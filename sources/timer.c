@@ -2,7 +2,11 @@
 
 // *** timer ****************************************************************
 
-int ticks;  // incremented by pit0 isr every millisecond
+bool timer_in_isr;
+
+int volatile ticks;  // incremented by pit0 isr every millisecond
+int volatile seconds;  // incremented by pit0 isr every second
+
 bool initialized;  // set when pit0 interrupts are initialized
 
 // called by pit0 every millisecond
@@ -11,16 +15,38 @@ __declspec(interrupt)
 void
 timer_isr(void)
 {
+    static int last_run_line_count;
+    
+    assert(! timer_in_isr);
+    timer_in_isr = true;
+    
     MCF_PIT0_PCSR |= MCF_PIT_PCSR_PIF;
-    ticks++;    
-    if (ticks%250 == 0) {
-        led_set(3, (ticks/250)%4);  // blink
-    }
+    ticks++;
+    
+    // poll the adc every millisecond
+    adc_poll();
 
-    // poll the accelerometer every millisecond
-#if ACCEL
-    accel_poll();
+    if (ticks%125 == 0) {
+        if (! led_assert) {
+#if BASIC
+            if (run_line_count != last_run_line_count) {
+                led_set(3, (ticks/125)%2);  // blink fast
+                last_run_line_count = run_line_count;
+            } else {
 #endif
+                led_set(3, (ticks/500)%2);  // blink slow
+#if BASIC
+            }
+#endif
+        }
+        
+        if (ticks%1000 == 0) {
+            seconds++;
+        }
+    }
+    
+    assert(timer_in_isr);
+    timer_in_isr = false;
 }
 
 void

@@ -1,5 +1,7 @@
 #include "MCF52221.h"
 
+// *** startup **************************************************************
+
 extern unsigned char far _SP_INIT[], _SDA_BASE[];
 extern unsigned char far __SP_AFTER_RESET[];
 extern unsigned char far __BSS_START[], __BSS_END[];
@@ -16,10 +18,10 @@ static
 asm void
 set_vbr(unsigned long) {
     move.l  4(SP),D0
-    movec   d0,VBR 
+    movec   d0,VBR
     nop
-    rts    
-}    
+    rts
+}
 
 // *** init *****************************************************************
 
@@ -32,18 +34,18 @@ init(void)
 
     /* Enable debug */
     MCF_GPIO_PDDPAR = 0x0F;
-    
+
     /* Set real time clock freq */
     MCF_CLOCK_RTCDR = 48000000;
-    
-    /* 
-     * Copy the vector table to RAM 
+
+    /*
+     * Copy the vector table to RAM
      */
     if (__VECTOR_RAM != (unsigned long *)_vectors) {
         for (n = 0; n < 256; n++)
             __VECTOR_RAM[n] = (unsigned long)_vectors[n];
     }
-    
+
     set_vbr((unsigned long)__VECTOR_RAM);
 
     /*
@@ -68,22 +70,20 @@ init(void)
         while (n--)
             *sp++ = 0;
     }
-    
+
     /*
      * Disable Software Watchdog Timer
      */
     MCF_SCM_CWCR = 0;
-    
-    MCF_CLOCK_CCHR = 0x05; // The PLL pre divider - 48MHz / 6 = 8MHz 
 
-    /* The PLL pre-divider affects this!!! 
-     * Multiply 8Mhz reference crystal /CCHR by 6 to acheive system clock of 48Mhz
-     */
+    // we use the 8MHz internal oscillator
+    MCF_CLOCK_CCHR = 0;
 
-    MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(1) | MCF_CLOCK_SYNCR_CLKSRC| MCF_CLOCK_SYNCR_PLLMODE | MCF_CLOCK_SYNCR_PLLEN ;
+    // and multiply by 6 to get 48MHz
+    MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(1)|MCF_CLOCK_SYNCR_CLKSRC|MCF_CLOCK_SYNCR_PLLMODE|MCF_CLOCK_SYNCR_PLLEN;
 
-    while (!(MCF_CLOCK_SYNSR & MCF_CLOCK_SYNSR_LOCK))
-    {
+    while (!(MCF_CLOCK_SYNSR & MCF_CLOCK_SYNSR_LOCK)) {
+        // NULL
     }
 
     /*
@@ -105,7 +105,7 @@ _startup(void)
     /* Initialize RAMBAR: locate SRAM and validate it */
     move.l   #__RAMBAR+0x21,d0
     movec    d0,RAMBAR
-    
+
     /* Initialize IPSBAR */
     move.l   #__IPSBAR,d0
     andi.l   #0xC0000000,d0  // need to mask
@@ -125,11 +125,11 @@ _startup(void)
     movea.l  #0,a6
     link     a6,#0
 
-	/* setup A5 */
+    /* setup A5 */
     lea      _SDA_BASE,a5
 
     /* initialize any hardware specific issues */
-    jsr      init   
+    jsr      init
 
     /* call main */
     jsr      main

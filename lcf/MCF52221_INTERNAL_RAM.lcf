@@ -12,8 +12,8 @@ MEMORY {
 SECTIONS {
  
 # Heap and Stack sizes definition
-	___heap_size	  = 0x400;
-	___stack_size     = 0x400;
+	___heap_size	  = 0x0000;
+	___stack_size     = 0x0400;
 
 
 

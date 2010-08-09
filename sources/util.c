@@ -1,26 +1,36 @@
 #include "main.h"
 
-// *** utility **************************************************************
+// *** util *****************************************************************
 
 // N.B. the usb controller bdt data structures are defined to be little
 // endian and the coldfire core is big endian, so we have to byteswap.
 
 uint32
-byteswap(uint32 x)
+byteswap(uint32 x, uint32 size)
 {
-    asm {
-        move.l     x,D0
-        byterev.l  d0
-        move.l     D0,x
+    switch (size) {
+        case 4:
+            asm {
+                move.l     x,D0
+                byterev.l  D0
+                move.l     D0,x
+            }
+            break;
+        case 2:
+            asm {
+                move.l     x,D0
+                byterev.l  D0
+                move.w     #0,D0
+                swap       D0
+                move.l     D0,x
+            }
+            break;
+        case 1:
+            break;
+        default:
+            assert(0);
     }
-
     return x;
-}
-
-uint16
-byteswapshort(uint16 x)
-{
-    return byteswap(x) >> 16;
 }
 
 // set the current interrupt mask level and return the old one
@@ -43,13 +53,14 @@ splx(int level)
     return (oldlevel >> 8) & 7;
 }
 
+static volatile int g;
+
 // delay for the specified number of milliseconds
 void
 delay(int ms)
 {
     int t;
     int x;
-    static int g;
 
     // if interrupts are initialized...
     if (initialized) {
