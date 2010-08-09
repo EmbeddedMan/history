@@ -1,6 +1,7 @@
-#include "main.h"
+// *** util.c *********************************************************
+// this file implements generic utility functions.
 
-// *** util *****************************************************************
+#include "main.h"
 
 // N.B. the usb controller bdt data structures are defined to be little
 // endian and the coldfire core is big endian, so we have to byteswap.
@@ -8,6 +9,7 @@
 uint32
 byteswap(uint32 x, uint32 size)
 {
+    // byteswap all bytes of x within size
     switch (size) {
         case 4:
             asm {
@@ -29,6 +31,7 @@ byteswap(uint32 x, uint32 size)
             break;
         default:
             assert(0);
+            break;
     }
     return x;
 }
@@ -41,13 +44,13 @@ splx(int level)
 
     level = (level & 7) << 8;
 
-    // enable cpu interrupts
+    // update the sr
     asm {
-        move.w     sr,d1
-        move.w     d1,oldlevel  // get the old level from the sr
-        and        #0xf8ff,d1
-        or         level,d1     // insert the new level into the sr
-        move.w     d1,sr
+        move.w     sr,d0
+        move.w     d0,oldlevel  // get the old level from the sr
+        and        #0xf8ff,d0
+        or         level,d0     // insert the new level into the sr
+        move.w     d0,sr
     }
 
     return (oldlevel >> 8) & 7;
@@ -76,9 +79,9 @@ delay(int ms)
             // NULL
         }
 
-        (void)splx(x);
+        splx(x);
+    // otherwise; make a good guess with a busywait
     } else {
-        // otherwise; make a good guess
         while (ms--) {
             for (x = 0; x < 10000; x++) {
                 g++;
@@ -87,4 +90,3 @@ delay(int ms)
     }
 }
 
-// **************************************************************************

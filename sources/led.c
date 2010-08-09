@@ -1,13 +1,21 @@
-#include "main.h"
+// *** led.c **********************************************************
+// this file implements basic LED controls for stickos.
 
-// *** led ******************************************************************
+#include "main.h"
 
 bool led_disable_autorun;
 
+static bool led_assert;
+
+// this function turns an LED on or off.
 void
 led_set(int n, int on)
 {
     assert(n < 4);
+
+    if (led_assert) {
+        return;
+    }
 
 #if DEMO
     if (on) {
@@ -24,23 +32,7 @@ led_set(int n, int on)
     }
 }
 
-void
-led_happy(void)
-{
-}
-
-void
-led_sad(void)
-{
-}
-
-void
-led_trigger(void)
-{
-}
-
-bool led_assert;
-
+// this function displays a diagnostic code on a LED.
 void
 led_line(int line)
 {
@@ -67,6 +59,7 @@ led_line(int line)
     }
 }
 
+// this function initializes the led module.
 void
 led_initialize(void)
 {
@@ -79,15 +72,15 @@ led_initialize(void)
     // NQ is gpio output (irq4, 7) and input (irq1)
     MCF_GPIO_PNQPAR = 0;
     MCF_GPIO_DDRNQ = 0xf0;
-    
+
     // if irq1 is asserted on boot, skip autorun
     if (! (MCF_GPIO_SETNQ & 0x02)) {
         led_disable_autorun = true;
-    
+
         while (! (MCF_GPIO_SETNQ & 0x02)) {
             // NULL
         }
-        
+
         delay(100);  // debounce
     }
 }

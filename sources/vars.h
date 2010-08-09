@@ -1,4 +1,4 @@
-// *** vars *****************************************************************
+// *** vars.h *********************************************************
 
 enum pin_type {
     pin_type_default = 0,
@@ -56,14 +56,6 @@ extern struct pin {
     enum pin_type pin_types;
 } pins[PIN_LAST];  // indexed by pin_number
 
-int var_open_scope();
-void var_close_scope(int scope);
-
-// called at runtime to manipulate variables
-void var_declare(char *name, int gosubs, int type, int size, int max_index, int pin_number, int pin_type);
-void var_set(char *name, int index, int value);
-int var_get(char *name, int index);
-
 // variables at end of flash page
 enum flash_var {
     FLASH_AUTORUN,
@@ -72,6 +64,15 @@ enum flash_var {
 };
 
 #define FLASH_OFFSET(var)  (BASIC_SMALL_PAGE_SIZE-sizeof(int)-(FLASH_LAST-var)*sizeof(int))
+
+
+int var_open_scope();
+void var_close_scope(int scope);
+
+// called at runtime to manipulate variables
+void var_declare(char *name, int gosubs, int type, int size, int max_index, int pin_number, int pin_type);
+void var_set(char *name, int index, int value);
+int var_get(char *name, int index);
 
 void var_set_flash(enum flash_var var, int value);
 int var_get_flash(enum flash_var var);

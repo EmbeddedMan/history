@@ -1,6 +1,9 @@
-#include "MCF52221.h"
+// *** startup.c ******************************************************
+// this file is where hardware starts execution of stickos.  from
+// here we call to main to initialize the other stickos modules, and
+// then to cpustick for the main program loop.
 
-// *** startup **************************************************************
+#include "MCF52221.h"
 
 extern unsigned char far _SP_INIT[], _SDA_BASE[];
 extern unsigned char far __SP_AFTER_RESET[];
@@ -10,21 +13,21 @@ extern unsigned long far __VECTOR_RAM[];
 
 extern int main();
 
-static void (*_vectors[256])(void);
+static void (*_vect[256])(void);
 
-// *** set_vbr **************************************************************
-
+// this function sets the coldfire vbr.
 static
-asm void
-set_vbr(unsigned long) {
-    move.l  4(SP),D0
-    movec   d0,VBR
-    nop
-    rts
+void
+set_vbr(unsigned long x) {
+    // update the vbr
+    asm {
+        move.l  x,d0
+        movec   d0,VBR
+        nop
+    }
 }
 
-// *** init *****************************************************************
-
+// this function performs C initialization before main runs.
 static
 void
 init(void)
@@ -41,9 +44,9 @@ init(void)
     /*
      * Copy the vector table to RAM
      */
-    if (__VECTOR_RAM != (unsigned long *)_vectors) {
+    if (__VECTOR_RAM != (unsigned long *)_vect) {
         for (n = 0; n < 256; n++)
-            __VECTOR_RAM[n] = (unsigned long)_vectors[n];
+            __VECTOR_RAM[n] = (unsigned long)_vect[n];
     }
 
     set_vbr((unsigned long)__VECTOR_RAM);
@@ -94,8 +97,11 @@ init(void)
         | MCF_SCM_RAMBAR_BDE);
 }
 
-// *** startup **************************************************************
+asm void
+_startup(void);
 
+// this function performs assembly language initialization before
+// main runs, and then calls init (C), and then calls main (C).
 asm void
 _startup(void)
 {
@@ -138,12 +144,11 @@ _startup(void)
     halt
 }
 
-// *** vector table *********************************************************
-
 #define x4(_x)  _x, _x, _x, _x
 #define x16(_y)  x4(_y), x4(_y), x4(_y), x4(_y)
 #define x64(_z)  x16(_z), x16(_z), x16(_z), x16(_z)
 
+static
 asm void
 asm_exception_handler(void)
 {
@@ -153,8 +158,9 @@ asm_exception_handler(void)
 
 #pragma define_section vectortable ".vectortable" far_absolute R
 
+// this is the interrupt vector table.
 __declspec(vectortable)
-void (*_vectors[256])(void) = {  // Interrupt vector table
+void (*_vect[256])(void) = {  // Interrupt vector table
    (void *)__SP_AFTER_RESET,     //   0 (0x00000000) Initial supervisor SP
    _startup,                     //   1 (0x00000004) Initial PC
    asm_exception_handler,        //   2
@@ -171,8 +177,6 @@ void (*_vectors[256])(void) = {  // Interrupt vector table
 };
 
 
-// *** CFM config ***********************************************************
-
 #define KEY_UPPER   0
 #define KEY_LOWER   0
 #define CFMPROT     0
@@ -183,6 +187,7 @@ void (*_vectors[256])(void) = {  // Interrupt vector table
 #pragma define_section cfmconfig ".cfmconfig"  far_absolute R
 #pragma explicit_zero_data on
 
+// this is the cfm config
 __declspec(cfmconfig)
 unsigned long _cfm[6] = {
     KEY_UPPER,  // (0x00000404)
@@ -193,4 +198,3 @@ unsigned long _cfm[6] = {
     CFMSEC,     // (0x00000414)
 };
 
-// **************************************************************************

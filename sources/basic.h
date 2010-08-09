@@ -1,4 +1,4 @@
-// *** basic ****************************************************************
+// *** basic.h ********************************************************
 
 enum devices {
     device_timer,
@@ -63,6 +63,7 @@ enum bytecode {
     code_max
 };
 
+
 #define BASIC_SMALL_PAGE_SIZE  2048
 #define BASIC_LARGE_PAGE_SIZE  (10*1024)
 #define BASIC_LINE_SIZE  79
@@ -91,6 +92,10 @@ extern byte FLASH_PARAM2_PAGE[BASIC_SMALL_PAGE_SIZE];
 extern byte RAM_CODE_PAGE[BASIC_SMALL_PAGE_SIZE];
 extern byte RAM_VARIABLE_PAGE[BASIC_SMALL_PAGE_SIZE];
 
+extern byte *end_of_static;
+extern byte *start_of_dynamic;
+extern byte *end_of_dynamic;
+
 void basic_run(char *line);
 void basic_initialize(void);
 
@@ -98,3 +103,4 @@ void basic_initialize(void);
 #include "parse.h"
 #include "run.h"
 #include "vars.h"
+

@@ -459,6 +459,7 @@ test help
 for more information:
   help about
   help commands
+  help modes
   help statements
   help blocks
   help devices
@@ -467,11 +468,10 @@ for more information:
   help pins
   help board
   help clone
-Welcome to StickOS for Freescale MCF52221 v1.0!
+Welcome to StickOS for Freescale MCF52221 v1.01!
 Copyright (c) CPUStick.com, 2008; all rights reserved.
-auto(reset|run) [on|off]    -- autoreset or autorun mode
 clear [flash]               -- clear ram [and flash] variables
-clone [run]                 -- clone flash to slave CPUStick
+clone [run]                 -- clone flash to slave CPUStick [and run]
 cont [<line>]               -- continue program from stop
 delete [<line>][-][<line>]  -- delete program lines
 dir                         -- list saved programs
@@ -486,11 +486,19 @@ renumber [<line>]           -- renumber program lines (and save)
 reset                       -- reset the CPUStick!
 run [<line>]                -- run program
 save [<name>]               -- save code ram to flash memory
-step [on|off]               -- single-step mode
-trace [on|off]              -- trace mode
 undo                        -- undo code changes since last save
 upgrade                     -- upgrade StickOS firmware!
 uptime                      -- print time since last reset
+
+for more information:
+  help modes
+autoreset [on|off]          -- autoreset (on wake) mode
+autorun [on|off]            -- autorun (on reset) mode
+echo [on|off]               -- terminal echo mode
+indent [on|off]             -- listing indent mode
+prompt [on|off]             -- terminal prompt mode
+step [on|off]               -- debugger single-step mode
+trace [on|off]              -- debugger trace mode
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -523,22 +531,24 @@ while <expression> do
   [break [n]]
 endwhile
 
-gosub <sub name>[(params, ...)]
+gosub <subname>
 
-sub <sub name>[(params, ...)]
+sub <subname>
   [return]
 endsub
 timers:
   configure timer <n> for <n> ms
   on timer <n> <statement>                -- on timer execute <statement>
   off timer <n>                           -- disable timer interrupt
-  [un]mask timer <n>                      -- mask or unmask timer interrupt
+  mask timer <n>                          -- mask (hold) timer interrupt
+  unmask timer <n>                        -- unmask timer interrupt
 
 uarts:
   configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
   on uart <n> (input|output) <statement>  -- on uart execute <statement>
   off uart <n> (input|output)             -- disable uart interrupt
-  [un]mask uart <n> (input|output)        -- mask or unmask uart interrupt
+  mask uart <n> (input|output)            -- mask (hold) uart interrupt
+  unmask uart <n> (input|output)          -- unmask uart interrupt
 the following operators are supported as in C,
 in order of increasing precedence:
   ||  ^^  &&                -- logical or, xor, and
@@ -568,45 +578,46 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables
-  dim <varpin> as pin <pinname> (analog|digital|uart) (input|output)
+  dim <varpin> as pin <pinname> for (analog|digital|uart) (input|output)
 
 for more information:
   help pins
 pin names:
-  qspi_cs0  qspi_clk  qspi_din  qspi_dout dtin3   dtin2   dtin1   dtin0
-  ucts0*    urts0*    urxd0     utxd0     ucts1*  urts1*  urxd1   utxd1
-  an0       an1       an2       an3       an4     an5     an6     an7
+  dtin3     dtin2     dtin1     dtin0
+  an0       an1       an2       an3
+  an4       an5       an6       an7
+  ucts0*    urts0*    urxd0     utxd0
+  ucts1*    urts1*    urxd1     utxd1
   irq7*     irq4*     irq1*
-            scl       sda
+  qspi_cs0  qspi_clk  qspi_din  qspi_dout
+  scl       sda
 
 all pins support general purpose digital input/output
-an? = potential analog input pins (scale 0..32767)
 dtin? = potential analog output (PWM actually) pins (scale 0..32767)
+an? = potential analog input pins (scale 0..32767)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
-              1 2 3 4 5 6 7 8 9 10   1 2 3 4 5 6 7 8 9 10
+              1  2  3  4  5  6  7  8  9  10 11 12 13 14
 
-              g + u u u u u u u u    g + i i i       a p
-              n 3 c r r t c r r t    n 3 r r r       l s
-              d V t t x x t t x x    d V q q q       l t
-1  gnd            s s d d s s d d        7 4 1       p c
-2  +3V            0 0 0 0 1 1 1 1        * * *       s l
-                  * *     * *                        t k
-1  gnd
-2  +3V                                                          gnd  1
-3  rsti*                                                        +5V  2
+              g  +  u  u  u  u  u  u  u  u  i  i  i  +
+              n  3  c  r  r  t  c  r  r  t  r  r  r  5
+              d  V  t  t  x  x  t  t  x  x  q  q  q  V
+                    s  s  d  d  s  s  d  d  7  4  1
+1  gnd              0  0  0  0  1  1  1  1  *  *  *
+2  +3V              *  *        *  *
+3  rsti*
 4  scl
-5  sda                  q
-6  qspi_din       q q q s
-7  qspi_dout      s s s p
-8  qspi_clk       p p p i
-9  qspi_cs0       i i i _ d d d d
-10 rcon*          _ _ _ d t t t t
-              g + c c d o i i i i    g + a a a a a a a a
-              n 3 s l i u n n n n    n 3 n n n n n n n n
-              d V 0 k n t 3 2 1 0    d V 0 1 2 3 4 5 6 7
+5  sda
+6  qspi_din
+7  qspi_dout
+8  qspi_clk
+9  qspi_cs0         d  d  d  d
+10 rcon*            t  t  t  t
+              g  +  i  i  i  i  a  a  a  a  a  a  a  a
+              n  3  n  n  n  n  n  n  n  n  n  n  n  n
+              d  V  3  2  1  0  0  1  2  3  4  5  6  7
 
-              1 2 3 4 5 6 7 8 9 10   1 2 3 4 5 6 7 8 9 10
+              1  2  3  4  5  6  7  8  9  10 11 12 13 14
 clone cable:
   master     slave
   ---------  ----------------
@@ -640,6 +651,17 @@ test flash memory
   50 next 
   60 for a = 0 to 3
   70   print a, b[a]
+  80 next 
+end
+on
+  10 dim a as flash
+  20 dim b[4] as flash
+  25 print a
+  30 for a = 0 to 3
+  40 let b[a] = b[a]+a*a
+  50 next 
+  60 for a = 0 to 3
+  70 print a, b[a]
   80 next 
 end
 0
@@ -692,6 +714,8 @@ off
 3 9
 on
 off
+on
+on
 test array parsing
   10 dim a[3], b
   20 dim b, a[3+4]
@@ -741,7 +765,7 @@ test read/data
   10 data 1, 0x2, 3
   20 data 0x4
   30 data 5, 0x6
-  35 data 7
+  35 data -7
   40 while 1 do
   50   read a
   60   print a
@@ -754,7 +778,7 @@ end
 4
 5
 6
-7
+-7
 16
 out of data
 STOP at line 50!
@@ -762,7 +786,7 @@ STOP at line 50!
   10 data 1, 0x2, 3
   20 data 0x4
   30 data 5, 0x6
-  35 data 7
+  35 data -7
   40 while 1 do
   50   read a, b
   60   print a, b
@@ -775,11 +799,11 @@ end
 1 2
 3 4
 5 6
-7 16
+-7 16
 out of data
 STOP at line 50!
 1 2
-missing next/endwhile
+missing endwhile/next
    1 dim a, b, c
   10 data 1, 0x2, 3
   20 data 0x4
@@ -799,7 +823,7 @@ end
 out of data
 STOP at line 50!
 5 6 7
-missing next/endwhile
+missing endwhile/next
 test autorun and autoreset
 off
 on
@@ -1030,11 +1054,11 @@ test large flash program
 1010 dim target, secs
 1020 dim thermocouple as pin an0 for analog input
 1030 dim relay as pin an1 for digital output
-1040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 gosub adjust
-1070 read target, secs
-1080 while target do
+1070 rem ----------
+1080 while target!=-1 do
 1090   sleep secs*1000
 1100   read target, secs
 1110 endwhile 
@@ -1051,11 +1075,11 @@ test large flash program
 2010 dim target, secs
 2020 dim thermocouple as pin an0 for analog input
 2030 dim relay as pin an1 for digital output
-2040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 gosub adjust
-2070 read target, secs
-2080 while target do
+2070 rem ----------
+2080 while target!=-1 do
 2090   sleep secs*1000
 2100   read target, secs
 2110 endwhile 
@@ -1072,11 +1096,11 @@ test large flash program
 3010 dim target, secs
 3020 dim thermocouple as pin an0 for analog input
 3030 dim relay as pin an1 for digital output
-3040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 gosub adjust
-3070 read target, secs
-3080 while target do
+3070 rem ----------
+3080 while target!=-1 do
 3090   sleep secs*1000
 3100   read target, secs
 3110 endwhile 
@@ -1099,11 +1123,11 @@ end
 1010 dim target, secs
 1020 dim thermocouple as pin an0 for analog input
 1030 dim relay as pin an1 for digital output
-1040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 gosub adjust
-1070 read target, secs
-1080 while target do
+1070 rem ----------
+1080 while target!=-1 do
 1090   sleep secs*1000
 1100   read target, secs
 1110 endwhile 
@@ -1120,11 +1144,11 @@ end
 2010 dim target, secs
 2020 dim thermocouple as pin an0 for analog input
 2030 dim relay as pin an1 for digital output
-2040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 gosub adjust
-2070 read target, secs
-2080 while target do
+2070 rem ----------
+2080 while target!=-1 do
 2090   sleep secs*1000
 2100   read target, secs
 2110 endwhile 
@@ -1141,11 +1165,11 @@ end
 3010 dim target, secs
 3020 dim thermocouple as pin an0 for analog input
 3030 dim relay as pin an1 for digital output
-3040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 gosub adjust
-3070 read target, secs
-3080 while target do
+3070 rem ----------
+3080 while target!=-1 do
 3090   sleep secs*1000
 3100   read target, secs
 3110 endwhile 
@@ -1168,11 +1192,11 @@ end
 1010 dim target, secs
 1020 dim thermocouple as pin an0 for analog input
 1030 dim relay as pin an1 for digital output
-1040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 gosub adjust
-1070 read target, secs
-1080 while target do
+1070 rem ----------
+1080 while target!=-1 do
 1090   sleep secs*1000
 1100   read target, secs
 1110 endwhile 
@@ -1189,11 +1213,11 @@ end
 2010 dim target, secs
 2020 dim thermocouple as pin an0 for analog input
 2030 dim relay as pin an1 for digital output
-2040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 gosub adjust
-2070 read target, secs
-2080 while target do
+2070 rem ----------
+2080 while target!=-1 do
 2090   sleep secs*1000
 2100   read target, secs
 2110 endwhile 
@@ -1210,11 +1234,11 @@ end
 3010 dim target, secs
 3020 dim thermocouple as pin an0 for analog input
 3030 dim relay as pin an1 for digital output
-3040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 gosub adjust
-3070 read target, secs
-3080 while target do
+3070 rem ----------
+3080 while target!=-1 do
 3090   sleep secs*1000
 3100   read target, secs
 3110 endwhile 
@@ -1231,11 +1255,11 @@ end
 4010 dim target, secs
 4020 dim thermocouple as pin an0 for analog input
 4030 dim relay as pin an1 for digital output
-4040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 gosub adjust
-4070 read target, secs
-4080 while target do
+4070 rem ----------
+4080 while target!=-1 do
 4090   sleep secs*1000
 4100   read target, secs
 4110 endwhile 
@@ -1252,11 +1276,11 @@ end
 5010 dim target, secs
 5020 dim thermocouple as pin an0 for analog input
 5030 dim relay as pin an1 for digital output
-5040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 gosub adjust
-5070 read target, secs
-5080 while target do
+5070 rem ----------
+5080 while target!=-1 do
 5090   sleep secs*1000
 5100   read target, secs
 5110 endwhile 
@@ -1273,11 +1297,11 @@ end
 6010 dim target, secs
 6020 dim thermocouple as pin an0 for analog input
 6030 dim relay as pin an1 for digital output
-6040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 gosub adjust
-6070 read target, secs
-6080 while target do
+6070 rem ----------
+6080 while target!=-1 do
 6090   sleep secs*1000
 6100   read target, secs
 6110 endwhile 
@@ -1300,11 +1324,11 @@ end
 1010 dim target, secs
 1020 dim thermocouple as pin an0 for analog input
 1030 dim relay as pin an1 for digital output
-1040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 gosub adjust
-1070 read target, secs
-1080 while target do
+1070 rem ----------
+1080 while target!=-1 do
 1090   sleep secs*1000
 1100   read target, secs
 1110 endwhile 
@@ -1321,11 +1345,11 @@ end
 2010 dim target, secs
 2020 dim thermocouple as pin an0 for analog input
 2030 dim relay as pin an1 for digital output
-2040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 gosub adjust
-2070 read target, secs
-2080 while target do
+2070 rem ----------
+2080 while target!=-1 do
 2090   sleep secs*1000
 2100   read target, secs
 2110 endwhile 
@@ -1342,11 +1366,11 @@ end
 3010 dim target, secs
 3020 dim thermocouple as pin an0 for analog input
 3030 dim relay as pin an1 for digital output
-3040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 gosub adjust
-3070 read target, secs
-3080 while target do
+3070 rem ----------
+3080 while target!=-1 do
 3090   sleep secs*1000
 3100   read target, secs
 3110 endwhile 
@@ -1363,11 +1387,11 @@ end
 4010 dim target, secs
 4020 dim thermocouple as pin an0 for analog input
 4030 dim relay as pin an1 for digital output
-4040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 gosub adjust
-4070 read target, secs
-4080 while target do
+4070 rem ----------
+4080 while target!=-1 do
 4090   sleep secs*1000
 4100   read target, secs
 4110 endwhile 
@@ -1384,11 +1408,11 @@ end
 5010 dim target, secs
 5020 dim thermocouple as pin an0 for analog input
 5030 dim relay as pin an1 for digital output
-5040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 gosub adjust
-5070 read target, secs
-5080 while target do
+5070 rem ----------
+5080 while target!=-1 do
 5090   sleep secs*1000
 5100   read target, secs
 5110 endwhile 
@@ -1405,11 +1429,11 @@ end
 6010 dim target, secs
 6020 dim thermocouple as pin an0 for analog input
 6030 dim relay as pin an1 for digital output
-6040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 gosub adjust
-6070 read target, secs
-6080 while target do
+6070 rem ----------
+6080 while target!=-1 do
 6090   sleep secs*1000
 6100   read target, secs
 6110 endwhile 
@@ -1432,11 +1456,11 @@ end
   20 dim target, secs
   30 dim thermocouple as pin an0 for analog input
   40 dim relay as pin an1 for digital output
-  50 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+  50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 gosub adjust
-  80 read target, secs
-  90 while target do
+  80 rem ----------
+  90 while target!=-1 do
  100   sleep secs*1000
  110   read target, secs
  120 endwhile 
@@ -1453,11 +1477,11 @@ end
  230 dim target, secs
  240 dim thermocouple as pin an0 for analog input
  250 dim relay as pin an1 for digital output
- 260 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+ 260 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  270 configure timer 0 for 1000 ms
  280 on timer 0 gosub adjust
- 290 read target, secs
- 300 while target do
+ 290 rem ----------
+ 300 while target!=-1 do
  310   sleep secs*1000
  320   read target, secs
  330 endwhile 
@@ -1474,11 +1498,11 @@ end
  440 dim target, secs
  450 dim thermocouple as pin an0 for analog input
  460 dim relay as pin an1 for digital output
- 470 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+ 470 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  480 configure timer 0 for 1000 ms
  490 on timer 0 gosub adjust
- 500 read target, secs
- 510 while target do
+ 500 rem ----------
+ 510 while target!=-1 do
  520   sleep secs*1000
  530   read target, secs
  540 endwhile 
@@ -1495,11 +1519,11 @@ end
  650 dim target, secs
  660 dim thermocouple as pin an0 for analog input
  670 dim relay as pin an1 for digital output
- 680 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+ 680 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  690 configure timer 0 for 1000 ms
  700 on timer 0 gosub adjust
- 710 read target, secs
- 720 while target do
+ 710 rem ----------
+ 720 while target!=-1 do
  730   sleep secs*1000
  740   read target, secs
  750 endwhile 
@@ -1516,11 +1540,11 @@ end
  860 dim target, secs
  870 dim thermocouple as pin an0 for analog input
  880 dim relay as pin an1 for digital output
- 890 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+ 890 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  900 configure timer 0 for 1000 ms
  910 on timer 0 gosub adjust
- 920 read target, secs
- 930 while target do
+ 920 rem ----------
+ 930 while target!=-1 do
  940   sleep secs*1000
  950   read target, secs
  960 endwhile 
@@ -1537,11 +1561,11 @@ end
 1070 dim target, secs
 1080 dim thermocouple as pin an0 for analog input
 1090 dim relay as pin an1 for digital output
-1100 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1100 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1110 configure timer 0 for 1000 ms
 1120 on timer 0 gosub adjust
-1130 read target, secs
-1140 while target do
+1130 rem ----------
+1140 while target!=-1 do
 1150   sleep secs*1000
 1160   read target, secs
 1170 endwhile 
@@ -1558,11 +1582,11 @@ end
 1280 dim target, secs
 1290 dim thermocouple as pin an0 for analog input
 1300 dim relay as pin an1 for digital output
-1310 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1310 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1320 configure timer 0 for 1000 ms
 1330 on timer 0 gosub adjust
-1340 read target, secs
-1350 while target do
+1340 rem ----------
+1350 while target!=-1 do
 1360   sleep secs*1000
 1370   read target, secs
 1380 endwhile 
@@ -1579,11 +1603,11 @@ end
 1490 dim target, secs
 1500 dim thermocouple as pin an0 for analog input
 1510 dim relay as pin an1 for digital output
-1520 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1520 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1530 configure timer 0 for 1000 ms
 1540 on timer 0 gosub adjust
-1550 read target, secs
-1560 while target do
+1550 rem ----------
+1560 while target!=-1 do
 1570   sleep secs*1000
 1580   read target, secs
 1590 endwhile 
@@ -1600,11 +1624,11 @@ end
 1700 dim target, secs
 1710 dim thermocouple as pin an0 for analog input
 1720 dim relay as pin an1 for digital output
-1730 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1730 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1740 configure timer 0 for 1000 ms
 1750 on timer 0 gosub adjust
-1760 read target, secs
-1770 while target do
+1760 rem ----------
+1770 while target!=-1 do
 1780   sleep secs*1000
 1790   read target, secs
 1800 endwhile 
@@ -1627,11 +1651,11 @@ end
   20 dim target, secs
   30 dim thermocouple as pin an0 for analog input
   40 dim relay as pin an1 for digital output
-  50 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+  50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 gosub adjust
-  80 read target, secs
-  90 while target do
+  80 rem ----------
+  90 while target!=-1 do
  100   sleep secs*1000
  110   read target, secs
  120 endwhile 
@@ -1648,11 +1672,11 @@ end
  230 dim target, secs
  240 dim thermocouple as pin an0 for analog input
  250 dim relay as pin an1 for digital output
- 260 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+ 260 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  270 configure timer 0 for 1000 ms
  280 on timer 0 gosub adjust
- 290 read target, secs
- 300 while target do
+ 290 rem ----------
+ 300 while target!=-1 do
  310   sleep secs*1000
  320   read target, secs
  330 endwhile 
@@ -1669,11 +1693,11 @@ end
  440 dim target, secs
  450 dim thermocouple as pin an0 for analog input
  460 dim relay as pin an1 for digital output
- 470 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+ 470 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  480 configure timer 0 for 1000 ms
  490 on timer 0 gosub adjust
- 500 read target, secs
- 510 while target do
+ 500 rem ----------
+ 510 while target!=-1 do
  520   sleep secs*1000
  530   read target, secs
  540 endwhile 
@@ -1690,11 +1714,11 @@ end
  650 dim target, secs
  660 dim thermocouple as pin an0 for analog input
  670 dim relay as pin an1 for digital output
- 680 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+ 680 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  690 configure timer 0 for 1000 ms
  700 on timer 0 gosub adjust
- 710 read target, secs
- 720 while target do
+ 710 rem ----------
+ 720 while target!=-1 do
  730   sleep secs*1000
  740   read target, secs
  750 endwhile 
@@ -1711,11 +1735,11 @@ end
  860 dim target, secs
  870 dim thermocouple as pin an0 for analog input
  880 dim relay as pin an1 for digital output
- 890 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+ 890 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  900 configure timer 0 for 1000 ms
  910 on timer 0 gosub adjust
- 920 read target, secs
- 930 while target do
+ 920 rem ----------
+ 930 while target!=-1 do
  940   sleep secs*1000
  950   read target, secs
  960 endwhile 
@@ -1732,11 +1756,11 @@ end
 1070 dim target, secs
 1080 dim thermocouple as pin an0 for analog input
 1090 dim relay as pin an1 for digital output
-1100 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1100 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1110 configure timer 0 for 1000 ms
 1120 on timer 0 gosub adjust
-1130 read target, secs
-1140 while target do
+1130 rem ----------
+1140 while target!=-1 do
 1150   sleep secs*1000
 1160   read target, secs
 1170 endwhile 
@@ -1753,11 +1777,11 @@ end
 1280 dim target, secs
 1290 dim thermocouple as pin an0 for analog input
 1300 dim relay as pin an1 for digital output
-1310 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1310 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1320 configure timer 0 for 1000 ms
 1330 on timer 0 gosub adjust
-1340 read target, secs
-1350 while target do
+1340 rem ----------
+1350 while target!=-1 do
 1360   sleep secs*1000
 1370   read target, secs
 1380 endwhile 
@@ -1774,11 +1798,11 @@ end
 1490 dim target, secs
 1500 dim thermocouple as pin an0 for analog input
 1510 dim relay as pin an1 for digital output
-1520 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1520 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1530 configure timer 0 for 1000 ms
 1540 on timer 0 gosub adjust
-1550 read target, secs
-1560 while target do
+1550 rem ----------
+1560 while target!=-1 do
 1570   sleep secs*1000
 1580   read target, secs
 1590 endwhile 
@@ -1795,11 +1819,11 @@ end
 1700 dim target, secs
 1710 dim thermocouple as pin an0 for analog input
 1720 dim relay as pin an1 for digital output
-1730 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1730 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1740 configure timer 0 for 1000 ms
 1750 on timer 0 gosub adjust
-1760 read target, secs
-1770 while target do
+1760 rem ----------
+1770 while target!=-1 do
 1780   sleep secs*1000
 1790   read target, secs
 1800 endwhile 
@@ -1895,12 +1919,76 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.0!
+Welcome to StickOS for Freescale MCF52221 v1.01!
 Copyright (c) CPUStick.com, 2008; all rights reserved.
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.0!
+Welcome to StickOS for Freescale MCF52221 v1.01!
 Copyright (c) CPUStick.com, 2008; all rights reserved.
 cloning...
+filesystem
+out of storage
+out of storage
+prog3
+prog2
+prog1
+  10 rem this is a program
+  20 rem 44
+end
+  10 rem this is a program
+  20 rem 1
+end
+  10 rem this is a program
+  20 rem 22
+end
+  10 rem this is a program
+  20 rem 3
+end
+program 'prog4' not found
+  10 rem this is a program
+  20 rem 3
+end
+program 'prog0' not found
+prog3
+prog2
+prog1
+  10 rem this is a program
+  20 rem 3
+end
+prog3
+prog2
+  10 rem this is a program
+  20 rem 3
+end
+prog3
+  10 rem this is a program
+  20 rem 3
+end
+prog4
+  10 rem this is a program
+  20 rem 444
+end
+program 'prog5' not found
+prog4
+  10 rem this is a program
+  20 rem 444
+end
+  10 rem this is a program
+  20 rem 444
+end
+this is a very
+prog4
+  10 rem this is a program
+  20 rem 444
+end
+this is a very
+prog4
+  10 rem this is a program
+  20 rem long
+end
+prog4
+  10 rem this is a program
+  20 rem long
+end
 parse errors
 error -   ^
         ^ - error
@@ -2085,7 +2173,7 @@ solos
        ^ - error
 error -   ^
 break
-missing while
+missing while/for
         ^ - error
         ^ - error
 error -    ^
@@ -2144,7 +2232,7 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.0!
+Welcome to StickOS for Freescale MCF52221 v1.01!
 Copyright (c) CPUStick.com, 2008; all rights reserved.
 list
        ^ - error
@@ -2206,7 +2294,8 @@ going
 going
 going
 going
-too many ifs
+too many scopes
+STOP at line 65!
 main
 main
 main
@@ -2241,11 +2330,11 @@ auto save
   20 dim target, secs
   30 dim thermocouple as pin an0 for analog input
   40 dim relay as pin an1 for digital output
-  50 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+  50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 gosub adjust
-  80 read target, secs
-  90 while target do
+  80 rem ----------
+  90 while target!=-1 do
  100   sleep secs*1000
  110   read target, secs
  120 endwhile 
@@ -2262,11 +2351,11 @@ auto save
 1010 dim target, secs
 1020 dim thermocouple as pin an0 for analog input
 1030 dim relay as pin an1 for digital output
-1040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 gosub adjust
-1070 read target, secs
-1080 while target do
+1070 rem ----------
+1080 while target!=-1 do
 1090   sleep secs*1000
 1100   read target, secs
 1110 endwhile 
@@ -2283,11 +2372,11 @@ auto save
 2010 dim target, secs
 2020 dim thermocouple as pin an0 for analog input
 2030 dim relay as pin an1 for digital output
-2040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 gosub adjust
-2070 read target, secs
-2080 while target do
+2070 rem ----------
+2080 while target!=-1 do
 2090   sleep secs*1000
 2100   read target, secs
 2110 endwhile 
@@ -2304,11 +2393,11 @@ auto save
 3010 dim target, secs
 3020 dim thermocouple as pin an0 for analog input
 3030 dim relay as pin an1 for digital output
-3040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 gosub adjust
-3070 read target, secs
-3080 while target do
+3070 rem ----------
+3080 while target!=-1 do
 3090   sleep secs*1000
 3100   read target, secs
 3110 endwhile 
@@ -2325,11 +2414,11 @@ auto save
 4010 dim target, secs
 4020 dim thermocouple as pin an0 for analog input
 4030 dim relay as pin an1 for digital output
-4040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 gosub adjust
-4070 read target, secs
-4080 while target do
+4070 rem ----------
+4080 while target!=-1 do
 4090   sleep secs*1000
 4100   read target, secs
 4110 endwhile 
@@ -2346,11 +2435,11 @@ auto save
 5010 dim target, secs
 5020 dim thermocouple as pin an0 for analog input
 5030 dim relay as pin an1 for digital output
-5040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 gosub adjust
-5070 read target, secs
-5080 while target do
+5070 rem ----------
+5080 while target!=-1 do
 5090   sleep secs*1000
 5100   read target, secs
 5110 endwhile 
@@ -2367,11 +2456,11 @@ auto save
 6010 dim target, secs
 6020 dim thermocouple as pin an0 for analog input
 6030 dim relay as pin an1 for digital output
-6040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 gosub adjust
-6070 read target, secs
-6080 while target do
+6070 rem ----------
+6080 while target!=-1 do
 6090   sleep secs*1000
 6100   read target, secs
 6110 endwhile 
@@ -2388,11 +2477,11 @@ auto save
 7010 dim target, secs
 7020 dim thermocouple as pin an0 for analog input
 7030 dim relay as pin an1 for digital output
-7040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 7050 configure timer 0 for 1000 ms
 7060 on timer 0 gosub adjust
-7070 read target, secs
-7080 while target do
+7070 rem ----------
+7080 while target!=-1 do
 7090   sleep secs*1000
 7100   read target, secs
 7110 endwhile 
@@ -2464,11 +2553,11 @@ out of code ram
   20 dim target, secs
   30 dim thermocouple as pin an0 for analog input
   40 dim relay as pin an1 for digital output
-  50 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+  50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 gosub adjust
-  80 read target, secs
-  90 while target do
+  80 rem ----------
+  90 while target!=-1 do
  100   sleep secs*1000
  110   read target, secs
  120 endwhile 
@@ -2485,11 +2574,11 @@ out of code ram
 1010 dim target, secs
 1020 dim thermocouple as pin an0 for analog input
 1030 dim relay as pin an1 for digital output
-1040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 gosub adjust
-1070 read target, secs
-1080 while target do
+1070 rem ----------
+1080 while target!=-1 do
 1090   sleep secs*1000
 1100   read target, secs
 1110 endwhile 
@@ -2506,11 +2595,11 @@ out of code ram
 2010 dim target, secs
 2020 dim thermocouple as pin an0 for analog input
 2030 dim relay as pin an1 for digital output
-2040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 gosub adjust
-2070 read target, secs
-2080 while target do
+2070 rem ----------
+2080 while target!=-1 do
 2090   sleep secs*1000
 2100   read target, secs
 2110 endwhile 
@@ -2527,11 +2616,11 @@ out of code ram
 3010 dim target, secs
 3020 dim thermocouple as pin an0 for analog input
 3030 dim relay as pin an1 for digital output
-3040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 gosub adjust
-3070 read target, secs
-3080 while target do
+3070 rem ----------
+3080 while target!=-1 do
 3090   sleep secs*1000
 3100   read target, secs
 3110 endwhile 
@@ -2548,11 +2637,11 @@ out of code ram
 4010 dim target, secs
 4020 dim thermocouple as pin an0 for analog input
 4030 dim relay as pin an1 for digital output
-4040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 gosub adjust
-4070 read target, secs
-4080 while target do
+4070 rem ----------
+4080 while target!=-1 do
 4090   sleep secs*1000
 4100   read target, secs
 4110 endwhile 
@@ -2569,11 +2658,11 @@ out of code ram
 5010 dim target, secs
 5020 dim thermocouple as pin an0 for analog input
 5030 dim relay as pin an1 for digital output
-5040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 gosub adjust
-5070 read target, secs
-5080 while target do
+5070 rem ----------
+5080 while target!=-1 do
 5090   sleep secs*1000
 5100   read target, secs
 5110 endwhile 
@@ -2590,11 +2679,11 @@ out of code ram
 6010 dim target, secs
 6020 dim thermocouple as pin an0 for analog input
 6030 dim relay as pin an1 for digital output
-6040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 gosub adjust
-6070 read target, secs
-6080 while target do
+6070 rem ----------
+6080 while target!=-1 do
 6090   sleep secs*1000
 6100   read target, secs
 6110 endwhile 
@@ -2611,11 +2700,11 @@ out of code ram
 7010 dim target, secs
 7020 dim thermocouple as pin an0 for analog input
 7030 dim relay as pin an1 for digital output
-7040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 7050 configure timer 0 for 1000 ms
 7060 on timer 0 gosub adjust
-7070 read target, secs
-7080 while target do
+7070 rem ----------
+7080 while target!=-1 do
 7090   sleep secs*1000
 7100   read target, secs
 7110 endwhile 
@@ -2632,11 +2721,11 @@ out of code ram
 8010 dim target, secs
 8020 dim thermocouple as pin an0 for analog input
 8030 dim relay as pin an1 for digital output
-8040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+8040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 8050 configure timer 0 for 1000 ms
 8060 on timer 0 gosub adjust
-8070 read target, secs
-8080 while target do
+8070 rem ----------
+8080 while target!=-1 do
 8090   sleep secs*1000
 8100   read target, secs
 8110 endwhile 
@@ -2653,11 +2742,11 @@ out of code ram
 9010 dim target, secs
 9020 dim thermocouple as pin an0 for analog input
 9030 dim relay as pin an1 for digital output
-9040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+9040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 9050 configure timer 0 for 1000 ms
 9060 on timer 0 gosub adjust
-9070 read target, secs
-9080 while target do
+9070 rem ----------
+9080 while target!=-1 do
 9090   sleep secs*1000
 9100   read target, secs
 9110 endwhile 
@@ -2674,11 +2763,11 @@ out of code ram
 10010 dim target, secs
 10020 dim thermocouple as pin an0 for analog input
 10030 dim relay as pin an1 for digital output
-10040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+10040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 10050 configure timer 0 for 1000 ms
 10060 on timer 0 gosub adjust
-10070 read target, secs
-10080 while target do
+10070 rem ----------
+10080 while target!=-1 do
 10090   sleep secs*1000
 10100   read target, secs
 10110 endwhile 
@@ -2695,11 +2784,11 @@ out of code ram
 11010 dim target, secs
 11020 dim thermocouple as pin an0 for analog input
 11030 dim relay as pin an1 for digital output
-11040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+11040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 11050 configure timer 0 for 1000 ms
 11060 on timer 0 gosub adjust
-11070 read target, secs
-11080 while target do
+11070 rem ----------
+11080 while target!=-1 do
 11090   sleep secs*1000
 11100   read target, secs
 11110 endwhile 
@@ -2716,11 +2805,11 @@ out of code ram
 12010 dim target, secs
 12020 dim thermocouple as pin an0 for analog input
 12030 dim relay as pin an1 for digital output
-12040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+12040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 12050 configure timer 0 for 1000 ms
 12060 on timer 0 gosub adjust
-12070 read target, secs
-12080 while target do
+12070 rem ----------
+12080 while target!=-1 do
 12090   sleep secs*1000
 12100   read target, secs
 12110 endwhile 
@@ -2737,11 +2826,11 @@ out of code ram
 13010 dim target, secs
 13020 dim thermocouple as pin an0 for analog input
 13030 dim relay as pin an1 for digital output
-13040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+13040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 13050 configure timer 0 for 1000 ms
 13060 on timer 0 gosub adjust
-13070 read target, secs
-13080 while target do
+13070 rem ----------
+13080 while target!=-1 do
 13090   sleep secs*1000
 13100   read target, secs
 13110 endwhile 
@@ -2758,11 +2847,11 @@ out of code ram
 14010 dim target, secs
 14020 dim thermocouple as pin an0 for analog input
 14030 dim relay as pin an1 for digital output
-14040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+14040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 14050 configure timer 0 for 1000 ms
 14060 on timer 0 gosub adjust
-14070 read target, secs
-14080 while target do
+14070 rem ----------
+14080 while target!=-1 do
 14090   sleep secs*1000
 14100   read target, secs
 14110 endwhile 
@@ -2779,11 +2868,11 @@ out of code ram
 15010 dim target, secs
 15020 dim thermocouple as pin an0 for analog input
 15030 dim relay as pin an1 for digital output
-15040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+15040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 15050 configure timer 0 for 1000 ms
 15060 on timer 0 gosub adjust
-15070 read target, secs
-15080 while target do
+15070 rem ----------
+15080 while target!=-1 do
 15090   sleep secs*1000
 15100   read target, secs
 15110 endwhile 
@@ -2800,11 +2889,11 @@ out of code ram
 16010 dim target, secs
 16020 dim thermocouple as pin an0 for analog input
 16030 dim relay as pin an1 for digital output
-16040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+16040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 16050 configure timer 0 for 1000 ms
 16060 on timer 0 gosub adjust
-16070 read target, secs
-16080 while target do
+16070 rem ----------
+16080 while target!=-1 do
 16090   sleep secs*1000
 16100   read target, secs
 16110 endwhile 
@@ -2821,11 +2910,11 @@ out of code ram
 17010 dim target, secs
 17020 dim thermocouple as pin an0 for analog input
 17030 dim relay as pin an1 for digital output
-17040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+17040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 17050 configure timer 0 for 1000 ms
 17060 on timer 0 gosub adjust
-17070 read target, secs
-17080 while target do
+17070 rem ----------
+17080 while target!=-1 do
 17090   sleep secs*1000
 17100   read target, secs
 17110 endwhile 
@@ -2842,11 +2931,11 @@ out of code ram
 18010 dim target, secs
 18020 dim thermocouple as pin an0 for analog input
 18030 dim relay as pin an1 for digital output
-18040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+18040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 18050 configure timer 0 for 1000 ms
 18060 on timer 0 gosub adjust
-18070 read target, secs
-18080 while target do
+18070 rem ----------
+18080 while target!=-1 do
 18090   sleep secs*1000
 18100   read target, secs
 18110 endwhile 
@@ -2863,11 +2952,11 @@ out of code ram
 19010 dim target, secs
 19020 dim thermocouple as pin an0 for analog input
 19030 dim relay as pin an1 for digital output
-19040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+19040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 19050 configure timer 0 for 1000 ms
 19060 on timer 0 gosub adjust
-19070 read target, secs
-19080 while target do
+19070 rem ----------
+19080 while target!=-1 do
 19090   sleep secs*1000
 19100   read target, secs
 19110 endwhile 
@@ -2884,11 +2973,11 @@ out of code ram
 20010 dim target, secs
 20020 dim thermocouple as pin an0 for analog input
 20030 dim relay as pin an1 for digital output
-20040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+20040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 20050 configure timer 0 for 1000 ms
 20060 on timer 0 gosub adjust
-20070 read target, secs
-20080 while target do
+20070 rem ----------
+20080 while target!=-1 do
 20090   sleep secs*1000
 20100   read target, secs
 20110 endwhile 
@@ -2905,11 +2994,11 @@ out of code ram
 21010 dim target, secs
 21020 dim thermocouple as pin an0 for analog input
 21030 dim relay as pin an1 for digital output
-21040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+21040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 21050 configure timer 0 for 1000 ms
 21060 on timer 0 gosub adjust
-21070 read target, secs
-21080 while target do
+21070 rem ----------
+21080 while target!=-1 do
 21090   sleep secs*1000
 21100   read target, secs
 21110 endwhile 
@@ -2956,11 +3045,11 @@ save
 1010 dim target, secs
 1020 dim thermocouple as pin an0 for analog input
 1030 dim relay as pin an1 for digital output
-1040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 gosub adjust
-1070 read target, secs
-1080 while target do
+1070 rem ----------
+1080 while target!=-1 do
 1090   sleep secs*1000
 1100   read target, secs
 1110 endwhile 
@@ -2977,11 +3066,11 @@ save
 2010 dim target, secs
 2020 dim thermocouple as pin an0 for analog input
 2030 dim relay as pin an1 for digital output
-2040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 gosub adjust
-2070 read target, secs
-2080 while target do
+2070 rem ----------
+2080 while target!=-1 do
 2090   sleep secs*1000
 2100   read target, secs
 2110 endwhile 
@@ -2998,11 +3087,11 @@ save
 3010 dim target, secs
 3020 dim thermocouple as pin an0 for analog input
 3030 dim relay as pin an1 for digital output
-3040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 gosub adjust
-3070 read target, secs
-3080 while target do
+3070 rem ----------
+3080 while target!=-1 do
 3090   sleep secs*1000
 3100   read target, secs
 3110 endwhile 
@@ -3019,11 +3108,11 @@ save
 4010 dim target, secs
 4020 dim thermocouple as pin an0 for analog input
 4030 dim relay as pin an1 for digital output
-4040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 gosub adjust
-4070 read target, secs
-4080 while target do
+4070 rem ----------
+4080 while target!=-1 do
 4090   sleep secs*1000
 4100   read target, secs
 4110 endwhile 
@@ -3040,11 +3129,11 @@ save
 5010 dim target, secs
 5020 dim thermocouple as pin an0 for analog input
 5030 dim relay as pin an1 for digital output
-5040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 gosub adjust
-5070 read target, secs
-5080 while target do
+5070 rem ----------
+5080 while target!=-1 do
 5090   sleep secs*1000
 5100   read target, secs
 5110 endwhile 
@@ -3061,11 +3150,11 @@ save
 6010 dim target, secs
 6020 dim thermocouple as pin an0 for analog input
 6030 dim relay as pin an1 for digital output
-6040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 gosub adjust
-6070 read target, secs
-6080 while target do
+6070 rem ----------
+6080 while target!=-1 do
 6090   sleep secs*1000
 6100   read target, secs
 6110 endwhile 
@@ -3082,11 +3171,11 @@ save
 7010 dim target, secs
 7020 dim thermocouple as pin an0 for analog input
 7030 dim relay as pin an1 for digital output
-7040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 7050 configure timer 0 for 1000 ms
 7060 on timer 0 gosub adjust
-7070 read target, secs
-7080 while target do
+7070 rem ----------
+7080 while target!=-1 do
 7090   sleep secs*1000
 7100   read target, secs
 7110 endwhile 
@@ -3103,11 +3192,11 @@ save
 8010 dim target, secs
 8020 dim thermocouple as pin an0 for analog input
 8030 dim relay as pin an1 for digital output
-8040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+8040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 8050 configure timer 0 for 1000 ms
 8060 on timer 0 gosub adjust
-8070 read target, secs
-8080 while target do
+8070 rem ----------
+8080 while target!=-1 do
 8090   sleep secs*1000
 8100   read target, secs
 8110 endwhile 
@@ -3124,11 +3213,11 @@ save
 9010 dim target, secs
 9020 dim thermocouple as pin an0 for analog input
 9030 dim relay as pin an1 for digital output
-9040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+9040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 9050 configure timer 0 for 1000 ms
 9060 on timer 0 gosub adjust
-9070 read target, secs
-9080 while target do
+9070 rem ----------
+9080 while target!=-1 do
 9090   sleep secs*1000
 9100   read target, secs
 9110 endwhile 
@@ -3145,11 +3234,11 @@ save
 10010 dim target, secs
 10020 dim thermocouple as pin an0 for analog input
 10030 dim relay as pin an1 for digital output
-10040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+10040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 10050 configure timer 0 for 1000 ms
 10060 on timer 0 gosub adjust
-10070 read target, secs
-10080 while target do
+10070 rem ----------
+10080 while target!=-1 do
 10090   sleep secs*1000
 10100   read target, secs
 10110 endwhile 
@@ -3166,11 +3255,11 @@ save
 11010 dim target, secs
 11020 dim thermocouple as pin an0 for analog input
 11030 dim relay as pin an1 for digital output
-11040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+11040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 11050 configure timer 0 for 1000 ms
 11060 on timer 0 gosub adjust
-11070 read target, secs
-11080 while target do
+11070 rem ----------
+11080 while target!=-1 do
 11090   sleep secs*1000
 11100   read target, secs
 11110 endwhile 
@@ -3187,11 +3276,11 @@ save
 12010 dim target, secs
 12020 dim thermocouple as pin an0 for analog input
 12030 dim relay as pin an1 for digital output
-12040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+12040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 12050 configure timer 0 for 1000 ms
 12060 on timer 0 gosub adjust
-12070 read target, secs
-12080 while target do
+12070 rem ----------
+12080 while target!=-1 do
 12090   sleep secs*1000
 12100   read target, secs
 12110 endwhile 
@@ -3208,11 +3297,11 @@ save
 13010 dim target, secs
 13020 dim thermocouple as pin an0 for analog input
 13030 dim relay as pin an1 for digital output
-13040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+13040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 13050 configure timer 0 for 1000 ms
 13060 on timer 0 gosub adjust
-13070 read target, secs
-13080 while target do
+13070 rem ----------
+13080 while target!=-1 do
 13090   sleep secs*1000
 13100   read target, secs
 13110 endwhile 
@@ -3229,11 +3318,11 @@ save
 14010 dim target, secs
 14020 dim thermocouple as pin an0 for analog input
 14030 dim relay as pin an1 for digital output
-14040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+14040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 14050 configure timer 0 for 1000 ms
 14060 on timer 0 gosub adjust
-14070 read target, secs
-14080 while target do
+14070 rem ----------
+14080 while target!=-1 do
 14090   sleep secs*1000
 14100   read target, secs
 14110 endwhile 
@@ -3250,11 +3339,11 @@ save
 15010 dim target, secs
 15020 dim thermocouple as pin an0 for analog input
 15030 dim relay as pin an1 for digital output
-15040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+15040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 15050 configure timer 0 for 1000 ms
 15060 on timer 0 gosub adjust
-15070 read target, secs
-15080 while target do
+15070 rem ----------
+15080 while target!=-1 do
 15090   sleep secs*1000
 15100   read target, secs
 15110 endwhile 
@@ -3271,11 +3360,11 @@ save
 16010 dim target, secs
 16020 dim thermocouple as pin an0 for analog input
 16030 dim relay as pin an1 for digital output
-16040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+16040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 16050 configure timer 0 for 1000 ms
 16060 on timer 0 gosub adjust
-16070 read target, secs
-16080 while target do
+16070 rem ----------
+16080 while target!=-1 do
 16090   sleep secs*1000
 16100   read target, secs
 16110 endwhile 
@@ -3292,11 +3381,11 @@ save
 17010 dim target, secs
 17020 dim thermocouple as pin an0 for analog input
 17030 dim relay as pin an1 for digital output
-17040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+17040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 17050 configure timer 0 for 1000 ms
 17060 on timer 0 gosub adjust
-17070 read target, secs
-17080 while target do
+17070 rem ----------
+17080 while target!=-1 do
 17090   sleep secs*1000
 17100   read target, secs
 17110 endwhile 
@@ -3313,11 +3402,11 @@ save
 18010 dim target, secs
 18020 dim thermocouple as pin an0 for analog input
 18030 dim relay as pin an1 for digital output
-18040 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+18040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 18050 configure timer 0 for 1000 ms
 18060 on timer 0 gosub adjust
-18070 read target, secs
-18080 while target do
+18070 rem ----------
+18080 while target!=-1 do
 18090   sleep secs*1000
 18100   read target, secs
 18110 endwhile 
@@ -3332,18 +3421,25 @@ save
 18200 endsub 
 end
 bad blocks
-missing next/endwhile
-missing for/while
+missing endwhile/next
+missing while/for
+STOP at line 10!
 missing endif
 missing if
-missing next/endwhile
-missing for/while
+STOP at line 10!
+missing endwhile/next
+missing while/for
+STOP at line 10!
 missing endif
 missing endif
 missing gosub
+STOP at line 10!
 missing gosub
-missing while
-break without while
+STOP at line 10!
+missing while/for
+STOP at line 10!
+break without while/for
+STOP at line 20!
 test negative run conditions
 tick
 2
@@ -3411,10 +3507,7 @@ end
 tick
 tick
 tick
-rx 0
 unmasking
-rx 0
-rx 0
 poll 0
 test timers
    1 configure timer 0 for 3500 ms
@@ -3495,12 +3588,12 @@ end
   20 dim target, secs
   30 dim thermocouple as pin an0 for analog input
   40 dim relay as pin an1 for digital output
-  50 data 5124, 6, 7460, 9, 8940, 3, 0, 0
+  50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 gosub adjust
   75 sleep 500
-  80 read target, secs
-  90 while target do
+  80 rem ----------
+  90 while target!=-1 do
  100   sleep secs*1000
  110   read target, secs
  120 endwhile 
@@ -3514,8 +3607,8 @@ end
  200   endif 
  210 endsub 
 end
-  80 let target = 5124
-  80 let secs = 6
+ 110 let target = 5124
+ 110 let secs = 6
  190 let relay = 1
  190 let relay = 1
  190 let relay = 1
@@ -3538,6 +3631,6 @@ end
  190 let relay = 1
  190 let relay = 1
  190 let relay = 1
- 110 let target = 0
- 110 let secs = 0
+ 110 let target = -1
+ 110 let secs = -1
  130 let relay = 0

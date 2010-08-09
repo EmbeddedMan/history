@@ -1,21 +1,27 @@
+// *** adc.c **********************************************************
+// this file polls the analog-to-digital converters coupled with the
+// an0-an7 pins when used in analog input mode.
+
 #include "main.h"
 
-// *** adc ******************************************************************
+// modules:
+// *** external pin control and access ***
 
 volatile short adc_result[8];
 
-// poll the adc
+// poll the analog-to-digital converters
 bool
-adc_poll()
+adc_poll(void)
 {
     int i;
-    
+
     // if any channel is not ready...
     if ((MCF_ADC_ADSTAT & 0xff) != 0xff) {
+        // return failure
         return 0;
     }
-    
-    // read all channel results
+
+    // read all channel results into adc_result[]
     for (i = 0; i < 8; i++) {
         adc_result[i] = MCF_ADC_ADRSLT(i);
     }
@@ -23,9 +29,11 @@ adc_poll()
     // re-start the adc
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_START0;
 
+    // return success
     return 1;
 }
 
+// this function initializes the adc module.
 void
 adc_initialize(void)
 {

@@ -1,6 +1,10 @@
-#include "main.h"
+// *** timer.c ********************************************************
+// this file implements the core interval timer used by stickos
+// internally.  note that application level (BASIC) timers are
+// implemented elsewhere by the bytecode execution engine and interrupt
+// service module.
 
-// *** timer ****************************************************************
+#include "main.h"
 
 bool timer_in_isr;
 
@@ -15,40 +19,40 @@ __declspec(interrupt)
 void
 timer_isr(void)
 {
+    int eighths;
     static int last_run_line_count;
-    
+
     assert(! timer_in_isr);
     timer_in_isr = true;
-    
+
     MCF_PIT0_PCSR |= MCF_PIT_PCSR_PIF;
     ticks++;
-    
+
     // poll the adc every millisecond
     adc_poll();
 
     if (ticks%125 == 0) {
-        if (! led_assert) {
-#if BASIC
-            if (run_line_count != last_run_line_count) {
-                led_set(3, (ticks/125)%2);  // blink fast
-                last_run_line_count = run_line_count;
-            } else {
-#endif
-                led_set(3, (ticks/500)%2);  // blink slow
-#if BASIC
-            }
-#endif
+        eighths = ticks/125;
+
+        // if the basic program line is changing...
+        if (run_line_count != last_run_line_count) {
+            led_set(3, eighths&1);  // blink fast
+            last_run_line_count = run_line_count;
+        // otherwise...
+        } else {
+            led_set(3, (eighths>>2)&1);  // blink slow
         }
-        
-        if (ticks%1000 == 0) {
+
+        if ((eighths&7) == 0) {
             seconds++;
         }
     }
-    
+
     assert(timer_in_isr);
     timer_in_isr = false;
 }
 
+// this function initializes the timer module.
 void
 timer_initialize(void)
 {
@@ -63,3 +67,4 @@ timer_initialize(void)
     MCF_PIT0_PMR = 24000;  // 1 ms @ 48 MHz
     MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
 }
+

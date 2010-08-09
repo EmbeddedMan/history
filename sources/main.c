@@ -1,6 +1,9 @@
-#include "main.h"
+// *** main.c *********************************************************
+// this is the main program that is launched by startup.c; it just
+// initializes all of the modules of stickos and then runs the cpustick
+// main program loop.
 
-// *** main *****************************************************************
+#include "main.h"
 
 int
 main()
@@ -10,47 +13,34 @@ main()
 
     // initialize timer
     timer_initialize();
-    
+
     // initialize adc
     adc_initialize();
 
     // initialize sleep
     sleep_initialize();
 
-#if FLASH
     // initialize flash
     flash_initialize();
-#endif
 
-#if USB
     // initialize usb
     usb_initialize();
-#endif
 
-#if CPUSTICK
     // register cpustick cbfns
     cpustick_register();
-#endif
 
     // enable interrupts
-    (void)splx(0);
+    splx(0);
     initialized = 1;
 
-#if BASIC
     // initialize basic
     basic_initialize();
-#endif
 
-#if CPUSTICK
     // run!
     cpustick_run();
-#else
-    for (;;) {
-        sleep_poll();
-    }
-#endif
 
     // stop!
     assert(0);
     return 0;
 }
+

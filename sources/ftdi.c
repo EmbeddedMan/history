@@ -1,18 +1,20 @@
+// *** ftdi.c *********************************************************
+// this file implements the FTDI transport (on top of the usb driver
+// module), as well as the line printing and line editing functionality
+// used by the rest of the stickos command line interface.
+
 #include "main.h"
 
-// *** ftdi *****************************************************************
-
-#if FTDI
+// modules:
+// *** FTDI transport ***
+// *** line editor ***
 
 bool ftdi_echo = true;
 
 #define PACKET_SIZE  64
 
-// We have allocated 8 PIDs to you from A660 to A667 (hex).
-// The PIDs must be used with VID 0403.
-
 #define FTDI_VID  0x0403
-#define FTDI_PID  0x6001  // 0xA667  // 0x8372  // 0x6001
+#define FTDI_PID  0x6001
 #define FTDI_RID  0x0400
 
 #define FTDI_RESET  0
@@ -119,171 +121,180 @@ static char keys[8];
 static int cursor;
 static char echo[FTDI_INPUT_LINE_SIZE*2];
 
-// *** print ****************************************************************
 
+// this function prints the specified line to the FTDI transport
+// console, assuming space exists in the transport buffer..
 static
 void
 ftdi_send(byte *buffer, int length)
 {
-	int m;
+    int m;
     int x;
     bool start;
-    
+
     if (! length) {
-    	return;
+        return;
     }
-    
+
     if (! usb_device_configured) {
         return;
     }
-    
+
     x = splx(7);
 
     start = rx_in == rx_out;
-    
+
     // append to next rx_in(s)
     do {
-    	m = MIN(length, PACKET_SIZE-rx_length[rx_in]);
-    	
-	    assert(rx_length[rx_in]+m <= sizeof(rx[rx_in]));
-	    memcpy(rx[rx_in]+rx_length[rx_in], buffer, m);
-	    rx_length[rx_in] += m;
-	    
-	    buffer += m;
-	    length -= m;
-	    
-	    if (start || length) {
-	    	if (length) {
-		    	assert(rx_length[rx_in] == sizeof(rx[rx_in]));
-	    	}
-	    	rx_in = (rx_in+1)%NRX;
-	    	assert(rx_in != rx_out);
-	        assert(rx_length[rx_in] == 2);
-	    }
+        m = MIN(length, PACKET_SIZE-rx_length[rx_in]);
+
+        assert(rx_length[rx_in]+m <= sizeof(rx[rx_in]));
+        memcpy(rx[rx_in]+rx_length[rx_in], buffer, m);
+        rx_length[rx_in] += m;
+
+        buffer += m;
+        length -= m;
+
+        if (start || length) {
+            if (length) {
+                assert(rx_length[rx_in] == sizeof(rx[rx_in]));
+            }
+            rx_in = (rx_in+1)%NRX;
+            assert(rx_in != rx_out);
+            assert(rx_length[rx_in] == 2);
+        }
     } while (length);
 
     if (start) {
         // start the rx ball rolling
-		assert(rx_out != rx_in);
-	    assert(rx_length[rx_out] > 2);
-	    usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
+        assert(rx_out != rx_in);
+        assert(rx_length[rx_out] > 2);
+        usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
     }
 
-    (void)splx(x);
+    splx(x);
 }
 
+// this function waits for space to be available in the transport
+// buffers and then prints the specified line to the FTDI transport
+// console.
 int
 ftdi_print(char *line)
 {
-	int n;
-	
-	n = strlen(line);
+    int n;
 
-	while (rx_in != rx_out) {
-		delay(1);
-	}
+    n = strlen(line);
+
+    while (rx_in != rx_out) {
+        delay(1);
+    }
 
     ftdi_send((byte *)line, n);
 
     return n;
 }
 
+// this function allows the user to edit a recalled history line.
 void
 ftdi_edit(char *line)
 {
     // put an unmodified copy of the line in history
-	strncpy(history[hist_in], line, sizeof(history[hist_in])-1);
-	hist_in = HISTWRAP(hist_in+1);
+    strncpy(history[hist_in], line, sizeof(history[hist_in])-1);
+    hist_in = HISTWRAP(hist_in+1);
 
     // and then allow the user to edit it
-	strncpy(command, line, sizeof(command)-1);
+    strncpy(command, line, sizeof(command)-1);
 }
 
-// *** command **************************************************************
-
+// this function causes us to discard typed commands while the
+// BASIC program is running, except Ctrl-C.
 void
 ftdi_command_discard(bool discard_in)
 {
     discard = discard_in;
 }
 
+// this function acknowledges receipt of an FTDI command from upper
+// level code.
 void
 ftdi_command_ack(bool edit)
 {
     ki = 0;
-	hist_first = true;
-	
-	if (! edit) {
+    hist_first = true;
+
+    if (! edit) {
         memset(command, 0, sizeof(command));
-	    cursor = 0;
-	} else {
-	    printf("%s", command);
-	    cursor = strlen(command);
-	}
-    
+        cursor = 0;
+    } else {
+        printf("%s", command);
+        cursor = strlen(command);
+    }
+
     // keep the tx ball rolling
     usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
 }
 
+// this function is called by upper level code in response to an
+// FTDI command error.
 void
 ftdi_command_error(int offset)
 {
-	int i;
-	char buffer[2+FTDI_INPUT_LINE_SIZE+1];
-	
-	assert(offset < FTDI_INPUT_LINE_SIZE);
-	
-	offset += 2;  // prompt -- revisit, this is decided in cpustick.c!
-	
-	if (offset >= 10) {
-		strcpy(buffer, "error -");
-		for (i = 7; i < offset; i++) {
-			buffer[i] = ' ';
-		}
-		buffer[i++] = '^';
-		assert(i < sizeof(buffer));
-		buffer[i] = '\0';
-	} else {
-		for (i = 0; i < offset; i++) {
-			buffer[i] = ' ';
-		}
-		buffer[i++] = '^';
-		assert(i < sizeof(buffer));
-		buffer[i] = '\0';
-		strcat(buffer, " - error");
-	}
-	printf("%s\n", buffer);
+    int i;
+    char buffer[2+FTDI_INPUT_LINE_SIZE+1];
+
+    assert(offset < FTDI_INPUT_LINE_SIZE);
+
+    offset += 2;  // prompt -- revisit, this is decided in cpustick.c!
+
+    if (offset >= 10) {
+        strcpy(buffer, "error -");
+        for (i = 7; i < offset; i++) {
+            buffer[i] = ' ';
+        }
+        buffer[i++] = '^';
+        assert(i < sizeof(buffer));
+        buffer[i] = '\0';
+    } else {
+        for (i = 0; i < offset; i++) {
+            buffer[i] = ' ';
+        }
+        buffer[i++] = '^';
+        assert(i < sizeof(buffer));
+        buffer[i] = '\0';
+        strcat(buffer, " - error");
+    }
+    printf("%s\n", buffer);
 }
 
-// *** line editing *********************************************************
+// *** line editor ***
 
 enum keys {
-	KEY_RIGHT,
-	KEY_LEFT,
-	KEY_UP,
-	KEY_DOWN,
-	KEY_HOME,
-	KEY_END,
-	KEY_BS,
-	KEY_BS_DEL,
-	KEY_DEL
+    KEY_RIGHT,
+    KEY_LEFT,
+    KEY_UP,
+    KEY_DOWN,
+    KEY_HOME,
+    KEY_END,
+    KEY_BS,
+    KEY_BS_DEL,
+    KEY_DEL
 };
 
 struct keycode {
-	char *keys;
-	byte code;
+    char *keys;
+    byte code;
 } keycodes[] = {
-	"\033[C", KEY_RIGHT,
-	"\033[D", KEY_LEFT,
-	"\033[A", KEY_UP,
-	"\033[B", KEY_DOWN,
-	"\033[H", KEY_HOME,
-	"\033[1~", KEY_HOME,
-	"\033[K", KEY_END,
-	"\033[4~", KEY_END,
-	"\010", KEY_BS,
-	"\177", KEY_BS_DEL,  // ambiguous
-	"\033[3~", KEY_DEL
+    "\033[C", KEY_RIGHT,
+    "\033[D", KEY_LEFT,
+    "\033[A", KEY_UP,
+    "\033[B", KEY_DOWN,
+    "\033[H", KEY_HOME,
+    "\033[1~", KEY_HOME,
+    "\033[K", KEY_END,
+    "\033[4~", KEY_END,
+    "\010", KEY_BS,
+    "\177", KEY_BS_DEL,  // ambiguous
+    "\033[3~", KEY_DEL
 };
 
 #define KEYS_RIGHT  "\033[%dC"
@@ -291,179 +302,181 @@ struct keycode {
 #define KEY_DELETE  "\033[P"
 #define KEY_CLEAR  "\033[K"
 
+// this function implements the FTDI command line editing functionality
+// of stickos, by accumulating one character at a time from the FTDI
+// console.
 static
 void
 accumulate(char c)
 {
-	int i;
-	int n;
-	int orig;
-	int again;
-	
-	echo[0] = '\0';						
-	
-	if (c == '\003') {
-		if (cursor) {
-			sprintf(echo+strlen(echo), KEYS_LEFT, cursor);
-			assert(strlen(echo) < sizeof(echo));
-			cursor = 0;
-		}
-		strcat(echo, KEY_CLEAR);
-		command[0] = '\0';
-		ki = 0;
-		ftdi_send((byte *)echo, strlen(echo));
-		return;
-	}
-	
-	do {
-		again = false;
-		
-		keys[ki++] = c;
-		keys[ki] = '\0';
-		assert(ki < sizeof(keys));
-		
-		for (i = 0; i < LENGTHOF(keycodes); i++) {
-			if (! strncmp(keycodes[i].keys, keys, ki)) {
-				// potential match
-				if (keycodes[i].keys[ki]) {
-					// partial match
-					return;
-				}
-				
-				// full match
-								
-				switch (keycodes[i].code) {
-					case KEY_RIGHT:
-						if (cursor < strlen(command)) {
-							strcat(echo, keycodes[i].keys);
-							assert(strlen(echo) < sizeof(echo));
-							cursor++;
-						}
-						break;
-					case KEY_LEFT:
-						if (cursor) {
-							strcat(echo, keycodes[i].keys);
-							assert(strlen(echo) < sizeof(echo));
-							cursor--;	
-						}
-						break;
-						
-					case KEY_UP:
-					case KEY_DOWN:
-						if (keycodes[i].code == KEY_UP) {
-							if (hist_first) {
-								hist_out = HISTWRAP(hist_in-1);
-							} else {
-								hist_out = HISTWRAP(hist_out-1);
-							}
-						} else {
-							hist_out = HISTWRAP(hist_out+1);
-						}
-						hist_first = false;
-						for (n = 0; n < NHIST; n++) {
-							if (history[hist_out][0]) {
-								break;
-							}
-							if (keycodes[i].code == KEY_UP) {
-								hist_out = HISTWRAP(hist_out-1);
-							} else {
-								hist_out = HISTWRAP(hist_out+1);
-							}
-						}
-						if (n != NHIST) {
-							if (cursor) {
-								sprintf(echo+strlen(echo), KEYS_LEFT, cursor);
-								assert(strlen(echo) < sizeof(echo));
-								cursor = 0;
-							}
-							strcat(echo, KEY_CLEAR);
-							strcpy(command, history[hist_out]);
-							
-							// reprint the line
-							strcat(echo, command);
-							cursor = strlen(command);
-						}
-						break;
-					case KEY_HOME:
-						if (cursor) {
-							sprintf(echo+strlen(echo), KEYS_LEFT, cursor);
-							assert(strlen(echo) < sizeof(echo));
-							cursor = 0;
-						}
-						break;
-					case KEY_END:
-						if (strlen(command)-cursor) {
-							sprintf(echo+strlen(echo), KEYS_RIGHT, strlen(command)-cursor);
-							assert(strlen(echo) < sizeof(echo));
-							cursor = strlen(command);
-						}
-						break;
-					case KEY_BS_DEL:
-					case KEY_BS:
-						if (cursor) {
-							strcat(echo, keycodes[KEY_LEFT].keys);
-							strcat(echo, KEY_DELETE);
-							cursor--;
-							memmove(command+cursor, command+cursor+1, sizeof(command)-cursor-1);
-						}
-						break;
-					case KEY_DEL:
-						if (command[cursor]) {
-							strcat(echo, KEY_DELETE);
-							memmove(command+cursor, command+cursor+1, sizeof(command)-cursor-1);
-						}
-						break;
-					default:
-						assert(0);
-				}
-				ki = 0;
-				ftdi_send((byte *)echo, strlen(echo));
-				return;
-			}
-		}
-		
-		// no match
-		
-		// if we had already accumulated characters...
-		if (ki > 1) {
-			// we'll have to go around again
-			ki--;
-			again = true;
-		}
-		
-		// process printable characters
-		orig = cursor;
-		for (i = 0; i < ki; i++) {
-			if (isprint(keys[i])) {
-				if (strlen(command) < sizeof(command)-1) {	
-					memmove(command+cursor+1, command+cursor, sizeof(command)-cursor-1);
-					command[cursor] = keys[i];
-					cursor++;
-					assert(cursor <= sizeof(command)-1);
-				}
-			}
-		}
-		
-		if (cursor > orig) {
-			// reprint the line
-			strcat(echo, command+orig);
-			
-			// and back the cursor up
-			assert(strlen(command+orig));
-			if (strlen(command+orig)-1) {
-				sprintf(echo+strlen(echo), KEYS_LEFT, strlen(command+orig)-1);
-			}
-		}
-		
-		ki = 0;
-	} while (again);
-	
-	if (ftdi_echo) {
-    	ftdi_send((byte *)echo, strlen(echo));
-	}
-}
+    int i;
+    int n;
+    int orig;
+    int again;
 
-// *** control transfer *****************************************************
+    echo[0] = '\0';
+
+    if (c == '\003') {
+        if (cursor) {
+            sprintf(echo+strlen(echo), KEYS_LEFT, cursor);
+            assert(strlen(echo) < sizeof(echo));
+            cursor = 0;
+        }
+        strcat(echo, KEY_CLEAR);
+        command[0] = '\0';
+        ki = 0;
+        ftdi_send((byte *)echo, strlen(echo));
+        return;
+    }
+
+    do {
+        again = false;
+
+        keys[ki++] = c;
+        keys[ki] = '\0';
+        assert(ki < sizeof(keys));
+
+        for (i = 0; i < LENGTHOF(keycodes); i++) {
+            if (! strncmp(keycodes[i].keys, keys, ki)) {
+                // potential match
+                if (keycodes[i].keys[ki]) {
+                    // partial match
+                    return;
+                }
+
+                // full match
+
+                switch (keycodes[i].code) {
+                    case KEY_RIGHT:
+                        if (cursor < strlen(command)) {
+                            strcat(echo, keycodes[i].keys);
+                            assert(strlen(echo) < sizeof(echo));
+                            cursor++;
+                        }
+                        break;
+                    case KEY_LEFT:
+                        if (cursor) {
+                            strcat(echo, keycodes[i].keys);
+                            assert(strlen(echo) < sizeof(echo));
+                            cursor--;
+                        }
+                        break;
+
+                    case KEY_UP:
+                    case KEY_DOWN:
+                        if (keycodes[i].code == KEY_UP) {
+                            if (hist_first) {
+                                hist_out = HISTWRAP(hist_in-1);
+                            } else {
+                                hist_out = HISTWRAP(hist_out-1);
+                            }
+                        } else {
+                            hist_out = HISTWRAP(hist_out+1);
+                        }
+                        hist_first = false;
+                        for (n = 0; n < NHIST; n++) {
+                            if (history[hist_out][0]) {
+                                break;
+                            }
+                            if (keycodes[i].code == KEY_UP) {
+                                hist_out = HISTWRAP(hist_out-1);
+                            } else {
+                                hist_out = HISTWRAP(hist_out+1);
+                            }
+                        }
+                        if (n != NHIST) {
+                            if (cursor) {
+                                sprintf(echo+strlen(echo), KEYS_LEFT, cursor);
+                                assert(strlen(echo) < sizeof(echo));
+                                cursor = 0;
+                            }
+                            strcat(echo, KEY_CLEAR);
+                            strcpy(command, history[hist_out]);
+
+                            // reprint the line
+                            strcat(echo, command);
+                            cursor = strlen(command);
+                        }
+                        break;
+                    case KEY_HOME:
+                        if (cursor) {
+                            sprintf(echo+strlen(echo), KEYS_LEFT, cursor);
+                            assert(strlen(echo) < sizeof(echo));
+                            cursor = 0;
+                        }
+                        break;
+                    case KEY_END:
+                        if (strlen(command)-cursor) {
+                            sprintf(echo+strlen(echo), KEYS_RIGHT, strlen(command)-cursor);
+                            assert(strlen(echo) < sizeof(echo));
+                            cursor = strlen(command);
+                        }
+                        break;
+                    case KEY_BS_DEL:
+                    case KEY_BS:
+                        if (cursor) {
+                            strcat(echo, keycodes[KEY_LEFT].keys);
+                            strcat(echo, KEY_DELETE);
+                            cursor--;
+                            memmove(command+cursor, command+cursor+1, sizeof(command)-cursor-1);
+                        }
+                        break;
+                    case KEY_DEL:
+                        if (command[cursor]) {
+                            strcat(echo, KEY_DELETE);
+                            memmove(command+cursor, command+cursor+1, sizeof(command)-cursor-1);
+                        }
+                        break;
+                    default:
+                        assert(0);
+                        break;
+                }
+                ki = 0;
+                ftdi_send((byte *)echo, strlen(echo));
+                return;
+            }
+        }
+
+        // no match
+
+        // if we had already accumulated characters...
+        if (ki > 1) {
+            // we'll have to go around again
+            ki--;
+            again = true;
+        }
+
+        // process printable characters
+        orig = cursor;
+        for (i = 0; i < ki; i++) {
+            if (isprint(keys[i])) {
+                if (strlen(command) < sizeof(command)-1) {
+                    memmove(command+cursor+1, command+cursor, sizeof(command)-cursor-1);
+                    command[cursor] = keys[i];
+                    cursor++;
+                    assert(cursor <= sizeof(command)-1);
+                }
+            }
+        }
+
+        if (cursor > orig) {
+            // reprint the line
+            strcat(echo, command+orig);
+
+            // and back the cursor up
+            assert(strlen(command+orig));
+            if (strlen(command+orig)-1) {
+                sprintf(echo+strlen(echo), KEYS_LEFT, strlen(command+orig)-1);
+            }
+        }
+
+        ki = 0;
+    } while (again);
+
+    if (ftdi_echo) {
+        ftdi_send((byte *)echo, strlen(echo));
+    }
+}
 
 static uint16 eeprom[64] = {
     0x0,
@@ -473,11 +486,11 @@ static uint16 eeprom[64] = {
     0x9180,  // Config descriptor and Max power consumption
     0x0018,  // Chip configuration
     0x0200,  // USB version
-    
+
     0x1c94,  // vendor
     0x12b0,  // product
     0x12c2,  // serial
-    
+
     0x031c, 'R', 'i', 'c', 'h', ' ', 'T', 'e', 's', 't', 'a', 'r', 'd', 'i',
     0x0312, 'C', 'P', 'U', 'S', 't', 'i', 'c', 'k',
     0x0312, 'R', 'T', '0', '0', '0', '0', '0', '0'
@@ -491,9 +504,9 @@ ftdi_checksum(void)
     unsigned char *output;
     unsigned short value;
     unsigned short checksum;
-    
+
     output = (unsigned char *)eeprom;
-    
+
     // calculate checksum
     checksum = 0xAAAA;
 
@@ -509,6 +522,7 @@ ftdi_checksum(void)
     output[(i*2)+1] = checksum >> 8;
 }
 
+// this function implements the FTDI usb setup control transfer.
 static int
 ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
 {
@@ -566,8 +580,7 @@ ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
     return length;
 }
 
-// *** bulk transfer ********************************************************
-
+// this function implements the FTDI usb bulk transfer.
 static int
 ftdi_bulk_transfer(bool in, byte *buffer, int length)
 {
@@ -582,22 +595,22 @@ ftdi_bulk_transfer(bool in, byte *buffer, int length)
                 assert(ctrlc_cbfn);
                 ctrlc_cbfn();
             }
-            
+
             if (! discard) {
-            	if (buffer[j] == '\r') {
-            		if (strcmp(history[HISTWRAP(hist_in-1)], command)) {
-	            		strcpy(history[hist_in], command);
-	            		hist_in = HISTWRAP(hist_in+1);
-            		}
-            		
+                if (buffer[j] == '\r') {
+                    if (strcmp(history[HISTWRAP(hist_in-1)], command)) {
+                        strcpy(history[hist_in], command);
+                        hist_in = HISTWRAP(hist_in+1);
+                    }
+
                     assert(command_cbfn);
                     command_cbfn(command);
-                                        
+
                     // wait for ftdi_command_ack()
                     return 0;
-            	} else {
-            		accumulate(buffer[j]);
-            	}
+                } else {
+                    accumulate(buffer[j]);
+                }
             }
         }
 
@@ -607,37 +620,37 @@ ftdi_bulk_transfer(bool in, byte *buffer, int length)
         rx_length[rx_out] = 2;
         rx_out = (rx_out+1)%NRX;
 
-		// if there is more data to transfer...
+        // if there is more data to transfer...
         if (rx_length[rx_out] > 2) {
-        	if (rx_in == rx_out) {
-		    	rx_in = (rx_in+1)%NRX;
-		    	assert(rx_in != rx_out);
-		        assert(rx_length[rx_in] == 2);
-        	}
-        	
-	        // keep the rx ball rolling
-			assert(rx_out != rx_in);
-		    assert(rx_length[rx_out] > 2);
-		    usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
+            if (rx_in == rx_out) {
+                rx_in = (rx_in+1)%NRX;
+                assert(rx_in != rx_out);
+                assert(rx_length[rx_in] == 2);
+            }
+
+            // keep the rx ball rolling
+            assert(rx_out != rx_in);
+            assert(rx_length[rx_out] > 2);
+            usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
         }
     }
 
     return 0;
 }
 
-// *** initialization *******************************************************
-
+// this function is called by the usb driver when the USB device
+// is reset.
 static void
 ftdi_reset(void)
 {
-	int i;
-	
-	for (i = 0; i < NRX; i++) {
-		rx[i][0] = 0xf1;  // ftdi header
-		rx[i][1] = 0x61;
-		rx_length[i] = 2;
-	}
-    
+    int i;
+
+    for (i = 0; i < NRX; i++) {
+        rx[i][0] = 0xf1;  // ftdi header
+        rx[i][1] = 0x61;
+        rx_length[i] = 2;
+    }
+
     // start the tx ball rolling
     usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
 
@@ -661,24 +674,26 @@ check(byte *descriptor, int length)
     return j;
 }
 
+// this function is called by upper level code to register callback
+// functions.
 void
 ftdi_register(ftdi_command_cbfn command, ftdi_ctrlc_cbfn ctrlc, ftdi_reset_cbfn reset)
 {
-	int i;
-	
-	for (i = 0; i < NRX; i++) {
-		rx[i][0] = 0xf1;  // ftdi header
-		rx[i][1] = 0x61;
-		rx_length[i] = 2;
-	}
-	
+    int i;
+
+    for (i = 0; i < NRX; i++) {
+        rx[i][0] = 0xf1;  // ftdi header
+        rx[i][1] = 0x61;
+        rx_length[i] = 2;
+    }
+
     command_cbfn = command;
     ctrlc_cbfn = ctrlc;
     reset_cbfn = reset;
-    
+
     ftdi_checksum();
 
-    usb_register(ftdi_reset, ftdi_control_transfer, ftdi_bulk_transfer, NULL);
+    usb_register(ftdi_reset, ftdi_control_transfer, ftdi_bulk_transfer);
 
     assert(check(ftdi_device_descriptor, sizeof(ftdi_device_descriptor)) == 1);
     usb_device_descriptor(ftdi_device_descriptor, sizeof(ftdi_device_descriptor));
@@ -690,4 +705,3 @@ ftdi_register(ftdi_command_cbfn command, ftdi_ctrlc_cbfn ctrlc, ftdi_reset_cbfn 
     usb_string_descriptor(ftdi_string_descriptor, sizeof(ftdi_string_descriptor));
 }
 
-#endif

@@ -1,4 +1,4 @@
-// *** code *****************************************************************
+// *** code.h *********************************************************
 
 struct line {
     int line_number;
@@ -8,6 +8,9 @@ struct line {
 };
 
 #define LINESIZE  OFFSETOF(struct line, bytecode[0])
+
+
+extern bool code_indent;
 
 // used for code execution
 struct line *code_next_line(IN bool deleted_ok, IN OUT int *line_number);  // returns NULL at eop
@@ -30,3 +33,4 @@ void code_dir();
 void code_purge(char *name);
 
 void code_initialize(void);
+

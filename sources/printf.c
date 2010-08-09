@@ -1,10 +1,9 @@
+// *** printf.c *******************************************************
+// this file implements a lightweight printf utility on top of the
+// FTDI transport for use by stickos.
+
 #include "main.h"
 #include <stdarg.h>
-
-// *** printf ***************************************************************
-
-// N.B. we add buffering to the default printf since we can only process
-//      a few BDM accesses per second thru the "Trap #14" mechanism... :-(
 
 #define isdigit(c)  ((c) >= '0' && (c) <= '9')
 
@@ -74,7 +73,7 @@ vsnprintf(char *buffer, int length, char *format, va_list ap)
     char temp[1+MAXDIGITS+1];
 
     i = 0;
-    
+
     nl = false;
     for (p = format; *p; p++) {
         c = *p;
@@ -129,6 +128,7 @@ vsnprintf(char *buffer, int length, char *format, va_list ap)
                     break;
                 default:
                     assert(0);
+                    break;
             }
 
             if (j < width) {
@@ -165,7 +165,7 @@ vsnprintf(char *buffer, int length, char *format, va_list ap)
             i++;
         }
     }
-    
+
     if (i < length) {
         buffer[i] = '\0';
     } else {
@@ -242,4 +242,3 @@ printf(char *format, ...)
     return n;
 }
 
-// **************************************************************************

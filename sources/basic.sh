@@ -326,6 +326,7 @@ debug/basic -q <<EOF
 help
 help about
 help commands
+help modes
 help statements
 help blocks
 help devices
@@ -366,6 +367,10 @@ autorun off
 70 print a,b[a]
 80 next
 list
+indent
+indent on
+indent off
+list
 run
 run
 autoreset
@@ -374,6 +379,12 @@ clear flash
 run
 autoreset
 autorun
+prompt
+prompt off
+prompt on
+echo
+echo on
+echo off
 EOF
 
 echo test array parsing
@@ -437,7 +448,7 @@ debug/basic -q <<EOF
   10 data 1, 0x2, 3
   20 data 0x4
   30 data 5, 0x6
-  35 data 7
+  35 data -7
   40 while 1 do
   50   read a
   60   print a
@@ -449,7 +460,7 @@ run
   10 data 1, 0x2, 3
   20 data 0x4
   30 data 5, 0x6
-  35 data 7
+  35 data -7
   40 while 1 do
   50   read a, b
   60   print a, b
@@ -681,6 +692,65 @@ echo test dummy clone
 debug/basic -q <<EOF
 clone
 clone run
+EOF
+
+echo filesystem
+debug/basic -q <<EOF
+10 rem this is a program
+20 rem 1
+save prog1
+20 rem 2
+save prog2
+20 rem 3
+save prog3
+20 rem 4
+save prog4
+20 rem 22
+save prog2
+20 rem 44
+save prog4
+dir
+list
+load prog1
+list
+load prog2
+list
+load prog3
+list
+load prog4
+list
+purge prog0
+dir
+list
+purge prog1
+dir
+list
+purge prog2
+dir
+list
+20 rem 444
+save prog4
+purge prog3
+dir
+list
+purge prog5
+dir
+list
+new
+load prog4
+list
+20 rem long
+save this is a very long program name
+save this is a very longer program name
+dir
+load prog4
+list
+load this is a very long xxx
+dir
+list
+purge this is a very long yyy
+dir
+list
 EOF
 
 ### parse errors ###

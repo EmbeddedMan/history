@@ -1,3 +1,5 @@
+// *** ftdi.h *********************************************************
+
 typedef void (*ftdi_command_cbfn)(char *command);
 typedef void (*ftdi_ctrlc_cbfn)(void);
 typedef void (*ftdi_reset_cbfn)(void);
@@ -21,3 +23,4 @@ ftdi_command_error(int offset);
 
 void
 ftdi_register(ftdi_command_cbfn command, ftdi_ctrlc_cbfn ctrlc, ftdi_reset_cbfn reset);
+

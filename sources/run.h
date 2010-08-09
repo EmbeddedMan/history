@@ -1,4 +1,4 @@
-// *** run ******************************************************************
+// *** run.h **********************************************************
 
 #define MAX_TIMERS  4
 
@@ -17,3 +17,4 @@ extern bool run_condition;
 extern bool run_bytecode(bool immediate, byte *bytecode, int length);
 extern bool run(bool cont, int start_line_number);
 extern void stop();
+

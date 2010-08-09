@@ -3,6 +3,9 @@
 
 extern int isatty(int);
 
+bool cpustick_prompt = true;
+bool ftdi_echo = true;
+
 void
 delay(int ms)
 {
@@ -22,6 +25,11 @@ flash_write_words(uint32 *addr, uint32 *data, uint32 nwords)
 }
 
 void
+flash_upgrade(void)
+{
+}
+
+void
 clone(bool and_run)
 {
 }
@@ -31,31 +39,31 @@ clone(bool and_run)
 void
 ftdi_command_error(int offset)
 {
-	int i;
-	char buffer[2+LINE_INPUT_SIZE+1];
-	
-	assert(offset < LINE_INPUT_SIZE);
-	
-	offset += 2;  // prompt -- revisit, this is decided in cpustick.c!
-	
-	if (offset >= 10) {
-		strcpy(buffer, "error -");
-		for (i = 7; i < offset; i++) {
-			buffer[i] = ' ';
-		}
-		buffer[i++] = '^';
-		assert(i < sizeof(buffer));
-		buffer[i] = '\0';
-	} else {
-		for (i = 0; i < offset; i++) {
-			buffer[i] = ' ';
-		}
-		buffer[i++] = '^';
-		assert(i < sizeof(buffer));
-		buffer[i] = '\0';
-		strcat(buffer, " - error");
-	}
-	printf("%s\n", buffer);
+    int i;
+    char buffer[2+LINE_INPUT_SIZE+1];
+
+    assert(offset < LINE_INPUT_SIZE);
+
+    offset += 2;  // prompt -- revisit, this is decided in cpustick.c!
+
+    if (offset >= 10) {
+        strcpy(buffer, "error -");
+        for (i = 7; i < offset; i++) {
+            buffer[i] = ' ';
+        }
+        buffer[i++] = '^';
+        assert(i < sizeof(buffer));
+        buffer[i] = '\0';
+    } else {
+        for (i = 0; i < offset; i++) {
+            buffer[i] = ' ';
+        }
+        buffer[i++] = '^';
+        assert(i < sizeof(buffer));
+        buffer[i] = '\0';
+        strcat(buffer, " - error");
+    }
+    printf("%s\n", buffer);
 }
 
 static
@@ -93,7 +101,7 @@ main(int argc, char **argv)
         basic_run("help about");
     }
     for (;;) {
-        if (isatty(0)) {
+        if (isatty(0) && cpustick_prompt) {
             write(1, "> ", 2);
         }
         if (! gets(text)) {

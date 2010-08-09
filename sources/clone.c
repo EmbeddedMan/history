@@ -1,6 +1,9 @@
-#include "main.h"
+// *** clone.c ********************************************************
+// this file clones the contents of flash to the qspi master port,
+// which can be connected to the ezport on a slave cpu for initial
+// code load.
 
-// *** clone **************************************************************
+#include "main.h"
 
 #define MASTER_FSYS  48000000  // frequency of M52221DEMO board
 #define SLAVE_FSYS    8000000  // frequency of target board
@@ -27,9 +30,12 @@ flash_qspi(byte *buffer, int length)
     int i;
     int request;
 
+    // while there is data remaining...
     while (length) {
+        // process up to 16 bytes at a time
         request = MIN(length, 16);
 
+        // for all bytes...
         for (i = 0; i < request; i++) {
             // set up the command
             MCF_QSPI_QAR = MCF_QSPI_QAR_CMD+i;
@@ -56,6 +62,7 @@ flash_qspi(byte *buffer, int length)
         assert((MCF_QSPI_QWR & 0xf0) >> 4 == request-1);
         assert(! (MCF_QSPI_QDLYR & MCF_QSPI_QDLYR_SPE));
 
+        // for all bytes...
         for (i = 0; i < request; i++) {
             // copy rx data from qspi ram
             MCF_QSPI_QAR = MCF_QSPI_QAR_RECV+i;
@@ -66,6 +73,7 @@ flash_qspi(byte *buffer, int length)
         length -= request;
     }
 
+    // transfer complete
     MCF_QSPI_QWR = MCF_QSPI_QWR_CSIV;
 }
 
@@ -97,7 +105,7 @@ flash_write(byte *buffer, int length)
     // enable the write
     command = WRITE_ENABLE;
     flash_qspi(&command, 1);
-    
+
     status = flash_status();
     if (! (status & WRITE_ENABLE_STATUS)) {
         return false;
@@ -113,7 +121,7 @@ flash_write(byte *buffer, int length)
             return false;
         }
     } while (status & WRITE_IN_PROGRESS);
-    
+
     return true;
 }
 
@@ -131,8 +139,10 @@ clone(bool and_run)
     // QS is primary
     MCF_GPIO_PQSPAR = 0x1555;
 
-    // pulse slave rsti* low
+    // request the target enter serial flash programming mode
     MCF_QSPI_QWR = 0;
+
+    // pulse slave rsti* low
     MCF_GPIO_CLRAS = ~1;
     delay(1);
     MCF_GPIO_SETAS = 1;
@@ -145,8 +155,8 @@ clone(bool and_run)
 
     status = flash_status();
     if (status & (WRITE_ERROR|WRITE_IN_PROGRESS)) {
-    	printf("initialization failed\n");
-    	return;
+        printf("initialization failed\n");
+        return;
     }
 
     // write configuration register
@@ -157,17 +167,18 @@ clone(bool and_run)
         buffer[1] = MCF_CFM_CFMCLKD_DIV((SLAVE_FSYS-1)/2/200000);
     }
     if (! flash_write(buffer, 2+0)) {
-    	printf("write configuration register failed\n");
-    	return;
+        printf("write configuration register failed\n");
+        return;
     }
 
     // bulk erase
     buffer[0] = BULK_ERASE;
     if (! flash_write(buffer, 1+0)) {
-    	printf("bulk erase failed\n");
-    	return;
+        printf("bulk erase failed\n");
+        return;
     }
 
+    // for all bytes to clone...
     for (n = 0; n < FLASH_BYTES; n += CLONE_PAGE_SIZE) {
         // get the reference data from our flash
         memcpy(buffer+4, (void *)n, CLONE_PAGE_SIZE);
@@ -178,8 +189,8 @@ clone(bool and_run)
         buffer[2] = n/0x100;
         buffer[3] = n;
         if (! flash_write(buffer, 4+CLONE_PAGE_SIZE)) {
-        	printf("\npage program failed\n");
-        	return;
+            printf("\npage program failed\n");
+            return;
         }
 
         memset(buffer+4, 0x5a, CLONE_PAGE_SIZE);
@@ -193,23 +204,24 @@ clone(bool and_run)
 
         // verify the data
         if (memcmp(buffer+4, (void *)n, CLONE_PAGE_SIZE)) {
-        	printf("\nverification failed at offset %d\n", n);
-        	return;
+            printf("\nverification failed at offset %d\n", n);
+            return;
         }
-        
+
         printf(".");
     }
-    
-    if (and_run) {
-	    // reset and run!
-	    MCF_QSPI_QWR = MCF_QSPI_QWR_CSIV;
 
-	    // pulse slave rsti* low
-	    MCF_GPIO_CLRAS = ~1;
-	    delay(1);
-	    MCF_GPIO_SETAS = 1;
-	    delay(1);
+    if (and_run) {
+        // allow the target to run!
+        MCF_QSPI_QWR = MCF_QSPI_QWR_CSIV;
+
+        // pulse slave rsti* low
+        MCF_GPIO_CLRAS = ~1;
+        delay(1);
+        MCF_GPIO_SETAS = 1;
+        delay(1);
     }
-    
+
     printf("\nclone done!\n");
 }
+

@@ -1,8 +1,17 @@
+// *** code.c *********************************************************
+// this file implements bytecode code storage and access and merge
+// functionality, as well as the stickos filesystem.
+
+// modules:
+// *** bytecode ***
+// *** code access and merge module ***
+// *** RAM control and access ***
+// *** flash control and access ***
+// *** filesystem ***
+
 #include "main.h"
 
-// *** code *****************************************************************
-
-#if BASIC
+bool code_indent = true;
 
 // the last word of each flash bank is the generation number
 #define GENERATION(p)  *(int *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(int))
@@ -11,6 +20,7 @@
 
 // we always pick the newer flash bank
 #define FLASH_CODE_PAGE  ((GENERATION(FLASH_CODE1_PAGE)+1 > GENERATION(FLASH_CODE2_PAGE)+1) ? FLASH_CODE1_PAGE : FLASH_CODE2_PAGE)
+
 
 static
 void
@@ -29,7 +39,14 @@ check_line(byte *page, struct line *line)
     }
 }
 
+#if RELEASE
+#define check_line(a, b)
+#endif
+
+
+// this function returns the first code line in a page.
 static
+inline
 struct line *
 find_first_line_in_page(byte *page)
 {
@@ -40,10 +57,15 @@ find_first_line_in_page(byte *page)
     return line;
 }
 
+// this function returns the next code line in a page.
 static
+inline
 struct line *
 find_next_line_in_page(byte *page, struct line *line)
 {
+#if ! _WIN32
+#pragma unused(page)
+#endif
     struct line *next;
 
     // if we're about to go past the end...
@@ -58,6 +80,7 @@ find_next_line_in_page(byte *page, struct line *line)
     return next;
 }
 
+// this function finds the exact code line in the page, if it exists.
 static
 struct line *
 find_exact_line_in_page(byte *page, int line_number)
@@ -72,6 +95,8 @@ find_exact_line_in_page(byte *page, int line_number)
     return NULL;
 }
 
+// this function finds the following code line in the page, if it
+// exists.
 static
 struct line *
 find_following_line_in_page(byte *page, int line_number)
@@ -86,6 +111,7 @@ find_following_line_in_page(byte *page, int line_number)
     return NULL;
 }
 
+// this function deletes a code line from a page.
 static
 void
 delete_line_in_page(byte *page, struct line *line)
@@ -106,6 +132,7 @@ delete_line_in_page(byte *page, struct line *line)
     find_exact_line_in_page(page, 0);
 }
 
+// this function inserts a code line in a page.
 static
 bool
 insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
@@ -150,10 +177,12 @@ insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
 
     // verify
     find_exact_line_in_page(page, 0);
-    
+
     return true;
 }
 
+// this function finds the next logical code line, from either the
+// ram or flash code page.
 struct line *
 code_next_line(IN bool deleted_ok, IN OUT int *line_number)
 {
@@ -187,6 +216,8 @@ code_next_line(IN bool deleted_ok, IN OUT int *line_number)
     return line;
 }
 
+// this function returns the line number where the specified sub_name
+// exists.
 int
 code_sub_line(byte *sub_name)
 {
@@ -206,10 +237,13 @@ code_sub_line(byte *sub_name)
     }
 }
 
+// *** RAM control and access ***
+
+// this function inserts a line into the ram code page, possibly
+// performing an auto save to the flash code page if needed.
 void
 code_insert(int line_number, char *text_in, IN int text_offset)
 {
-    bool boo;
     int length;
     int syntax_error;
     char text[BASIC_LINE_SIZE];
@@ -228,84 +262,18 @@ code_insert(int line_number, char *text_in, IN int text_offset)
         length = 1;
     }
 
-    boo = insert_line_in_page(RAM_CODE_PAGE, line_number, length, bytecode);
-    if (! boo) {
+    if (! insert_line_in_page(RAM_CODE_PAGE, line_number, length, bytecode)) {
         printf("auto save\n");
         code_save(0);
-        boo = insert_line_in_page(RAM_CODE_PAGE, line_number, length, bytecode);
-        if (! boo) {
+        if (! insert_line_in_page(RAM_CODE_PAGE, line_number, length, bytecode)) {
             printf("out of code ram\n");
         }
     }
 }
 
-void
-code_edit(int line_number_in)
-{
-    int n;
-    int line_number;
-    struct line *line;
-    char text[BASIC_LINE_SIZE+10];  // REVISIT -- line number size?
-    
-    line_number = line_number_in-1;
-    line = code_next_line(false, &line_number);
-    if (! line || line_number != line_number_in) {
-        return;
-    }
-    
-    n = sprintf(text, "%d ", line_number);
-    unparse_bytecode(line->bytecode, line->length, text+n);
-#if ! _WIN32
-    ftdi_edit(text);
-    cpustick_edit = true;
-#endif
-}
-
-void
-code_list(int start_line_number, int end_line_number)
-{
-    int indent;
-    int line_number;
-    struct line *line;
-    char text[BASIC_LINE_SIZE+30/*2*MAX_SCOPES*/];  // REVISIT -- line number size?
-
-    indent = 0;
-    line_number = 0;
-    for (;;) {
-        line = code_next_line(false, &line_number);
-        if (line) {
-            if (line->bytecode[0] == code_endif || line->bytecode[0] == code_else || line->bytecode[0] == code_elseif ||
-                line->bytecode[0] == code_endwhile || line->bytecode[0] == code_next ||
-                line->bytecode[0] == code_endsub) {
-                if (indent) {
-                    indent--;
-                } else {
-                    printf("missing block begins?\n");
-                }
-            }
-            if (line_number >= start_line_number && (! end_line_number || line_number <= end_line_number)) {
-                memset(text, ' ', indent*2);
-                unparse_bytecode(line->bytecode, line->length, text+indent*2);
-                printf("%4d %s\n", line_number, text);
-            }
-            if (end_line_number && line_number > end_line_number) {
-                break;
-            }
-            if (line->bytecode[0] == code_if || line->bytecode[0] == code_else || line->bytecode[0] == code_elseif ||
-                line->bytecode[0] == code_while || line->bytecode[0] == code_for ||
-                line->bytecode[0] == code_sub) {
-                indent++;
-            }
-        } else {
-            if (indent) {
-                printf("missing block ends?\n");
-            }
-            printf("end\n");
-            break;
-        }
-    }
-}
-
+// this function deletes lines into the ram code page (note that
+// deleted lines are actually *added* to the ram code page, to
+// override existing lines in the flash code page!).
 void
 code_delete(int start_line_number, int end_line_number)
 {
@@ -330,9 +298,80 @@ code_delete(int start_line_number, int end_line_number)
     }
 }
 
+// this function lists lines.
+void
+code_list(int start_line_number, int end_line_number)
+{
+    byte code;
+    int indent;
+    int line_number;
+    struct line *line;
+    char text[BASIC_LINE_SIZE+10+20/*2*MAX_SCOPES*/];  // REVISIT -- line number size?
+
+    indent = 0;
+    line_number = 0;
+    for (;;) {
+        line = code_next_line(false, &line_number);
+        if (line) {
+            code = line->bytecode[0];
+            if (code == code_endif || code == code_else || code == code_elseif || code == code_endwhile || code == code_next || code == code_endsub) {
+                if (indent) {
+                    indent--;
+                } else {
+                    printf("missing block begins?\n");
+                }
+            }
+            if (line_number >= start_line_number && (! end_line_number || line_number <= end_line_number)) {
+                memset(text, ' ', indent*2);
+                unparse_bytecode(line->bytecode, line->length, text+code_indent*indent*2);
+                printf("%4d %s\n", line_number, text);
+            }
+            if (end_line_number && line_number > end_line_number) {
+                break;
+            }
+            if (code == code_if || code == code_else || code == code_elseif || code == code_while || code == code_for || code == code_sub) {
+                indent++;
+            }
+        } else {
+            if (indent) {
+                printf("missing block ends?\n");
+            }
+            printf("end\n");
+            break;
+        }
+    }
+}
+
+// this function recalls a line to be edited by teh FTDI transport
+// command line editor.
+void
+code_edit(int line_number_in)
+{
+    int n;
+    int line_number;
+    struct line *line;
+    char text[BASIC_LINE_SIZE+10];  // REVISIT -- line number size?
+
+    line_number = line_number_in-1;
+    line = code_next_line(false, &line_number);
+    if (! line || line_number != line_number_in) {
+        return;
+    }
+
+    n = sprintf(text, "%d ", line_number);
+    unparse_bytecode(line->bytecode, line->length, text+n);
+#if ! _WIN32
+    ftdi_edit(text);
+    cpustick_edit = true;
+#endif
+}
+
+// *** flash control and access ***
+
 static byte *alternate_flash_code_page;
 static int alternate_flash_code_page_offset;
 
+// this function erases the alternate code page in flash memory.
 static
 void
 code_erase_alternate(void)
@@ -347,6 +386,7 @@ code_erase_alternate(void)
     flash_erase_pages((uint32 *)alternate_flash_code_page, BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);
 }
 
+// this function updates the alternate code page in flash memory.
 static
 bool
 code_append_line_to_alternate(const struct line *line)
@@ -374,12 +414,14 @@ code_append_line_to_alternate(const struct line *line)
 
     alternate_flash_code_page_offset += size;
     assert(! (alternate_flash_code_page_offset%sizeof(uint32)));
-    
+
     return true;
 }
 
 const static struct line empty = { 0, LINESIZE, 0 };
 
+// this function promotes the alternate code page in flash memory
+// to become current.
 static
 void
 code_promote_alternate(void)
@@ -403,6 +445,7 @@ code_promote_alternate(void)
     delay(500);  // this always takes a while!
 }
 
+// this function saves/merges the current program from ram to flash.
 void
 code_save(int renum)
 {
@@ -449,7 +492,7 @@ code_save(int renum)
             }
         }
     }
-    
+
     // if we saved all lines successfully...
     if (boo) {
         // promote the alternate flash bank
@@ -463,6 +506,7 @@ code_save(int renum)
     }
 }
 
+// this function erases the current program in flash.
 void
 code_new(void)
 {
@@ -480,6 +524,7 @@ code_new(void)
     var_clear(true);
 }
 
+// this function erases code ram, reverting to the code in flash.
 void
 code_undo()
 {
@@ -488,28 +533,32 @@ code_undo()
     *(struct line *)RAM_CODE_PAGE = empty;
 }
 
+// this function prints code memory usage.
 void
 code_mem(void)
 {
     int n;
     struct line *eop;
-    
+
     eop = find_exact_line_in_page(RAM_CODE_PAGE, 0);
     assert(eop);
     n = (byte *)eop+LINESIZE-RAM_CODE_PAGE;
     printf("%3d%% ram code bytes used%s\n", n*100/BASIC_SMALL_PAGE_SIZE, n>LINESIZE?" (unsaved changes!)":"");
-    
+
     eop = find_exact_line_in_page(FLASH_CODE_PAGE, 0);
     assert(eop);
     n = (byte *)eop+LINESIZE-FLASH_CODE_PAGE;
     printf("%3d%% flash code bytes used\n", n*100/(BASIC_LARGE_PAGE_SIZE-sizeof(int)));
 }
 
+// *** filesystem ***
+
 struct catalog {
     char name[BASIC_STORES][15];  // 14 character name
     int dummy;
 };
 
+// this function stores the current program to the filesystem.
 void
 code_store(char *name)
 {
@@ -534,14 +583,13 @@ code_store(char *name)
     for (i = 0; i < BASIC_STORES; i++) {
         if (catalog->name[i][0] == (char)0xff || catalog->name[i][0] == (char)0) {
             e = i;
-            continue;
         }
         if (! strncmp(catalog->name[i], name, sizeof(catalog->name[i])-1)) {
             break;
         }
     }
 
-    // if there is no space left...
+    // if we didn't find a match...
     if (i == BASIC_STORES) {
         if (e == -1) {
             printf("out of storage\n");
@@ -558,7 +606,9 @@ code_store(char *name)
     // if the name doesn't yet exist...
     if (i == BASIC_STORES) {
         // update the catalog
+        // revisit -- this is not crash-update-safe
         strncpy(catalog->name[n], name, sizeof(catalog->name[n])-1);
+        catalog->name[n][sizeof(catalog->name[n])-1] = '\0';
         flash_erase_pages((uint32 *)FLASH_CATALOG_PAGE, BASIC_SMALL_PAGE_SIZE/FLASH_PAGE_SIZE);
         flash_write_words((uint32 *)FLASH_CATALOG_PAGE, (uint32 *)&temp, sizeof(temp)/sizeof(uint32));
     }
@@ -567,37 +617,34 @@ code_store(char *name)
     flash_write_words((uint32 *)FLASH_STORE_PAGE(n), (uint32 *)FLASH_CODE_PAGE, BASIC_LARGE_PAGE_SIZE/sizeof(uint32));
 }
 
+// this function loads the current program from the filesystem.
 void
 code_load(char *name)
 {
     int i;
     int generation;
     byte *code_page;
-    struct catalog temp;
     struct catalog *catalog;
 
     // update the primary flash and clear ram
     code_save(0);
 
-    memcpy(&temp, FLASH_CATALOG_PAGE, sizeof(temp));
-    catalog = (struct catalog *)&temp;
+    catalog = (struct catalog *)FLASH_CATALOG_PAGE;
 
     // look up the name in the catalog
     for (i = 0; i < BASIC_STORES; i++) {
-        if (catalog->name[i][0] == (char)0xff || catalog->name[i][0] == (char)0) {
-            continue;
-        }
         if (! strncmp(catalog->name[i], name, sizeof(catalog->name[i])-1)) {
             break;
         }
     }
 
-    // if the store name does not exist...
+    // if we didn't find a match...
     if (i == BASIC_STORES) {
         printf("program '%s' not found\n", name);
         return;
     }
-    
+
+    // revisit -- this is not crash-update-safe
     code_page = FLASH_CODE_PAGE;
     generation = GENERATION(code_page);
 
@@ -606,22 +653,21 @@ code_load(char *name)
 
     // copy the store flash to the primary flash (except the generation)
     flash_write_words((uint32 *)code_page, (uint32 *)FLASH_STORE_PAGE(i), BASIC_LARGE_PAGE_SIZE/sizeof(uint32)-1);
-    
+
     // then restore the generation
     flash_write_words((uint32 *)(code_page+BASIC_LARGE_PAGE_SIZE-sizeof(int)), (uint32 *)&generation, 1);
 }
 
+// this function displays the programs in the filesystem.
 void
 code_dir()
 {
     int i;
-    struct catalog temp;
     struct catalog *catalog;
 
-    memcpy(&temp, FLASH_CATALOG_PAGE, sizeof(temp));
-    catalog = (struct catalog *)&temp;
+    catalog = (struct catalog *)FLASH_CATALOG_PAGE;
 
-    // look up the name in the catalog
+    // look up all names in the catalog
     for (i = 0; i < BASIC_STORES; i++) {
         if (catalog->name[i][0] == (char)0xff || catalog->name[i][0] == (char)0) {
             continue;
@@ -630,6 +676,7 @@ code_dir()
     }
 }
 
+// this function purges programs from the filesystem.
 void
 code_purge(char *name)
 {
@@ -642,21 +689,19 @@ code_purge(char *name)
 
     // look up the name in the catalog
     for (i = 0; i < BASIC_STORES; i++) {
-        if (catalog->name[i][0] == (char)0xff || catalog->name[i][0] == (char)0) {
-            continue;
-        }
         if (! strncmp(catalog->name[i], name, sizeof(catalog->name[i])-1)) {
             break;
         }
     }
 
-    // if the store name does not exist...
+    // if we didn't find a match...
     if (i == BASIC_STORES) {
         printf("program '%s' not found\n", name);
         return;
     }
 
     // update the catalog
+    // revisit -- this is not crash-update-safe
     strncpy(catalog->name[i], "", sizeof(catalog->name[i])-1);
     flash_erase_pages((uint32 *)FLASH_CATALOG_PAGE, BASIC_SMALL_PAGE_SIZE/FLASH_PAGE_SIZE);
     flash_write_words((uint32 *)FLASH_CATALOG_PAGE, (uint32 *)&temp, sizeof(temp)/sizeof(uint32));
@@ -664,6 +709,7 @@ code_purge(char *name)
     delay(500);  // this always takes a while!
 }
 
+// this function initializes the code module.
 void
 code_initialize(void)
 {
@@ -688,4 +734,3 @@ code_initialize(void)
     }
 }
 
-#endif
