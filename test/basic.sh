@@ -1,7 +1,14 @@
 #! /bin/sh
+# this test exercises platform similarities
+
+if [ X${1:-} = X-r ]; then
+  BASIC="../stickos/52221 release/basic"
+else
+  BASIC="../stickos/52221 debug/basic"
+fi
 
 echo first we test parsing and running expressions
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print 1
 print 1+1
 print 1+2*3
@@ -18,7 +25,7 @@ print 16/(4/2)
 EOF
 
 echo then we unparse them
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 print 1
 20 print 1+1
 30 print 1+2*3
@@ -38,7 +45,7 @@ new
 EOF
 
 echo then we test format specifiers
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print hex 20, 30, "dec", dec 20, 30
 print dec 0x100, 0x200, "hex", hex 0x100, 0x200
 print "hex", hex 20, 30, "dec", dec 20, 30
@@ -48,7 +55,7 @@ print "default", 30
 EOF
 
 echo then we unparse them
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 print hex 20, 30, "dec", dec 20, 30
 20 print dec 0x100, 0x200, "hex", hex 0x100, 0x200
 30 print "hex", hex 20, 30, "dec", dec 20, 30
@@ -60,7 +67,7 @@ run
 EOF
 
 echo then we test operators
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print 1+2, 3+2
 print 1-2, 2-1
 print 2*3, 3*3
@@ -82,7 +89,7 @@ print 1!=2, 2!=1, 1!=1
 EOF
 
 echo then we unparse them
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 1 print 1+2, 3+2
 2 print 1-2, 2-1
 3 print 2*3, 3*3
@@ -107,7 +114,7 @@ new
 EOF
 
 echo then test unary operators
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print 1, !1, ~1
 print 0, !0, ~0
 print !1+3, ~1+3
@@ -119,7 +126,7 @@ print !!4, !!0, !!(2+2), !!(2-2)
 EOF
 
 echo then we unparse them
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 1print 1, !1, ~1
 2print 0, !0, ~0
 3print !1+3, ~1+3
@@ -134,7 +141,7 @@ new
 EOF
 
 echo then we test line input
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 rem line 10
 list
 save
@@ -163,7 +170,7 @@ list
 EOF
 
 echo then we test some math
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a
 20 dim r
 list
@@ -187,7 +194,7 @@ run
 EOF
 
 echo test multiple assignments
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a,b , c
 20 let a=5,b=5+5 ,   c=a+b
 30 print a,b ,  c
@@ -196,7 +203,7 @@ run
 EOF
 
 echo test some variable types
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 1dim a as byte
 2dim b as short
 3dim c 
@@ -213,7 +220,7 @@ run
 EOF
 
 echo test some assertions
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 assert 1
 20 assert 0
 30 assert 3%2==1
@@ -232,7 +239,7 @@ cont
 EOF
 
 echo test some more statements
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 130 if x+((y*2)) then
 140 elseif 1 then
 150 else
@@ -245,7 +252,7 @@ list
 EOF
 
 echo then test delete
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a
 20 dim r
 25 let a=5
@@ -279,7 +286,7 @@ list
 EOF
 
 echo larger tests
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 new
 1 print 1,2+2
 2 dim a,x
@@ -349,7 +356,7 @@ delete neither
 EOF
 
 echo test some ifs and whiles
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 if 0 then
 20 print 0
 30 if 1 then
@@ -382,7 +389,7 @@ list -
 EOF
 
 echo test do/until
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a
 20 do
 30 print a
@@ -398,7 +405,7 @@ list
 EOF
 
 echo test help
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 help
 help about
 help commands
@@ -415,10 +422,13 @@ help zigbee
 EOF
 
 echo test dims
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a as pin dtin0 for digital output
 20 dim b as pin dtin1 for digital input
 30 dim c as pin an0 for analog input
+31 dim x as pin dtin2 for digital output inverted
+32 dim y as pin dtin3 for digital input inverted
+33 dim z as pin an1 for analog input inverted
 40 dim d as flash
 41 dim m as remote on nodeid 7
 42 dim n[4] as remote on nodeid 8
@@ -432,7 +442,7 @@ run
 EOF
 
 echo test flash memory
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 trace on
 autoreset on
 autorun off
@@ -467,7 +477,7 @@ echo off
 EOF
 
 echo test array parsing
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a[3], b
 20 dim b, a[3+4]
 30 dim a[3+(4*2)]
@@ -502,7 +512,7 @@ run
 EOF
 
 echo test long variable names
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim long
 20 dim evenlonger
 30 dim muchmuchmuchmuchlonger
@@ -522,7 +532,7 @@ cont
 EOF
 
 echo test read/data
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
    1 dim a, b
   10 data 1, 0x2, 3
   20 data 0x4
@@ -571,7 +581,7 @@ cont 80
 EOF
 
 echo test autorun and autoreset
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 autorun
 autorun on
 autorun
@@ -589,7 +599,7 @@ autoreset
 EOF
 
 echo test variable scopes
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a
 20 let a=1
 25 print a
@@ -618,7 +628,7 @@ run
 EOF
 
 echo test variable scope overflow
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a
 15 dim b[500] as byte
 20 gosub alloc
@@ -649,7 +659,7 @@ run
 EOF
 
 echo test while breaks
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a
 20 while 1 do
 30 if a==10 then
@@ -670,7 +680,7 @@ run
 EOF
 
 echo test while continues
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
   10 dim i
   20 while i<15 do
   30   let i=i+1
@@ -694,7 +704,7 @@ run
 EOF
 
 echo test for loops
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim x,y
 20 for y = 0 to 10 step 2
 30 for x = 1 to 2
@@ -717,7 +727,7 @@ run
 EOF
 
 echo test arrays
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
    1 dim i, j
    2 dim a[256]
    3 while 1 do
@@ -742,7 +752,7 @@ clear flash
 EOF
 
 echo test large flash program
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 demo 3 1000
 demo 3 2000
 demo 3 3000
@@ -775,7 +785,7 @@ memory
 EOF
 
 echo test configures
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 configure uart 0 for 9600 baud 8 data even parity
 20 configure uart 1 for 115200 baud 7 data no parity
 30 configure uart 1 for 1200 baud 6 data odd parity loopback
@@ -790,14 +800,14 @@ list
 EOF
 
 echo test uart
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 demo1
 list
 run
 EOF
 
 echo return from sub scope
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
   10 gosub output
   20 end
  140 sub output
@@ -810,7 +820,7 @@ debug/basic -q <<EOF
 EOF
 
 echo if, elseif, else
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim a
 20 for a = -5 to 5
 30   if !a then
@@ -826,13 +836,13 @@ run
 EOF
 
 echo test dummy clone
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 clone
 clone run
 EOF
 
 echo filesystem
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 rem this is a program
 20 rem 1
 save prog1
@@ -893,7 +903,7 @@ EOF
 ### on/off/mask/unmask ###
 
 echo on/off/mask/unmask
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 on xxx do gosub yyy
 20 on zzz+aaa do stop
 30 off xxx
@@ -910,7 +920,7 @@ EOF
 ### watchpoints ###
 
 echo watchpoints
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim i
 20 on i%5 do stop
 30 while 1 do
@@ -933,7 +943,7 @@ EOF
 ### parse errors ###
 
 echo parse errors
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print 3**3
 print *3
 print 3*
@@ -953,7 +963,7 @@ EOF
 ### runtime errors ###
 
 echo runtime errors
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print a[b[3]]
 print 3/0
 print 3%0
@@ -971,7 +981,7 @@ EOF
 ### pin types ###
 
 echo pin types
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 dim audio as pin dtin0 for frequency output
 20 dim voltage as pin dtin1 for analog output
 30 dim audio2 as pin an0 for frequency output
@@ -984,7 +994,7 @@ EOF
 ### statement errors ###
 
 echo statement errors
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print "on"
 on xxx
 on timer a
@@ -1189,7 +1199,7 @@ EOF
 ### command errors ###
 
 echo command errors
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print "autoreset"
 autoreset aaa
 autoreset on aaa
@@ -1265,7 +1275,7 @@ EOF
 ### overflow tests ###
 
 echo overflow tests
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 print !!!!!!!!!!0
 print !!!!!!!!!!1
 print !!!!!!!!!!!0
@@ -1384,7 +1394,7 @@ EOF
 ### bad blocks ###
 
 echo bad blocks
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 while 1 do
 run
 10 endwhile
@@ -1424,7 +1434,7 @@ EOF
 ### negative run conditions
 
 echo test negative run conditions
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 if 0 then
 15 let a[7] = b[7]
 16 print c[7]
@@ -1481,7 +1491,7 @@ EOF
 ### long line trimming ###
 
 echo test long line trimming
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 if 1 then
 20 if 1 then
 30 if 1 then
@@ -1507,7 +1517,7 @@ EOF
 ### slow tests follow ###
 
 echo test interrupt masking
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 10 configure timer 0 for 500 ms
 20 on timer 0 do print "tick"
 30 sleep 750
@@ -1538,7 +1548,7 @@ run
 EOF
 
 echo test timers
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 1 configure timer 0 for 3500 ms
 2 on timer 0 do gosub seven
 9 configure timer 1 for 1000 ms
@@ -1557,7 +1567,7 @@ run
 EOF
 
 echo test demo
-debug/basic -q <<EOF
+"$BASIC" -q <<EOF
 demo 0
 list
 rem run

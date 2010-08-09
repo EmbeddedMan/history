@@ -71,6 +71,7 @@ flash_write(byte *buffer, int length)
 void
 clone(bool and_run)
 {
+#if ! MCF51JM128
     int i;
     unsigned n;
     byte status;
@@ -184,5 +185,8 @@ clone(bool and_run)
     }
 
     printf("\nclone done!\n");
+#else
+#pragma unused(and_run)
+#endif
 }
 

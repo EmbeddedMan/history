@@ -4,11 +4,12 @@
 // handlers.  it also implements the core of the interactive debugger,
 // coupled with the command interpreter and variable access module.
 
+// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Patent pending.
+
 #include "main.h"
 
 int cw7bug;
-
-bool uart_armed[UART_INTS];
 
 bool watch_armed;
 
@@ -19,6 +20,8 @@ int data_line_number;
 int data_line_offset;
 
 bool run_condition = true;  // global condition flag
+
+bool run_printf;
 
 static int run_sleep_ticks;
 static int run_sleep_line_number;
@@ -173,9 +176,8 @@ read_data()
 }
 
 // this function evaluates a bytecode expression.
-static
 int
-evaluate(byte *bytecode_in, int length, OUT int *value)
+run_evaluate(byte *bytecode_in, int length, OUT int *value)
 {
     int lhs;
     int rhs;
@@ -349,9 +351,10 @@ evaluate(byte *bytecode_in, int length, OUT int *value)
     return bytecode - bytecode_in;
 }
 
-// this function executes a bytecode statement.
+// this function executes a bytecode statement, with an independent keyword
+// bytecode.
 bool  // end
-run_bytecode(bool immediate, byte *bytecode, int length)
+run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
 {
     int i;
     int n;
@@ -362,11 +365,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
     byte loopback;
     byte device;
     bool end;
-    byte code;
-#if ! _WIN32
-    int divisor;
-#endif
-    int interrupt;
+    int inter;
     int blen;
     int value;
     byte *p;
@@ -381,13 +380,14 @@ run_bytecode(bool immediate, byte *bytecode, int length)
     int var_type;
     int pin_number;
     int pin_type;
+    int pin_qual;
     int line_number;
     bool hex;
     bool output;
     int isr_length;
     byte *isr_bytecode;
     int nodeid;
-
+    
     end = false;
 
     index = 0;
@@ -395,7 +395,6 @@ run_bytecode(bool immediate, byte *bytecode, int length)
     run_condition = max_scopes ? scopes[max_scopes-1].condition && scopes[max_scopes-1].condition_initial : true;
     run_condition |= immediate;
 
-    code = bytecode[index++];
     switch (code) {
         case code_deleted:
             // nothing to do
@@ -420,7 +419,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 index += sizeof(int);
                 assert(timer >= 0 && timer < MAX_TIMERS);
 
-                interrupt = TIMER_INT(timer);
+                inter = TIMER_INT(timer);
 
                 // if we are enabling the interrupt...
                 if (code == code_on) {
@@ -429,17 +428,17 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             } else if (device == device_uart) {
                 // *** uart control ***
                 // get the uart number
-                uart = *(int *)(bytecode + index);
-                index += sizeof(int);
+                uart = *(bytecode+index);
+                index++;
                 assert(uart >= 0 && uart < MAX_UARTS);
 
                 // get the input/output flag
                 output = *(bytecode+index);
                 index++;
 
-                interrupt = UART_INT(uart, output);
+                inter = UART_INT(uart, output);
             } else if (device == device_watch) {
-                interrupt = WATCH_INT;
+                inter = WATCH_INT;
 
                 // this is the expression to watch
                 watch_length = *(int *)(bytecode + index);
@@ -463,18 +462,18 @@ run_bytecode(bool immediate, byte *bytecode, int length)
 
             if (run_condition) {
                 if (code == code_mask) {
-                    run_isr_masked |= 1<<interrupt;
+                    run_isr_masked |= 1<<inter;
                 } else if (code == code_unmask) {
-                    run_isr_masked &= ~(1<<interrupt);
+                    run_isr_masked &= ~(1<<inter);
                 } else if (code == code_off) {
-                    run_isr_enabled &= ~(1<<interrupt);
-                    run_isr_length[interrupt] = 0;
-                    run_isr_bytecode[interrupt] = NULL;
+                    run_isr_enabled &= ~(1<<inter);
+                    run_isr_length[inter] = 0;
+                    run_isr_bytecode[inter] = NULL;
                 } else {
                     assert(code == code_on);
-                    run_isr_enabled |= 1<<interrupt;
-                    run_isr_length[interrupt] = isr_length;
-                    run_isr_bytecode[interrupt] = isr_bytecode;
+                    run_isr_enabled |= 1<<inter;
+                    run_isr_length[inter] = isr_length;
+                    run_isr_bytecode[inter] = isr_bytecode;
                 }
             }
             break;
@@ -499,8 +498,9 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             } else if (device == device_uart) {
                 // *** uart control ***
                 // get the uart number and protocol and optional loopback specifier
-                uart = *(int *)(bytecode+index);
-                index += sizeof(int);
+                uart = *(bytecode+index);
+                index++;
+                assert(uart >= 0 && uart < MAX_UARTS);
                 baud = *(int *)(bytecode+index);
                 index += sizeof(int);
                 data = *(int *)(bytecode+index);
@@ -510,23 +510,9 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 loopback = *(bytecode+index);
                 index++;
 
-                assert(uart == 0 || uart == 1);
 #if ! _WIN32
                 if (run_condition) {
-                    // configure the uart for the requested protocol and speed
-                    MCF_UART_UCR(uart) = MCF_UART_UCR_RESET_MR|MCF_UART_UCR_TX_DISABLED|MCF_UART_UCR_RX_DISABLED;
-
-                    MCF_UART_UMR(uart)/*1*/ = (parity==0?MCF_UART_UMR_PM_ODD:(parity==1?MCF_UART_UMR_PM_EVEN:MCF_UART_UMR_PM_NONE))|(data-5);
-                    MCF_UART_UMR(uart)/*2*/ = (loopback?MCF_UART_UMR_CM_LOCAL_LOOP:0)|MCF_UART_UMR_SB_STOP_BITS_2;
-
-                    MCF_UART_UCSR(uart) = MCF_UART_UCSR_RCS_SYS_CLK|MCF_UART_UCSR_TCS_SYS_CLK;
-
-                    divisor = fsys_frequency/baud/32;
-                    assert(divisor < 0x10000);
-                    MCF_UART_UBG1(uart) = (uint8)(divisor/0x100);
-                    MCF_UART_UBG2(uart) = (uint8)(divisor%0x100);
-
-                    MCF_UART_UCR(uart) = MCF_UART_UCR_TX_ENABLED|MCF_UART_UCR_RX_ENABLED;
+                    pin_uart_configure(uart, baud, data, parity, loopback);
                 }
 #endif
             } else if (device == device_qspi) {
@@ -548,7 +534,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
         case code_assert:
             // *** interactive debugger ***
             // evaluate the assertion expression
-            index += evaluate(bytecode+index, length-index, &value);
+            index += run_evaluate(bytecode+index, length-index, &value);
             if (run_condition && ! value) {
                 printf("assertion failed\n");
                 stop();
@@ -578,7 +564,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index += sizeof(int);
 
                     // evaluate the array index
-                    index += evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, &max_index);
                 }
 
                 // get the variable name
@@ -638,7 +624,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index += sizeof(int);
 
                     // evaluate the array length
-                    index += evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, &max_index);
                 }
 
                 // get the variable name
@@ -653,16 +639,17 @@ run_bytecode(bool immediate, byte *bytecode, int length)
 
                 // if this is a memory variable...
                 if (var_type == code_ram || var_type == code_flash) {
-                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, -1);
+                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, 0, -1);
                 // otherwise, if this is a pin variable...
                 } else if (var_type == code_pin) {
                     // get the pin number (from the pin name) and pin type (from the pin usage)
                     pin_number = bytecode[index++];
                     pin_type = bytecode[index++];
+                    pin_qual = bytecode[index++];
 
                     assert(pin_number >= 0 && pin_number < PIN_LAST);
 
-                    var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type, -1);
+                    var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type, pin_qual, -1);
                 } else {
                     // this is a remote variable
                     assert(var_type == code_nodeid);
@@ -670,7 +657,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     nodeid = *(int *)(bytecode+index);
                     index += sizeof(int);
                     
-                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, nodeid);
+                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, 0, nodeid);
                 }
             } while (index < length && bytecode[index] == code_comma);
             break;
@@ -699,7 +686,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index += sizeof(int);
 
                     // evaluate the array index
-                    index += evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, &max_index);
                 }
 
                 // get the variable name
@@ -707,7 +694,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 index += strlen(name)+1;
 
                 // evaluate the assignment expression
-                index += evaluate(bytecode+index, length-index, &value);
+                index += run_evaluate(bytecode+index, length-index, &value);
 
                 // assign the variable with the assignment expression
                 var_set(name, max_index, value);
@@ -722,7 +709,9 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 // skip commas
                 if (bytecode[index] == code_comma) {
                     if (run_condition) {
+                        run_printf = true;
                         printf(" ");
+                        run_printf = false;
                     }
                     index++;
                 }
@@ -738,7 +727,9 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index++;
 
                     if (run_condition) {
+                        run_printf = true;
                         printf("%s", bytecode+index);
+                        run_printf = false;
                     }
                     index += strlen((char *)bytecode+index)+1;
                 } else {
@@ -747,21 +738,24 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index++;
 
                     // evaluate the expression
-                    index += evaluate(bytecode+index, length-index, &value);
+                    index += run_evaluate(bytecode+index, length-index, &value);
                     if (run_condition) {
+                        run_printf = true;
                         if (hex) {
                             printf("0x%x", value);
                         } else {
                             printf("%d", value);
                         }
+                        run_printf = false;
                     }
                 }
             } while (index < length && bytecode[index] == code_comma);
             if (run_condition) {
+                run_printf = true;
                 printf("\n");
+                run_printf = false;
             }
             break;
-#endif
             
         case code_qspi:
             // we'll walk the variable list twice
@@ -789,7 +783,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index += sizeof(int);
 
                     // evaluate the array index
-                    index += evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, &max_index);
                 }
 
                 // get the variable name
@@ -844,7 +838,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index += sizeof(int);
 
                     // evaluate the array index
-                    index += evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, &max_index);
                 }
 
                 // get the variable name
@@ -883,7 +877,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             max_scopes++;
 
             // evaluate the condition
-            index += evaluate(bytecode+index, length-index, &value);
+            index += run_evaluate(bytecode+index, length-index, &value);
 
             // incorporate the condition
             scopes[max_scopes-1].condition = !! value;
@@ -900,7 +894,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
 
             // reevaluate the condition
             run_condition = scopes[max_scopes-1].condition_initial;
-            index += evaluate(bytecode+index, length-index, &value);
+            index += run_evaluate(bytecode+index, length-index, &value);
 
             // if the condition has ever been true...
             if (scopes[max_scopes-1].condition_ever) {
@@ -966,7 +960,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index += sizeof(int);
 
                     // evaluate the array index
-                    index += evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, &max_index);
                 }
 
                 // get the variable name
@@ -974,7 +968,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 index += strlen(name)+1;
 
                 // evaluate and set the initial value
-                index += evaluate(bytecode+index, length-index, &value);
+                index += run_evaluate(bytecode+index, length-index, &value);
                 var_set(name, max_index, value);
 
                 assert(name);
@@ -985,7 +979,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 index++;
 
                 // evaluate the final value
-                index += evaluate(bytecode+index, length-index, &scopes[max_scopes-1].for_final_value);
+                index += run_evaluate(bytecode+index, length-index, &scopes[max_scopes-1].for_final_value);
 
                 // if there is a step value...
                 if (index < length) {
@@ -993,7 +987,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index++;
 
                     // evaluate the step value
-                    index += evaluate(bytecode+index, length-index, &scopes[max_scopes-1].for_step_value);
+                    index += run_evaluate(bytecode+index, length-index, &scopes[max_scopes-1].for_step_value);
                 } else {
                     scopes[max_scopes-1].for_step_value = 1;
                 }
@@ -1011,7 +1005,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 scopes[max_scopes-1].for_step_value = 0;
 
                 // evaluate the condition
-                index += evaluate(bytecode+index, length-index, &value);
+                index += run_evaluate(bytecode+index, length-index, &value);
             } else {
                 assert(code == code_do);
 
@@ -1098,7 +1092,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             // if this is an until loop...
             if (code == code_until) {
                 // evaluate the condition
-                index += evaluate(bytecode+index, length-index, &value);
+                index += run_evaluate(bytecode+index, length-index, &value);
             }
 
             if (run_condition) {
@@ -1196,7 +1190,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
         case code_sleep:
             // N.B. sleeps occur in the main loop so we can service interrupts
             // evaluate the sleep time
-            index += evaluate(bytecode+index, length-index, &value);
+            index += run_evaluate(bytecode+index, length-index, &value);
             if (run_condition) {
                 // prepare to sleep
                 run_sleep_ticks = ticks+value;
@@ -1220,7 +1214,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             break;
 
         default:
-            assert(0);
+            return run2_bytecode_code(code, bytecode, length);
             break;
     }
 
@@ -1232,13 +1226,31 @@ XXX_SKIP_XXX:
     return false;
 }
 
+// this function executes a bytecode statement.
+bool  // end
+run_bytecode(bool immediate, byte *bytecode, int length)
+{
+    byte code;
+
+    assert(length);
+
+    code = *bytecode;
+    return run_bytecode_code(code, immediate, bytecode+1, length-1);
+}
+
+
+void
+run_clear(void)
+{
+    max_scopes = 0;
+    max_gosubs = 0;
+}
+
+
 // this function executes a BASIC program!!!
 bool
 run(bool cont, int start_line_number)
 {
-#if ! _WIN32
-    byte usr;
-#endif
     int i;
     int tick;
     bool isr;
@@ -1247,6 +1259,8 @@ run(bool cont, int start_line_number)
     int value;
     int line_number;
     int last_tick;
+    bool condition;
+    int rx_full;
     int tx_empty;
     struct line *line;
 
@@ -1256,9 +1270,6 @@ run(bool cont, int start_line_number)
         // prepare for a new run
 
         var_clear(false);
-
-        max_scopes = 0;
-        max_gosubs = 0;
 
         run_isr_enabled = 0;
         run_isr_pending = 0;
@@ -1360,19 +1371,19 @@ run(bool cont, int start_line_number)
 
         // if any uart ints are enabled...
         if (run_isr_enabled & UART_MASK) {
+            // see if any uarts have transferred data
+            pin_uart_pending(&rx_full, &tx_empty);
             
+            for (i = 0; i < MAX_UARTS; i++) {
 #if ! _WIN32
-                usr = MCF_UART_USR(i);
-
-#if ! _WIN32
-                if (run_isr_bytecode[UART_INT(i, true)] && uart_armed[UART_INT(i, true)] && (usr & MCF_UART_USR_TXEMP)) {
+                // if the uart transmitter is empty...
                 if (run_isr_bytecode[UART_INT(i, true)] && uart_armed[UART_INT(i, true)] && (tx_empty & (1<<UART_INT(i, true)))) {
                     // mark the interrupt as pending
                     run_isr_pending |= 1<<UART_INT(i, true);
                     uart_armed[UART_INT(i, true)] = false;
                 }
-                // if the uart receiver is not empty...
-                if (run_isr_bytecode[UART_INT(i, false)] && uart_armed[UART_INT(i, false)] && (usr & MCF_UART_USR_RXRDY)) {
+
+                // if the uart receiver is full...
                 if (run_isr_bytecode[UART_INT(i, false)] && uart_armed[UART_INT(i, false)] && (rx_full & (1<<UART_INT(i, true)))) {
                     // mark the interrupt as pending
                     run_isr_pending |= 1<<UART_INT(i, false);
@@ -1387,7 +1398,7 @@ run(bool cont, int start_line_number)
             condition = run_condition;
             run_condition = true;
 
-            length = evaluate(watch_bytecode, watch_length, &value);
+            length = run_evaluate(watch_bytecode, watch_length, &value);
             assert(length == watch_length);
 
             run_condition = condition;

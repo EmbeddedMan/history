@@ -90,27 +90,43 @@ splx(int level)
 
 static volatile int g;
 
+static int blips_per_ms;
+
+static void
+blip(void)
+{
+    int x;
+    for (x = 0; x < 500; x++) {
+        g++;
+    }
+}
+
 // delay for the specified number of milliseconds
 void
 delay(int ms)
 {
     int t;
     int x;
-    int y;
-
+    int blips;
+        
     // if interrupts are initialized...
-    if (initialized) {
+    if (gpl() < SPL_PIT0) {
         // wait for the pit0 to count off the ticks
         t = ticks;
+        blips = 0;
         while (ticks-t < ms+1) {
-            // NULL
+            blip();
+            blips++;
+        }
+        if (! blips_per_ms) {
+            blips_per_ms = blips/ms+1;
         }
     // otherwise; make a good guess with a busywait
     } else {
-        y = fsys_frequency/6000;
+        assert(blips_per_ms);
         while (ms--) {
-            for (x = 0; x < y; x++) {
-                g++;
+            for (x = 0; x < blips_per_ms; x++) {
+                blip();
             }
         }
     }
@@ -174,7 +190,7 @@ tailtrim(char *text)
 
 #if ! _WIN32
 void *
-memcpy(void *d,  const void *s, uint32 n)
+memcpy(void *d,  const void *s, unsigned long n)
 {
     void *dd;
     
@@ -193,7 +209,7 @@ memcpy(void *d,  const void *s, uint32 n)
 }
 
 void *
-memmove(void *d,  const void *s, uint32 n)
+memmove(void *d,  const void *s, unsigned long n)
 {
     void *dd;
     
@@ -209,7 +225,7 @@ memmove(void *d,  const void *s, uint32 n)
 }
 
 void *
-memset(void *p,  int d, uint32 n)
+memset(void *p,  int d, unsigned long n)
 {
     int dd;
     void *pp;
@@ -231,7 +247,7 @@ memset(void *p,  int d, uint32 n)
 }
 
 int
-memcmp(const void *d,  const void *s, uint32 n)
+memcmp(const void *d,  const void *s, unsigned long n)
 {
     char c;
     

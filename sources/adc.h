@@ -1,8 +1,8 @@
 // *** adc.h **********************************************************
 
-extern volatile short adc_result[8];
+extern volatile short adc_result[12];
 
-bool
+void
 adc_timer_poll();
 
 void

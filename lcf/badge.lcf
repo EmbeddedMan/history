@@ -1,0 +1,111 @@
+# Sample Linker Command File for CodeWarrior for ColdFire MCF51JM128
+
+# Memory ranges
+
+MEMORY {
+   bootcode    (RX)  : ORIGIN = 0x00000410, LENGTH = 0x000033F0
+   code        (RX)  : ORIGIN = 0x00003A00, LENGTH = 0x0001C600
+   vectorram   (RWX) : ORIGIN = 0x00800000, LENGTH = 0x00000200
+   bdtram      (RWX) : ORIGIN = 0x00800200, LENGTH = 0x00000200
+   userram     (RWX) : ORIGIN = 0x00800400, LENGTH = 0x00003C00
+}
+
+SECTIONS {
+
+# Heap and Stack sizes definition
+    ___stack_size     = 0x0a00;
+
+# MCF51JM128 Derivative Memory map definitions from linker command files:
+#           __RAMBAR, __RAMBAR_SIZE, __FLASHBAR, __FLASHBAR_SIZE linker
+# symbols must be defined in the linker command file.
+
+
+
+
+# 16 Kbytes Internal SRAM
+   ___RAMBAR         = 0x00800000;
+   ___RAMBAR_SIZE    = 0x00004000;
+
+# 128 KByte Internal Flash Memory
+   ___FLASHBAR       = 0x00000000;
+   ___FLASHBAR_SIZE  = 0x00020000;
+
+   # N.B. this is here so it doesn't change and cause an incompatible upgrade
+   ___SP_AFTER_RESET = ___RAMBAR + ___RAMBAR_SIZE - 4;
+   
+  .userram	  : {} > userram		
+  .code	    : {} > code		
+  .bdtram	: {} > bdtram			
+	
+	.text :
+	{
+		*(.text)
+		. = ALIGN (0x4);
+		*(.rodata)
+		. = ALIGN (0x4);		
+		___ROM_AT = .;
+		___DATA_ROM = .;
+	} >> code
+
+	.data : AT(___ROM_AT) 
+	{  
+	    # N.B. this is here so it doesn't change and cause an incompatible upgrade
+		__SDA_BASE = .;
+
+		___DATA_RAM = .;
+		. = ALIGN(0x4);
+		___sinit__ = .;
+	    STATICINIT
+	    
+		__START_DATA = .;
+		*(.data)
+		. = ALIGN (0x4);
+		__END_DATA = .;
+
+		__START_SDATA = .;
+		*(.sdata)
+		. = ALIGN (0x4);
+		__END_SDATA = .;
+
+		___DATA_END = .;
+		. = ALIGN (0x4);
+	} >> userram
+
+	.bss :
+	{
+		___BSS_START = .;
+		__START_SBSS = .;
+		*(.sbss)
+		. = ALIGN (0x4);
+		*(SCOMMON)
+		__END_SBSS = .;
+
+		__START_BSS = .;
+		*(.bss)
+		. = ALIGN (0x4);
+		*(COMMON)
+		__END_BSS = .;
+		___BSS_END = .;
+
+		. = ALIGN(0x4);
+
+		___SP_END		= .;
+		.               = . + ___stack_size;
+		___SP_INIT		= .;
+		.               = .+4;
+		___HEAP_START	= .;
+		___HEAP_END		= ___RAMBAR + ___RAMBAR_SIZE;
+
+		. = ALIGN (0x4);
+	} >> userram
+
+	___heap_addr = ___HEAP_START;
+	___heap_size = (___HEAP_END - ___HEAP_START - 4) & 0x0FFFFF00;
+	___STACK_SIZE = ___SP_INIT - ___SP_END;
+	  	
+	___BDT_RAM		= ADDR(.bdtram);
+	
+	__SP_INIT		= ___SP_INIT;
+
+}
+

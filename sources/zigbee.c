@@ -3,23 +3,21 @@
 
 #include "main.h"
 
-// N.B. to handle relaying (i.e., node 1 -> node 2 -> node3) we need
-//      to implement two sets (upstream/downstream) of sequence numbers.
-
-#define ACK_MS  40
+#define ACK_MS  40  // zb_class_receive, zb_class_print
+#define FAST_ACK_MS  5  // zb_class_remote_set
 #define WAIT_MS  50
-#define DELAY_MS  5
-#define THROTTLE_MS  30
+#define DELAY_MS  5  // ack
+#define THROTTLE_MS  30  // send/retry
 #define RETRIES  10
 
 typedef struct packet {
     uint16 magic;  // 0x4242
     uint16 txid;
     uint16 rxid;
-    uint8 class;  // zb_class_none, zb_class_receive, zb_class_print
-    uint8 seq;  // 0 for zb_class_none
+    uint8 class;  // zb_class_receive, zb_class_print, zb_class_remote_set
+    uint8 seq;  // 0 if length is 0 (explicit ack)
     uint8 ackseq;
-    uint8 length;
+    uint8 length;  // 0 -> explicit ack
     byte payload[ZB_PAYLOAD_SIZE];
 } packet_t;
 
@@ -29,24 +27,26 @@ bool zb_present;
 bool zb_in_isr;
 
 #define NCLASS  4
+#define NSEQ  2
 
 static int recv_cbfns;
 static zb_recv_cbfn recv_cbfn[NCLASS];
 
-int transmits;
-int receives;
-int drops;
-int failures;
-int retries;
+static int transmits;
+static int receives;
+static int drops;
+static int failures;
+static int retries;
 
-// revisit handle multiple senders/receivers
-static uint8 txseq;  // last seq transmitted
-static uint8 txack;  // last transmit seq acked
-static uint8 rxseq;  // last seq received
-static bool rxdrop;  // we need to drop received packets
-static bool rxack_bool;  // we need to ack a received seq
-static int rxack_ticks;  // we need to ack a received seq now
-static int rxseqid = -1;  // last nodeid received
+static uint8 txseq[NSEQ];  // last seq transmitted
+static uint8 txack[NSEQ];  // last transmit seq acked
+static uint8 rxseq[NSEQ];  // last seq received
+static int rxseqid[NSEQ];  // last nodeid received
+
+static bool rxack_bool[NSEQ];  // we need to ack a received seq
+static int rxack_ticks[NSEQ];  // we need to ack a received seq now
+
+static bool rxdrop;  // we need to drop zb_class_receive received packets
 
 static bool ready;
 static int active;
@@ -55,9 +55,29 @@ static int active;
 #define RX  2
 #define TX  3
 
+static int seqid[NSEQ];
+
+static
+int
+zb_seq(int nodeid)
+{
+    int i;
+    static int n;
+    
+    for (i = 0; i < NSEQ; i++) {
+        if (seqid[i] == nodeid) {
+            return i;
+        }
+    }
+    n = ++n%NSEQ;
+    seqid[n] = nodeid;
+    return n;
+}
+
 static void
 zb_rxtxen(bool boo)
 {
+#if ! MCF51JM128
     if (boo) {
         MCF_GPIO_SETAN = (1<<5);
         MCF_GPIO_SETAS = (1<<1);
@@ -65,6 +85,13 @@ zb_rxtxen(bool boo)
         MCF_GPIO_CLRAN = ~(1<<5);
         MCF_GPIO_CLRAS = ~(1<<1);
     }
+#else
+    if (boo) {
+        PTBD |= 0x20;
+    } else {
+        PTBD &= ~0x20;
+    }
+#endif
 }
 
 static void
@@ -75,9 +102,9 @@ zb_delay(int send)
     for (;;) {
         // if we've recently sent or received a packet...
         ms = ticks-active;
-        if (ms >= 0 && ms < (send?THROTTLE_MS:DELAY_MS)) {
+        if (ms >= 0 && ms < (send?THROTTLE_MS*(send/4+1):DELAY_MS)) {
             // delay the transition to tx
-            delay((send?THROTTLE_MS:DELAY_MS)-ms);
+            delay((send?THROTTLE_MS*(send/4+1):DELAY_MS)-ms);
         } else {
             break;
         }
@@ -297,38 +324,42 @@ zb_packet_deliver(
     IN byte *payload
     )
 {
+    int n;
+    
+    n = zb_seq(txid);
+    
     // if this is an explicit ack...
-    if (class == zb_class_none) {
+    if (! length) {
         // just remember the ack status
         assert(! seq);
-        txack = ackseq;
+        txack[n] = ackseq;
         return;
     }
     
     // if we're dropping received packets...
     if (rxdrop && class == zb_class_receive) {
         // just remember the ack status
-        txack = ackseq;
+        txack[n] = ackseq;
         drops++;
         return;
     }
     
     // schedule a delayed ack
-    rxack_ticks = ticks+ACK_MS;
-    rxack_bool = true;
+    rxack_ticks[n] = ticks+((class==zb_class_remote_set)?FAST_ACK_MS:ACK_MS);
+    rxack_bool[n] = true;
     
     // if this is from a new node or a new boot...
-    if (txid != rxseqid || ! seq) {
+    if (txid != rxseqid[n] || ! seq) {
         // resequence with the stream
-        rxseqid = txid;
-        rxseq = seq-1;
+        rxseqid[n] = txid;
+        rxseq[n] = seq-1;
     }
 
     // if the packet is not a duplicate...
-    if (seq != rxseq) {
+    if (seq != rxseq[n]) {
         // advance the stream
-        rxseq = seq;
-        txack = ackseq;
+        rxseq[n] = seq;
+        txack[n] = ackseq;
     
         // if someone is waiting for it...
         if (recv_cbfn[class]) {
@@ -343,8 +374,14 @@ zb_packet_deliver(
     }
 }
 
+int zb_isrs;
+int zb_pre_isrs;
+
+// N.B. this is shared by zb_isr() and zb_send()!
+static byte payload[ZB_PAYLOAD_SIZE];
+
 // this function is called when a packet is ready to be received.
-__declspec(interrupt)
+INTERRUPT
 void
 zb_isr(void)
 {
@@ -354,7 +391,11 @@ zb_isr(void)
     uint8 seq;
     uint8 ackseq;
     uint8 length;
-    static byte payload[ZB_PAYLOAD_SIZE];
+
+#if MCF51JM128
+    // cancel zb_isr at level 4
+    INTC_CFRC = 0x3B;
+#endif
 
     assert(! zb_in_isr)
     zb_in_isr = true;
@@ -380,18 +421,36 @@ zb_isr(void)
     
     assert(zb_in_isr);
     zb_in_isr = false;
+
+    zb_isrs++;
 }
 
+#if MCF51JM128
+interrupt
+void
+zb_pre_isr(void)
+{
+    // call zb_isr at level 4
+    INTC_SFRC = 0x3B;
+    
+    // iack
+    IRQSC |= IRQSC_IRQACK_MASK;
+    
+    zb_pre_isrs++;
+}
+#endif
+
+static
 bool
-zb_send(
+zb_send_internal(
     IN int nodeid,
     IN uint8 class_in,
     IN int length_in,
     IN byte *buffer
     )
 {
+    int n;
     int x;
-    int xx;
     int irq;
     int retry;
     int start;
@@ -401,22 +460,20 @@ zb_send(
     uint8 seq;
     uint8 ackseq;
     uint8 length;
-    static byte payload[ZB_PAYLOAD_SIZE];
     
-    assert(gpl() < SPL_IRQ4);
-    assert(! zb_in_isr);
+    assert(gpl() == 0);
     
     if (! zb_present) {
         return false;
     }
     
-    xx = splx(SPL_USB);
-
+    n = zb_seq(nodeid);
+    
     retry = 0;
     boo = false;
     for (;;) {
         // if we have exhausted our retries...
-        if (++retry > RETRIES) {
+        if (retry++ > RETRIES) {
             // send has failed
             boo = false;
             failures++;
@@ -432,10 +489,11 @@ zb_send(
         zb_unready();
         
         // we're sending an implicit ack
-        rxack_bool = false;
+        rxack_bool[n] = false;
 
         // send the packet
-        zb_packet_transmit(nodeid, class_in, txseq, rxseq, length_in, buffer);
+        assert(length_in);
+        zb_packet_transmit(nodeid, class_in, txseq[n], rxseq[n], length_in, buffer);
         
         // wait for an ack
         start = ticks;
@@ -470,7 +528,7 @@ zb_send(
                     zb_packet_deliver(txid, class, seq, ackseq, length, payload);
                     
                     // if we got an ack...
-                    if (txack == txseq) {
+                    if (txack[n] == txseq[n]) {
                         // send is complete
                         boo = true;
                         break;
@@ -490,36 +548,62 @@ zb_send(
     }
     
     // bump the transmit sequence number
-    txseq++;
-    if (! txseq) {
+    txseq[n]++;
+    if (! txseq[n]) {
         // N.B. we reserve sequence number 0 to indicate a new boot
-        txseq++;
+        txseq[n]++;
     }
-    
-    splx(xx);
     
     return boo;
 }
 
+bool
+zb_send(
+    IN int nodeid,
+    IN uint8 class,
+    IN int length_in,
+    IN byte *buffer
+    )
+{
+    bool boo;
+    int length;
+    
+    while (length_in) {
+        length = MIN(ZB_PAYLOAD_SIZE, length_in);
+        boo = zb_send_internal(nodeid, class, length, buffer);
+        if (! boo) {
+            return false;
+        }
+        length_in -= length;
+        buffer += length;
+    }
+    return true;
+}
+    
 void
 zb_poll(void)
 {
     int x;
+    int n;
     
     //assert(gpl() == 0);
 
-    if (rxack_bool && ticks-rxack_ticks > 0) {
-        x = splx(SPL_IRQ4);
-    
-        zb_unready();
+    for (n = 0; n < NSEQ; n++) {
+        if (rxack_bool[n] && ticks-rxack_ticks[n] > 0) {
+            zb_delay(0);
         
-        // send the explicit ack
-        rxack_bool = false;
-        zb_packet_transmit(rxseqid, zb_class_none, 0, rxseq, 0, NULL);
+            x = splx(SPL_IRQ4);
         
-        zb_ready();
-        
-        splx(x);
+            zb_unready();
+            
+            // send the explicit ack
+            rxack_bool[n] = false;
+            zb_packet_transmit(rxseqid[n], zb_class_none, 0, rxseq[n], 0, NULL);
+            
+            zb_ready();
+            
+            splx(x);
+        }
     }
 }
 
@@ -527,6 +611,67 @@ void
 zb_drop(bool drop)
 {
     rxdrop = drop;
+}
+
+static
+void
+zb_reset(void)
+{
+    // assert rst*
+#if MCF52221
+    MCF_GPIO_CLRAN = ~(1<<2);
+    MCF_GPIO_CLRAS = ~(1<<0);
+#elif MCF52233
+    MCF_GPIO_CLRTA = ~(1<<0);
+#elif MCF51JM128
+    PTED &= ~0x04;
+#endif
+    delay(1);
+#if MCF52221
+    MCF_GPIO_SETAN = (1<<2);
+    MCF_GPIO_SETAS = (1<<0);
+#elif MCF52233
+    MCF_GPIO_SETTA = (1<<0);
+#elif MCF51JM128
+    PTED |= 0x04;
+#endif
+    delay(50);
+}
+
+void
+zb_diag(bool reset, bool init)
+{
+    int i;
+    int v;
+    int x;
+
+    if (reset) {
+        zb_reset();
+    }
+    
+    if (init) {
+        x = splx(7);
+        zb_unready();
+        zb_initialize();
+        splx(x);
+    }
+
+    if (! reset && ! init) {
+        printf("receives = %u; transmits = %u\n", receives, transmits);
+        printf("zb_isrs = %u; zb_pre_isrs = %u\n", zb_isrs, zb_pre_isrs);
+        printf("drops = %u; failures = %u; retries = %u\n", drops, failures, retries);
+        printf("                                             ");
+        for (i = 0x03; i < 0x32; i++) {
+            x = splx(SPL_IRQ4);
+            v = zb_read(i);
+            splx(x);
+            printf("0x%02x = 0x%04x  ", i, v);
+            if (i%4 == 3) {
+                printf("\n");
+            }
+        }
+        printf("\n");
+    }
 }
 
 void
@@ -552,31 +697,48 @@ zb_initialize(void)
     
     assert(sizeof(packet_t) <= 125);
     
-#if DEMO
-    // an2/gpt0=0 for rst*
-    // an3/gpt1=0 for attn*
-    // an5=0 for rxtxen
+    memset(rxseqid, -1, sizeof(rxseqid));
+    
 #if MCF52221
+    // an2=0 for rst*
+    // an3=0 for attn*
+    // an5=0 for rxtxen
     MCF_GPIO_PANPAR = 0x00;
     MCF_GPIO_DDRAN |= (1<<2)|(1<<3)|(1<<5);
+    
+    // scl=0 for rst*
+    // sda=0 for rxtxen
+    MCF_GPIO_PASPAR = 0x00;
+    MCF_GPIO_DDRAS |= (1<<0)|(1<<1);
 #elif MCF52233
-    MCF_GPIO_PANPAR = 0x00;
-    MCF_GPIO_DDRAN |= (1<<5);
+    // gpt0=0 for rst*
+    // gpt1=0 for attn*
+    // an5=0 for rxtxen
     MCF_GPIO_PTAPAR = 0x00;
     MCF_GPIO_DDRTA |= (1<<0)|(1<<1);
+    MCF_GPIO_PANPAR = 0x00;
+    MCF_GPIO_DDRAN |= (1<<5);
+#elif MCF51JM128
+    // e2 for rst*
+    // e3 for attn*
+    // b5 for rxtxen
+    PTEDD |= 0x0c;
+    PTBDD |= 0x20;
 #else
 #error
 #endif
 
     qspi_inactive(1);
 
-    // rst*
+    // deassert rst*
 #if MCF52221
     MCF_GPIO_SETAN = (1<<2);
-#else
-    MCF_GPIO_SETTA = (1<<0);
-#endif
     MCF_GPIO_SETAS = (1<<0);
+#elif MCF52233
+    MCF_GPIO_SETTA = (1<<0);
+#elif MCF51JM128
+    PTED |= 0x04;
+#endif
 
     delay(50);
 
@@ -592,34 +754,9 @@ zb_initialize(void)
     zb_present = true;
     qspi_baud_fast();
 
-    // scl=0 for rst*
-    // sda=0 for rxtxen
-    MCF_GPIO_PASPAR = 0x00;
-    MCF_GPIO_DDRAS |= (1<<0)|(1<<1);
+    zb_reset();
     
-    
-    // rst*
-#if MCF52221
-    MCF_GPIO_CLRAN = ~(1<<2);
-#else
-    MCF_GPIO_CLRTA = ~(1<<0);
-#endif
-    MCF_GPIO_CLRAS = ~(1<<0);
-    delay(1);
-#if MCF52221
-    MCF_GPIO_SETAN = (1<<2);
-#else
-    MCF_GPIO_SETTA = (1<<0);
-#endif
-    MCF_GPIO_SETAS = (1<<0);
-    delay(50);
-    
-    // rxtxen*
-    MCF_GPIO_CLRAN = ~((1<<5)|(1<<3));
-    
-#else
-#error
-#endif
+    zb_rxtxen(0);
     
     zb_write(0x1b, 0x80ff);  // disable timer 1
     zb_write(0x1c, 0xffff);
@@ -649,11 +786,12 @@ zb_initialize(void)
     
     zb_nodeid = main_nodeid();
 
+#if MCF52221 || MCF52233
     // NQ is primary (irq4)
     irq4_enable = true;
     MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(4*2))) | (1<<(4*2));  // irq4 is primary
 
-    // program irq4 for level trigger
+    // program irq4 (level 4) for level trigger
     MCF_EPORT_EPPAR = (MCF_EPORT_EPPAR &~ MCF_EPORT_EPPAR_EPPA4_BOTH) | MCF_EPORT_EPPAR_EPPA4_LEVEL;
     MCF_EPORT_EPIER |= MCF_EPORT_EPIER_EPIE4;
 
@@ -661,5 +799,9 @@ zb_initialize(void)
     MCF_INTC0_ICR04 = MCF_INTC_ICR_IL(SPL_IRQ4)|MCF_INTC_ICR_IP(SPL_IRQ4);
     //MCF_INTC0_IMRH &= ~0;
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK4;  // irq4
+#else
+    // program irq (level 7) for falling edge trigger
+    IRQSC = IRQSC_IRQPE_MASK|IRQSC_IRQIE_MASK;
+#endif
 }
 

@@ -3,82 +3,29 @@
 // pin, and flash variables, as well as the external pin control and
 // access module.
 
+// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Patent pending.
+
 #include "main.h"
 
 // the last word of each flash bank is the generation number
-#define GENERATION(p)  *(int *)((p)+BASIC_SMALL_PAGE_SIZE-sizeof(int))
+#define SGENERATION(p)  *(int *)((p)+BASIC_SMALL_PAGE_SIZE-sizeof(int))
 
 // we always pick the newer flash bank
-#define FLASH_PARAM_PAGE  ((GENERATION(FLASH_PARAM1_PAGE)+1 > GENERATION(FLASH_PARAM2_PAGE)+1) ? FLASH_PARAM1_PAGE : FLASH_PARAM2_PAGE)
+#define FLASH_PARAM_PAGE  ((SGENERATION(FLASH_PARAM1_PAGE)+1 > SGENERATION(FLASH_PARAM2_PAGE)+1) ? FLASH_PARAM1_PAGE : FLASH_PARAM2_PAGE)
 
 static byte *alternate_flash_param_page;
 
 // *** pin variables ***
-
-const struct pin pins[] = {
-    "dtin0", (enum pin_type)(pin_type_analog_output|pin_type_frequency_output),
-    "dtin1", (enum pin_type)(pin_type_analog_output|pin_type_frequency_output),
-    "dtin2", (enum pin_type)(pin_type_analog_output|pin_type_frequency_output),
-    "dtin3", (enum pin_type)(pin_type_analog_output|pin_type_frequency_output),
-    "qspi_dout", pin_type_default,
-    "qspi_din", pin_type_default,
-    "qspi_clk", pin_type_default,
-    "qspi_cs0", pin_type_default,
-    "utxd1", pin_type_uart_output,
-    "urxd1", pin_type_uart_input,
-    "urts1*", pin_type_default,
-    "ucts1*", pin_type_default,
-    "utxd0", pin_type_uart_output,
-    "urxd0", pin_type_uart_input,
-    "urts0*", pin_type_default,
-    "ucts0*", pin_type_default,
-    "an0", pin_type_analog_input,
-    "an1", pin_type_analog_input,
-    "an2", pin_type_analog_input,
-    "an3", pin_type_analog_input,
-    "an4", pin_type_analog_input,
-    "an5", pin_type_analog_input,
-    "an6", pin_type_analog_input,
-    "an7", pin_type_analog_input,
-    "irq0*", pin_type_unused,
-    "irq1*", pin_type_default,
-    "irq2*", pin_type_unused,
-    "irq3*", pin_type_unused,
-    "irq4*", pin_type_default,
-    "irq5*", pin_type_unused,
-    "irq6*", pin_type_unused,
-    "irq7*", pin_type_default,
-#if MCF52233
-    "irq8*", pin_type_unused,
-    "irq9*", pin_type_unused,
-    "irq10*", pin_type_unused,
-    "irq11*", pin_type_default,
-    "irq12*", pin_type_unused,
-    "irq13*", pin_type_unused,
-    "irq14*", pin_type_unused,
-    "irq15*", pin_type_unused,
-    "gpt0", pin_type_default,
-    "gpt1", pin_type_default,
-    "gpt2", pin_type_default,
-    "gpt3", pin_type_default,
-#endif
-    "scl", pin_type_default,
-    "sda", pin_type_default,
-};
 
 struct {
     char *name;
     int *integer;
 } systems[] = {
 #if ! _WIN32
-    "drops", &drops,
-    "failures", &failures,
     "nodeid", &zb_nodeid,
-    "receives", &receives,
-    "retries", &retries,
     "seconds", (int *)&seconds,
     "ticks", (int *)&ticks,
-    "transmits", &transmits
 #else
     "dummy", NULL
 #endif
@@ -102,7 +49,8 @@ struct var {
         byte *bytecode;
         struct {
             byte number;
-            byte type;  // only 1 bit set
+            uint8 type;
+            uint8 qual;
         } pin;
     } u;
     int nodeid;  // for remote variable sets
@@ -183,11 +131,11 @@ flash_promote_alternate(void)
     assert(FLASH_PARAM_PAGE != alternate_flash_param_page);
 
     // update the generation of the alternate page, to make it primary!
-    generation = GENERATION(FLASH_PARAM_PAGE)+1;
+    generation = SGENERATION(FLASH_PARAM_PAGE)+1;
     flash_write_words((uint32 *)(alternate_flash_param_page+BASIC_SMALL_PAGE_SIZE-sizeof(int)), (uint32 *)&generation, 1);
 
     assert(FLASH_PARAM_PAGE == alternate_flash_param_page);
-    assert(GENERATION(FLASH_PARAM1_PAGE) != GENERATION(FLASH_PARAM2_PAGE));
+    assert(SGENERATION(FLASH_PARAM1_PAGE) != SGENERATION(FLASH_PARAM2_PAGE));
 
     delay(500);  // this always takes a while!
 }
@@ -235,12 +183,8 @@ var_close_scope(IN int scope)
 
 // this function declares a ram, flash, or pin variable!
 void
-var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int nodeid)
+var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid)
 {
-#if ! _WIN32
-    int assign;
-    int offset;
-#endif
     struct var *var;
 
     assert(name);
@@ -331,165 +275,15 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
         case code_pin:
             // *** external pin control and access ***
             assert(max_index == 1);
-            assert(! (pin_type & (pin_type-1)));  // only 1 bit set
-            if (pin_type != pin_type_digital_input && pin_type != pin_type_digital_output) {
-                // N.B. this was checked when we parsed
-                assert(pins[pin_number].pin_types & pin_type);
-            }
+            // N.B. this was checked when we parsed
+            assert(pins[pin_number].pin_type_mask & (1<<pin_type));
+
             vars[max_vars].u.pin.number = pin_number;
             vars[max_vars].u.pin.type = pin_type;
+            vars[max_vars].u.pin.qual = pin_qual;
 
 #if ! _WIN32
-            // configure the MCF52221 pin for the requested function
-            switch (pin_number) {
-                case PIN_DTIN0:
-                case PIN_DTIN1:
-                case PIN_DTIN2:
-                case PIN_DTIN3:
-                    offset = pin_number - PIN_DTIN0;
-                    if (pin_type == pin_type_digital_output || pin_type == pin_type_digital_input) {
-                        assign = 0;
-                    } else if (pin_type == pin_type_analog_output) {
-                        assign = 3;
-                    } else {
-                        assert(pin_type == pin_type_frequency_output);
-                        assign = 2;
-                    }
-                    MCF_GPIO_PTCPAR = (MCF_GPIO_PTCPAR &~ (3<<(offset*2))) | (assign<<(offset*2));
-                    if (pin_type == pin_type_digital_output) {
-                        MCF_GPIO_DDRTC |= 1 << offset;
-                    } else if (pin_type == pin_type_digital_input) {
-                        MCF_GPIO_DDRTC &= ~(1 << offset);
-                    }
-                    break;
-                case PIN_QSPI_DOUT:
-                case PIN_QSPI_DIN:
-                case PIN_QSPI_CLK:
-                case PIN_QSPI_CS0:
-                    offset = pin_number - PIN_QSPI_DOUT;
-                    MCF_GPIO_PQSPAR = 0;
-                    if (pin_type == pin_type_digital_output) {
-                        MCF_GPIO_DDRQS |= 1 << offset;
-                    } else {
-                        assert(pin_type == pin_type_digital_input);
-                        MCF_GPIO_DDRQS &= ~(1 << offset);
-                    }
-                    break;
-                case PIN_UTXD1:
-                case PIN_URXD1:
-                case PIN_RTS1:
-                case PIN_CTS1:
-                    offset = pin_number - PIN_UTXD1;
-                    if (pin_type == pin_type_uart_input || pin_type == pin_type_uart_output) {
-                        assert(pin_number == PIN_URXD1 || pin_number == PIN_UTXD1);
-                        MCF_GPIO_PUBPAR = (MCF_GPIO_PUBPAR &~ (3 << (offset*2))) | (1 << (offset*2));
-                    } else {
-                        MCF_GPIO_PUBPAR &= ~(3 << (offset*2));
-                        if (pin_type == pin_type_digital_output) {
-                            MCF_GPIO_DDRUB |= 1 << offset;
-                        } else {
-                            assert(pin_type == pin_type_digital_input);
-                            MCF_GPIO_DDRUB &= ~(1 << offset);
-                        }
-                    }
-                    break;
-                case PIN_UTXD0:
-                case PIN_URXD0:
-                case PIN_RTS0:
-                case PIN_CTS0:
-                    offset = pin_number - PIN_UTXD0;
-                    if (pin_type == pin_type_uart_input || pin_type == pin_type_uart_output) {
-                        assert(pin_number == PIN_URXD0 || pin_number == PIN_UTXD0);
-                        MCF_GPIO_PUAPAR = (MCF_GPIO_PUAPAR &~ (3 << (offset*2))) | (1 << (offset*2));
-                    } else {
-                        MCF_GPIO_PUAPAR &= ~(3 << (offset*2));
-                        if (pin_type == pin_type_digital_output) {
-                            MCF_GPIO_DDRUA |= 1 << offset;
-                        } else {
-                            MCF_GPIO_DDRUA &= ~(1 << offset);
-                            assert(pin_type == pin_type_digital_input);
-                        }
-                    }
-                    break;
-                case PIN_AN0:
-                case PIN_AN1:
-                case PIN_AN2:
-                case PIN_AN3:
-                case PIN_AN4:
-                case PIN_AN5:
-                case PIN_AN6:
-                case PIN_AN7:
-                    offset = pin_number - PIN_AN0;
-                    if (pin_type == pin_type_analog_input) {
-                        MCF_GPIO_PANPAR |= 1 << offset;
-                    } else {
-                        MCF_GPIO_PANPAR &= ~(1 << offset);
-                        if (pin_type == pin_type_digital_output) {
-                            MCF_GPIO_DDRAN |= 1 << offset;
-                        } else {
-                            MCF_GPIO_DDRAN &= ~(1 << offset);
-                            assert(pin_type == pin_type_digital_input);
-                        }
-                    }
-                    break;
-                case PIN_IRQ1:
-                case PIN_IRQ4:
-                case PIN_IRQ7:
-                    offset = pin_number - PIN_IRQ0;
-                    if (offset == 1) {
-                        irq1_enable = false;
-                        MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(1*2))) | (0<<(1*2));  // irq1 is gpio
-                    } else if (offset == 4) {
-                        irq4_enable = false;
-                        MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(4*2))) | (0<<(4*2));  // irq4 is gpio
-                    }
-                    if (pin_type == pin_type_digital_output) {
-                        MCF_GPIO_DDRNQ |= 1 << offset;
-                    } else {
-                        assert(pin_type == pin_type_digital_input);
-                        MCF_GPIO_DDRNQ &= ~(1 << offset);
-                    }
-                    break;
-#if MCF52233
-                case PIN_IRQ11:
-                    offset = pin_number - PIN_IRQ8;
-                    MCF_GPIO_PGPPAR = 0;
-                    if (pin_type == pin_type_digital_output) {
-                        MCF_GPIO_DDRGP |= 1 << offset;
-                    } else {
-                        assert(pin_type == pin_type_digital_input);
-                        MCF_GPIO_DDRGP &= ~(1 << offset);
-                    }
-                    break;
-                case PIN_GPT0:
-                case PIN_GPT1:
-                case PIN_GPT2:
-                case PIN_GPT3:
-                    offset = pin_number - PIN_GPT0;
-                    MCF_GPIO_PTAPAR = 0;
-                    if (pin_type == pin_type_digital_output) {
-                        MCF_GPIO_DDRTA |= 1 << offset;
-                    } else {
-                        assert(pin_type == pin_type_digital_input);
-                        MCF_GPIO_DDRTA &= ~(1 << offset);
-                    }
-                    break;
-#endif
-                case PIN_SCL:
-                case PIN_SDA:
-                    offset = pin_number - PIN_SCL;
-                    MCF_GPIO_PASPAR = 0;
-                    if (pin_type == pin_type_digital_output) {
-                        MCF_GPIO_DDRAS |= 1 << offset;
-                    } else {
-                        assert(pin_type == pin_type_digital_input);
-                        MCF_GPIO_DDRAS &= ~(1 << offset);
-                    }
-                    break;
-                default:
-                    assert(0);
-                    break;
-            }
+            pin_declare(pin_number, pin_type, pin_qual);
 #endif
             break;
 
@@ -544,18 +338,14 @@ var_poll(void)
 }
 #endif
 
-static byte lasttx0;
-static byte lasttx1;
-
 // this function sets the value of a ram, flash, or pin variable!
 void
 var_set(IN char *name, IN int index, IN int value)
 {
+    struct var *var;
 #if ! _WIN32
-    int offset;
     remote_set_t set;
 #endif
-    struct var *var;
 
     if (! run_condition) {
         return;
@@ -654,154 +444,11 @@ var_set(IN char *name, IN int index, IN int value)
                         printf("%4d let %s = %d\n", run_line_number, name, value);
                     }
 
-#if ! _WIN32
-                    // set the MCF52221 pin to value
-                    switch (var->u.pin.number) {
-                        case PIN_DTIN0:
-                        case PIN_DTIN1:
-                        case PIN_DTIN2:
-                        case PIN_DTIN3:
-                            offset = var->u.pin.number - PIN_DTIN0;
-                            if (var->u.pin.type == pin_type_analog_output) {
-                                // program MCF_PWM_PWMDTY with values 0 (3.3v) to 255 (0v)
-                                if (value < 0) {
-                                    value = 0;
-                                } else if (value > 3300) {
-                                    value = 3300;
-                                }
-                                MCF_PWM_PWMDTY(offset*2) = 255 - value*255/3300;
-                            } else if (var->u.pin.type == pin_type_frequency_output) {
-                                // program MCF_DTIM_DTRR with fsys_frequency/2 (1Hz) to 1 (fsys_frequency/2)
-                                if (value < 0) {
-                                    value = 0;
-                                } else if (value > fsys_frequency/2) {
-                                    value = fsys_frequency/2;
-                                }
-                                if (value) {
-                                    MCF_DTIM_DTRR(offset) = fsys_frequency/2/value;
-                                } else {
-                                    MCF_DTIM_DTRR(offset) = -1;
-                                }
-                                // catch missed wraps
-                                if (MCF_DTIM_DTCN(offset) >= MCF_DTIM_DTRR(offset)) {
-                                    MCF_DTIM_DTCN(offset) = 0;
-                                }
-                            } else {
-                                if (value) {
-                                    MCF_GPIO_SETTC = 1 << offset;
-                                } else {
-                                    MCF_GPIO_CLRTC = ~(1 << offset);
-                                }
-                            }
-                            break;
-                        case PIN_QSPI_DOUT:
-                        case PIN_QSPI_DIN:
-                        case PIN_QSPI_CLK:
-                        case PIN_QSPI_CS0:
-                            offset = var->u.pin.number - PIN_QSPI_DOUT;
-                            if (value) {
-                                MCF_GPIO_SETQS = 1 << offset;
-                            } else {
-                                MCF_GPIO_CLRQS = ~(1 << offset);
-                            }
-                            break;
-                        case PIN_UTXD1:
-                        case PIN_URXD1:
-                        case PIN_RTS1:
-                        case PIN_CTS1:
-                            offset = var->u.pin.number - PIN_UTXD1;
-                            if (var->u.pin.type == pin_type_uart_output) {
-                                assert(var->u.pin.number == PIN_UTXD1);
-                                MCF_UART_UTB(1) = value;
-                                lasttx1 = value;
-                                uart_armed[UART_INT(1, true)] = true;
-                            } else {
-                                if (value) {
-                                    MCF_GPIO_SETUB = 1 << offset;
-                                } else {
-                                    MCF_GPIO_CLRUB = ~(1 << offset);
-                                }
-                            }
-                            break;
-                        case PIN_UTXD0:
-                        case PIN_URXD0:
-                        case PIN_RTS0:
-                        case PIN_CTS0:
-                            offset = var->u.pin.number - PIN_UTXD0;
-                            if (var->u.pin.type == pin_type_uart_output) {
-                                assert(var->u.pin.number == PIN_UTXD0);
-                                MCF_UART_UTB(0) = value;
-                                lasttx0 = value;
-                                uart_armed[UART_INT(0, true)] = true;
-                            } else {
-                                if (value) {
-                                    MCF_GPIO_SETUA = 1 << offset;
-                                } else {
-                                    MCF_GPIO_CLRUA = ~(1 << offset);
-                                }
-                            }
-                            break;
-                        case PIN_AN0:
-                        case PIN_AN1:
-                        case PIN_AN2:
-                        case PIN_AN3:
-                        case PIN_AN4:
-                        case PIN_AN5:
-                        case PIN_AN6:
-                        case PIN_AN7:
-                            offset = var->u.pin.number - PIN_AN0;
-                            if (value) {
-                                MCF_GPIO_SETAN = 1 << offset;
-                            } else {
-                                MCF_GPIO_CLRAN = ~(1 << offset);
-                            }
-                            break;
-                        case PIN_IRQ1:
-                        case PIN_IRQ4:
-                        case PIN_IRQ7:
-                            offset = var->u.pin.number - PIN_IRQ0;
-                            if (value) {
-                                MCF_GPIO_SETNQ = 1 << offset;
-                            } else {
-                                MCF_GPIO_CLRNQ = ~(1 << offset);
-                            }
-                            break;
-#if MCF52233
-                        case PIN_IRQ11:
-                            offset = var->u.pin.number - PIN_IRQ8;
-                            if (value) {
-                                MCF_GPIO_SETGP = 1 << offset;
-                            } else {
-                                MCF_GPIO_CLRGP = ~(1 << offset);
-                            }
-                            break;
-                        case PIN_GPT0:
-                        case PIN_GPT1:
-                        case PIN_GPT2:
-                        case PIN_GPT3:
-                            offset = var->u.pin.number - PIN_GPT0;
-                            if (value) {
-                                MCF_GPIO_SETTA = 1 << offset;
-                            } else {
-                                MCF_GPIO_CLRTA = ~(1 << offset);
-                            }
-                            break;
-#endif
-                        case PIN_SCL:
-                        case PIN_SDA:
-                            offset = var->u.pin.number - PIN_SCL;
-                            if (value) {
-                                MCF_GPIO_SETAS = 1 << offset;
-                            } else {
-                                MCF_GPIO_CLRAS = ~(1 << offset);
-                            }
-                            break;
-                        default:
-                            assert(0);
-                            break;
-                    }
-#endif
                 }
+                
+#if ! _WIN32
+                pin_set(var->u.pin.number, var->u.pin.type, var->u.pin.qual, value);
+#endif
                 break;
 
             default:
@@ -817,9 +464,6 @@ var_get(IN char *name, IN int index)
 {
     int i;
     int value;
-#if ! _WIN32
-    int offset;
-#endif
     struct var *var;
 
     if (! run_condition) {
@@ -870,108 +514,7 @@ var_get(IN char *name, IN int index)
             case code_pin:
                 // *** external pin control and access ***
 #if ! _WIN32
-                // get the value of the MCF52221 pin
-                switch (var->u.pin.number) {
-                    case PIN_DTIN0:
-                    case PIN_DTIN1:
-                    case PIN_DTIN2:
-                    case PIN_DTIN3:
-                        offset = var->u.pin.number - PIN_DTIN0;
-                        if (var->u.pin.type == pin_type_analog_output) {
-                            value = (255-MCF_PWM_PWMDTY(offset*2))*3300/255;
-                        } else if (var->u.pin.type == pin_type_frequency_output) {
-                            if (MCF_DTIM_DTRR(offset) == -1) {
-                                value = 0;
-                            } else if (MCF_DTIM_DTRR(offset)) {
-                                value = fsys_frequency/2/MCF_DTIM_DTRR(offset);
-                            } else {
-                                value = fsys_frequency/2;
-                            }                        
-                        } else {
-                            value = !!(MCF_GPIO_SETTC & (1 << (var->u.pin.number - PIN_DTIN0)));
-                        }
-                        break;
-                    case PIN_QSPI_DOUT:
-                    case PIN_QSPI_DIN:
-                    case PIN_QSPI_CLK:
-                    case PIN_QSPI_CS0:
-                        value = !!(MCF_GPIO_SETQS & (1 << (var->u.pin.number - PIN_QSPI_DOUT)));
-                        break;
-                    case PIN_UTXD1:
-                    case PIN_URXD1:
-                    case PIN_RTS1:
-                    case PIN_CTS1:
-                        if (var->u.pin.type == pin_type_uart_input) {
-                            assert(var->u.pin.number == PIN_URXD1);
-                            if (MCF_UART_USR(1) & MCF_UART_USR_RXRDY) {
-                                value = MCF_UART_URB(1);
-                                uart_armed[UART_INT(1, false)] = true;
-                            } else {
-                                value = 0;
-                            }
-                        } else if (var->u.pin.type == pin_type_uart_output) {
-                            value = (MCF_UART_USR(1) & MCF_UART_USR_TXEMP)?0:lasttx1;
-                        } else {
-                            value = !!(MCF_GPIO_SETUB & (1 << (var->u.pin.number - PIN_UTXD1)));
-                        }
-                        break;
-                    case PIN_UTXD0:
-                    case PIN_URXD0:
-                    case PIN_RTS0:
-                    case PIN_CTS0:
-                        if (var->u.pin.type == pin_type_uart_input) {
-                            assert(var->u.pin.number == PIN_URXD0);
-                            if (MCF_UART_USR(0) & MCF_UART_USR_RXRDY) {
-                                value = MCF_UART_URB(0);
-                                uart_armed[UART_INT(0, false)] = true;
-                            } else {
-                                value = 0;
-                            }
-                        } else if (var->u.pin.type == pin_type_uart_output) {
-                            value = (MCF_UART_USR(0) & MCF_UART_USR_TXEMP)?0:lasttx0;
-                        } else {
-                            value = !!(MCF_GPIO_SETUA & (1 << (var->u.pin.number - PIN_UTXD0)));
-                        }
-                        break;
-                    case PIN_AN0:
-                    case PIN_AN1:
-                    case PIN_AN2:
-                    case PIN_AN3:
-                    case PIN_AN4:
-                    case PIN_AN5:
-                    case PIN_AN6:
-                    case PIN_AN7:
-                        offset = var->u.pin.number - PIN_AN0;
-                        if (var->u.pin.type == pin_type_analog_input) {
-                            value = adc_result[offset]*3300/32768;
-                        } else {
-                            value = !!(MCF_GPIO_SETAN & (1 << offset));
-                        }
-                        break;
-                    case PIN_IRQ1:
-                    case PIN_IRQ4:
-                    case PIN_IRQ7:
-                        value = !!(MCF_GPIO_SETNQ & (1 << (var->u.pin.number - PIN_IRQ0)));
-                        break;
-#if MCF52233
-                    case PIN_IRQ11:
-                        value = !!(MCF_GPIO_SETGP & (1 << (var->u.pin.number - PIN_IRQ8)));
-                        break;
-                    case PIN_GPT0:
-                    case PIN_GPT1:
-                    case PIN_GPT2:
-                    case PIN_GPT3:
-                        value = !!(MCF_GPIO_SETTA & (1 << (var->u.pin.number - PIN_GPT0)));
-                        break;
-#endif
-                    case PIN_SCL:
-                    case PIN_SDA:
-                        value = !!(MCF_GPIO_SETAS & (1 << (var->u.pin.number - PIN_SCL)));
-                        break;
-                    default:
-                        assert(0);
-                        break;
-                }
+                value = pin_get(var->u.pin.number, var->u.pin.type, var->u.pin.qual);
 #endif
                 break;
 
@@ -1008,7 +551,7 @@ var_get_size(IN char *name)
 
 // this function sets the value of a flash mode parameter
 void
-var_set_flash(IN enum flash_var var, IN int value)
+var_set_flash(IN int var, IN int value)
 {
     assert(var >= 0 && var < FLASH_LAST);
 
@@ -1021,7 +564,7 @@ var_set_flash(IN enum flash_var var, IN int value)
 
 // this function gets the value of a flash mode parameter.
 int
-var_get_flash(IN enum flash_var var)
+var_get_flash(IN int var)
 {
     assert(var >= 0 && var < FLASH_LAST);
 
@@ -1042,6 +585,9 @@ var_clear(IN bool flash)
         flash_clear_alternate();
         flash_promote_alternate();
     }
+    
+    run_clear();
+    pin_clear();
 }
 
 // this function prints variable memory usage.
@@ -1057,24 +603,6 @@ void
 var_initialize(void)
 {
 #if ! _WIN32
-    // enable pwm channel 0, 2, 4, 6
-    MCF_PWM_PWME = MCF_PWM_PWME_PWME0|MCF_PWM_PWME_PWME2|MCF_PWM_PWME_PWME4|MCF_PWM_PWME_PWME6;
-    
-    // set prescales to 4 (6MHz)
-    MCF_PWM_PWMPRCLK = MCF_PWM_PWMPRCLK_PCKA(2)|MCF_PWM_PWMPRCLK_PCKB(2);
-    
-    // set periods to 0xff
-    MCF_PWM_PWMPER0 = 0xff;
-    MCF_PWM_PWMPER2 = 0xff;
-    MCF_PWM_PWMPER4 = 0xff;
-    MCF_PWM_PWMPER6 = 0xff;
-        
-    // set dma timer mode registers for frequency output
-    MCF_DTIM0_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
-    MCF_DTIM1_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
-    MCF_DTIM2_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
-    MCF_DTIM3_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
-
     zb_register(zb_class_remote_set, class_remote_set);
 #endif
 }

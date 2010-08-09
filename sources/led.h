@@ -31,5 +31,8 @@ void
 led_line(int line);  // red crashed
 
 void
+led_hex(int hex);
+
+void
 led_initialize(void);
 

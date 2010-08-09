@@ -18,6 +18,9 @@ bool usb_host_mode;
 bool irq1_enable;
 bool irq4_enable;
 
+#if BADGE_BOARD
+extern void pre_main(void);
+#endif
 extern int main();
 
 // N.B. this is outside of page0
@@ -55,6 +58,7 @@ init(void)
     end_of_static = __DATA_ROM + (__DATA_END - __DATA_RAM);
 
 #if STICKOS || SKELETON
+#if ! MCF51JM128  // REVISIT
     // NQ is gpio output (irq4, 7) and input (irq1)
     MCF_GPIO_PNQPAR = 0;
     MCF_GPIO_DDRNQ = 0xf0;
@@ -70,12 +74,16 @@ init(void)
         delay(100);  // debounce
     }
 #endif
+#endif
 
     // compute flash checksum
     for (p = (byte *)0; p < (byte *)(FLASH_BYTES/2); p++) {
         flash_checksum += *p;
     }
 
+#if BADGE_BOARD
+    pre_main();
+#endif
     // finally, call main()
     main();
 }

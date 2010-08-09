@@ -4,6 +4,7 @@
 
 #include "main.h"
 
+#if ! MCF51JM128
 static
 void
 flash_command(uint8 cmd, uint32 *addr, uint32 data)
@@ -95,11 +96,110 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
         assert(addr_in[i] == data_in[i]);
     }
 }
+#else  // ! MCF51JM128
+#undef assert
+#define assert(x)  if (! (x)) { asm { halt } }
+
+typedef void (*flash_command_internal_f)(uint8 cmd, uint32 *addr, uint32 data);
+
+static
+void
+flash_command_internal(uint8 cmd, uint32 *addr, uint32 data)
+{
+    // write the flash thru the frontdoor address
+    *addr = data;
+
+    // write the command
+    MCF_CFM_CFMCMD = cmd;
+
+    // launch the command (N.B. this clears CBEIF!)
+    MCF_CFM_CFMUSTAT = MCF_CFM_CFMUSTAT_CBEIF;
+
+    // busy wait for flash command complete
+    while (! (MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CCIF)) {
+        // NULL
+    };
+}
+
+static
+void
+flash_command(uint8 cmd, uint32 *addr, uint32 data)
+{
+    flash_command_internal_f fn;
+    
+    // assert we're initialized
+    assert(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
+
+    // assert we're ready
+    assert(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
+    
+    // assert no errors
+    MCF_CFM_CFMUSTAT |= MCF_CFM_CFMUSTAT_PVIOL|MCF_CFM_CFMUSTAT_ACCERR;
+    assert(! (MCF_CFM_CFMUSTAT & (MCF_CFM_CFMUSTAT_PVIOL|MCF_CFM_CFMUSTAT_ACCERR)));
+
+    fn = (flash_command_internal_f)(((uint32)big_buffer+3)&~3);
+    memcpy(fn, flash_command_internal, (uint32)flash_command-(uint32)flash_command_internal);
+    fn(cmd, addr, data);
+
+    // assert no errors
+    assert(! (MCF_CFM_CFMUSTAT & (MCF_CFM_CFMUSTAT_PVIOL|MCF_CFM_CFMUSTAT_ACCERR)));
+}
+
+// this function erases the specified pages of flash memory.
+void
+flash_erase_pages(uint32 *addr, uint32 npages)
+{
+    int x;
+    
+    x = splx(7);
+    
+    // while there are more pages to erase...
+    while (npages) {
+        flash_command(MCF_CFM_CFMCMD_PAGE_ERASE, addr, 0);
+        npages--;
+        addr += FLASH_PAGE_SIZE/sizeof(uint32);
+    }
+
+    (void)splx(x);
+}
+
+// this function writes the specified words of flash memory.
+void
+flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
+{
+    int i;
+    int x;
+    uint32 *addr;
+    uint32 *data;
+    uint32 nwords;
+
+    addr = addr_in;
+    data = data_in;
+    nwords = nwords_in;
+    
+    x = splx(7);
+
+    // while there are more words to program...
+    while (nwords) {
+        flash_command(MCF_CFM_CFMCMD_WORD_PROGRAM, addr, *data);
+        nwords--;
+        addr++;
+        data++;
+    }
+
+    (void)splx(x);
+
+    for (i = 0; i < nwords_in; i++) {
+        assert(addr_in[i] == data_in[i]);
+    }
+}
+#endif
 
 // this function performs the final step of a firmware flash upgrade.
 void
 flash_upgrade_ram_begin(bool compatible)
 {
+#if ! MCF51JM128
     uint32 *addr;
     uint32 *data;
     uint32 nwords;
@@ -138,7 +238,7 @@ flash_upgrade_ram_begin(bool compatible)
     // flash_write_words()
     addr = NULL;
     data = (uint32 *)(FLASH_BYTES/2);
-    nwords = FLASH_BYTES/2/sizeof(uint32);
+    nwords = FLASH_BYTES/2/sizeof(uint32) - 1;
     if (compatible) {
         // N.B. we skip page0
         nwords -= FLASH_PAGE_SIZE/sizeof(uint32);
@@ -187,6 +287,9 @@ flash_upgrade_ram_begin(bool compatible)
     // reset the MCU
     MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
     asm { halt }
+#else
+#pragma unused(compatible)
+#endif
 }
 
 // this function just demarcates the end of flash_upgrade_ram_begin().
@@ -202,6 +305,7 @@ flash_upgrade_ram_end(void)
 void
 flash_upgrade()
 {
+#if ! MCF51JM128
     int b;
     int i;
     int n;
@@ -214,6 +318,7 @@ flash_upgrade()
     char *s19;
     bool done;
     uint32 data;
+    uint32 zero;
     bool s0_found;
     bool compatible;
     flash_upgrade_ram_begin_f fn;
@@ -413,6 +518,10 @@ flash_upgrade()
 
         // if this is a compatible upgrade...
         if (compatible) {
+            // we have to zero one more byte!
+            zero = 0;
+            flash_write_words((uint32 *)FLASH_BYTES - 1, &zero, 1);
+            
             // reset the MCU; init() will take care of the rest
             MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
             asm { halt }
@@ -435,6 +544,7 @@ flash_upgrade()
             ASSERT(0);  // stop!
         }
     }
+#endif
 }
 
 // this function initializes the flash module.
@@ -443,15 +553,17 @@ flash_initialize(void)
 {
     assert((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer));
 
-    if (fsys_frequency > 25600000) {
-        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((fsys_frequency-1)/2/8/200000);
+    if (bus_frequency > 12800000) {
+        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((bus_frequency/8-1)/200000);
     } else {
-        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((fsys_frequency-1)/2/200000);
+        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((bus_frequency-1)/200000);
     }
 
+#if ! MCF51JM128
     MCF_CFM_CFMPROT = 0;
     MCF_CFM_CFMSACC = 0;
     MCF_CFM_CFMDACC = 0;
     MCF_CFM_CFMMCR = 0;
+#endif
 }
 

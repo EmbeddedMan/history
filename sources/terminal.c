@@ -5,8 +5,8 @@ extern void *rich_so;
 #endif
 
 bool terminal_echo = true;
-int terminal_rxid = -1;
-int terminal_txid = -1;
+int terminal_rxid = -1;  // node we forward our receives to
+int terminal_txid = -1;  // node we forward our prints to
 
 static terminal_command_cbfn command_cbfn;
 static terminal_ctrlc_cbfn ctrlc_cbfn;
@@ -16,7 +16,9 @@ static terminal_ctrlc_cbfn ctrlc_cbfn;
 static bool discard;
 static char command[TERMINAL_INPUT_LINE_SIZE];
 
-#define DELAY  20
+// this buffer holds the extra command characters provided by the inbound
+// transport beyond the end of the current comamnd.
+static char extra[MAX((ZB_PAYLOAD_SIZE), 64)];
 
 static byte hist_in;
 static byte hist_out;
@@ -33,7 +35,14 @@ static char history[NHIST][TERMINAL_INPUT_LINE_SIZE];
 static int ki;
 static char keys[8];
 static int cursor;
+
+// this buffer holds characters queued by an isr to be echoed later by
+// terminal_poll().
 static char echo[TERMINAL_INPUT_LINE_SIZE*2];
+
+// this buffer holds characters queued by an isr to be forwarded later
+// by terminal_poll().
+static char forward[TERMINAL_INPUT_LINE_SIZE*2];
 
 static bool ack = true;
 
@@ -70,7 +79,7 @@ terminal_print(byte *buffer, int length)
 #endif
     }
     
-#if MCF52221
+#if MCF52221 || MCF51JM128
 #if ! FLASHER
     if (ftdi_attached) {
         ftdi_print(buffer, length);
@@ -138,7 +147,7 @@ accumulate(char c)
     int orig;
     int again;
   
-#if MCF52221  
+#if MCF52221 || MCF51JM128
     assert(gpl() >= MIN(SPL_USB, SPL_IRQ4));
 #endif
 
@@ -312,23 +321,28 @@ static bool
 terminal_receive_internal(byte *buffer, int length)
 {
     int j;
+    int x;
     int id;
+    bool boo;
 
     led_unknown_progress();
     
     // if we're connected to another node...
     id = terminal_rxid;
     if (id != -1) {
-#if ! FLASHER && ! PICTOCRYPT
         // forward packets
-        zb_send(id, zb_class_receive, length, buffer);
-#endif
-        
-        if (length == 1 && buffer[0] == '\004') {
-            // stop forwarding packets on Ctrl-D
-            terminal_rxid = -1;
+        x = splx(MAX(SPL_USB, SPL_IRQ4));
+        strncat(forward, (char *)buffer, length);
+        assert(strlen(forward) < sizeof(forward));
+        boo = !!strchr((char *)forward, '\r');
+        splx(x);
+
+        // if we're forwarding a return...
+        if (boo) {
+            // slow us down
+            ack = false;
+            return false;
         }
-        
         return true;
     }
     
@@ -350,6 +364,11 @@ terminal_receive_internal(byte *buffer, int length)
                     strcpy(history[hist_in], command);
                     hist_in = HISTWRAP(hist_in+1);
                 }
+                
+                // save extra for later
+                assert(length >= j+1);
+                strncpy(extra, (char *)buffer+j+1, length-(j+1));
+                extra[length-(j+1)] = '\0';
 
                 ack = false;
 #if ! FLASHER && ! PICTOCRYPT
@@ -415,6 +434,9 @@ terminal_command_discard(bool discard_in)
 void
 terminal_command_ack(bool edit)
 {
+    int x;
+    bool boo;
+    
     ki = 0;
     hist_first = true;
 
@@ -425,8 +447,20 @@ terminal_command_ack(bool edit)
         printf("%s", command);
         cursor = strlen(command);
     }
+    
+    // if we had extra left over from last time...
+    if (extra[0]) {
+        // process it now
+        x = splx(MAX(SPL_USB, SPL_IRQ4));
+        boo = terminal_receive_internal((byte *)extra, strlen(extra));
+        splx(x);
+        if (! boo) {
+            // we just issued another command
+            return;
+        }
+    }
 
-#if MCF52221
+#if MCF52221 || MCF51JM128
     if (terminal_txid == -1) {
         ftdi_command_ack();
     }
@@ -471,13 +505,14 @@ terminal_command_error(int offset)
 }
 
 // deliver any pending echo characters the isr stack accumulated
+// or forward characters from terminal_receive_internal().
 void
 terminal_poll(void)
 {
     int x;
     char copy[TERMINAL_INPUT_LINE_SIZE*2];
     
-#if MCF52221
+#if MCF52221 || MCF51JM128
     assert(gpl() == 0);
 #endif
 
@@ -489,6 +524,32 @@ terminal_poll(void)
     
     if (terminal_echo && copy[0]) {
         terminal_print((byte *)copy, strlen(copy));
+    }
+    
+    x = splx(MAX(SPL_USB, SPL_IRQ4));
+    strcpy(copy, forward);
+    assert(strlen(copy) < sizeof(copy));
+    forward[0] = '\0';
+    splx(x);
+    
+    if (copy[0]) {
+#if ! FLASHER && ! PICTOCRYPT
+        zb_send(terminal_rxid, zb_class_receive, strlen(copy), (byte *)copy);
+#endif
+        if (copy[0] == '\004') {
+            // stop forwarding packets on Ctrl-D
+            terminal_rxid = -1;
+        }
+        
+        if (strchr((char *)copy, '\r')) {
+#if MCF52221 || MCF51JM128
+            if (terminal_txid == -1) {
+                ftdi_command_ack();
+            }
+#endif
+
+            ack = true;
+        }
     }
     
 #if ! FLASHER && ! PICTOCRYPT
@@ -513,7 +574,6 @@ class_receive(int nodeid, int length, byte *buffer)
     if (length) {
         // reply to remote node
         terminal_txid = nodeid;
-        terminal_rxid = -1;
     }
     
     (void)terminal_receive_internal(buffer, length);

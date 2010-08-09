@@ -1,4 +1,4 @@
-#if MCF52221
+#if MCF52221 || MCF51JM128
 // *** usb.c **********************************************************
 // this file implements a generic usb device driver; the FTDI transport
 // sits on top of this module to implement a specific usb device.
@@ -35,7 +35,7 @@
 
 #define MYBDT(endpoint, tx, odd)  (bdts+(endpoint)*4+(tx)*2+(odd))
 
-extern __declspec(system) uint32 __BDT_RAM[];
+extern uint32 __BDT_RAM[];
 #define BDT_RAM_SIZE  0x80
 
 static struct bdt {
@@ -49,7 +49,7 @@ struct endpoint {
     byte toggle[2];  // rx [0] and tx [1] next packet data0 (0) or data1 (BD_FLAGS_DATA)
     byte bdtodd[2];  // rx [0] and tx [1] next bdt even (0) or odd (1)
     byte packetsize;
-    bool interrupt;
+    bool inter;
 
     byte data_pid;  // TOKEN_IN -> data to host; TOKEN_OUT -> data from host
     int data_offset;  // current offset in data stream
@@ -95,7 +95,7 @@ parse_configuration(const byte *configuration, int size)
                 assert(int_ep < LENGTHOF(endpoints));
                 assert(configuration[i+4]);
                 endpoints[int_ep].packetsize = configuration[i+4];
-                endpoints[int_ep].interrupt = 1;
+                endpoints[int_ep].inter = 1;
             }
         }
     }
@@ -409,7 +409,12 @@ usb_device_wait()
     MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_USB_EN_SOF_EN;
 
     // enable usb pull ups
+#if ! MCF51JM128
     MCF_USB_OTG_OTG_CTRL = MCF_USB_OTG_OTG_CTRL_DP_HIGH|MCF_USB_OTG_OTG_CTRL_OTG_EN;
+#else
+    USB_OTG_CONTROL |= USB_OTG_CONTROL_DPPULLUP_NONOTG_MASK;
+    USBTRC0 |= USBTRC0_USBPU_MASK|USBTRC0_USBVREN_MASK;
+#endif
 
     // enable (only) usb reset interrupt
     MCF_USB_OTG_INT_STAT = 0xff;
@@ -490,7 +495,7 @@ static byte descriptor[DEVICE_DESCRIPTOR_SIZE];
 static byte configuration[CONFIGURATION_DESCRIPTOR_SIZE];
 
 // called by usb on device attach
-__declspec(interrupt)
+INTERRUPT
 void
 usb_isr(void)
 {
@@ -499,6 +504,10 @@ usb_isr(void)
 #endif
     int rv;
 
+    if (! bdts) {
+        return;  // revisit
+    }
+    
     assert(! usb_in_isr);
     usb_in_isr = true;
     
@@ -943,22 +952,30 @@ usb_initialize(void)
     bdts = (struct bdt *)__BDT_RAM;
     assert(BDT_RAM_SIZE >= 4*4*sizeof(struct bdt));
 
+#if ! MCF51JM128
     // enable usb interrupt
     MCF_INTC0_ICR53 = MCF_INTC_ICR_IL(SPL_USB)|MCF_INTC_ICR_IP(SPL_USB);
     MCF_INTC0_IMRH &= ~MCF_INTC_IMRH_INT_MASK53;  // usb
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
+#else
+    /* Reset USB module first. */
+    USBTRC0_USBRESET = 1;
+    while (USBTRC0_USBRESET ) {
+        // NULL
+    }
+#endif
 
     // initialize usb timing
     if (oscillator_frequency == 48000000) {
         MCF_USB_OTG_USB_CTRL = MCF_USB_OTG_USB_CTRL_CLK_SRC(1);
     } else {
-        assert(fsys_frequency == 48000000);
+        assert(cpu_frequency == 48000000);
         MCF_USB_OTG_USB_CTRL = MCF_USB_OTG_USB_CTRL_CLK_SRC(3);
     }
     MCF_USB_OTG_SOF_THLD = 74;
 
     // initialize usb bdt
-    assert(! (((unsigned int)bdts >> 8) & 1));
+    assert(! ((unsigned int)bdts & 0x1ff));
     MCF_USB_OTG_BDT_PAGE_01 = (uint8)((unsigned int)bdts >> 8);
     MCF_USB_OTG_BDT_PAGE_02 = (uint8)((unsigned int)bdts >> 16);
     MCF_USB_OTG_BDT_PAGE_03 = (uint8)((unsigned int)bdts >> 24);

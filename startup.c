@@ -23,20 +23,27 @@
 
 #include "config.h"
 
-#if EXTRACT
+#ifndef MAIN_INCLUDED
+
+#if EXTRACT && ! MCF51JM128
 #include "extract.h"
 #else
 #if MCF52233
 #include "MCF52235.h"
 #elif MCF52221
 #include "MCF52221.h"
+#elif MCF51JM128
+#include "MCF51JM128.h"
+#include "compat.h"
 #else
 #error
 #endif
 #endif
 
 typedef unsigned char bool;
+#if ! MCF51JM128
 typedef unsigned char byte;
+#endif
 
 enum {
     false,
@@ -50,6 +57,8 @@ enum {
 #endif
 #define ASSERT(x)  if (! (x)) { asm { halt } }
 
+#endif  // MAIN_INCLUDED
+
 // N.B. we tightly control the headers used by this file so we can't
 // inadvertently call out of page0 until we have completed compatible
 // upgrade
@@ -62,8 +71,11 @@ extern unsigned char far ___RAMBAR[], ___RAMBAR_SIZE[];
 extern unsigned char far __DATA_RAM[], __DATA_ROM[], __DATA_END[];
 
 byte *end_of_static;
-uint32 fsys_frequency;
+
+uint32 cpu_frequency;
 uint32 oscillator_frequency;
+uint32 bus_frequency;
+
 bool debugger_attached;
 #if PICTOCRYPT
 byte big_buffer[8192];
@@ -71,19 +83,20 @@ byte big_buffer[8192];
 byte big_buffer[1024];
 #endif
 
+#if ! BADGE_BOARD
+#pragma define_section page0 ".page0" far_absolute R
+#define DECLSPEC_PAGE0  __declspec(page0)
+#else
+#define DECLSPEC_PAGE0
+#endif
+
 // *** page0 ***
 
-#pragma explicit_zero_data on
-#pragma define_section page0 ".page0" far_absolute R
-
-__declspec(page0)
+DECLSPEC_PAGE0
 asm void
 _startup(void);
 
-static
-__declspec(page0)
-void
-p0_c_startup(void);
+#if ! BADGE_BOARD
 
 #if ! FLASHER
 #define X  0  // we're running in flash
@@ -93,7 +106,7 @@ p0_c_startup(void);
 
 // this is the hardware interrupt vector table, that re-dispatches to
 // the software interrupt vector table in page1 from vectors.c.
-__declspec(page0)
+DECLSPEC_PAGE0
 uint32 _vect[256] = {
     (uint32)__SP_AFTER_RESET, (uint32)_startup,
                         X+0x0810, X+0x0818, X+0x0820, X+0x0828, X+0x0830, X+0x0838,
@@ -131,8 +144,9 @@ uint32 _vect[256] = {
 };
     
 // this is the cfm config
-__declspec(page0)
-unsigned long _cfm[6] = {
+DECLSPEC_PAGE0
+unsigned long _cfm[] = {
+#if ! MCF51JM128
     0,                              // (0x00000400) KEY_UPPER
     0,                              // (0x00000404) KEY_LOWER
     0xffffffff,                     // (0x00000408) CFMPROT
@@ -143,17 +157,34 @@ unsigned long _cfm[6] = {
 #else
     0,                              // (0x00000414) CFMSEC
 #endif
+#else
+    0,                              // 400 key
+    0,                              // 404 key
+    0,                              // 408 reserved
+    0x00ff0000                      // 40c prot/opt
+#endif
 };
+#else  // ! BADGE_BOARD
+extern
+void
+init(void);
+#endif  // ! BADGE_BOARD
+
+static
+DECLSPEC_PAGE0
+void
+p0_c_startup(void);
 
 // this function performs assembly language initialization from
 // reset, and then calls C initialization, which calls main().
-__declspec(page0)
+DECLSPEC_PAGE0
 asm void
 _startup(void)
 {
     // disable interrupts
     move.w   #0x2700,sr
     
+#if ! MCF51JM128
     // initialize RAMBAR
     move.l   #__RAMBAR+0x21,d0
     movec    d0,RAMBAR
@@ -169,6 +200,10 @@ _startup(void)
     andi.l   #0xFFF80000,d0  // need to mask
     add.l    #0x61,d0
     movec    d0,FLASHBAR
+#else
+    move.l #0xc0000000,d0
+    movec  d0,CPUCR
+#endif
 
     // set up the fixed stack pointer
     lea      __SP_AFTER_RESET,a7
@@ -186,17 +221,21 @@ _startup(void)
     // set up the real stack pointer
     lea      _SP_INIT,a7
 
+#if ! BADGE_BOARD
     // late C initialization, post-upgrade (init(), page1 indirect)
     lea      VECTOR_OLD_INIT,a0
     move.l   (a0),a0
     jsr      (a0)
+#else
+    jsr      init
+#endif
     
     nop
     halt
 }
 
 static
-__declspec(page0)
+DECLSPEC_PAGE0
 void *
 p0_memcpy(void *d,  const void *s, uint32 n)
 {
@@ -210,7 +249,7 @@ p0_memcpy(void *d,  const void *s, uint32 n)
 }
 
 static
-__declspec(page0)
+DECLSPEC_PAGE0
 void *
 p0_memset(void *p,  int d, uint32 n)
 {
@@ -224,7 +263,7 @@ p0_memset(void *p,  int d, uint32 n)
 }
 
 static
-__declspec(page0)
+DECLSPEC_PAGE0
 int
 p0_memcmp(const void *d,  const void *s, uint32 n)
 {
@@ -241,11 +280,11 @@ p0_memcmp(const void *d,  const void *s, uint32 n)
 
 // this function performs C initialization before main() runs.
 static
-__declspec(page0)
+DECLSPEC_PAGE0
 void
 p0_c_startup(void)
 {
-#if ! FLASHER
+#if ! FLASHER && ! MCF51JM128
     flash_upgrade_ram_begin_f fn;
 #endif
     
@@ -259,11 +298,17 @@ p0_c_startup(void)
     // zero all of RAM now, so we can set globals in this file
     p0_memset((void *)__DATA_RAM, 0, (uint32)__SP_AFTER_RESET - (uint32)__DATA_RAM - 64);
 
+#if ! MCF51JM128
     // enable debug
     MCF_GPIO_PDDPAR = 0x0F;
 
     // disable Software Watchdog Timer
     MCF_SCM_CWCR = 0;
+#else
+    // disable Software Watchdog Timer
+    SOPT1 = SOPT1_STOPE_MASK;
+    SOPT2 &= ~SOPT2_USB_BIGEND_MASK;
+#endif
 
 #if MCF52221
     // if we don't have a crystal...
@@ -275,7 +320,8 @@ p0_c_startup(void)
         MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(1)|MCF_CLOCK_SYNCR_CLKSRC|MCF_CLOCK_SYNCR_PLLMODE|MCF_CLOCK_SYNCR_PLLEN;
         
         // USB uses fsys
-        fsys_frequency = 48000000;
+        cpu_frequency = 48000000;
+        bus_frequency = cpu_frequency/2;
         oscillator_frequency = 8000000;
     } else {
         // we use the 48MHz crystal divided by 6
@@ -285,7 +331,8 @@ p0_c_startup(void)
         MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(2)|MCF_CLOCK_SYNCR_CLKSRC|MCF_CLOCK_SYNCR_PLLMODE|MCF_CLOCK_SYNCR_PLLEN;
         
         // USB uses oscillator
-        fsys_frequency = 64000000;
+        cpu_frequency = 64000000;
+        bus_frequency = cpu_frequency/2;
         oscillator_frequency = 48000000;
     }
 #elif MCF52233
@@ -296,26 +343,70 @@ p0_c_startup(void)
     MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(4)|MCF_CLOCK_SYNCR_CLKSRC|MCF_CLOCK_SYNCR_PLLMODE|MCF_CLOCK_SYNCR_PLLEN;
     
     // no USB
-    fsys_frequency = 60000000;
+    cpu_frequency = 60000000;
+    bus_frequency = cpu_frequency/2;
     oscillator_frequency = 25000000;
+#elif MCF51JM128
+    /* switch from FEI to FBE (FLL bypassed external) */ 
+    /* enable external clock source */
+    MCGC2 = MCGC2_HGO_MASK       /* oscillator in high gain mode */
+          | MCGC2_EREFS_MASK   /* because crystal is being used */
+          | MCGC2_RANGE_MASK   /* 12 MHz is in high freq range */
+          | MCGC2_ERCLKEN_MASK;     /* activate external reference clock */
+    while (MCGSC_OSCINIT == 0)
+    ;
+    /* select clock mode */
+    MCGC1 = (2<<6)         /* CLKS = 10 -> external reference clock. */
+          | (3<<3);      /* RDIV = 3 -> 12MHz/8=1.5 MHz */
+
+    /* wait for mode change to be done */
+    while (MCGSC_IREFST != 0)
+    ;
+    while (MCGSC_CLKST != 2)
+    ;
+
+    /* switch from FBE to PBE (PLL bypassed internal) mode */
+    MCGC3=MCGC3_PLLS_MASK
+        | (8<<0);     /* VDIV=6 -> multiply by 32 -> 1.5MHz * 32 = 48MHz */
+    while(MCGSC_PLLST != 1)
+    ;
+    while(MCGSC_LOCK != 1)
+    ;
+    /* finally switch from PBE to PEE (PLL enabled external mode) */
+    MCGC1 = (0<<6)         /* CLKS = 0 -> PLL or FLL output clock. */
+          | (3<<3);      /* RDIV = 3 -> 12MHz/8=1.5 MHz */
+    while(MCGSC_CLKST!=3)
+    ;
+
+    /* Now MCGOUT=48MHz, BUS_CLOCK=24MHz */  
+    cpu_frequency = 48000000;
+    bus_frequency = cpu_frequency/2;
+    oscillator_frequency = 12000000;
+
+    // we read KBI1SC's initial value to determine if the debugger is attached
+    // N.B. this value must be set by the debugger's cmd file!
+    if (KBI1SC == 0x01) {
+        debugger_attached = true;
+    }
 #else
 #error
 #endif
 
+#if ! MCF51JM128
     // wait for pll lock
     while (!(MCF_CLOCK_SYNSR & MCF_CLOCK_SYNSR_LOCK)) {
         // NULL
     }
     
     // set real time clock freq
-    MCF_CLOCK_RTCDR = fsys_frequency;
+    MCF_CLOCK_RTCDR = cpu_frequency;
 
     // enable on-chip modules to access internal SRAM
     MCF_SCM_RAMBAR = (0|MCF_SCM_RAMBAR_BA(RAMBAR_ADDRESS)|MCF_SCM_RAMBAR_BDE);
         
     // we read MCF_GPIO_PORTAN's initial value to determine if the debugger is
     // attached
-    // N.B. this value musy be set by the debugger's cfg file!
+    // N.B. this value must be set by the debugger's cfg file!
     if (! MCF_GPIO_PORTAN) {
         debugger_attached = true;
     } else {
@@ -325,12 +416,12 @@ p0_c_startup(void)
 
 #if ! FLASHER
     // if we're in the middle of a compatible upgrade...
-    if (! p0_memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE)) {
+    if (! p0_memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE) && ! *((uint32 *)FLASH_BYTES - 1)) {
         // initialize the flash module
-        if (fsys_frequency > 25600000) {
-            MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((fsys_frequency-1)/2/8/200000);
+        if (bus_frequency > 12800000) {
+            MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((bus_frequency-1)/8/200000);
         } else {
-            MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((fsys_frequency-1)/2/200000);
+            MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((bus_frequency-1)/200000);
         }
 
         MCF_CFM_CFMPROT = 0;
@@ -349,6 +440,7 @@ p0_c_startup(void)
         // we should not come back!
         ASSERT(0);  // stop!
     }
+#endif
 #endif
 }
 

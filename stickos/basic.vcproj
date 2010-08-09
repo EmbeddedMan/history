@@ -11,14 +11,14 @@
 	</Platforms>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			Name="52221 Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/D MCF52221=1 /D STICKOS=1 /I ../sources /I ../stickos /I .."
+				AdditionalOptions="/D MCF52221=1 /D STICKOS=1 /I ../sources /I ../stickos /I .. /I ../cpustick"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="TRUE"
@@ -61,14 +61,312 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			Name="52221 Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/D MCF52221=1 /D STICKOS=1 /I ../sources /I ../stickos /I .."
+				AdditionalOptions="/D MCF52221=1 /D STICKOS=1 /I ../sources /I ../stickos /I .. /I ../cpustick"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="0"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/basic.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="52233 Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D MCF52233=1 /D STICKOS=1 /I ../sources /I ../stickos /I .. /I ../cpustick"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				ObjectFile="$(IntDir)/"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="kernel32.lib user32.lib"
+				OutputFile="$(OutDir)/basic.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/basic.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="52233 Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D MCF52233=1 /D STICKOS=1 /I ../sources /I ../stickos /I .. /I ../cpustick"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="0"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/basic.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="51JM128 Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D MCF51JM128=1 /D STICKOS=1 /I ../sources /I ../stickos /I .. /I ../cpustick"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="kernel32.lib user32.lib"
+				OutputFile="$(OutDir)/basic.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/basic.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="51JM128 Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D MCF51JM128=1 /D STICKOS=1 /I ../sources /I ../stickos /I .. /I ../cpustick"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="0"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/basic.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Badge Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D MCF51JM128=1 /D BADGE_BOARD=1 /D STICKOS=1 /I ../sources /I ../stickos /I .. /I ../cpustick"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="kernel32.lib user32.lib"
+				OutputFile="$(OutDir)/basic.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/basic.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Badge Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D MCF51JM128=1 /D BADGE_BOARD=1 /D STICKOS=1 /I ../sources /I ../stickos /I .. /I ../cpustick"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="0"
@@ -114,8 +412,36 @@
 	</References>
 	<Files>
 		<Filter
+			Name="cpustick"
+			Filter="">
+			<File
+				RelativePath="..\cpustick\basic2.c">
+			</File>
+			<File
+				RelativePath="..\cpustick\basic2.h">
+			</File>
+			<File
+				RelativePath="..\cpustick\parse2.c">
+			</File>
+			<File
+				RelativePath="..\cpustick\parse2.h">
+			</File>
+			<File
+				RelativePath="..\cpustick\run2.c">
+			</File>
+			<File
+				RelativePath="..\cpustick\run2.h">
+			</File>
+		</Filter>
+		<Filter
 			Name="sources"
 			Filter="">
+			<File
+				RelativePath="..\sources\pin.c">
+			</File>
+			<File
+				RelativePath="..\sources\pin.h">
+			</File>
 			<File
 				RelativePath="..\sources\printf.c">
 			</File>
@@ -123,48 +449,65 @@
 				RelativePath="..\sources\printf.h">
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\basic.c">
-		</File>
-		<File
-			RelativePath=".\basic.h">
-		</File>
-		<File
-			RelativePath=".\basic.sh">
-		</File>
-		<File
-			RelativePath=".\basic.txt">
-		</File>
-		<File
-			RelativePath=".\code.c">
-		</File>
-		<File
-			RelativePath=".\code.h">
-		</File>
-		<File
-			RelativePath="..\main.h">
-		</File>
-		<File
-			RelativePath=".\parse.c">
-		</File>
-		<File
-			RelativePath=".\parse.h">
-		</File>
-		<File
-			RelativePath=".\run.c">
-		</File>
-		<File
-			RelativePath=".\run.h">
-		</File>
-		<File
-			RelativePath=".\test.sh">
-		</File>
-		<File
-			RelativePath=".\vars.c">
-		</File>
-		<File
-			RelativePath=".\vars.h">
-		</File>
+		<Filter
+			Name="stickos"
+			Filter="">
+			<File
+				RelativePath=".\basic.c">
+			</File>
+			<File
+				RelativePath=".\basic.h">
+			</File>
+			<File
+				RelativePath=".\code.c">
+			</File>
+			<File
+				RelativePath=".\code.h">
+			</File>
+			<File
+				RelativePath="..\main.h">
+			</File>
+			<File
+				RelativePath=".\parse.c">
+			</File>
+			<File
+				RelativePath=".\parse.h">
+			</File>
+			<File
+				RelativePath=".\run.c">
+			</File>
+			<File
+				RelativePath=".\run.h">
+			</File>
+			<File
+				RelativePath=".\vars.c">
+			</File>
+			<File
+				RelativePath=".\vars.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="test"
+			Filter="">
+			<File
+				RelativePath="..\test\basic.sh">
+			</File>
+			<File
+				RelativePath="..\test\basic.txt">
+			</File>
+			<File
+				RelativePath="..\test\basic2.sh">
+			</File>
+			<File
+				RelativePath="..\test\basic2.txt">
+			</File>
+			<File
+				RelativePath="..\test\test.sh">
+			</File>
+			<File
+				RelativePath="..\test\test2.sh">
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\w32main.c">
 		</File>

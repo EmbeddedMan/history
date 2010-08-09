@@ -2,6 +2,9 @@
 // this file implements the bytecode compiler and de-compiler for
 // stickos.
 
+// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Patent pending.
+
 #include "main.h"
 
 
@@ -105,7 +108,7 @@ parse_char(IN OUT char **text, IN char c)
 }
 
 bool
-parse_word(IN OUT char **text, IN char *word)
+parse_word(IN OUT char **text, IN const char *word)
 {
     int len;
 
@@ -122,9 +125,38 @@ parse_word(IN OUT char **text, IN char *word)
     return true;
 }
 
-static
+bool
+parse_words(IN OUT char **text_in, IN char *words)
+{
+    int len;
+    char *p;
+    char *text;
+
+    text = *text_in;
+    while (words[0]) {
+        len = strlen(words);
+        p = strchr(words, ' ');
+        if (p) {
+            len = MIN(len, p-words);
+        }
+
+        if (strncmp(text, words, len)) {
+            return false;
+        }
+        
+        text += len;
+        words += len;
+        parse_trim(&text);
+        parse_trim(&words);
+    }
+    
+    // advance *text_in past words
+    *text_in = text;
+    return true;
+}
+
 char *
-find_keyword(IN OUT char *text, IN char* word)
+parse_find_keyword(IN OUT char *text, IN char* word)
 {
     int n;
     bool w;
@@ -143,14 +175,13 @@ find_keyword(IN OUT char *text, IN char* word)
     return NULL;
 }
 
-static
 bool
-parse_tail(IN OUT char **text, IN char* tail)
+parse_find_tail(IN OUT char **text, IN char* tail)
 {
     char *p;
 
     // find delimited keyword in text
-    p = find_keyword(*text, tail);
+    p = parse_find_keyword(*text, tail);
     if (! p) {
         return false;
     }
@@ -166,7 +197,8 @@ parse_tail(IN OUT char **text, IN char* tail)
     return true;
 }
 
-static
+// revisit -- merge this with basic.c/parse.c???
+
 bool
 parse_const(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
@@ -207,9 +239,8 @@ parse_const(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
     return true;
 }
 
-static
 char *
-match_paren(char *p)
+parse_match_paren(char *p)
 {
     char c;
     char cc;
@@ -240,9 +271,8 @@ match_paren(char *p)
     return NULL;
 }
 
-static
 char *
-match_quote(char *p)
+parse_match_quote(char *p)
 {
     char c;
 
@@ -266,16 +296,7 @@ match_quote(char *p)
 
 // *** bytecode compiler ***
 
-static
-bool
-parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode);
-
-static
-int
-unparse_expression(int tbase, byte *bytecode_in, int length, char **out);
-
 // this function parses (compiles) a variable to bytecode.
-static
 bool
 parse_var(IN bool lvalue, IN int obase, IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
@@ -307,7 +328,7 @@ parse_var(IN bool lvalue, IN int obase, IN OUT char **text, IN OUT int *length, 
         }
 
         // find the end of the array index expression
-        p = match_paren(*text);
+        p = parse_match_paren(*text);
         if (! p) {
             return false;
         }
@@ -388,7 +409,6 @@ parse_clean(IN int obase, IN OUT int *otop, IN int precedence, IN OUT int *lengt
 }
 
 // this function parses (compiles) an expression to bytecode.
-static
 bool
 parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
@@ -446,7 +466,7 @@ parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT by
                 if (! number) {
                     return false;
                 }
-                p = match_paren(*text);
+                p = parse_match_paren(*text);
                 if (! p) {
                     return false;
                 }
@@ -520,9 +540,10 @@ parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT by
     return true;
 }
 
-// this function parses (compiles) a statement line to bytecode.
+// this function parses (compiles) a public statement line to bytecode,
+// excluding the keyword.
 bool
-parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *syntax_error)
+parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *syntax_error)
 {
     int i;
     char *d;
@@ -531,29 +552,17 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     bool neg;
     int length;
     char *text;
+    int uart;
     int pin_type;
+    int pin_qual;
     int pin_number;
 
     text = text_in;
     parse_trim(&text);
 
-    for (i = 0; i < LENGTHOF(keywords); i++) {
-        len = strlen(keywords[i].keyword);
-        if (! strncmp(text, keywords[i].keyword, len)) {
-            text += len;
-            break;
-        }
-    }
-    if (i == LENGTHOF(keywords)) {
-        goto XXX_ERROR_XXX;
-    }
-
-    parse_trim(&text);
-
     length = 0;
-    bytecode[length++] = keywords[i].code;
 
-    switch (keywords[i].code) {
+    switch (code) {
         case code_rem:
             // generate the comment to bytecode
             while (*text) {
@@ -582,14 +591,16 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             } else if (parse_word(&text, "uart")) {
                 bytecode[length++] = device_uart;
 
-                // parse the uart number
-                if (! parse_const(&text, &length, bytecode)) {
+                // parse the uart name
+                for (uart = 0; uart < MAX_UARTS; uart++) {
+                    if (parse_word(&text, uart_names[uart])) {
+                        break;
+                    }
+                }
+                if (uart == MAX_UARTS) {
                     goto XXX_ERROR_XXX;
                 }
-                assert(length >= sizeof(int));
-                if (*(int *)(bytecode+length-sizeof(int)) < 0 || *(int *)(bytecode+length-sizeof(int)) >= MAX_UARTS) {
-                    goto XXX_ERROR_XXX;
-                }
+                bytecode[length++] = uart;
 
                 // parse the uart data direction
                 if (parse_word(&text, "output")) {
@@ -603,7 +614,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                 // this should be an expression
                 
                 // find the "do"
-                d = find_keyword(text, "do");
+                d = parse_find_keyword(text, "do");
 
                 bytecode[length++] = device_watch;
                 
@@ -627,7 +638,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             }
             
             // if we're enabling interrupts...
-            if (keywords[i].code == code_on) {
+            if (code == code_on) {
                 // parse the "do"
                 if (! parse_word(&text, "do")) {
                     goto XXX_ERROR_XXX;
@@ -673,14 +684,16 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             } else if (parse_word(&text, "uart")) {
                 bytecode[length++] = device_uart;
 
-                // parse the uart number
-                if (! parse_const(&text, &length, bytecode)) {
+                // parse the uart name
+                for (uart = 0; uart < MAX_UARTS; uart++) {
+                    if (parse_word(&text, uart_names[uart])) {
+                        break;
+                    }
+                }
+                if (uart == MAX_UARTS) {
                     goto XXX_ERROR_XXX;
                 }
-                assert(length >= sizeof(int));
-                if (*(int *)(bytecode+length-sizeof(int)) < 0 || *(int *)(bytecode+length-sizeof(int)) >= MAX_UARTS) {
-                    goto XXX_ERROR_XXX;
-                }
+                bytecode[length++] = uart;
 
                 if (! parse_word(&text, "for")) {
                     goto XXX_ERROR_XXX;
@@ -845,7 +858,6 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                             bytecode[length++] = code_pin;
 
                             // parse the pin name
-                            assert(PIN_LAST == LENGTHOF(pins));
                             for (pin_number = 0; pin_number < PIN_LAST; pin_number++) {
                                 if (parse_word(&text, pins[pin_number].name)) {
                                     break;
@@ -854,7 +866,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                             if (pin_number == PIN_LAST) {
                                 goto XXX_ERROR_XXX;
                             }
-                            assert(pin_number < 256);
+                            assert(pin_number < PIN_LAST);
                             bytecode[length++] = pin_number;
 
                             if (! parse_word(&text, "for")) {
@@ -862,55 +874,35 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                             }
 
                             // parse the pin usage
-                            if (parse_word(&text, "analog")) {
-                                if (parse_word(&text, "input")) {
-                                    bytecode[length++] = pin_type_analog_input;
-                                } else if (parse_word(&text, "output")) {
-                                    bytecode[length++] = pin_type_analog_output;
-                                } else {
-                                    goto XXX_ERROR_XXX;
+                            for (pin_type = 0; pin_type < pin_type_last; pin_type++) {
+                                if (parse_words(&text, pin_type_names[pin_type])) {
+                                    break;
                                 }
-                            } else if (parse_word(&text, "digital")) {
-                                if (parse_word(&text, "input")) {
-                                    bytecode[length++] = pin_type_digital_input;
-                                } else if (parse_word(&text, "output")) {
-                                    bytecode[length++] = pin_type_digital_output;
-                                } else {
-                                    goto XXX_ERROR_XXX;
-                                }
-                            } else if (parse_word(&text, "uart")) {
-                                if (parse_word(&text, "input")) {
-                                    bytecode[length++] = pin_type_uart_input;
-                                } else if (parse_word(&text, "output")) {
-                                    bytecode[length++] = pin_type_uart_output;
-                                } else {
-                                    goto XXX_ERROR_XXX;
-                                }
-                            } else if (parse_word(&text, "frequency")) {
-                                if (parse_word(&text, "input")) {
-                                    printf("unsupported pin type\n");
-                                    goto XXX_ERROR_XXX;
-                                } else if (parse_word(&text, "output")) {
-                                    bytecode[length++] = pin_type_frequency_output;
-                                } else {
-                                    goto XXX_ERROR_XXX;
-                                }
-                            } else {
+                            }
+                            if (pin_type == pin_type_last) {
                                 goto XXX_ERROR_XXX;
                             }
-
-                            assert(length);
-                            pin_type = bytecode[length-1];
-                            assert(! (pin_type & (pin_type-1)));  // only 1 bit set
-                            if (pins[pin_number].pin_types == pin_type_unused) {
-                                printf("unsupported pin\n");
+                            bytecode[length++] = pin_type;
+                            
+                            // parse the pin qualifier(s)
+                            pin_qual = 0;
+                            for (i = 0; i < pin_qual_last; i++) {
+                                if (parse_word(&text, pin_qual_names[i])) {
+                                    pin_qual |= 1<<i;
+                                }
+                            }
+                            bytecode[length++] = pin_qual;
+                            
+                            // see if the pin usage is legal
+                            if (! (pins[pin_number].pin_type_mask & (1<<pin_type))) {
+                                printf("unsupported pin type\n");
                                 goto XXX_ERROR_XXX;
                             }
-                            if (pin_type != pin_type_digital_input && pin_type != pin_type_digital_output) {
-                                if (! (pins[pin_number].pin_types & pin_type)) {
-                                    printf("unsupported pin type\n");
-                                    goto XXX_ERROR_XXX;
-                                }
+                            
+                            // see if the pin qualifier usage is legal
+                            if (pin_qual &~ pin_qual_mask[pin_type]) {
+                                printf("unsupported pin qualifier\n");
+                                goto XXX_ERROR_XXX;
                             }
                         } else if (parse_word(&text, "remote") && parse_word(&text, "on") && parse_word(&text, "nodeid")) {
                             bytecode[length++] = code_nodeid;
@@ -984,7 +976,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                     bytecode[length++] = code_string;
 
                     // find the matching quote
-                    p = match_quote(text);
+                    p = parse_match_quote(text);
                     if (! p) {
                         goto XXX_ERROR_XXX;
                     }
@@ -1039,15 +1031,15 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
         case code_elseif:
         case code_while:
         case code_until:
-            if (keywords[i].code == code_if || keywords[i].code == code_elseif) {
+            if (code == code_if || code == code_elseif) {
                 // make sure we have a "then"
-                if (! parse_tail(&text, "then")) {
+                if (! parse_find_tail(&text, "then")) {
                     text += strlen(text);
                     goto XXX_ERROR_XXX;
                 }
-            } else if (keywords[i].code == code_while) {
+            } else if (code == code_while) {
                 // make sure we have a "do"
-                if (! parse_tail(&text, "do")) {
+                if (! parse_find_tail(&text, "do")) {
                     text += strlen(text);
                     goto XXX_ERROR_XXX;
                 }
@@ -1097,7 +1089,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             }
 
             // find the "to" keyword
-            p = find_keyword(text, "to");
+            p = parse_find_keyword(text, "to");
             if (! p) {
                 goto XXX_ERROR_XXX;
             }
@@ -1115,7 +1107,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             parse_trim(&text);
 
             // see if there is a "step" keyword
-            p = find_keyword(text, "step");
+            p = parse_find_keyword(text, "step");
             if (p) {
                 *p = 0;
             }
@@ -1152,7 +1144,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
         case code_restore:
         case code_gosub:
         case code_sub:
-            if (! *text && keywords[i].code != code_restore) {
+            if (! *text && code != code_restore) {
                 goto XXX_ERROR_XXX;
             }
             // generate the label/subname to bytecode
@@ -1196,10 +1188,57 @@ XXX_ERROR_XXX:
     return false;
 }
 
+// this function parses (compiles) a statement line to bytecode.
+bool
+parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *syntax_error_in)
+{
+    int i;
+    int len;
+    bool boo;
+    int length;
+    char *text;
+    int syntax_error;
+
+    text = text_in;
+    parse_trim(&text);
+
+    // check for public commands
+    for (i = 0; i < LENGTHOF(keywords); i++) {
+        len = strlen(keywords[i].keyword);
+        if (! strncmp(text, keywords[i].keyword, len)) {
+            text += len;
+            break;
+        }
+    }
+    if (i == LENGTHOF(keywords)) {
+        // check for private commands
+        if (parse2_line(text_in, length_out, bytecode, &syntax_error)) {
+            return true;
+        }
+
+        *syntax_error_in = text - text_in + syntax_error;
+        assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_LINE_SIZE);
+        return false;
+    }
+
+    *bytecode = keywords[i].code;
+
+    // parse the public command
+    boo = parse_line_code(keywords[i].code, text, &length, bytecode+1, &syntax_error);
+    if (! boo) {
+        *syntax_error_in = text - text_in + syntax_error;
+        assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_LINE_SIZE);
+        return boo;
+    }
+    
+    *length_out = 1+length;
+    return true;
+}
+
+
 // *** bytecode de-compiler ***
 
 // this function unparses (de-compiles) a variable from bytecode.
-static
 int
 unparse_var_lvalue(byte *bytecode_in, char **out)
 {
@@ -1242,7 +1281,6 @@ static char texts[MAX_TEXTS][BASIC_LINE_SIZE];
 static int precedence[MAX_TEXTS];
 
 // this function unparses (de-compiles) an expression from bytecode.
-static
 int
 unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
 {
@@ -1360,9 +1398,10 @@ unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
     return bytecode - bytecode_in;
 }
 
-// this function unparses (de-compiles) a statement line from bytecode.
+// this function unparses (de-compiles) a public statement line from bytecode,
+// excluding the keyword.
 void
-unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
+unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT char *out)
 {
     int i;
     int n;
@@ -1371,6 +1410,7 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
     int pin;
     int timer;
     int type;
+    int qual;
     int uart;
     int baud;
     int data;
@@ -1380,29 +1420,14 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
     int interval;
     int csiv;
     byte device;
-    byte code;
     byte code2;
-    char *out;
     byte *bytecode;
     bool output;
     int nodeid;
 
     bytecode = bytecode_in;
 
-    // find the bytecode keyword
-    for (i = 0; i < LENGTHOF(keywords); i++) {
-        if (keywords[i].code == *bytecode_in) {
-            break;
-        }
-    }
-    assert(i != LENGTHOF(keywords));
-
-    // decompile the bytecode keyword
-    out = text;
-    out += sprintf(out, keywords[i].keyword);
-    out += sprintf(out, " ");
-
-    switch ((code = *bytecode++)) {
+    switch (code) {
         case code_rem:
             // decompile the comment
             len = sprintf(out, "%s", bytecode);
@@ -1430,11 +1455,10 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                 // decompile the uart
                 out += sprintf(out, "uart ");
 
-                // and the uart number
-                uart = *(int *)bytecode;
+                // and the uart name
+                uart = *bytecode++;
                 assert(uart >= 0 && uart < MAX_UARTS);
-                bytecode += sizeof(int);
-                out += sprintf(out, "%d ", uart);
+                out += sprintf(out, "%s ", uart_names[uart]);
 
                 // and the uart data direction
                 output = *bytecode++;
@@ -1488,11 +1512,10 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                 // decompile the uart
                 out += sprintf(out, "uart ");
 
-                // and the uart number
-                uart = *(int *)bytecode;
+                // and the uart name
+                uart = *bytecode++;
                 assert(uart >= 0 && uart < MAX_UARTS);
-                bytecode += sizeof(int);
-                out += sprintf(out, "%d ", uart);
+                out += sprintf(out, "%s ", uart_names[uart]);
 
                 // find the uart protocol and optional loopback specifier
                 baud = *(int *)bytecode;
@@ -1547,13 +1570,13 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                 }
 
                 // decompile the constant
-                code = *bytecode++;
+                code2 = *bytecode++;
                 value = *(int *)bytecode;
                 bytecode += sizeof(int);
-                if (code == code_load_and_push_immediate_hex) {
+                if (code2 == code_load_and_push_immediate_hex) {
                     out += sprintf(out, "0x%x", value);
                 } else {
-                    assert(code == code_load_and_push_immediate);
+                    assert(code2 == code_load_and_push_immediate);
                     out += sprintf(out, "%d", value);
                 }
             }
@@ -1598,6 +1621,7 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
 
                             pin = *bytecode++;
                             type = *bytecode++;
+                            qual = *bytecode++;
 
                             // decompile the pin name
                             assert(pin >= 0 && pin < PIN_LAST);
@@ -1606,21 +1630,14 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                             out += sprintf(out, "for ");
 
                             // decompile the pin usage
-                            if (type == pin_type_frequency_output) {
-                                out += sprintf(out, "%s", "frequency output");
-                            } else if (type == pin_type_analog_input) {
-                                out += sprintf(out, "%s", "analog input");
-                            } else if (type == pin_type_analog_output) {
-                                out += sprintf(out, "%s", "analog output");
-                            } else if (type == pin_type_uart_input) {
-                                out += sprintf(out, "%s", "uart input");
-                            } else if (type == pin_type_uart_output) {
-                                out += sprintf(out, "%s", "uart output");
-                            } else if (type == pin_type_digital_input) {
-                                out += sprintf(out, "%s", "digital input");
-                            } else {
-                                assert(type == pin_type_digital_output);
-                                out += sprintf(out, "%s", "digital output");
+                            assert(type >= 0 && type < pin_type_last);
+                            out += sprintf(out, "%s", pin_type_names[type]);
+                            
+                            // decompile the pin qualifier(s)
+                            for (i = 0; i < pin_qual_last; i++) {
+                                if (qual & (1<<i)) {
+                                    out += sprintf(out, " %s", pin_qual_names[i]);
+                                }
                             }
                         } else {
                             assert(code2 == code_nodeid);
@@ -1804,5 +1821,36 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
     }
 
     assert(bytecode == bytecode_in+length);
+}
+
+// this function unparses (de-compiles) a statement line from bytecode.
+void
+unparse_bytecode(IN byte *bytecode, IN int length, OUT char *text)
+{
+    int i;
+    char *out;
+    byte code;
+
+    out = text;
+
+    code = *bytecode;
+
+    // find the bytecode keyword
+    for (i = 0; i < LENGTHOF(keywords); i++) {
+        if (keywords[i].code == code) {
+            break;
+        }
+    }
+    if (i == LENGTHOF(keywords)) {
+        unparse2_bytecode(bytecode, length, out);
+        return;
+    }
+
+    // decompile the bytecode keyword
+    out += sprintf(out, keywords[i].keyword);
+    out += sprintf(out, " ");
+
+    assert(length);
+    unparse_bytecode_code(code, bytecode+1, length-1, out);
 }
 

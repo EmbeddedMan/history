@@ -6,13 +6,13 @@
 #define QSPI_BAUD_FAST  500000  // zigbee
 #define QSPI_BAUD_SLOW  150000  // default
 
-static int csiv;
-static int csav;
+static bool csiv;
 
 // perform both output and input qspi i/o
 void
 qspi_transfer(byte *buffer, int length)
 {
+#if ! MCF51JM128
     int i;
     int x;
     int request;
@@ -37,7 +37,7 @@ qspi_transfer(byte *buffer, int length)
 
         // set the queue pointers
         assert(request);
-        MCF_QSPI_QWR = csav|MCF_QSPI_QWR_ENDQP(request-1)|MCF_QSPI_QWR_NEWQP(0);
+        MCF_QSPI_QWR = (csiv?0:MCF_QSPI_QWR_CSIV)|MCF_QSPI_QWR_ENDQP(request-1)|MCF_QSPI_QWR_NEWQP(0);
 
         // start the transfer
         MCF_QSPI_QDLYR = MCF_QSPI_QDLYR_SPE;
@@ -63,36 +63,117 @@ qspi_transfer(byte *buffer, int length)
     }
 
     // transfer complete
-    MCF_QSPI_QWR = csiv;
+    MCF_QSPI_QWR = csiv?MCF_QSPI_QWR_CSIV:0;
     
     splx(x);
+#else
+    // cs active
+    if (csiv) {
+        PTED &= ~PTEDD_PTEDD7_MASK;
+    } else {
+        PTED |= PTEDD_PTEDD7_MASK;
+    }
+    
+    while (length) {
+        // N.B. spi needs us to read the status register even for release code!
+        ASSERT(SPI1S & SPI1S_SPTEF_MASK);
+        ASSERT(! (SPI1S & SPI1S_SPRF_MASK));
+        
+        SPI1DL = *buffer;
+        
+        while (! (SPI1S & SPI1S_SPTEF_MASK)) {
+            // NULL
+        }
+        
+        while (! (SPI1S & SPI1S_SPRF_MASK)) {
+            // NULL
+        }
+        
+        *buffer = SPI1DL;
+        
+        buffer++;
+        length--;
+    }
+
+    // cs inactive
+    if (csiv) {
+        PTED |= PTEDD_PTEDD7_MASK;
+    } else {
+        PTED &= ~PTEDD_PTEDD7_MASK;
+    }
+#endif
 }
 
 extern void
 qspi_inactive(bool csiv_in)
 {
-    csiv = csiv_in?MCF_QSPI_QWR_CSIV:0;  // inactive
-    csav = csiv_in?0:MCF_QSPI_QWR_CSIV;  // active
-    MCF_QSPI_QWR = csiv;
+    csiv = csiv_in;
+#if ! MCF51JM128
+    MCF_QSPI_QWR = csiv?MCF_QSPI_QWR_CSIV:0;
+#else
+    if (csiv) {
+        PTED |= PTEDD_PTEDD7_MASK;
+    } else {
+        PTED &= ~PTEDD_PTEDD7_MASK;
+    }
+#endif
 }
 
 extern void
 qspi_baud_fast(void)
 {
+#if ! MCF51JM128
     // initialize qspi master at 500k baud
-    assert(fsys_frequency/2/QSPI_BAUD_FAST < 256);
-    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/fsys_frequency/2/QSPI_BAUD_FAST;
+    assert(bus_frequency/QSPI_BAUD_FAST < 256);
+    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/bus_frequency/QSPI_BAUD_FAST;
+#else
+    int log2;
+    int divisor;
+    
+    // initialize qspi master at 150k baud
+    log2 = 0;
+    divisor = bus_frequency/QSPI_BAUD_FAST/2;
+    while (divisor > 8) {
+        divisor /= 2;
+        log2++;
+    }
+    assert(log2 < 8 && (divisor-1) < 8);
+    SPI1BR_SPR = log2;
+    SPI1BR_SPPR = divisor-1;
+#endif
 }
 
 extern void
 qspi_initialize(void)
 {
+#if ! MCF51JM128
     // QS is primary
     MCF_GPIO_PQSPAR = 0x1555;
 
     // initialize qspi master at 150k baud
-    assert(fsys_frequency/2/QSPI_BAUD_SLOW < 256);
-    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/fsys_frequency/2/QSPI_BAUD_SLOW;
+    assert(bus_frequency/QSPI_BAUD_SLOW < 256);
+    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/bus_frequency/QSPI_BAUD_SLOW;
+#else
+    int log2;
+    int divisor;
+    
+    // E7 is gpio output
+    PTEDD |= PTEDD_PTEDD7_MASK;
+    
+    SPI1C1 = SPI1C1_SPE_MASK|SPI1C1_MSTR_MASK;
+    SPI1C2 = 0;
+    
+    // initialize qspi master at 150k baud
+    log2 = 0;
+    divisor = bus_frequency/QSPI_BAUD_SLOW/2;
+    while (divisor > 8) {
+        divisor /= 2;
+        log2++;
+    }
+    assert(log2 < 8 && (divisor-1) < 8);
+    SPI1BR_SPR = log2;
+    SPI1BR_SPPR = divisor-1;
+#endif
 
     // initialize qspi to active low chip select
     qspi_inactive(1);

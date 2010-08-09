@@ -1,5 +1,9 @@
 // *** printf.h *******************************************************
 
+#if BADGE_BOARD
+extern bool printf_scroll;
+#endif
+
 int
 snprintf(char *buffer, unsigned long length, const char *format, ...);
 

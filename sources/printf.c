@@ -6,6 +6,10 @@
 #include <stdarg.h>
 extern bool debugger_attached;
 
+#if BADGE_BOARD
+bool printf_scroll;
+#endif
+
 #define isdigit(c)  ((c) >= '0' && (c) <= '9')
 
 #define MAXDIGITS  32
@@ -275,7 +279,15 @@ vprintf(const char *format, va_list ap)
 #if _WIN32
     write(1, bbuffer, MIN(n, sizeof(bbuffer)-1));
 #else
-    terminal_print((byte *)bbuffer, MIN(n, sizeof(bbuffer)-1));
+#if BADGE_BOARD && ! SKELETON
+    if (run_printf && run2_scroll) {
+        jm_scroll(bbuffer, MIN(n, sizeof(bbuffer)-1));
+    } else {
+#endif
+        terminal_print((byte *)bbuffer, MIN(n, sizeof(bbuffer)-1));
+#if BADGE_BOARD && ! SKELETON
+    }
+#endif
 #endif
 
     return n;

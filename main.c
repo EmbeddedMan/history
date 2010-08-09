@@ -12,9 +12,7 @@ main2()  // the tasking system is called by startup.c, before us
 main()  // we're called directly by startup.c
 #endif
 {
-#if PICTOCRYPT
-    bool boo;
-#endif
+    int x;
 
     // configure leds
     led_initialize();
@@ -22,15 +20,24 @@ main()  // we're called directly by startup.c
     // initialize timer
     timer_initialize();
     
+    // calibrate our busywait
+    x = splx(0);
+    delay(20);
+    splx(x);
+    
     // initialize qspi
     qspi_initialize();
 
     // initialize adc
     adc_initialize();
+    
+#if ! FLASHER && ! PICTOCRYPT
+    // initialize pins
+    pin_initialize();
+#endif
 
 #if PICTOCRYPT
-    boo = adc_timer_poll();
-    assert(boo);
+    adc_timer_poll();
 
     // determine if we're in host or device mode
     if (adc_result[0] < 10000) {
@@ -47,7 +54,7 @@ main()  // we're called directly by startup.c
     // initialize flash
     flash_initialize();
 
-#if MCF52221
+#if MCF52221 || MCF51JM128
     // initialize usb
     usb_initialize();
 #endif
@@ -60,8 +67,7 @@ main()  // we're called directly by startup.c
     // enable interrupts
     splx(0);
 #endif
-    initialized = 1;
-    
+
 #if ! FLASHER && ! PICTOCRYPT
     // initialize zigbee
     zb_initialize();
@@ -70,6 +76,11 @@ main()  // we're called directly by startup.c
     terminal_initialize();
 #endif
     
+#if BADGE_BOARD
+    // initialize badge board
+    jm_initialize();
+#endif
+
     // run the main application program loop
     main_run();
 

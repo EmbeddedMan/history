@@ -1,9 +1,5 @@
 // *** basic.h ********************************************************
 
-#if ! _WIN32
-#define SHRINK  0  // turn on for building debug code
-#endif
-
 enum devices {
     device_timer,
     device_uart,
@@ -81,7 +77,7 @@ enum bytecode {
 
 #if SHRINK
 #define BASIC_LARGE_PAGE_SIZE  (8*1024)
-#define BASIC_STORES  2
+#define BASIC_STORES  1
 #else
 #define BASIC_LARGE_PAGE_SIZE  (10*1024)
 #define BASIC_STORES  3
@@ -112,6 +108,8 @@ extern byte RAM_VARIABLE_PAGE[BASIC_SMALL_PAGE_SIZE];
 
 extern byte *start_of_dynamic;
 extern byte *end_of_dynamic;
+
+bool basic_const(IN OUT char **text, OUT int *value_out);
 
 void basic_run(char *line);
 

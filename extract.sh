@@ -1,3 +1,13 @@
+# checklist for building skeleton
+#
+# 1. remove project dependencies on Niche Lite and StickOS
+# 2. rebuild all
+# 3. DEBUG=1, FAST=0, SECURE=0, EXTRACT=1
+# 4. extract.sh
+# ...
+# 10. remove all non-critical files from zip!
+# 11. extract zip and build Skeleton's, StickOS's, Flasher
+
 extract()
 {
   find . -name \*.c -o -name main.h |

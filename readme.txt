@@ -22,7 +22,8 @@ Port on the host PC.  For the MCF52233, this is provided by the Niche
 Lite TCP/IP stack that accepts a raw connection from a socket on the host
 PC on port 1234.
 
-The skeleton code also provides the following features:
+The skeleton code also provides the following features, identical to those
+found in StickOS BASIC, allowing easy porting of BASIC programs to C:
 
 * remote wireless command-line over zigbee via MC1320x transceiver
 * upgrade firmware via the terminal command-line
@@ -30,6 +31,7 @@ The skeleton code also provides the following features:
 * a host mode USB driver and MST class driver to connect to USB devices
   when not using the command-line (MCF52221 only)
 * programmatic access to flash memory; optional flash security
+* MCU pin manipulation routines for digital, analog, frequency I/O, uart
 * lightweight printf to either terminal or CW debug console
 * boot-time detection of debugger presence
 * programmable interval timer, a/d converter, sleep mode example code
@@ -72,6 +74,7 @@ clone.[ch]     -- QSPI/EzPort CPU-to-CPU flash cloner
 flash.[ch]     -- flash access and FTDI-based USB upgrade routines
 ftdi.[ch]      -- FTDI device class driver
 led.[ch]       -- trivial LED status driver
+pin.[ch]       -- MCU I/O pin manipulation
 printf.[ch]    -- lightweight printf to terminal or CW debug console
 qspi.[ch]      -- qspi transport driver
 scsi.[ch]      -- mst class host controller driver

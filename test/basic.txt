@@ -601,7 +601,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.2!
+Welcome to StickOS for Freescale MCF52221 v1.21h!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]                 -- clear ram [and flash] variables
@@ -727,25 +727,26 @@ ram variables:
 flash parameter variables:
   dim <varflash>[[n]] as flash
 
-pin alias variables
+pin alias variables:
   dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
-                                      (input|output)
+                                      (input|output) [inverted]
 
-system variables (read-only)
+system variables (read-only):
   drops     failures  nodeid    receives
   retries   seconds   ticks     transmits
 
 for more information:
   help pins
 pin names:
-  dtin3     dtin2     dtin1     dtin0
-  an0       an1       an2       an3
-  an4       an5       an6       an7
-  ucts0*    urts0*    urxd0     utxd0
-  ucts1*    urts1*    urxd1     utxd1
-  irq7*     irq4*     irq1*
-  qspi_cs0  qspi_clk  qspi_din  qspi_dout
-  scl       sda
+    0        1        2        3        4     5     6     7
+  -------- -------- -------- --------- ----- ----- ----- ------+
+  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
+  scl      sda                                                 | PORT AS
+           irq1*                       irq4*             irq7* | PORT NQ
+  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
+  dtin0    dtin1    dtin2    dtin3                             | PORT TC
+  utxd0    urxd0    urts0*   ucts0*                            | PORT UA
+  utxd1    urxd1    urts1*   ucts1*                            | PORT UB
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
@@ -788,7 +789,7 @@ nodeid (<nodeid>|none)        -- set/display zigbee nodeid
 
 connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
 
-remote node variables
+remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
@@ -808,6 +809,9 @@ error -            ^
   10 dim a as pin dtin0 for digital output
   20 dim b as pin dtin1 for digital input
   30 dim c as pin an0 for analog input
+  31 dim x as pin dtin2 for digital output inverted
+  32 dim y as pin dtin3 for digital input inverted
+  33 dim z as pin an1 for analog input inverted
   40 dim d as flash
   41 dim m as remote on nodeid 7
   42 dim n[4] as remote on nodeid 8
@@ -1357,7 +1361,7 @@ STOP at line 23!
   0% flash parameter bytes used
   0% variables used
 test large flash program
- 82% ram code bytes used (unsaved changes!)
+ 83% ram code bytes used (unsaved changes!)
   0% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -1495,7 +1499,7 @@ end
 3190   endif 
 3200 endsub 
 end
- 82% ram code bytes used (unsaved changes!)
+ 83% ram code bytes used (unsaved changes!)
  16% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -1628,7 +1632,7 @@ end
 6200 endsub 
 end
   0% ram code bytes used
- 32% flash code bytes used
+ 33% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -1759,8 +1763,8 @@ end
 6190   endif 
 6200 endsub 
 end
- 82% ram code bytes used (unsaved changes!)
- 32% flash code bytes used
+ 83% ram code bytes used (unsaved changes!)
+ 33% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -2164,9 +2168,9 @@ test configures
   70 qspi a, b, c, d
 end
   10 rem ### uart pio ###
-  20 configure uart 0 for 9600 baud 7 data even parity loopback
-  30 dim tx as pin utxd0 for uart output
-  40 dim rx as pin urxd0 for uart input
+  20 configure uart 1 for 9600 baud 7 data even parity loopback
+  30 dim tx as pin utxd1 for uart output
+  40 dim rx as pin urxd1 for uart input
   50 let tx = 3
   60 let tx = 4
   70 while tx do
@@ -2233,11 +2237,11 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.2!
+Welcome to StickOS for Freescale MCF52221 v1.21h!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.2!
+Welcome to StickOS for Freescale MCF52221 v1.21h!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
@@ -2370,9 +2374,8 @@ unsupported pin type
 error -                                        ^
 unsupported pin type
 error -                                       ^
-unsupported pin type
-error -                                      ^
-error -                                 ^
+error -                       ^
+error -                       ^
   10 dim audio as pin dtin0 for frequency output
   20 dim voltage as pin dtin1 for analog output
 end
@@ -2395,21 +2398,21 @@ error -             ^
 error -              ^
 error -              ^
 error -              ^
-error -     ^
+error -   ^
 off
 error -    ^
 error -       ^
 error -      ^
 error -   ^
 error -            ^
-error -      ^
+error -    ^
 mask
 error -     ^
 error -        ^
 error -       ^
 error -    ^
 error -             ^
-error -       ^
+error -     ^
 configure
 error -     ^
 error -          ^
@@ -2434,7 +2437,7 @@ error -                                   ^
 error -                                    ^
 error -                                           ^
 error -                               ^
-error -            ^
+error -          ^
 assert
         ^ - error
          ^ - error
@@ -2474,10 +2477,9 @@ error -           ^
 error -            ^
 error -               ^
 error -                             ^
-error -                       ^
 error -                ^
-unsupported pin type
-error -                               ^
+error -                ^
+error -                ^
 error -   ^
 error -           ^
 error -               ^
@@ -2594,7 +2596,7 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.2!
+Welcome to StickOS for Freescale MCF52221 v1.21h!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 list
@@ -2684,8 +2686,8 @@ out of variable ram
 STOP at line 60!
 auto save
 auto save
- 10% ram code bytes used (unsaved changes!)
- 41% flash code bytes used
+ 11% ram code bytes used (unsaved changes!)
+ 42% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -2859,27 +2861,30 @@ auto save
 7200 endsub 
 end
   0% ram code bytes used
- 43% flash code bytes used
+ 44% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 auto save
 auto save
   0% ram code bytes used
- 98% flash code bytes used
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
  55% ram code bytes used (unsaved changes!)
- 98% flash code bytes used
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
- 82% ram code bytes used (unsaved changes!)
- 98% flash code bytes used
+ 83% ram code bytes used (unsaved changes!)
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
+auto save
+out of code flash
+out of code ram
 auto save
 out of code flash
 out of code ram
@@ -2908,7 +2913,7 @@ auto save
 out of code flash
 out of code ram
 100% ram code bytes used (unsaved changes!)
- 98% flash code bytes used
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3364,38 +3369,38 @@ out of code ram
 21080 while target!=-1 do
 21090   sleep secs*1000
 21100   read target, secs
-21110 endwhile 
+missing block ends?
 end
 delete line 10
 auto save
 out of code flash
 out of code ram
 100% ram code bytes used (unsaved changes!)
- 98% flash code bytes used
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 21000
  99% ram code bytes used (unsaved changes!)
- 98% flash code bytes used
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 21000-
  91% ram code bytes used (unsaved changes!)
- 98% flash code bytes used
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 19000-
- 70% ram code bytes used (unsaved changes!)
- 98% flash code bytes used
+ 69% ram code bytes used (unsaved changes!)
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line -1000
- 87% ram code bytes used (unsaved changes!)
- 98% flash code bytes used
+ 86% ram code bytes used (unsaved changes!)
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3938,9 +3943,9 @@ end
  220 endsub 
 end
   10 rem ### uart pio ###
-  20 configure uart 0 for 9600 baud 7 data even parity loopback
-  30 dim tx as pin utxd0 for uart output
-  40 dim rx as pin urxd0 for uart input
+  20 configure uart 1 for 9600 baud 7 data even parity loopback
+  30 dim tx as pin utxd1 for uart output
+  40 dim rx as pin urxd1 for uart input
   50 let tx = 3
   60 let tx = 4
   70 while tx do

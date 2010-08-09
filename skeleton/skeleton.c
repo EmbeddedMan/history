@@ -146,6 +146,8 @@ static char *help_about =
 "Welcome to Skeleton for Freescale MCF52233 v" VERSION "!\n"
 #elif MCF52221
 "Welcome to Skeleton for Freescale MCF52221 v" VERSION "!\n"
+#elif MCF51JM128
+"Welcome to Skeleton for Freescale MCF51JM128 v" VERSION "!\n"
 #else
 #error
 #endif
@@ -338,8 +340,10 @@ command_run(char *text_in)
             }
 
 #if ! _WIN32
+#if ! MCF51JM128
             MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
             asm { halt }
+#endif
 #endif
             break;
 
@@ -425,7 +429,7 @@ void
 main_run(void)
 {
     for (;;) {
-#if MCF52221
+#if MCF52221 || MCF51JM128
         // if our usb device is attached...
         if (scsi_attached) {
             int rv;
@@ -506,7 +510,7 @@ main_initialize()
     if (! usb_host_mode) {
         // register device mode callbacks
         terminal_register(main_command_cbfn, main_ctrlc_cbfn);
-    #if MCF52221
+    #if MCF52221 || MCF51JM128
         ftdi_register(main_reset_cbfn);
     #endif
     }

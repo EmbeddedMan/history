@@ -5,16 +5,34 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "basic", "basic.vcproj", "{9
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		Debug = Debug
-		Release = Release
+		51JM128 Debug = 51JM128 Debug
+		51JM128 Release = 51JM128 Release
+		52221 Debug = 52221 Debug
+		52221 Release = 52221 Release
+		52233 Debug = 52233 Debug
+		52233 Release = 52233 Release
+		Badge Debug = Badge Debug
+		Badge Release = Badge Release
 	EndGlobalSection
 	GlobalSection(ProjectDependencies) = postSolution
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
-		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.Debug.ActiveCfg = Debug|Win32
-		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.Debug.Build.0 = Debug|Win32
-		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.Release.ActiveCfg = Release|Win32
-		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.Release.Build.0 = Release|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.51JM128 Debug.ActiveCfg = 51JM128 Debug|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.51JM128 Debug.Build.0 = 51JM128 Debug|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.51JM128 Release.ActiveCfg = 51JM128 Release|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.51JM128 Release.Build.0 = 51JM128 Release|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.52221 Debug.ActiveCfg = 52221 Debug|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.52221 Debug.Build.0 = 52221 Debug|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.52221 Release.ActiveCfg = 52221 Release|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.52221 Release.Build.0 = 52221 Release|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.52233 Debug.ActiveCfg = 52233 Debug|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.52233 Debug.Build.0 = 52233 Debug|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.52233 Release.ActiveCfg = 52233 Release|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.52233 Release.Build.0 = 52233 Release|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.Badge Debug.ActiveCfg = Badge Debug|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.Badge Debug.Build.0 = Badge Debug|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.Badge Release.ActiveCfg = Badge Release|Win32
+		{945F9ACB-ADD5-4B2B-94C4-2404B6E90705}.Badge Release.Build.0 = Badge Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

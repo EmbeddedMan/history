@@ -6,10 +6,11 @@
 static volatile int sleep_seconds;
 
 // called on sleep entry and exit (sw1 depressed)
-__declspec(interrupt)
+INTERRUPT
 void
 sleep_isr(void)
 {
+#if ! MCF51JM128
     (void)splx(-SPL_IRQ1);
     
     delay(100);  // debounce
@@ -23,6 +24,7 @@ sleep_isr(void)
     sleep_delay(0);
     
     MCF_EPORT_EPFR = 0x02;
+#endif
 }
 
 void
@@ -47,6 +49,7 @@ static short pnqpar, pqspar;
 void
 sleep_poll(void)
 {
+#if ! MCF51JM128
     bool wake_mode;
     bool sleep_mode;
     
@@ -113,7 +116,7 @@ sleep_poll(void)
 
         // prepare for stop mode
         MCF_PMM_LPCR = MCF_PMM_LPCR_LPMD_STOP|0x18/*all clocks off*/;
-#if MCF52221 && ! FLASHER
+#if (MCF52221 || MCF51JM128) && ! FLASHER
         if (usb_host_mode && other_attached) {
             // prepare for doze mode to keep USB SOF's alive for other devices
             MCF_PMM_LPCR = MCF_PMM_LPCR_LPMD_DOZE|0x18/*all clocks off*/;
@@ -123,7 +126,7 @@ sleep_poll(void)
         // allow us to wake from stop mode
         MCF_PMM_LPICR = MCF_PMM_LPICR_ENBSTOP|MCF_PMM_LPICR_XLPM_IPL(0);
 
-        if (initialized) {
+        if (! gpl()) {
             // stop!
             asm {
                 stop #0x2000
@@ -176,13 +179,14 @@ sleep_poll(void)
         // reinitialize the adc
         adc_initialize();
     }
+#endif
 }
 
 // this function initializes the sleep module.
 void
 sleep_initialize(void)
 {
-    
+#if ! MCF51JM128
     // NQ is primary (irq1)
     irq1_enable = true;
     MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(1*2))) | (1<<(1*2));  // irq1 is primary
@@ -195,5 +199,6 @@ sleep_initialize(void)
     MCF_INTC0_ICR01 = MCF_INTC_ICR_IL(SPL_IRQ1)|MCF_INTC_ICR_IP(SPL_IRQ1);
     //MCF_INTC0_IMRH &= ~0;
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK1;  // irq1
+#endif
 }
 

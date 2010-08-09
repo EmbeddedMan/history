@@ -1,6 +1,6 @@
 // *** sleep.h ********************************************************
 
-__declspec(interrupt)
+INTERRUPT
 void
 sleep_isr(void);
 

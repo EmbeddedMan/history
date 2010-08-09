@@ -12,18 +12,18 @@ enum {
 extern int zb_nodeid;
 extern bool zb_present;
 
-extern int transmits;
-extern int receives;
-extern int drops;
-extern int failures;
-extern int retries;
-
 typedef void (*zb_recv_cbfn)(int nodeid, int length, byte *buffer);
 
 #if ! _WIN32
-__declspec(interrupt)
+INTERRUPT
 void
 zb_isr(void);
+
+#if MCF51JM128
+interrupt
+void
+zb_pre_isr(void);
+#endif
 #endif
 
 bool
@@ -34,6 +34,9 @@ zb_poll(void);
 
 void
 zb_drop(bool drop);
+
+void
+zb_diag(bool reset, bool init);
 
 void
 zb_register(uint8 class, zb_recv_cbfn cbfn);

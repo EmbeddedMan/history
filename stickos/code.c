@@ -2,17 +2,20 @@
 // this file implements bytecode code storage and access and merge
 // functionality, as well as the stickos filesystem.
 
+// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Patent pending.
+
 #include "main.h"
 
 bool code_indent = true;
 
 // the last word of each flash bank is the generation number
-#define GENERATION(p)  *(int *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(int))
+#define LGENERATION(p)  *(int *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(int))
 
 #define PAGE_SIZE(p)  (((p) == FLASH_CODE1_PAGE || (p) == FLASH_CODE2_PAGE) ? BASIC_LARGE_PAGE_SIZE : BASIC_SMALL_PAGE_SIZE)
 
 // we always pick the newer flash bank
-#define FLASH_CODE_PAGE  ((GENERATION(FLASH_CODE1_PAGE)+1 > GENERATION(FLASH_CODE2_PAGE)+1) ? FLASH_CODE1_PAGE : FLASH_CODE2_PAGE)
+#define FLASH_CODE_PAGE  ((LGENERATION(FLASH_CODE1_PAGE)+1 > LGENERATION(FLASH_CODE2_PAGE)+1) ? FLASH_CODE1_PAGE : FLASH_CODE2_PAGE)
 
 
 static
@@ -439,11 +442,11 @@ code_promote_alternate(void)
     assert(boo);
 
     // update the generation of the alternate page, to make it primary!
-    generation = GENERATION(FLASH_CODE_PAGE)+1;
+    generation = LGENERATION(FLASH_CODE_PAGE)+1;
     flash_write_words((uint32 *)(alternate_flash_code_page+BASIC_LARGE_PAGE_SIZE-sizeof(int)), (uint32 *)&generation, 1);
 
     assert(FLASH_CODE_PAGE == alternate_flash_code_page);
-    assert(GENERATION(FLASH_CODE1_PAGE) != GENERATION(FLASH_CODE2_PAGE));
+    assert(LGENERATION(FLASH_CODE1_PAGE) != LGENERATION(FLASH_CODE2_PAGE));
 
     delay(500);  // this always takes a while!
 }
@@ -649,7 +652,7 @@ code_load(char *name)
 
     // revisit -- this is not crash-update-safe
     code_page = FLASH_CODE_PAGE;
-    generation = GENERATION(code_page);
+    generation = LGENERATION(code_page);
 
     // erase the primary flash
     flash_erase_pages((uint32 *)code_page, BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);

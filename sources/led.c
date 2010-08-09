@@ -72,7 +72,8 @@ led_set(enum led n, int on)
 {
 #pragma unused(n)
     assert (n >= 0 && n < led_max);
-    
+
+#if ! MCF51JM128
 #if PICTOCRYPT
     // red LED workaround; tri-state when off!
     if (on) {
@@ -97,9 +98,16 @@ led_set(enum led n, int on)
 #endif
 
     if (on) {
-        MCF_GPIO_CLRNQ = (uint8)~(1 << (7));
+        MCF_GPIO_CLRNQ = (uint8)~(1 << 7);
     } else {
-        MCF_GPIO_SETNQ = (uint8)(1 << (7));
+        MCF_GPIO_SETNQ = (uint8)(1 << 7);
+    }
+#endif
+#else  // ! MCF51JM128
+    if (on) {
+        PTFD &= ~0x01;
+    } else {
+        PTFD |= 0x01;
     }
 #endif
 }
@@ -163,7 +171,6 @@ led_line(int line)
         };
     } else {
         splx(7);
-        initialized = 0;
         
         n = 0;
         for (;;) {
@@ -195,10 +202,56 @@ led_line(int line)
     }
 }
 
+// this function displays a diagnostic code on a LED.
+void
+led_hex(int hex)
+{
+    int i;
+    int j;
+    int n;
+    
+    if (debugger_attached) {
+        asm {
+            halt
+        };
+    } else {
+        splx(7);
+        
+        n = 0;
+        for (;;) {
+            if (n++ >= 10) {
+#if PICTOCRYPT
+                sleep_delay(0);
+#endif
+                sleep_poll();
+            }
+            
+            for (i = 0x10000000; i > 0; i /= 16) {
+                if (hex < i) {
+                    continue;
+                }
+                j = (hex/i)%16;
+                if (! j) {
+                    j = 16;
+                }
+                while (j--) {
+                    led_set(led_red, 1);
+                    delay(200);
+                    led_set(led_red, 0);
+                    delay(200);
+                }
+                delay(1000);
+            }
+            delay(3000);
+        }
+    }
+}
+
 // this function initializes the led module.
 void
 led_initialize(void)
 {
+#if ! MCF51JM128
     // TC is gpio output
     MCF_GPIO_PTCPAR = 0;
     MCF_GPIO_DDRTC = 0xf;
@@ -206,6 +259,10 @@ led_initialize(void)
     MCF_GPIO_CLRTC = ~0xf;  // all LEDs on to indicate reset!
 #else
     MCF_GPIO_SETTC = 0xf;  // all LEDs on to indicate reset!
+#endif
+#else  // ! MCF51JM128
+    // f0 is gpio output
+    PTFDD = 0x01;
 #endif
 }
 

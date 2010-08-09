@@ -79,8 +79,8 @@ extern uint8 powerup_config_flags;
  * externals.  
  */
 
-extern int fsys_frequency;
-#define SYS_CLK_MHZ  (fsys_frequency/1000000)
+extern int cpu_frequency;
+#define SYS_CLK_MHZ  (cpu_frequency/1000000)
 #define __interrupt__  __declspec(interrupt)
 
 

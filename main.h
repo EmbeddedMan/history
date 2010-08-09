@@ -1,21 +1,33 @@
 // *** main.h *********************************************************
 
+#ifndef MAIN_INCLUDED
 #define SLEEP_DELAY  60
 
 #include "config.h"
 
 #if ! _WIN32
 
-#if EXTRACT
+#if EXTRACT && ! MCF51JM128
 #include "extract.h"
 #else
 #if MCF52233
 #include "MCF52235.h"
 #elif MCF52221
 #include "MCF52221.h"
+#elif MCF51JM128
+#include "MCF51JM128.h"
+#include "compat.h"
 #else
-#error
+typedef unsigned char uint8;
+typedef unsigned short uint16;
+typedef unsigned int uint32;
 #endif
+#endif
+
+#if ! MCF51JM128
+#define INTERRUPT  __declspec(interrupt)
+#else
+#define INTERRUPT  interrupt
 #endif
 
 #else  // _WIN32
@@ -25,9 +37,12 @@
 extern int write(int, void *, int);
 extern char *gets(char *);
 
+#if ! NO_UINT_TYPEDEFS
 typedef unsigned char uint8;
 typedef unsigned short uint16;
 typedef unsigned int uint32;
+#define NO_UINT_TYPEDEFS  1
+#endif
 
 #define inline
 #undef MAX_PATH
@@ -37,7 +52,14 @@ typedef unsigned int uint32;
 #endif  // ! _WIN32
 
 typedef unsigned char bool;
+#if ! MCF51JM128
 typedef unsigned char byte;
+#endif
+
+enum {
+    false,
+    true
+};
 
 #define IN
 #define OUT
@@ -50,17 +72,13 @@ typedef unsigned char byte;
 #define LENGTHOF(a)  (sizeof(a)/sizeof(a[0]))
 #define OFFSETOF(t, f)  ((int)(&((t *)0)->f))
 
-enum {
-    false,
-    true
-};
-
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
 
 #include "clone.h"
 #include "flash.h"
+#include "pin.h"
 #include "printf.h"
 #include "qspi.h"
 #include "zigbee.h"
@@ -78,7 +96,7 @@ enum {
 #include "sleep.h"
 #include "timer.h"
 
-#if MCF52221
+#if MCF52221 || MCF51JM128
 #include "ftdi.h"
 #include "scsi.h"
 #include "usb.h"
@@ -93,6 +111,10 @@ enum {
 #define MCF_EPORT_EPPAR  MCF_EPORT0_EPPAR
 #define MCF_EPORT_EPFR  MCF_EPORT0_EPFR
 #define MCF_EPORT_EPIER  MCF_EPORT0_EPIER
+#endif
+
+#if BADGE_BOARD
+#include "jm.h"
 #endif
 
 #endif  // ! _WIN32
@@ -113,6 +135,9 @@ enum {
 #include "parse.h"
 #include "run.h"
 #include "vars.h"
+#include "basic2.h"
+#include "parse2.h"
+#include "run2.h"
 
 #elif SKELETON
 #include "skeleton.h"
@@ -122,12 +147,10 @@ enum {
 
 #endif  // PICTOCRYPT
 
-#if MCF52221
-#define os_yield()  // NULL
-#elif MCF52233
+#if MCF52233
 extern void os_yield(void);
 #else
-#error
+#define os_yield()  // NULL
 #endif
 
 #if ! _WIN32
@@ -153,4 +176,7 @@ extern byte big_buffer[1024];
 #endif  // ! _WIN32
 
 #define BASIC_LINE_SIZE  79
+
+#define MAIN_INCLUDED  1
+#endif  // MAIN_INCLUDED
 

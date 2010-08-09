@@ -1,4 +1,4 @@
-#if MCF52221
+#if MCF52221 || MCF51JM128
 // *** ftdi.c *********************************************************
 // this file implements the FTDI transport (on top of the usb driver
 // module).
@@ -119,10 +119,10 @@ ftdi_print(byte *buffer, int length)
     int x;
     bool start;
     
-    if (gpl() == 0) {
-        while (rx_in != rx_out) {
-            delay(1);
-        }
+    assert(gpl() == 0);
+
+    while (rx_in != rx_out) {
+        delay(1);
     }
 
     if (! length) {
