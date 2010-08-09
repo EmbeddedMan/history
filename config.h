@@ -1,4 +1,4 @@
-#define VERSION  "1.72a"
+#define VERSION  "1.72b"
 
 #if PIC32
 // REVISIT -- we take debug info from the pic32 environment for now

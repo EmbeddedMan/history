@@ -68,7 +68,7 @@ qspi_transfer(bool cs, byte *buffer, int length)
 
     // transfer complete
     MCF_QSPI_QWR = 0;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     while (length) {
         // N.B. spi needs us to read the status register even for release code!
         ASSERT(SPI1SX & SPI1S_SPTEF_MASK);
@@ -124,7 +124,7 @@ qspi_baud_fast(void)
     // initialize qspi master at 800k baud
     assert(bus_frequency/QSPI_BAUD_FAST < 256);
     MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/bus_frequency/QSPI_BAUD_FAST;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     int log2;
     int divisor;
     
@@ -159,7 +159,7 @@ qspi_initialize(void)
     // initialize qspi master at 200k baud
     assert(bus_frequency/QSPI_BAUD_SLOW < 256);
     MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/bus_frequency/QSPI_BAUD_SLOW;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     int log2;
     int divisor;
     
@@ -176,6 +176,11 @@ qspi_initialize(void)
     assert(log2 < 8 && (divisor-1) < 8);
     SPI1BRX_SPR = log2;
     SPI1BRX_SPPR = divisor-1;
+    
+#if MCF51CN128
+    PTBPF1 = 0x0a;
+    PTBPF2 = 0x80;
+#endif
 
 #if MC9S12DT256 || MC9S12DP512
     // route spi0 to m2,3,4,5

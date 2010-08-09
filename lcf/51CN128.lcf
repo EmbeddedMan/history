@@ -6,7 +6,7 @@ MEMORY {
    page0       (RX)  : ORIGIN = 0x00000000, LENGTH = 0x00000800
    page1       (RX)  : ORIGIN = 0x00000800, LENGTH = 0x00000800
    code        (RX)  : ORIGIN = 0x00001000, LENGTH = 0x0001f000
-   userram     (RWX) : ORIGIN = 0x00800000, LENGTH = 0x00002000
+   userram     (RWX) : ORIGIN = 0x00800000, LENGTH = 0x00006000
 }
 
 SECTIONS {
@@ -21,9 +21,9 @@ SECTIONS {
 
 
 
-# 8 Kbytes Internal SRAM
+# 24 Kbytes Internal SRAM
    ___RAMBAR         = 0x00800000;
-   ___RAMBAR_SIZE    = 0x00002000;
+   ___RAMBAR_SIZE    = 0x00006000;
 
 # 128 KByte Internal Flash Memory
    ___FLASHBAR       = 0x00000000;

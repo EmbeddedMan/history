@@ -3,7 +3,7 @@
 enum {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     adc_num_channel = 8
-#elif MCF51JM128
+#elif MCF51JM128 || MCF51CN128
     adc_num_channel = 12
 #elif MCF51QE128 || MC9S08QE128
     adc_num_channel = 20

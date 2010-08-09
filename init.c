@@ -46,6 +46,8 @@ init(void)
 
 #if MCF51JM128
     PTGPE = 0x01;
+#elif MCF51CN128
+    PTGPE = 0x40;
 #elif MCF51QE128
     PTAPE = 0x04;
 #endif

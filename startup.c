@@ -25,7 +25,7 @@
 
 #ifndef MAIN_INCLUDED
 
-#if EXTRACT && ! MCF51JM128 && ! MCF51QE128
+#if EXTRACT && ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
 #include "extract.h"
 #else
 #if MCF52233
@@ -38,6 +38,9 @@
 #include "MCF5211.h"
 #elif MCF51JM128
 #include "MCF51JM128.h"
+#include "compat.h"
+#elif MCF51CN128
+#include "MCF51CN128.h"
 #include "compat.h"
 #elif MCF51QE128
 #include "MCF51QE128.h"
@@ -72,7 +75,7 @@ extern uint8 __RAMBAR[];
 #endif
 
 typedef unsigned char bool;
-#if ! MCF51JM128 && ! MCF51QE128
+#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
 typedef unsigned char byte;
 #endif
 
@@ -189,7 +192,7 @@ const uint32 _vect[256] = {
 // this is the cfm config
 DECLSPEC_PAGE0_DATA
 const uint32 _cfm[] = {
-#if ! MCF51JM128 && ! MCF51QE128
+#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
     0,                              // (0x00000400) KEY_UPPER
     0,                              // (0x00000404) KEY_LOWER
     0xffffffff,                     // (0x00000408) CFMPROT
@@ -225,7 +228,7 @@ BEGIN_NAKED(_startup)
     // disable interrupts
     Q3(move.w,  #0x2700,sr)
     
-#if ! MCF51JM128 && ! MCF51QE128
+#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
     // initialize RAMBAR
     Q3(move.l,  #__RAMBAR+0x21,d0)
     Q3(movec,   d0,RAMBAR)
@@ -311,6 +314,9 @@ p0_c_startup(void)
     // disable Software Watchdog Timer
     SOPT1 = SOPT1_STOPE_MASK;
     SOPT2 &= ~SOPT2_USB_BIGEND_MASK;
+#elif MCF51CN128
+    // disable Software Watchdog Timer
+    SOPT1 = SOPT1_STOPE_MASK;
 #elif MCF51QE128
     // disable Software Watchdog Timer
     SOPT1 = SOPT1_STOPE_MASK|SOPT1_BKGDPE_MASK;
@@ -448,6 +454,53 @@ p0_c_startup(void)
     bus_frequency = cpu_frequency/2;
     oscillator_frequency = 12000000;
 
+    // we read KBI1SC's initial value to determine if the debugger is attached
+    // N.B. this value must be set by the debugger's cmd file!
+    if (KBI1SC == 0x01) {
+        debugger_attached = true;
+    }
+#elif MCF51CN128
+#define EXTAL_PIN_INIT                  PTDPF1_D4 = 0b11;   // extal pin ON
+#define XTAL_PIN_INIT                   PTDPF1_D5 = 0b11;   // xtal pin ON
+    EXTAL_PIN_INIT;
+    XTAL_PIN_INIT;
+
+  /* switch from FEI to FBE (FLL bypassed external) */ 
+  /* enable external clock source */
+
+    MCGC2 = MCGC2_ERCLKEN_MASK  // activate external reference clock
+          | MCGC2_EREFS_MASK    // because crystal is being used
+          | MCGC2_RANGE_MASK;   // high range  
+            
+    /* select clock mode */
+    MCGC1 = (0b10<<6)           // CLKS = 10 -> external reference clock
+          | (0b100<<3)          // RDIV = 2^4 -> 25MHz/16 = 1.5625 MHz
+          | MCGC1_IRCLKEN_MASK; // IRCLK to RTC enabled
+          // also clear IREFs
+      
+    /* wait for mode change to be done */
+    while (MCGSC_IREFST | (MCGSC_CLKST != 0b10)) // wait for Reference Status bit to update
+    ;                                            // and for clock status bits to update 
+
+    /* switch from FBE to PBE (PLL bypassed internal) mode */
+    MCGC3 =  (0b1000<<0)        // set PLL multi 50MHz
+          |  MCGC3_PLLS_MASK;   // select PLL
+
+    while (!MCGSC_PLLST | !MCGSC_LOCK) /* wait for PLL status bit to update */
+    ;   /* Wait for LOCK bit to set */
+
+    /* Now running PBE Mode */
+    /* finally switch from PBE to PEE (PLL enabled external mode) */
+    MCGC1_CLKS  = 0b00; // PLL clock to system (MCGOUT)
+
+    /* Wait for clock status bits to update */
+    while (MCGSC_CLKST != 0b11)           
+    ;
+
+    cpu_frequency = 50000000;
+    bus_frequency = cpu_frequency/2;
+    oscillator_frequency = 32768;
+    
     // we read KBI1SC's initial value to determine if the debugger is attached
     // N.B. this value must be set by the debugger's cmd file!
     if (KBI1SC == 0x01) {

@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-#if PIC32
+#if PIC32 || MCF51CN128
 #define UART  1
 #else
 #define UART  0
@@ -43,8 +43,11 @@ serial_disable(void)
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // disable uart1 receive interrupts
     SCI1C2X &= ~SCI1C2_RIE_MASK;
+#elif MCF51CN128
+    // disable uart2 receive interrupts
+    SCI2C2X &= ~SCI2C2_RIE_MASK;
 #elif PIC32
-    // Unconfigure UART1 RX Interrupt
+    // Unconfigure UART2 RX Interrupt
     ConfigIntUART2(0);
 #endif
     // don't allow the rx ball to start rolling
@@ -236,6 +239,13 @@ serial_initialize(void)
     
     // configure uart1 receive interrupts
     SCI1C2X |= SCI1C2_RIE_MASK;
+#elif MCF51CN128
+    SCI2C2X = SCI2C2_TE_MASK|SCI2C2_RE_MASK;
+    
+    // configure uart2 receive interrupts
+    SCI2C2X |= SCI2C2_RIE_MASK;
+    
+    PTDPF2 = 0xa0;
 #elif PIC32
     U2MODE |= _U2MODE_UARTEN_MASK;
 

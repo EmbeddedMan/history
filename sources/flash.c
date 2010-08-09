@@ -118,7 +118,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     }
 #endif
 }
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #else
@@ -512,7 +512,7 @@ flash_upgrade_ram_begin(bool compatible)
     MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
     asm_halt();
 #endif
-#elif MCF51JM128 || MCF51QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128
 #if ! BADGE_BOARD
     uint32 *addr;
     uint32 *data;
@@ -768,7 +768,7 @@ flash_upgrade_ram_end(void)
 void
 flash_upgrade(uint32 fsys_frequency)
 {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128
 #if ! BADGE_BOARD && ! DEMO_KIT
     int i;
     int n;
@@ -1014,7 +1014,7 @@ flash_upgrade(uint32 fsys_frequency)
         // reset the MCU; init() will take care of the rest
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
         MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-#elif MCF51JM128 || MCF51QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128
         asm {
             move.l  #0x00000000,d0
             movec   d0,CPUCR
@@ -1306,7 +1306,7 @@ flash_upgrade(uint32 fsys_frequency)
 void
 flash_initialize(void)
 {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     assert((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer));
 #if MC9S12DT256 || MC9S12DP512
     if (oscillator_frequency > 12800000) {

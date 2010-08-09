@@ -45,7 +45,7 @@ timer_isr(void)
 #if ! STICK_GUEST
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     MCF_PIT0_PCSR |= MCF_PIT_PCSR_PIF;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
     RTCSC |= RTCSC_RTIF_MASK;
 #elif MC9S12DT256 || MC9S12DP512
     CRGFLG = 128;                        /* Reset interrupt request flag */
@@ -206,9 +206,10 @@ timer_initialize(void)
     MCF_PIT0_PCSR = 0;
     MCF_PIT0_PMR = bus_frequency/1000/ticks_per_msec - 1;
     MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_DOZE|MCF_PIT_PCSR_DBG|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
 #if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     // remap rtc to level 6
+    // XXX -- this does nothing???
     INTC_PL6P7 = 27;
 #endif
 

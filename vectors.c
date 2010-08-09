@@ -324,7 +324,7 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 254
     UINT32HALT, 0,                               // 255
 };
-#elif MCF51JM128 || MCF51QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128
 // this is the software interrupt vector table, in page1.
 #if ! BADGE_BOARD && ! DEMO_KIT
 __declspec(page1)
@@ -427,7 +427,11 @@ uint32 _swvect[512] = {
 #else
     UINT32HALT, 0,                               // 82
 #endif
+#if MCF51CN128
+    UINT32JMP, (uint32)serial_isr,               // 83 serial.c
+#else
     UINT32HALT, 0,                               // 83
+#endif
     UINT32HALT, 0,                               // 84
     UINT32HALT, 0,                               // 85
 #if MCF51QE128
@@ -462,7 +466,11 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 103
     UINT32HALT, 0,                               // 104
     UINT32HALT, 0,                               // 105
+#if MCF51CN128
+    UINT32JMP, (uint32)zb_isr,                   // 106 zigflea.c
+#else
     UINT32HALT, 0,                               // 106
+#endif
 #if MCF51JM128
     UINT32JMP, (uint32)zb_isr,                   // 107 zigflea.c
 #else
@@ -474,7 +482,11 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 111
     UINT32HALT, 0,                               // 112
     UINT32HALT, 0,                               // 113
+#if MCF51CN128
+    UINT32JMP, (uint32)timer_isr,                // 114 timer.c
+#else
     UINT32HALT, 0,                               // 114
+#endif
     UINT32HALT, 0,                               // 115
     UINT32HALT, 0,                               // 116
     UINT32HALT, 0,                               // 117

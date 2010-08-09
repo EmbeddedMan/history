@@ -30,6 +30,9 @@
 #elif MCF51JM128
 #include "MCF51JM128.h"
 #include "compat.h"
+#elif MCF51CN128
+#include "MCF51CN128.h"
+#include "compat.h"
 #elif MCF51QE128
 #include "MCF51QE128.h"
 #include "compat.h"
@@ -84,8 +87,8 @@ typedef uint32 size_t;
 #define asm_stop_2000(x) __asm__("stop #0x2000")
 #define asm_stop_2700(x) __asm__("stop #0x2700")
 
-#elif MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128
-#if MCF51JM128 || MCF51QE128
+#elif MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128
+#if MCF51JM128 || MCF51CN128 || MCF51QE128
 #define INTERRUPT  interrupt
 #else
 #define INTERRUPT  __declspec(interrupt)
@@ -176,7 +179,7 @@ extern char *gets(char *);
 #endif  // ! STICK_GUEST
 
 typedef unsigned char bool;
-#if (! MCF51JM128 && ! MCF51QE128) || GCC
+#if (! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128) || GCC
 typedef unsigned char byte;
 #endif
 typedef unsigned int uint;

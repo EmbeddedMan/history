@@ -21,7 +21,7 @@ void
 zb_isr(void);
 #endif
 
-#if MCF51JM128 || MCF51QE128
+#if MCF51JM128 || MCF51CN128 || MCF51QE128
 interrupt
 void
 zb_pre_isr(void);

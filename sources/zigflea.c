@@ -397,6 +397,9 @@ zb_isr(void)
 #if MCF51JM128
     // cancel zb_isr at level 4
     INTC_CFRC = 0x3B;
+#elif MCF51CN128
+    // cancel zb_isr at level 4
+    INTC_CFRC = 0x3B;
 #elif MCF51QE128
     // cancel zb_isr at level 4
     INTC_CFRC = 0x23;
@@ -444,7 +447,7 @@ zb_isr(void)
     zb_isrs++;
 }
 
-#if MCF51JM128 || MCF51QE128
+#if MCF51JM128 || MCF51CN128 || MCF51QE128
 interrupt
 void
 zb_pre_isr(void)
@@ -452,8 +455,12 @@ zb_pre_isr(void)
     // call zb_isr at level 4
 #if MCF51JM128
     INTC_SFRC = 0x3B;
-#else
+#elif MCF51CN128
+    INTC_SFRC = 0x3B;
+#elif MCF51QE128
     INTC_SFRC = 0x23;
+#else
+#error
 #endif
     
     // iack
@@ -804,9 +811,12 @@ zb_initialize(void)
     MCF_INTC0_ICR01 = MCF_INTC_ICR_IL(SPL_IRQ1)|MCF_INTC_ICR_IP(SPL_IRQ1);
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK1;  // irq1
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
     // program irq (level 7) for falling edge trigger
     IRQSC = IRQSC_IRQPE_MASK|IRQSC_IRQIE_MASK;
+#if MCF51CN128
+    PTCPF1 = 0x01;
+#endif
 #elif MC9S12DT256 || MC9S12DP512
 #define setReg8(RegName, val)                                    (RegName = (byte)(val))
     /* INTCR: IRQE=0,IRQEN=1,??=0,??=0,??=0,??=0,??=0,??=0 */

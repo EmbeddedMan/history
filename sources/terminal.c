@@ -108,7 +108,7 @@ terminal_print(const byte *buffer, int length)
         printed = true;
     }
 #endif
-#elif MCF5211 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF5211 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #elif MCF52233
     if (rich_so) {
         m_send(rich_so, buffer, length);

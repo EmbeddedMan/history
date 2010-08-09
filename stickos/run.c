@@ -916,7 +916,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 run_printf = false;
             }
             break;
-#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51QE128 || MCF5211
+#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
         default:
             goto XXX_MORE_XXX;  // N.B. CW compiler bug
             break;
@@ -1466,11 +1466,11 @@ XXX_PERF_XXX:
             break;
     }
     
-#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51QE128 || MCF5211
+#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
 XXX_DONE_XXX:
 #endif
 
-#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51QE128 || MCF5211
+#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
     assert_ram(index == length);  // CW bug
 #else
     assert(index == length);

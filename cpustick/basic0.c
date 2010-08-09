@@ -65,6 +65,8 @@ char * const help_about =
 "Welcome to StickOS for Freescale MCF5211 v" VERSION "!\n"
 #elif MCF51JM128
 "Welcome to StickOS for Freescale MCF51JM128 v" VERSION "!\n"
+#elif MCF51CN128
+"Welcome to StickOS for Freescale MCF51CN128 v" VERSION "!\n"
 #elif MCF51QE128
 "Welcome to StickOS for Freescale MCF51QE128 v" VERSION "!\n"
 #elif MC9S08QE128
@@ -368,6 +370,26 @@ static char *const help_pins =
 "pte[23], ptf[0-5] = potential frequency output pins (Hz)\n"
 "pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)\n"
 "pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)\n"
+#elif MCF51CN128
+"    0       1       2       3       4       5       6       7\n"
+"  ------- ------- ------- ------- ------- ------- ------- --------+\n"
+"  pta0    pta1    pta2    pta3    pta4    pta5    pta6    pta7    | PORT A\n"
+"  ptb0    ptb1    ptb2    ptb3    ptb4    ptb5    ptb6    ptb7    | PORT B\n"
+"  ptc0    ptc1    ptc2            ptc4    ptc5    ptc6    ptc7    | PORT C\n"
+"  ptd0    ptd1    ptd2    ptd3                    ptd6    ptd7    | PORT D\n"
+"  pte0    pte1    pte2    pte3    pte4    pte5    pte6    pte7    | PORT E\n"
+"  ptf0    ptf1    ptf2    ptf3    ptf4    ptf5    ptf6    ptf7    | PORT F\n"
+"  ptg0    ptg1    ptg2    ptg3    ptg4    ptg5    ptg6    ptg7    | PORT G\n"
+"  pth0    pth1    pth2    pth3    pth4    pth5    pth6    pth7    | PORT H\n"
+"  ptj0    ptj1    ptj2    ptj3    ptj4    ptj5                    | PORT J\n"
+"\n"
+"all pins support general purpose digital input/output\n"
+"ptc[4-7], ptd[0-37], pte[0-2] = potential analog input pins (mV)\n"
+"ptb[67], ptc0, pte[3-5] = potential analog output (PWM) pins (mV)\n"
+"ptb[67], ptc0, pte[3-5] = potential servo output (PWM) pins (cms)\n"
+"ptb[67], ptc0, pte[3-5] = potential frequency output pins (Hz)\n"
+"ptd1 (u1), ptd3 (u2), pta4 (u3) = potential uart input pins (received byte)\n"
+"ptd0 (u1), ptd2 (u2), pta3 (u3) = potential uart output pins (transmit byte)\n"
 #elif MCF51QE128 || MC9S08QE128
 "    0       1       2       3       4       5       6       7\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
@@ -533,6 +555,11 @@ static char *const help_zigflea =
 "  miso1 (pte4)         miso\n"
 "  mosi1 (pte5)         mosi\n"
 "  irq*                 irq*\n"
+#elif MCF51CN128
+"  spsck1 (ptb5)        spiclk\n"
+"  miso1 (ptb4)         miso\n"
+"  mosi1 (ptb3)         mosi\n"
+"  irq* (ptc4)          irq*\n"
 #elif MCF51QE128 || MC9S08QE128
 "  spsck1 (ptb2)        spiclk\n"
 "  miso1 (ptb4)         miso\n"
@@ -610,6 +637,8 @@ static const char * const demos[] = {
   "dim led as pin dtin2 for digital output\n"
 #elif MCF51JM128
   "dim led as pin ptf1 for digital output inverted\n"
+#elif MCF51CN128
+  "dim led as pin ptg5 for digital output inverted\n"
 #elif MCF51QE128 || MC9S08QE128
   "dim led as pin ptc3 for digital output inverted\n"
 #elif MC9S12DT256 || MC9S12DP512
@@ -653,6 +682,9 @@ static const char * const demos[] = {
 #if MCF51JM128
   "dim tx as pin ptc3 for uart output\n"
   "dim rx as pin ptc5 for uart input\n"
+#elif MCF51CN128
+  "dim tx as pin ptd2 for uart output\n"
+  "dim rx as pin ptd3 for uart input\n"
 #elif MCF51QE128 || MC9S08QE128
   "dim tx as pin ptc7 for uart output\n"
   "dim rx as pin ptc6 for uart input\n"
@@ -692,6 +724,9 @@ static const char * const demos[] = {
 #elif MCF51JM128
   "dim tx as pin pte0 for uart output\n"
   "dim rx as pin pte1 for uart input\n"
+#elif MCF51CN128
+  "dim tx as pin ptd0 for uart output\n"
+  "dim rx as pin ptd1 for uart input\n"
 #elif MCF51QE128 || MC9S08QE128
   "dim tx as pin ptb1 for uart output\n"
   "dim rx as pin ptb0 for uart input\n"
@@ -706,7 +741,7 @@ static const char * const demos[] = {
 #endif
 #if STICK_GUEST
   "let tx = 3\n"
-#if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
   "while tx do\n"
   "endwhile\n"
   "print rx\n"
@@ -730,6 +765,9 @@ static const char * const demos[] = {
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128
   "dim thermocouple as pin ptb2 for analog input\n"
   "dim relay as pin ptb3 for digital output\n"
+#elif MCF51CN128
+  "dim thermocouple as pin pte0 for analog input\n"
+  "dim relay as pin pte1 for digital output\n"
 #elif MC9S12DT256 || MC9S12DP512
   "dim thermocouple as pin pad00 for analog input\n"
   "dim relay as pin pa0 for digital output\n"
@@ -1003,7 +1041,7 @@ basic0_run(char *text_in)
             (void)splx(7);
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
             MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-#elif MCF51JM128 || MCF51QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128
             asm {
                 move.l  #0x00000000,d0
                 movec   d0,CPUCR
