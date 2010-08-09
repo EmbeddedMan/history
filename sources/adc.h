@@ -3,7 +3,7 @@
 extern volatile short adc_result[8];
 
 bool
-adc_poll();
+adc_timer_poll();
 
 void
 adc_sleep();

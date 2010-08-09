@@ -79,6 +79,7 @@ enum flash_var {
 #if MCF52233
     FLASH_IPADDRESS,
 #endif
+    FLASH_NODEID,
     FLASH_LAST
 };
 
@@ -89,7 +90,7 @@ int var_open_scope();
 void var_close_scope(int scope);
 
 // called at runtime to manipulate variables
-void var_declare(char *name, int gosubs, int type, int size, int max_index, int pin_number, int pin_type);
+void var_declare(char *name, int gosubs, int type, int size, int max_index, int pin_number, int pin_type, int nodeid);
 void var_set(char *name, int index, int value);
 int var_get(char *name, int index);
 int var_get_size(char *name);
@@ -101,5 +102,7 @@ int var_get_flash(enum flash_var var);
 void var_clear(bool flash);
 
 void var_mem(void);
+
+void var_poll(void);
 
 void var_initialize(void);

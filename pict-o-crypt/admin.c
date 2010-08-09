@@ -333,7 +333,7 @@ admin_run(char *text_in)
                 }
 
                 while (! main_command) {
-                    // NULL
+                    terminal_poll();
                 }
 
                 // get the confirmed key

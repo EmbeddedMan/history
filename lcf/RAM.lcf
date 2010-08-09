@@ -5,8 +5,8 @@
 MEMORY {
    page0       (RX)  : ORIGIN = 0x20000000, LENGTH = 0x00000800
    page1       (RX)  : ORIGIN = 0x20000800, LENGTH = 0x00000800
-   code        (RX)  : ORIGIN = 0x20001000, LENGTH = 0x00001800
-   userram     (RWX) : ORIGIN = 0x20002800, LENGTH = 0x00001800
+   code        (RX)  : ORIGIN = 0x20001000, LENGTH = 0x00001c00
+   userram     (RWX) : ORIGIN = 0x20002c00, LENGTH = 0x00001400
 }
 
 SECTIONS {

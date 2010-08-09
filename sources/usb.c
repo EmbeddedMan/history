@@ -55,7 +55,7 @@ struct endpoint {
     int data_offset;  // current offset in data stream
     int data_length;  // max offset in data stream
     byte data_buffer[64];  // data to or from host
-} endpoints[4];
+} endpoints[6];
 
 byte bulk_in_ep;
 byte bulk_out_ep;
@@ -81,15 +81,18 @@ parse_configuration(const byte *configuration, int size)
             if (configuration[i+3] == BULK_ATTRIBUTES) {
                 if (configuration[i+2] & 0x80) {
                     bulk_in_ep = (byte)(configuration[i+2] & 0xf);
+                    assert(bulk_in_ep < LENGTHOF(endpoints));
                     assert(configuration[i+4]);
                     endpoints[bulk_in_ep].packetsize = configuration[i+4];
                 } else {
                     bulk_out_ep = (byte)(configuration[i+2] & 0xf);
+                    assert(bulk_out_ep < LENGTHOF(endpoints));
                     assert(configuration[i+4]);
                     endpoints[bulk_out_ep].packetsize = configuration[i+4];
                 }
             } else if (configuration[i+3] == INTERRUPT_ATTRIBUTES) {
                 int_ep = (byte)(configuration[i+2] & 0xf);
+                assert(int_ep < LENGTHOF(endpoints));
                 assert(configuration[i+4]);
                 endpoints[int_ep].packetsize = configuration[i+4];
                 endpoints[int_ep].interrupt = 1;
@@ -499,6 +502,8 @@ usb_isr(void)
     assert(! usb_in_isr);
     usb_in_isr = true;
     
+    (void)splx(-SPL_USB);
+    
     // *** host ***
     
 #if ! STICKOS
@@ -602,6 +607,8 @@ usb_isr(void)
         usb_setup(0, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_SET_CONFIGURATION, configuration[5], 0, 0, &setup);
         rv = usb_control_transfer(&setup, NULL, 0);
         assert(rv == 0);
+        
+        delay(200);  // post set address recovery
         
         for (e = 1; e < LENGTHOF(endpoints); e++) {
             assert(endpoints[e].toggle[0] == 0);

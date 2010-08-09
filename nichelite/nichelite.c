@@ -182,6 +182,13 @@ void mcf5223x_ePHY_init(void)
 // *** MAIN.C EXTENSIONS **********************************************
 
 int
+dprintf(char *format, ...)
+{
+#pragma unused(format)
+    return 0;
+}
+
+int
 dhcp_callback(int iface, int state)
 {
     if (! rich_so) {
@@ -312,6 +319,7 @@ EXIT_CRIT_SECTION(void * p)
 void
 os_yield(void)
 {
+    assert(! gpl());
     tk_yield();
 }
 
@@ -371,9 +379,9 @@ TK_ENTRY(tk_rich2)
     int n;
       M_SOCK so;
       int error;
-      static char buffer[1];
+      static char buffer[1];  // revisit -- grow this!!!
       static struct sockaddr_in addr;
-      void terminal_receive(unsigned char *buffer, int length);
+      extern unsigned char terminal_receive(unsigned char *buffer, int length);
 
       
    /* wait till the stack is initialized */
@@ -395,7 +403,8 @@ printf("listen\n");
             n = m_recv(rich_so, buffer, sizeof(buffer));
             assert(n >= 0);
             if (n) {
-                terminal_receive((unsigned char *)buffer, n);
+                (void)terminal_receive((unsigned char *)buffer, n);
+                terminal_wait();
             }
             tk_yield();
         } else {

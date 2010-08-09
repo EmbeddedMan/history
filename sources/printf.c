@@ -267,6 +267,8 @@ vprintf(const char *format, va_list ap)
 {
     int n;
     
+    assert(gpl() == 0);
+
     n = vsnprintf(bbuffer, sizeof(bbuffer), format, ap);
     assert(! bbuffer[sizeof(bbuffer)-1]);
     

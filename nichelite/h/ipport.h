@@ -289,7 +289,7 @@ void dtrap(void); 			/* routine with permanent breakpoint */
 #define NUM_TXBDS    2
 
 #ifdef NATIVE_PRINTF
-//extern  int  dprintf(char * format, ...);
+extern  int  dprintf(char * format, ...);
 /* extern  int  printf(char * format, ...); */
 #else
 extern  void dprintf(char * format, ...);

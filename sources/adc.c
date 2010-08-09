@@ -8,7 +8,7 @@ volatile short adc_result[8];
 
 // poll the analog-to-digital converters
 bool
-adc_poll(void)
+adc_timer_poll(void)
 {
     int i;
 

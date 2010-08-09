@@ -1,6 +1,6 @@
 extract()
 {
-  find . -name \*.c |
+  find . -name \*.c -o -name main.h |
     grep -vEi "nichelite|stickos|pict-o-crypt" |
     xargs cat |
     grep "\<MCF_" |

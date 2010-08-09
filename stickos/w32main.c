@@ -3,10 +3,17 @@
 
 extern int isatty(int);
 
+bool zb_present = true;
 bool main_prompt = true;
 bool terminal_echo = true;
 
-byte big_buffer[2048];
+byte big_buffer[1024];
+
+int
+gpl()
+{
+    return 0;
+}
 
 void
 delay(int ms)

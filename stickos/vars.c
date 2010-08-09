@@ -66,13 +66,33 @@ const struct pin pins[] = {
     "sda", pin_type_default,
 };
 
+struct {
+    char *name;
+    int *integer;
+} systems[] = {
+#if ! _WIN32
+    "drops", &drops,
+    "failures", &failures,
+    "nodeid", &zb_nodeid,
+    "receives", &receives,
+    "retries", &retries,
+    "seconds", (int *)&seconds,
+    "ticks", (int *)&ticks,
+    "transmits", &transmits
+#else
+    "dummy", NULL
+#endif
+};
+
 bool var_trace;
 
 #define MAX_VARS  100
 
+#define VAR_NAME_SIZE  15
+
 static
 struct var {
-    char name[15];  // 14 char max variable name
+    char name[VAR_NAME_SIZE];  // 14 char max variable name
     byte gosubs;
     byte type;
     byte size;  // 4 bytes per integer, 2 bytes per short, 1 byte per byte
@@ -85,6 +105,7 @@ struct var {
             byte type;  // only 1 bit set
         } pin;
     } u;
+    int nodeid;  // for remote variable sets
 } vars[MAX_VARS];
 
 static int max_vars;  // allocated
@@ -203,12 +224,18 @@ var_open_scope(void)
 void
 var_close_scope(IN int scope)
 {
-    max_vars = scope;
+    // reclaim ram space
+    if (max_vars > scope) {
+        assert(vars[scope].type == code_ram || vars[scope].type == code_nodeid);
+        ram_offset = vars[scope].u.page_offset;
+        max_vars = scope;
+        memset(RAM_VARIABLE_PAGE+ram_offset, 0, sizeof(RAM_VARIABLE_PAGE)-ram_offset);
+    }
 }
 
 // this function declares a ram, flash, or pin variable!
 void
-var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type)
+var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int nodeid)
 {
 #if ! _WIN32
     int assign;
@@ -221,6 +248,12 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
     assert(max_index);
 
     if (! run_condition) {
+        return;
+    }
+
+    if ((type == code_flash || type == code_pin) && gosubs) {
+        printf("flash or pin variable declared in sub\n");
+        stop();
         return;
     }
 
@@ -257,8 +290,11 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
     assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(int));
     vars[max_vars].size = size;
     vars[max_vars].max_index = max_index;
+    vars[max_vars].nodeid = nodeid;
 
     switch (type) {
+        case code_nodeid:
+            assert(size == 4);  // integer only
         case code_ram:
             assert(! pin_number);
             // if we're out of ram space...
@@ -346,9 +382,9 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
                     offset = pin_number - PIN_UTXD1;
                     if (pin_type == pin_type_uart_input || pin_type == pin_type_uart_output) {
                         assert(pin_number == PIN_URXD1 || pin_number == PIN_UTXD1);
-                        MCF_GPIO_PUBPAR = (MCF_GPIO_PUBPAR &~ (3 << (2*offset))) | (1 << (2*offset));
+                        MCF_GPIO_PUBPAR = (MCF_GPIO_PUBPAR &~ (3 << (offset*2))) | (1 << (offset*2));
                     } else {
-                        MCF_GPIO_PUBPAR &= ~(3 << (2*offset));
+                        MCF_GPIO_PUBPAR &= ~(3 << (offset*2));
                         if (pin_type == pin_type_digital_output) {
                             MCF_GPIO_DDRUB |= 1 << offset;
                         } else {
@@ -364,9 +400,9 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
                     offset = pin_number - PIN_UTXD0;
                     if (pin_type == pin_type_uart_input || pin_type == pin_type_uart_output) {
                         assert(pin_number == PIN_URXD0 || pin_number == PIN_UTXD0);
-                        MCF_GPIO_PUAPAR = (MCF_GPIO_PUAPAR &~ (3 << (2*offset))) | (1 << (2*offset));
+                        MCF_GPIO_PUAPAR = (MCF_GPIO_PUAPAR &~ (3 << (offset*2))) | (1 << (offset*2));
                     } else {
-                        MCF_GPIO_PUAPAR &= ~(3 << (2*offset));
+                        MCF_GPIO_PUAPAR &= ~(3 << (offset*2));
                         if (pin_type == pin_type_digital_output) {
                             MCF_GPIO_DDRUA |= 1 << offset;
                         } else {
@@ -400,7 +436,13 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
                 case PIN_IRQ4:
                 case PIN_IRQ7:
                     offset = pin_number - PIN_IRQ0;
-                    MCF_GPIO_PNQPAR = 0;
+                    if (offset == 1) {
+                        irq1_enable = false;
+                        MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(1*2))) | (0<<(1*2));  // irq1 is gpio
+                    } else if (offset == 4) {
+                        irq4_enable = false;
+                        MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(4*2))) | (0<<(4*2));  // irq4 is gpio
+                    }
                     if (pin_type == pin_type_digital_output) {
                         MCF_GPIO_DDRNQ |= 1 << offset;
                     } else {
@@ -459,6 +501,49 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
     max_vars++;
 }
 
+typedef struct remote_set {
+    char name[VAR_NAME_SIZE];  // 14 char max variable name
+    int index;
+    int value;
+} remote_set_t;
+
+static remote_set_t set;
+
+static bool remote;
+
+#if ! _WIN32
+static void
+class_remote_set(int nodeid, int length, byte *buffer)
+{
+#pragma unused(nodeid)
+#pragma unused(length)
+    // remember to set the variable as requested by the remote node
+    assert(length == sizeof(set));
+    set = *(remote_set_t *)buffer;
+}
+
+void
+var_poll(void)
+{
+    bool condition;
+
+    if (set.name[0]) {
+        assert(! remote);
+        remote = true;
+        condition = run_condition;
+        run_condition = true;
+
+        // set the variable as requested by the remote node
+        var_set(set.name, set.index, set.value);
+        set.name[0] = '\0';
+
+        run_condition = condition;
+        assert(remote);
+        remote = false;
+    }
+}
+#endif
+
 static byte lasttx0;
 static byte lasttx1;
 
@@ -468,6 +553,7 @@ var_set(IN char *name, IN int index, IN int value)
 {
 #if ! _WIN32
     int offset;
+    remote_set_t set;
 #endif
     struct var *var;
 
@@ -484,6 +570,33 @@ var_set(IN char *name, IN int index, IN int value)
         stop();
     } else {
         switch (var->type) {
+            case code_nodeid:
+                if (! zb_present) {
+                    printf("zigbee not present\n");
+                    stop();
+                    break;
+#if ! _WIN32
+                } else if (zb_nodeid == -1) {
+                    printf("zigbee nodeid not set\n");
+                    stop();
+                    break;
+#endif
+                }
+                
+#if ! _WIN32
+                // if we're not being set from a remote node...
+                if (! remote) {
+                    // forward the variable set request to the remote node
+                    strcpy(set.name, name);
+                    set.index = index;
+                    set.value = value;
+                    if (! zb_send(var->nodeid, zb_class_remote_set, sizeof(set), (byte *)&set)) {
+                        value = -1;
+                    }
+                }
+                // fall thru
+#endif
+                
             case code_ram:
                 // *** RAM control and access ***
                 // set the ram variable to value
@@ -702,6 +815,7 @@ var_set(IN char *name, IN int index, IN int value)
 int
 var_get(IN char *name, IN int index)
 {
+    int i;
     int value;
 #if ! _WIN32
     int offset;
@@ -715,6 +829,14 @@ var_get(IN char *name, IN int index)
     value = 0;
 
     var = var_find(name);
+    if (! var && ! index) {
+        // see if this could be a special system variable
+        for (i = 0; i < LENGTHOF(systems); i++) {
+            if (! strcmp(name, systems[i].name)) {
+                return *systems[i].integer;
+            }
+        }
+    }
     if (! var) {
         printf("var '%s' undefined\n", name);
         stop();
@@ -723,6 +845,7 @@ var_get(IN char *name, IN int index)
         stop();
     } else {
         switch (var->type) {
+            case code_nodeid:
             case code_ram:
                 // *** RAM control and access ***
                 // get the value of the ram variable
@@ -951,5 +1074,7 @@ var_initialize(void)
     MCF_DTIM1_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
     MCF_DTIM2_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
     MCF_DTIM3_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
+
+    zb_register(zb_class_remote_set, class_remote_set);
 #endif
 }

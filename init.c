@@ -15,6 +15,8 @@ uint32 incompat;
 bool disable_autorun;
 uint16 flash_checksum;
 bool usb_host_mode;
+bool irq1_enable;
+bool irq4_enable;
 
 extern int main();
 

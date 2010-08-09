@@ -10,18 +10,22 @@ int cw7bug;
 
 bool uart_armed[UART_INTS];
 
+bool watch_armed;
+
 bool run_step;
 int run_line_number;
 
 int data_line_number;
 int data_line_offset;
 
-bool run_condition;  // global condition flag
+bool run_condition = true;  // global condition flag
 
 static int run_sleep_ticks;
 static int run_sleep_line_number;
 
-#define MAX_INTS  (UART_INTS+MAX_TIMERS)
+#define MAX_INTS  (UART_INTS+MAX_TIMERS+1)
+
+#define WATCH_INT  (MAX_INTS-1)
 
 #define UART_MASK  ((1<<UART_INTS)-1)
 
@@ -33,6 +37,9 @@ static uint32 run_isr_masked;  // bitmask
 
 static byte *run_isr_bytecode[MAX_INTS];
 static int run_isr_length[MAX_INTS];
+
+static int watch_length;
+static byte *watch_bytecode;
 
 static int timer_interval_ticks[MAX_TIMERS];
 static int timer_last_ticks[MAX_TIMERS];
@@ -63,6 +70,7 @@ struct open_scope {
     bool condition;
     bool condition_ever;
     bool condition_initial;
+    bool condition_restore;
 } scopes[MAX_SCOPES];
 
 static int max_scopes;
@@ -378,6 +386,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
     bool output;
     int isr_length;
     byte *isr_bytecode;
+    int nodeid;
 
     end = false;
 
@@ -411,18 +420,12 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 index += sizeof(int);
                 assert(timer >= 0 && timer < MAX_TIMERS);
 
+                interrupt = TIMER_INT(timer);
+
                 // if we are enabling the interrupt...
                 if (code == code_on) {
                     timer_last_ticks[timer] = ticks;
-
-                    isr_length = *(int *)(bytecode + index);
-                    index += sizeof(int);
-                    isr_bytecode = bytecode+index;
-                    index += isr_length;
                 }
-
-                interrupt = TIMER_INT(timer);
-
             } else if (device == device_uart) {
                 // *** uart control ***
                 // get the uart number
@@ -434,17 +437,28 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 output = *(bytecode+index);
                 index++;
 
-                // if we are enabling the interrupt...
-                if (code == code_on) {
-                    isr_length = *(int *)(bytecode + index);
-                    index += sizeof(int);
-                    isr_bytecode = bytecode+index;
-                    index += isr_length;
-                }
-
                 interrupt = UART_INT(uart, output);
+            } else if (device == device_watch) {
+                interrupt = WATCH_INT;
+
+                // this is the expression to watch
+                watch_length = *(int *)(bytecode + index);
+                index += sizeof(int);
+                watch_bytecode = bytecode+index;
+                index += watch_length;
+
+                assert(bytecode[index] == code_comma);
+                index++;
             } else {
                 assert(0);
+            }
+
+            if (code == code_on) {
+                // this is the handler
+                isr_length = *(int *)(bytecode + index);
+                index += sizeof(int);
+                isr_bytecode = bytecode+index;
+                index += isr_length;
             }
 
             if (run_condition) {
@@ -585,10 +599,20 @@ run_bytecode(bool immediate, byte *bytecode, int length)
 
         case code_restore:
             if (run_condition) {
-                data_line_number = *(int *)(bytecode+index);
+                if (bytecode[index]) {
+                    line_number = code_line(code_label, bytecode+index);
+                    if (! line_number) {
+                        printf("missing label\n");
+                        goto XXX_SKIP_XXX;
+                    }
+                } else {
+                    line_number = 0;
+                }
+                data_line_number = line_number;
                 data_line_offset = 0;
             }
-            index += sizeof(int);
+
+            index += strlen((char *)bytecode+index)+1;
             break;
 
         case code_dim:
@@ -629,18 +653,24 @@ run_bytecode(bool immediate, byte *bytecode, int length)
 
                 // if this is a memory variable...
                 if (var_type == code_ram || var_type == code_flash) {
-                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0);
-                } else {
-                    // this is a pin variable
-                    assert(var_type == code_pin);
-
+                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, -1);
+                // otherwise, if this is a pin variable...
+                } else if (var_type == code_pin) {
                     // get the pin number (from the pin name) and pin type (from the pin usage)
                     pin_number = bytecode[index++];
                     pin_type = bytecode[index++];
 
                     assert(pin_number >= 0 && pin_number < PIN_LAST);
 
-                    var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type);
+                    var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type, -1);
+                } else {
+                    // this is a remote variable
+                    assert(var_type == code_nodeid);
+                    
+                    nodeid = *(int *)(bytecode+index);
+                    index += sizeof(int);
+                    
+                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, nodeid);
                 }
             } while (index < length && bytecode[index] == code_comma);
             break;
@@ -858,10 +888,11 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             // incorporate the condition
             scopes[max_scopes-1].condition = !! value;
             scopes[max_scopes-1].condition_ever = !! value;
+            scopes[max_scopes-1].condition_initial = run_condition;
             scopes[max_scopes-1].condition_restore = false;
             break;
 
-            if (scopes[max_scopes-1].type != open_if) {
+        case code_elseif:
             if (! max_scopes || scopes[max_scopes-1].type != open_if) {
                 printf("mismatched elseif\n");
                 goto XXX_SKIP_XXX;
@@ -881,7 +912,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             }
             break;
 
-            if (scopes[max_scopes-1].type != open_if) {
+        case code_else:
             if (! max_scopes || scopes[max_scopes-1].type != open_if) {
                 printf("mismatched else\n");
                 goto XXX_SKIP_XXX;
@@ -907,6 +938,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             break;
 
         case code_while:
+        case code_for:
         case code_do:
             if (max_scopes >= MAX_SCOPES-2) {
                 printf("too many scopes\n");
@@ -971,9 +1003,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     value = value <= scopes[max_scopes-1].for_final_value;
                 } else {
                     value = value >= scopes[max_scopes-1].for_final_value;
-            } else {
-                assert(code == code_while);
-
+                }
             } else if (code == code_while) {
                 scopes[max_scopes-1].for_variable_name = NULL;
                 scopes[max_scopes-1].for_variable_index = 0;
@@ -981,16 +1011,22 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 scopes[max_scopes-1].for_step_value = 0;
 
                 // evaluate the condition
+                index += evaluate(bytecode+index, length-index, &value);
+            } else {
+                assert(code == code_do);
+
                 value = 1;
             }
 
             // incorporate the condition
             scopes[max_scopes-1].condition = !! value;
             scopes[max_scopes-1].condition_ever = !! value;
+            scopes[max_scopes-1].condition_initial = run_condition;
             scopes[max_scopes-1].condition_restore = false;
             break;
 
-            // get the break level
+        case code_break:
+        case code_continue:
             // get the break/continue level
             n = *(int *)(bytecode + index);
             index += sizeof(int);
@@ -1009,29 +1045,43 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     }
                 }
             }
-                printf("break without while/for\n");
+            if (i < 0) {
                 printf("break/continue without while/for\n");
                 goto XXX_SKIP_XXX;
             }
+
             assert(! n);
             if (run_condition) {
                 // negate all conditions
-                    scopes[i].condition_initial = false;
+                while (i < max_scopes) {
+                    assert(scopes[i].condition_initial);
+                    assert(scopes[i].condition);
+                    if (code == code_break) {
+                        scopes[i].condition_initial = false;
+                    } else {
+                        scopes[i].condition = false;
+                        if (! n) {
+                            // the outermost continue gets to run again
+                            assert(scopes[i].type == open_while);
+                            scopes[i].condition_restore = true;
+                        }
                     }
+                    i++;
                     n++;
                 }
             }
             break;
 
         case code_next:
+        case code_endwhile:
         case code_until:
             if (! max_scopes) {
                 printf("missing while/for\n");
                 goto XXX_SKIP_XXX;
             }
             if (scopes[max_scopes-1].type != open_while ||
-                (code == code_endwhile && scopes[max_scopes-1].for_variable_name)) {
-                printf("mismatched endwhile/next\n");
+                (code == code_next && ! scopes[max_scopes-1].for_variable_name) ||
+                ((code == code_endwhile || code == code_until) && scopes[max_scopes-1].for_variable_name)) {
                 printf("mismatched endwhile/until/next\n");
                 goto XXX_SKIP_XXX;
             }
@@ -1039,6 +1089,17 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             // close the conditional scope
             assert(max_scopes);
             max_scopes--;
+
+            if (scopes[max_scopes].condition_restore) {
+                scopes[max_scopes].condition = true;
+                run_condition = true;
+            }
+
+            // if this is an until loop...
+            if (code == code_until) {
+                // evaluate the condition
+                index += evaluate(bytecode+index, length-index, &value);
+            }
 
             if (run_condition) {
                 // if this is a for loop...
@@ -1064,12 +1125,19 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     }
 
                     // conditionally go back for more (skip the for line)!
+                    if (run_condition) {
                         // N.B we re-open the scope here!
                         run_line_number = scopes[max_scopes++].line_number;
-                } else {
-                    assert(code == code_endwhile);
+                    }
                 } else if (code == code_endwhile) {
                     // go back for more (including the while line)!
+                    run_line_number = scopes[max_scopes].line_number-1;
+                } else {
+                    // if the condition has not been achieved...
+                    if (! value) {
+                        // go back for more!
+                        // N.B we re-open the scope here!
+                        run_line_number = scopes[max_scopes++].line_number;
                     }
                 }
             }
@@ -1088,7 +1156,7 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 gosubs[max_gosubs].return_scope = max_scopes;
                 max_gosubs++;
 
-                line_number = code_sub_line(bytecode+index);
+                // jump to the gosub line
                 line_number = code_line(code_sub, bytecode+index);
                 if (! line_number) {
                     printf("missing sub\n");
@@ -1098,9 +1166,10 @@ run_bytecode(bool immediate, byte *bytecode, int length)
             }
             index += strlen((char *)bytecode+index)+1;
             break;
+
         case code_label:
         case code_sub:
-            // revisit -- we could push false conditional scope (and pop on endsub)
+            // we do nothing here
             // revisit -- we could push false conditional scope for sub (and pop on endsub)
             index += strlen((char *)bytecode+index)+1;
             break;
@@ -1173,8 +1242,11 @@ run(bool cont, int start_line_number)
     int i;
     int tick;
     bool isr;
+    uint32 mask;
+    int length;
     int value;
     int line_number;
+    int last_tick;
     int tx_empty;
     struct line *line;
 
@@ -1202,6 +1274,8 @@ run(bool cont, int start_line_number)
         }
 
         memset(uart_armed, 1, sizeof(uart_armed));
+
+        watch_armed = true;
 
         run_line_number = start_line_number?start_line_number-1:0;
 
@@ -1258,8 +1332,8 @@ run(bool cont, int start_line_number)
         tick = ticks;
         if (tick != last_tick) {
 #if ! _WIN32
-            os_yield();
-            sleep_poll();
+            // see if the sleep switch was pressed
+            basic_poll();
             
             led_unknown_progress();
 #endif
@@ -1304,6 +1378,29 @@ run(bool cont, int start_line_number)
                     run_isr_pending |= 1<<UART_INT(i, false);
                     uart_armed[UART_INT(i, false)] = false;
                 }
+#endif
+            }
+        }
+
+        // if the watch int is enabled
+        if (run_isr_enabled & (1 << WATCH_INT)) {
+            condition = run_condition;
+            run_condition = true;
+
+            length = evaluate(watch_bytecode, watch_length, &value);
+            assert(length == watch_length);
+
+            run_condition = condition;
+
+            // if the watch is non-0...
+            if (value) {
+                // if this transition has not yet been delivered...
+                if (watch_armed) {
+                    // mark the interrupt as pending
+                    run_isr_pending |= 1 << WATCH_INT;
+                    watch_armed = false;
+                }
+            } else {
                 watch_armed = true;
             }
         }
@@ -1322,6 +1419,7 @@ run(bool cont, int start_line_number)
 
                     scopes[max_scopes-1].condition = true;
                     scopes[max_scopes-1].condition_ever = true;
+                    scopes[max_scopes-1].condition_initial = true;
                     scopes[max_scopes-1].condition_restore = false;
 
                     // *** interrupt handler ***

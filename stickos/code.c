@@ -32,7 +32,7 @@ check_line(byte *page, struct line *line)
     }
 }
 
-#if RELEASE || ! DEBUG
+#if FAST || ! DEBUG
 #define check_line(a, b)
 #endif
 
@@ -212,16 +212,18 @@ code_next_line(IN bool deleted_ok, IN OUT int *line_number)
 // this function returns the line number where the specified sub_name
 // exists.
 int
-code_sub_line(byte *sub_name)
+code_line(enum bytecode code, byte *name)
 {
     int line_number;
     struct line *line;
+
+    assert(code == code_label || code == code_sub);
 
     line_number = 0;
     for (;;) {
         line = code_next_line(false, &line_number);
         if (line) {
-            if (line->bytecode[0] == code_sub && ! strcmp((char *)line->bytecode+1, (char *)sub_name)) {
+            if (line->bytecode[0] == code && ! strcmp((char *)line->bytecode+1, (char *)name)) {
                 return line->line_number;
             }
         } else {
@@ -312,7 +314,7 @@ code_list(int start_line_number, int end_line_number)
         line = code_next_line(false, &line_number);
         if (line) {
             code = line->bytecode[0];
-            if (code == code_endif || code == code_else || code == code_elseif || code == code_endwhile || code == code_next || code == code_endsub) {
+            if (code == code_endif || code == code_else || code == code_elseif || code == code_endwhile || code == code_until || code == code_next || code == code_endsub) {
                 if (indent) {
                     indent--;
                 } else {
@@ -330,7 +332,7 @@ code_list(int start_line_number, int end_line_number)
             if (line_number > start_line_number && end_line_number == 0x7fffffff && code == code_endsub) {
                 break;
             }
-            if (code == code_if || code == code_else || code == code_elseif || code == code_while || code == code_for || code == code_sub) {
+            if (code == code_if || code == code_else || code == code_elseif || code == code_while || code == code_do ||code == code_for || code == code_sub) {
                 indent++;
             }
         } else {

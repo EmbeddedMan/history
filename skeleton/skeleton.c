@@ -38,7 +38,9 @@ main_reset_cbfn(void)
 
 enum cmdcode {
     command_clone,  // [run]
+    command_connect, // nnn
     command_help,
+    command_nodeid,
     command_reset,
     command_upgrade,
     command_uptime
@@ -50,7 +52,9 @@ struct commands {
     enum cmdcode code;
 } commands[] = {
     "clone", command_clone,
+    "connect", command_connect,
     "help", command_help,
+    "nodeid", command_nodeid,
     "reset", command_reset,
     "upgrade", command_upgrade,
     "uptime", command_uptime
@@ -125,6 +129,7 @@ basic_const(IN OUT char **text, OUT int *value_out)
 static char *help_general =
 "commands:\n"
 "  clone [run]\n"
+"  connect <nodeid>\n"
 "  help\n"
 "  reset\n"
 "  upgrade\n"
@@ -133,6 +138,7 @@ static char *help_general =
 "for more information:\n"
 "  help about\n"
 "  help clone\n"
+"  help zigbee\n"
 ;
 
 static char *help_about =
@@ -162,6 +168,21 @@ static char *help_clone =
 "  qspi_cs0   rcon* (ezpcs*)\n"
 "  scl        rsti*\n"
 "  vbus       vbus\n"
+"  vdd        vdd\n"
+;
+
+static char *help_zigbee =
+"zigbee cable:\n"
+"  MCU        MC1320X\n"
+"  ---------  -------\n"
+"  qspi_clk   spiclk\n"
+"  qspi_din   miso\n"
+"  qspi_dout  mosi\n"
+"  qspi_cs0   ce*\n"
+"  irq4*      irq*\n"
+"  scl        rst*\n"
+"  sda        rxtxen\n"
+"  vss        vss\n"
 "  vdd        vdd\n"
 ;
 
@@ -208,6 +229,7 @@ command_run(char *text_in)
     int m;
     int cmd;
     int len;
+    int nodeid;
     bool boo;
     char *text;
 
@@ -245,6 +267,35 @@ command_run(char *text_in)
             clone(boo);
             break;
             
+        case command_connect:
+            if (! zb_present) {
+                printf("zigbee not present\n");
+            } else if (zb_nodeid == -1) {
+                printf("zigbee nodeid not set\n");
+            } else {
+                if (! basic_const(&text, &nodeid) || nodeid == -1) {
+                    goto XXX_ERROR_XXX;
+                }
+                if (*text) {
+                    goto XXX_ERROR_XXX;
+                }
+                
+                printf("press Ctrl-D to disconnect\n");
+
+                assert(main_command);
+                main_command = NULL;
+                terminal_command_ack(false);
+
+                terminal_rxid = nodeid;
+                terminal_txid = -1;
+                
+                while (terminal_rxid != -1) {
+                    terminal_poll();
+                    zb_poll();
+                }
+            }
+            break;
+
         case command_help:
             if (! *text) {
                 help(help_general);
@@ -252,8 +303,32 @@ command_run(char *text_in)
                 help(help_about);
             } else if (basic_word(&text, "clone")) {
                 help(help_clone);
+            } else if (basic_word(&text, "zigbee")) {
+                help(help_zigbee);
             } else {
                 goto XXX_ERROR_XXX;
+            }
+            break;
+
+        case command_nodeid:
+            if (*text) {
+                if (basic_word(&text, "none")) {
+                    nodeid = -1;
+                } else {
+                    if (! basic_const(&text, &nodeid) || nodeid == -1) {
+                        goto XXX_ERROR_XXX;
+                    }
+                }
+                if (*text) {
+                    goto XXX_ERROR_XXX;
+                }
+                zb_nodeid = nodeid;
+            } else {
+                if (zb_nodeid == -1) {
+                    printf("none\n");
+                } else {
+                    printf("%u\n", zb_nodeid);
+                }
             }
             break;
 
@@ -313,12 +388,12 @@ main_run_admin(void)
 
     // we just poll here waiting for commands
     for (;;) {
-        os_yield();        
-        sleep_poll();
+        terminal_poll();
 
         ready = 0;
         autoend = false;
         if (main_command) {
+            terminal_poll();
             if (terminal_echo) {
                 printf("\n");
             }
@@ -346,7 +421,7 @@ main_run_admin(void)
 }
 
 // this function implements the main loop of skeleton.
-extern void
+void
 main_run(void)
 {
     for (;;) {
@@ -406,8 +481,7 @@ main_run(void)
 #else
 #error
 #endif
-        os_yield();
-        sleep_poll();
+        terminal_poll();
     }
 }
 
@@ -418,7 +492,14 @@ main_ip_address()
     return 0;
 }
 
-extern void
+int
+main_nodeid()
+{
+    // none
+    return -1;
+}
+
+void
 main_initialize()
 {
     // if we're in device mode...

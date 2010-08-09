@@ -109,14 +109,21 @@ static int rx_length[NRX];
 static byte rx_in;
 static byte rx_out;
 
-// this function prints the specified line to the FTDI transport
-// console, assuming space exists in the transport buffer..
+// this function waits for space to be available in the transport
+// buffers and then prints the specified line to the FTDI transport
+// console.
 void
-ftdi_send(byte *buffer, int length)
+ftdi_print(byte *buffer, int length)
 {
     int m;
     int x;
     bool start;
+    
+    if (gpl() == 0) {
+        while (rx_in != rx_out) {
+            delay(1);
+        }
+    }
 
     if (! length) {
         return;
@@ -126,7 +133,7 @@ ftdi_send(byte *buffer, int length)
         return;
     }
 
-    x = splx(7);
+    x = splx(SPL_USB);
 
     start = rx_in == rx_out;
 
@@ -159,25 +166,6 @@ ftdi_send(byte *buffer, int length)
     }
 
     splx(x);
-}
-
-// this function waits for space to be available in the transport
-// buffers and then prints the specified line to the FTDI transport
-// console.
-int
-ftdi_print(char *line)
-{
-    int n;
-
-    n = strlen(line);
-
-    while (rx_in != rx_out) {
-        delay(1);
-    }
-
-    ftdi_send((byte *)line, n);
-
-    return n;
 }
 
 // this function implements the FTDI usb setup control transfer.

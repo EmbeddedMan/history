@@ -63,6 +63,7 @@ enum {
 #include "flash.h"
 #include "printf.h"
 #include "qspi.h"
+#include "zigbee.h"
 #include "terminal.h"
 #include "util.h"
 
@@ -81,6 +82,17 @@ enum {
 #include "ftdi.h"
 #include "scsi.h"
 #include "usb.h"
+#endif
+
+#if MCF52233
+#undef MCF_EPORT_EPPDR
+#undef MCF_EPORT_EPPAR
+#undef MCF_EPORT_EPFR
+#undef MCF_EPORT_EPIER
+#define MCF_EPORT_EPPDR  MCF_EPORT0_EPPDR
+#define MCF_EPORT_EPPAR  MCF_EPORT0_EPPAR
+#define MCF_EPORT_EPFR  MCF_EPORT0_EPFR
+#define MCF_EPORT_EPIER  MCF_EPORT0_EPIER
 #endif
 
 #endif  // ! _WIN32
@@ -135,7 +147,7 @@ extern void os_yield(void);
 #if PICTOCRYPT
 extern byte big_buffer[8192];
 #else
-extern byte big_buffer[2048];
+extern byte big_buffer[1024];
 #endif
 
 #endif  // ! _WIN32

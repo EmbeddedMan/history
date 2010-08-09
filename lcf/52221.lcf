@@ -13,7 +13,7 @@ MEMORY {
 SECTIONS {
 
 # Heap and Stack sizes definition
-	___stack_size     = 0x0800;
+	___stack_size     = 0x0a00;
 
 # MCF52221 Derivative Memory map definitions from linker command files:
 # __IPSBAR, __RAMBAR, __RAMBAR_SIZE, __FLASHBAR, __FLASHBAR_SIZE linker

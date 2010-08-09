@@ -235,8 +235,8 @@ test multiple assignments
 end
 5 10 15
 test some variable types
-   1 dim a as byte
-   2 dim b as short
+   1 dim a as byte 
+   2 dim b as short 
    3 dim c
    4 let c = -1
    5 let b = c
@@ -359,7 +359,7 @@ end
  300   print "here"
  310   return 
  320 endsub 
- 400 on timer 1 gosub timer
+ 400 on timer 1 do gosub timer
  410 end 
  490 sub timer
  500   print "timer"
@@ -448,7 +448,7 @@ delete inner
  200   gosub inner
  210   return 
  220 endsub 
- 400 on timer 1 gosub timer
+ 400 on timer 1 do gosub timer
  410 end 
  490 sub timer
  500   print "timer"
@@ -469,7 +469,7 @@ delete outer
   92 gosub outer
  100 end 
  110 print "not reached"
- 400 on timer 1 gosub timer
+ 400 on timer 1 do gosub timer
  410 end 
  490 sub timer
  500   print "timer"
@@ -555,6 +555,35 @@ end
  210   endif 
  220 endif 
 end
+test do/until
+  10 dim a
+  20 do 
+  30   print a
+  40   let a = a+1
+  50 until a==10
+end
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+  10 dim a
+  30 print a
+  40 let a = a+1
+missing block begins?
+  50 until a==10
+end
+  10 dim a
+  20 do 
+  30   print a
+  40   let a = a+1
+missing block ends?
+end
 test help
 for more information:
   help about
@@ -568,31 +597,33 @@ for more information:
   help pins
   help board
   help clone
+  help zigbee
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.07!
+Welcome to StickOS for Freescale MCF52221 v1.2!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
-clear [flash]               -- clear ram [and flash] variables
-clone [run]                 -- clone flash to slave CPUStick [and run]
-cont [<line>]               -- continue program from stop
-delete [<line>][-][<line>]  -- delete program lines or <subname>
-dir                         -- list saved programs
-edit <line>                 -- edit program line
-help [<topic>]              -- online help
-list [<line>][-][<line>]    -- list program lines or <subname>
-load <name>                 -- load saved program
-memory                      -- print memory usage
-new                         -- erase code ram and flash memories
-purge <name>                -- purge saved program
-renumber [<line>]           -- renumber program lines (and save)
-reset                       -- reset the CPUStick!
-run [<line>]                -- run program
-save [<name>]               -- save code ram to flash memory
-undo                        -- undo code changes since last save
-upgrade                     -- upgrade StickOS firmware!
-uptime                      -- print time since last reset
+clear [flash]                 -- clear ram [and flash] variables
+clone [run]                   -- clone flash to slave CPUStick [and run]
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete [<line>][-][<line>]    -- delete program lines or <subname>
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list [<line>][-][<line>]      -- list program lines or <subname>
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the CPUStick!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
 
 for more information:
   help modes
@@ -609,12 +640,13 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
+label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
 print ("string"|<expression>) [, ...]  -- print strings/expressions
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
-restore [<line>]                       -- restore read-only data pointer
+restore [<label>]                      -- restore read-only data pointer
 sleep <expression>                     -- delay program execution (ms)
 stop                                   -- insert breakpoint in code
 
@@ -629,12 +661,16 @@ if <expression> then
 endif
 
 for <variable> = <expression> to <expression> [step <expression>]
-  [break [n]]
+  [(break|continue) [n]]
 next
 
 while <expression> do
-  [break [n]]
+  [(break|continue) [n]]
 endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
 
 gosub <subname>
 
@@ -646,17 +682,23 @@ qspi:
 
 timers:
   configure timer <n> for <n> ms
-  on timer <n> <statement>                -- on timer execute <statement>
-  off timer <n>                           -- disable timer interrupt
-  mask timer <n>                          -- mask (hold) timer interrupt
-  unmask timer <n>                        -- unmask timer interrupt
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
 
 uarts:
   configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
-  on uart <n> (input|output) <statement>  -- on uart execute <statement>
-  off uart <n> (input|output)             -- disable uart interrupt
-  mask uart <n> (input|output)            -- mask (hold) uart interrupt
-  unmask uart <n> (input|output)          -- unmask uart interrupt
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
 the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
@@ -680,7 +722,7 @@ array variable indices start at 0; v[0] is the same as v
 
 ram variables:
   dim <var>[[n]]
-  dim <var>[[n]] as (byte|short|integer)
+  dim <var>[[n]] as (byte|short)
 
 flash parameter variables:
   dim <varflash>[[n]] as flash
@@ -688,6 +730,10 @@ flash parameter variables:
 pin alias variables
   dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
                                       (input|output)
+
+system variables (read-only)
+  drops     failures  nodeid    receives
+  retries   seconds   ticks     transmits
 
 for more information:
   help pins
@@ -707,14 +753,14 @@ dtin? = potential analog output (PWM actually) pins (mV)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
-              1  2  3  4  5  6  7  8  9  10 11 12 13 14
+                1  2  3  4  5  6  7  8  9  10 11 12 13 14
 
-              g  +  u  u  u  u  u  u  u  u  i  i  i  +
-              n  3  c  r  r  t  c  r  r  t  r  r  r  5
-              d  V  t  t  x  x  t  t  x  x  q  q  q  V
-                    s  s  d  d  s  s  d  d  7  4  1
-1  gnd              0  0  0  0  1  1  1  1  *  *  *
-2  +3V              *  *        *  *
+                g  +  u  u  u  u  u  u  u  u  i  i  i  +
+                n  3  c  r  r  t  c  r  r  t  r  r  r  5
+                d  V  t  t  x  x  t  t  x  x  q  q  q  V
+                      s  s  d  d  s  s  d  d  7  4  1
+1  gnd                0  0  0  0  1  1  1  1  *  *  *
+2  +3V                *  *        *  *
 3  rsti*
 4  scl
 5  sda
@@ -722,12 +768,12 @@ utxd? = potential uart output pins (transmit byte)
 7  qspi_dout
 8  qspi_clk
 9  qspi_cs0         d  d  d  d
-10 rcon*            t  t  t  t
-              g  +  i  i  i  i  a  a  a  a  a  a  a  a
-              n  3  n  n  n  n  n  n  n  n  n  n  n  n
-              d  V  3  2  1  0  0  1  2  3  4  5  6  7
+10 rcon*/irq4*      t  t  t  t
+                g  +  i  i  i  i  a  a  a  a  a  a  a  a
+                n  3  n  n  n  n  n  n  n  n  n  n  n  n
+                d  V  3  2  1  0  0  1  2  3  4  5  6  7
 
-              1  2  3  4  5  6  7  8  9  10 11 12 13 14
+                1  2  3  4  5  6  7  8  9  10 11 12 13 14
 clone cable:
   master     slave
   ---------  ----------------
@@ -738,19 +784,40 @@ clone cable:
   scl        rsti*
   vss        vss
   vdd        vdd
+nodeid (<nodeid>|none)        -- set/display zigbee nodeid
+
+connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+
+remote node variables
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigbee cable:
+  MCU        MC1320X
+  ---------  -------
+  qspi_clk   spiclk
+  qspi_din   miso
+  qspi_dout  mosi
+  qspi_cs0   ce*
+  irq4*      irq*
+  scl        rst*
+  sda        rxtxen
+  vss        vss
+  vdd        vdd
 test dims
-error -                 ^
+error -            ^
   10 dim a as pin dtin0 for digital output
   20 dim b as pin dtin1 for digital input
   30 dim c as pin an0 for analog input
   40 dim d as flash
+  41 dim m as remote on nodeid 7
+  42 dim n[4] as remote on nodeid 8
   50 dim e
   55 let e = 5
   70 dim g
-  80 print a, b, c, d, e, f, g
+  80 print a, b, c, d, e, f, g, m, n[3]
 end
 0 0 0 0 5 var 'f' undefined
-0 0
+0 0 0 0
 STOP at line 80!
 test flash memory
   10 dim a as flash
@@ -832,7 +899,7 @@ test array parsing
   30 dim a[3+4*2]
   40 dim a[(3+4)*2]
   50 dim a[(3+4)*2]
-  60 dim a[(3+4)*2] as byte
+  60 dim a[(3+4)*2] as byte 
   70 dim a[(3+4)*2] as flash
   80 dim a[3+4-3]
  110 let a[3] = b[3]
@@ -858,9 +925,9 @@ test long variable names
   60 let evenlonger = 2
   70 let muchmuchmuchmuchlonger = 3
   80 print long, evenlonger, muchmuchmuchmuchlonger
-  90 dim long2 as byte
- 100 dim evenlonger2 as byte
- 110 dim muchmuchmuchmuchlonger2 as byte
+  90 dim long2 as byte 
+ 100 dim evenlonger2 as byte 
+ 110 dim muchmuchmuchmuchlonger2 as byte 
  120 print long2, evenlonger2, muchmuchmuchmuchlonger2
  130 print long, evenlonger, muchmuchmuchmuchlonger
 end
@@ -917,6 +984,7 @@ missing endwhile/next
    1 dim a, b, c
   10 data 1, 0x2, 3
   20 data 0x4
+  29 label middle
   30 data 5, 0x6
   35 data 7
   40 while 1 do
@@ -924,7 +992,7 @@ missing endwhile/next
   60   print a, b, c
   70 endwhile 
   75 data 0x10
-  80 restore 30
+  80 restore middle
   90 read a, b, c
  100 print a, b, c
 end
@@ -1009,6 +1077,48 @@ local a 2
 2
 local a 3
 2
+test variable scope overflow
+  10 dim a
+  15 dim b[500] as byte 
+  20 gosub alloc
+  30 end 
+  90 sub alloc
+  95   dim b[500] as byte 
+ 100   let a = a+1
+ 110   if a<20 then
+ 120     gosub alloc
+ 125   endif 
+ 130 endsub 
+end
+  92   dim g as flash
+flash or pin variable declared in sub
+STOP at line 92!
+  92   dim g as pin dtin0 for digital output
+flash or pin variable declared in sub
+STOP at line 92!
+out of variable ram
+STOP at line 95!
+3
+  10 dim a
+  15 for a = 1 to 10
+  20   gosub alloc
+  25 next 
+  30 end 
+  90 sub alloc
+  95   dim b[500] as byte 
+  96   print b[499]
+ 130 endsub 
+end
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
 test while breaks
   10 dim a
   20 while 1 do
@@ -1035,6 +1145,98 @@ end
   90 end 
 end
 10
+test while continues
+  10 dim i
+  20 while i<15 do
+  30   let i = i+1
+  40   sleep 100
+  50   if i%5==0 then
+  60     continue 
+  70   endif 
+  80   print i
+  90 endwhile 
+end
+1
+2
+3
+4
+6
+7
+8
+9
+11
+12
+13
+14
+  10 dim i
+  11 dim j
+  20 while i<15 do
+  30   let i = i+1
+  40   sleep 100
+  45   for j = 1 to 3
+  46     print "   ", j
+  50     if j==2&&i%5==0 then
+  60       continue  2
+  62       print "not"
+  70     endif 
+  75   next 
+  80   print i
+  90 endwhile 
+end
+    1
+    2
+    3
+1
+    1
+    2
+    3
+2
+    1
+    2
+    3
+3
+    1
+    2
+    3
+4
+    1
+    2
+    1
+    2
+    3
+6
+    1
+    2
+    3
+7
+    1
+    2
+    3
+8
+    1
+    2
+    3
+9
+    1
+    2
+    1
+    2
+    3
+11
+    1
+    2
+    3
+12
+    1
+    2
+    3
+13
+    1
+    2
+    3
+14
+    1
+    2
 test for loops
   10 dim x, y
   20 for y = 0 to 10 step 2
@@ -1132,7 +1334,7 @@ end
 STOP at line 23!
 257
    1 dim i, j
-   2 dim a[256] as byte
+   2 dim a[256] as byte 
    3 while 1 do
   20   let i = (i*13+7)%256
   21   let j = j+1
@@ -1166,7 +1368,7 @@ test large flash program
 1030 dim relay as pin an1 for digital output
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
-1060 on timer 0 gosub adjust
+1060 on timer 0 do gosub adjust
 1070 rem ----------
 1080 while target!=-1 do
 1090   sleep secs*1000
@@ -1187,7 +1389,7 @@ test large flash program
 2030 dim relay as pin an1 for digital output
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
-2060 on timer 0 gosub adjust
+2060 on timer 0 do gosub adjust
 2070 rem ----------
 2080 while target!=-1 do
 2090   sleep secs*1000
@@ -1208,7 +1410,7 @@ test large flash program
 3030 dim relay as pin an1 for digital output
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
-3060 on timer 0 gosub adjust
+3060 on timer 0 do gosub adjust
 3070 rem ----------
 3080 while target!=-1 do
 3090   sleep secs*1000
@@ -1235,7 +1437,7 @@ end
 1030 dim relay as pin an1 for digital output
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
-1060 on timer 0 gosub adjust
+1060 on timer 0 do gosub adjust
 1070 rem ----------
 1080 while target!=-1 do
 1090   sleep secs*1000
@@ -1256,7 +1458,7 @@ end
 2030 dim relay as pin an1 for digital output
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
-2060 on timer 0 gosub adjust
+2060 on timer 0 do gosub adjust
 2070 rem ----------
 2080 while target!=-1 do
 2090   sleep secs*1000
@@ -1277,7 +1479,7 @@ end
 3030 dim relay as pin an1 for digital output
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
-3060 on timer 0 gosub adjust
+3060 on timer 0 do gosub adjust
 3070 rem ----------
 3080 while target!=-1 do
 3090   sleep secs*1000
@@ -1304,7 +1506,7 @@ end
 1030 dim relay as pin an1 for digital output
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
-1060 on timer 0 gosub adjust
+1060 on timer 0 do gosub adjust
 1070 rem ----------
 1080 while target!=-1 do
 1090   sleep secs*1000
@@ -1325,7 +1527,7 @@ end
 2030 dim relay as pin an1 for digital output
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
-2060 on timer 0 gosub adjust
+2060 on timer 0 do gosub adjust
 2070 rem ----------
 2080 while target!=-1 do
 2090   sleep secs*1000
@@ -1346,7 +1548,7 @@ end
 3030 dim relay as pin an1 for digital output
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
-3060 on timer 0 gosub adjust
+3060 on timer 0 do gosub adjust
 3070 rem ----------
 3080 while target!=-1 do
 3090   sleep secs*1000
@@ -1367,7 +1569,7 @@ end
 4030 dim relay as pin an1 for digital output
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
-4060 on timer 0 gosub adjust
+4060 on timer 0 do gosub adjust
 4070 rem ----------
 4080 while target!=-1 do
 4090   sleep secs*1000
@@ -1388,7 +1590,7 @@ end
 5030 dim relay as pin an1 for digital output
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
-5060 on timer 0 gosub adjust
+5060 on timer 0 do gosub adjust
 5070 rem ----------
 5080 while target!=-1 do
 5090   sleep secs*1000
@@ -1409,7 +1611,7 @@ end
 6030 dim relay as pin an1 for digital output
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
-6060 on timer 0 gosub adjust
+6060 on timer 0 do gosub adjust
 6070 rem ----------
 6080 while target!=-1 do
 6090   sleep secs*1000
@@ -1436,7 +1638,7 @@ end
 1030 dim relay as pin an1 for digital output
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
-1060 on timer 0 gosub adjust
+1060 on timer 0 do gosub adjust
 1070 rem ----------
 1080 while target!=-1 do
 1090   sleep secs*1000
@@ -1457,7 +1659,7 @@ end
 2030 dim relay as pin an1 for digital output
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
-2060 on timer 0 gosub adjust
+2060 on timer 0 do gosub adjust
 2070 rem ----------
 2080 while target!=-1 do
 2090   sleep secs*1000
@@ -1478,7 +1680,7 @@ end
 3030 dim relay as pin an1 for digital output
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
-3060 on timer 0 gosub adjust
+3060 on timer 0 do gosub adjust
 3070 rem ----------
 3080 while target!=-1 do
 3090   sleep secs*1000
@@ -1499,7 +1701,7 @@ end
 4030 dim relay as pin an1 for digital output
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
-4060 on timer 0 gosub adjust
+4060 on timer 0 do gosub adjust
 4070 rem ----------
 4080 while target!=-1 do
 4090   sleep secs*1000
@@ -1520,7 +1722,7 @@ end
 5030 dim relay as pin an1 for digital output
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
-5060 on timer 0 gosub adjust
+5060 on timer 0 do gosub adjust
 5070 rem ----------
 5080 while target!=-1 do
 5090   sleep secs*1000
@@ -1541,7 +1743,7 @@ end
 6030 dim relay as pin an1 for digital output
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
-6060 on timer 0 gosub adjust
+6060 on timer 0 do gosub adjust
 6070 rem ----------
 6080 while target!=-1 do
 6090   sleep secs*1000
@@ -1568,7 +1770,7 @@ end
   40 dim relay as pin an1 for digital output
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
-  70 on timer 0 gosub adjust
+  70 on timer 0 do gosub adjust
   80 rem ----------
   90 while target!=-1 do
  100   sleep secs*1000
@@ -1589,7 +1791,7 @@ end
  250 dim relay as pin an1 for digital output
  260 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  270 configure timer 0 for 1000 ms
- 280 on timer 0 gosub adjust
+ 280 on timer 0 do gosub adjust
  290 rem ----------
  300 while target!=-1 do
  310   sleep secs*1000
@@ -1610,7 +1812,7 @@ end
  460 dim relay as pin an1 for digital output
  470 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  480 configure timer 0 for 1000 ms
- 490 on timer 0 gosub adjust
+ 490 on timer 0 do gosub adjust
  500 rem ----------
  510 while target!=-1 do
  520   sleep secs*1000
@@ -1631,7 +1833,7 @@ end
  670 dim relay as pin an1 for digital output
  680 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  690 configure timer 0 for 1000 ms
- 700 on timer 0 gosub adjust
+ 700 on timer 0 do gosub adjust
  710 rem ----------
  720 while target!=-1 do
  730   sleep secs*1000
@@ -1652,7 +1854,7 @@ end
  880 dim relay as pin an1 for digital output
  890 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  900 configure timer 0 for 1000 ms
- 910 on timer 0 gosub adjust
+ 910 on timer 0 do gosub adjust
  920 rem ----------
  930 while target!=-1 do
  940   sleep secs*1000
@@ -1673,7 +1875,7 @@ end
 1090 dim relay as pin an1 for digital output
 1100 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1110 configure timer 0 for 1000 ms
-1120 on timer 0 gosub adjust
+1120 on timer 0 do gosub adjust
 1130 rem ----------
 1140 while target!=-1 do
 1150   sleep secs*1000
@@ -1694,7 +1896,7 @@ end
 1300 dim relay as pin an1 for digital output
 1310 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1320 configure timer 0 for 1000 ms
-1330 on timer 0 gosub adjust
+1330 on timer 0 do gosub adjust
 1340 rem ----------
 1350 while target!=-1 do
 1360   sleep secs*1000
@@ -1715,7 +1917,7 @@ end
 1510 dim relay as pin an1 for digital output
 1520 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1530 configure timer 0 for 1000 ms
-1540 on timer 0 gosub adjust
+1540 on timer 0 do gosub adjust
 1550 rem ----------
 1560 while target!=-1 do
 1570   sleep secs*1000
@@ -1736,7 +1938,7 @@ end
 1720 dim relay as pin an1 for digital output
 1730 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1740 configure timer 0 for 1000 ms
-1750 on timer 0 gosub adjust
+1750 on timer 0 do gosub adjust
 1760 rem ----------
 1770 while target!=-1 do
 1780   sleep secs*1000
@@ -1763,7 +1965,7 @@ end
   40 dim relay as pin an1 for digital output
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
-  70 on timer 0 gosub adjust
+  70 on timer 0 do gosub adjust
   80 rem ----------
   90 while target!=-1 do
  100   sleep secs*1000
@@ -1784,7 +1986,7 @@ end
  250 dim relay as pin an1 for digital output
  260 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  270 configure timer 0 for 1000 ms
- 280 on timer 0 gosub adjust
+ 280 on timer 0 do gosub adjust
  290 rem ----------
  300 while target!=-1 do
  310   sleep secs*1000
@@ -1805,7 +2007,7 @@ end
  460 dim relay as pin an1 for digital output
  470 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  480 configure timer 0 for 1000 ms
- 490 on timer 0 gosub adjust
+ 490 on timer 0 do gosub adjust
  500 rem ----------
  510 while target!=-1 do
  520   sleep secs*1000
@@ -1826,7 +2028,7 @@ end
  670 dim relay as pin an1 for digital output
  680 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  690 configure timer 0 for 1000 ms
- 700 on timer 0 gosub adjust
+ 700 on timer 0 do gosub adjust
  710 rem ----------
  720 while target!=-1 do
  730   sleep secs*1000
@@ -1847,7 +2049,7 @@ end
  880 dim relay as pin an1 for digital output
  890 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  900 configure timer 0 for 1000 ms
- 910 on timer 0 gosub adjust
+ 910 on timer 0 do gosub adjust
  920 rem ----------
  930 while target!=-1 do
  940   sleep secs*1000
@@ -1868,7 +2070,7 @@ end
 1090 dim relay as pin an1 for digital output
 1100 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1110 configure timer 0 for 1000 ms
-1120 on timer 0 gosub adjust
+1120 on timer 0 do gosub adjust
 1130 rem ----------
 1140 while target!=-1 do
 1150   sleep secs*1000
@@ -1889,7 +2091,7 @@ end
 1300 dim relay as pin an1 for digital output
 1310 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1320 configure timer 0 for 1000 ms
-1330 on timer 0 gosub adjust
+1330 on timer 0 do gosub adjust
 1340 rem ----------
 1350 while target!=-1 do
 1360   sleep secs*1000
@@ -1910,7 +2112,7 @@ end
 1510 dim relay as pin an1 for digital output
 1520 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1530 configure timer 0 for 1000 ms
-1540 on timer 0 gosub adjust
+1540 on timer 0 do gosub adjust
 1550 rem ----------
 1560 while target!=-1 do
 1570   sleep secs*1000
@@ -1931,7 +2133,7 @@ end
 1720 dim relay as pin an1 for digital output
 1730 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1740 configure timer 0 for 1000 ms
-1750 on timer 0 gosub adjust
+1750 on timer 0 do gosub adjust
 1760 rem ----------
 1770 while target!=-1 do
 1780   sleep secs*1000
@@ -1981,8 +2183,8 @@ test uart
   40 configure uart 0 for 300 baud 8 data no parity loopback
   50 dim tx as pin utxd0 for uart output
   60 dim rx as pin urxd0 for uart input
-  70 on uart 0 input gosub receive
-  80 on uart 0 output gosub transmit
+  70 on uart 0 input do gosub receive
+  80 on uart 0 output do gosub transmit
   90 sleep 1000
  100 end 
  110 sub receive
@@ -2031,11 +2233,11 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.07!
+Welcome to StickOS for Freescale MCF52221 v1.2!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.07!
+Welcome to StickOS for Freescale MCF52221 v1.2!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
@@ -2103,6 +2305,34 @@ prog4
   10 rem this is a program
   20 rem long
 end
+on/off/mask/unmask
+  10 on xxx do gosub yyy
+  20 on zzz+aaa do stop 
+  30 off xxx
+  40 off zzz+aaa
+  50 unmask xxx
+  60 unmask zzz+aaa
+  70 on timer 1 do gosub tick
+  80 on uart 0 input do gosub rx
+  90 off timer 1
+ 100 off uart 0 input
+end
+watchpoints
+  10 dim i
+  20 on i%5 do stop 
+  30 while 1 do
+  40   let i = i+1
+  50   let i = i+1
+  51   if i==100 then
+  52     break 
+  53   endif 
+  60 endwhile 
+end
+STOP at line 50!
+2
+STOP at line 51!
+6
+100
 parse errors
 error -   ^
         ^ - error
@@ -2148,23 +2378,25 @@ error -                                 ^
 end
 statement errors
 on
-     ^ - error
+        ^ - error
+error -    ^
 error -    ^
 error -     ^
-error -      ^
-error -      ^
-error -      ^
+error -        ^
+error -         ^
+error -         ^
+error -         ^
 error -      ^
 error -   ^
 error -    ^
 error -     ^
-error -          ^
 error -           ^
-error -           ^
-error -           ^
+error -             ^
+error -              ^
+error -              ^
+error -              ^
 error -     ^
 off
-      ^ - error
 error -    ^
 error -       ^
 error -      ^
@@ -2172,7 +2404,6 @@ error -   ^
 error -            ^
 error -      ^
 mask
-       ^ - error
 error -     ^
 error -        ^
 error -       ^
@@ -2219,14 +2450,15 @@ data
        ^ - error
 error -   ^
        ^ - error
+label
+       ^ - error
 restore
-error -   ^
-error -   ^
-error -   ^
+missing label
 dim
      ^ - error
       ^ - error
       ^ - error
+        ^ - error
         ^ - error
         ^ - error
 error -    ^
@@ -2235,7 +2467,7 @@ error -         ^
         ^ - error
         ^ - error
 error -          ^
-error -              ^
+error -         ^
 var 'a' dimension mismatch
 error -        ^
 error -           ^
@@ -2246,6 +2478,13 @@ error -                       ^
 error -                ^
 unsupported pin type
 error -                               ^
+error -   ^
+error -           ^
+error -               ^
+error -                 ^
+error -                    ^
+error -                       ^
+error -                      ^
 let
      ^ - error
       ^ - error
@@ -2355,7 +2594,7 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.07!
+Welcome to StickOS for Freescale MCF52221 v1.2!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 list
@@ -2456,7 +2695,7 @@ auto save
   40 dim relay as pin an1 for digital output
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
-  70 on timer 0 gosub adjust
+  70 on timer 0 do gosub adjust
   80 rem ----------
   90 while target!=-1 do
  100   sleep secs*1000
@@ -2477,7 +2716,7 @@ auto save
 1030 dim relay as pin an1 for digital output
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
-1060 on timer 0 gosub adjust
+1060 on timer 0 do gosub adjust
 1070 rem ----------
 1080 while target!=-1 do
 1090   sleep secs*1000
@@ -2498,7 +2737,7 @@ auto save
 2030 dim relay as pin an1 for digital output
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
-2060 on timer 0 gosub adjust
+2060 on timer 0 do gosub adjust
 2070 rem ----------
 2080 while target!=-1 do
 2090   sleep secs*1000
@@ -2519,7 +2758,7 @@ auto save
 3030 dim relay as pin an1 for digital output
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
-3060 on timer 0 gosub adjust
+3060 on timer 0 do gosub adjust
 3070 rem ----------
 3080 while target!=-1 do
 3090   sleep secs*1000
@@ -2540,7 +2779,7 @@ auto save
 4030 dim relay as pin an1 for digital output
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
-4060 on timer 0 gosub adjust
+4060 on timer 0 do gosub adjust
 4070 rem ----------
 4080 while target!=-1 do
 4090   sleep secs*1000
@@ -2561,7 +2800,7 @@ auto save
 5030 dim relay as pin an1 for digital output
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
-5060 on timer 0 gosub adjust
+5060 on timer 0 do gosub adjust
 5070 rem ----------
 5080 while target!=-1 do
 5090   sleep secs*1000
@@ -2582,7 +2821,7 @@ auto save
 6030 dim relay as pin an1 for digital output
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
-6060 on timer 0 gosub adjust
+6060 on timer 0 do gosub adjust
 6070 rem ----------
 6080 while target!=-1 do
 6090   sleep secs*1000
@@ -2603,7 +2842,7 @@ auto save
 7030 dim relay as pin an1 for digital output
 7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 7050 configure timer 0 for 1000 ms
-7060 on timer 0 gosub adjust
+7060 on timer 0 do gosub adjust
 7070 rem ----------
 7080 while target!=-1 do
 7090   sleep secs*1000
@@ -2679,7 +2918,7 @@ out of code ram
   40 dim relay as pin an1 for digital output
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
-  70 on timer 0 gosub adjust
+  70 on timer 0 do gosub adjust
   80 rem ----------
   90 while target!=-1 do
  100   sleep secs*1000
@@ -2700,7 +2939,7 @@ out of code ram
 1030 dim relay as pin an1 for digital output
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
-1060 on timer 0 gosub adjust
+1060 on timer 0 do gosub adjust
 1070 rem ----------
 1080 while target!=-1 do
 1090   sleep secs*1000
@@ -2721,7 +2960,7 @@ out of code ram
 2030 dim relay as pin an1 for digital output
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
-2060 on timer 0 gosub adjust
+2060 on timer 0 do gosub adjust
 2070 rem ----------
 2080 while target!=-1 do
 2090   sleep secs*1000
@@ -2742,7 +2981,7 @@ out of code ram
 3030 dim relay as pin an1 for digital output
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
-3060 on timer 0 gosub adjust
+3060 on timer 0 do gosub adjust
 3070 rem ----------
 3080 while target!=-1 do
 3090   sleep secs*1000
@@ -2763,7 +3002,7 @@ out of code ram
 4030 dim relay as pin an1 for digital output
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
-4060 on timer 0 gosub adjust
+4060 on timer 0 do gosub adjust
 4070 rem ----------
 4080 while target!=-1 do
 4090   sleep secs*1000
@@ -2784,7 +3023,7 @@ out of code ram
 5030 dim relay as pin an1 for digital output
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
-5060 on timer 0 gosub adjust
+5060 on timer 0 do gosub adjust
 5070 rem ----------
 5080 while target!=-1 do
 5090   sleep secs*1000
@@ -2805,7 +3044,7 @@ out of code ram
 6030 dim relay as pin an1 for digital output
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
-6060 on timer 0 gosub adjust
+6060 on timer 0 do gosub adjust
 6070 rem ----------
 6080 while target!=-1 do
 6090   sleep secs*1000
@@ -2826,7 +3065,7 @@ out of code ram
 7030 dim relay as pin an1 for digital output
 7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 7050 configure timer 0 for 1000 ms
-7060 on timer 0 gosub adjust
+7060 on timer 0 do gosub adjust
 7070 rem ----------
 7080 while target!=-1 do
 7090   sleep secs*1000
@@ -2847,7 +3086,7 @@ out of code ram
 8030 dim relay as pin an1 for digital output
 8040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 8050 configure timer 0 for 1000 ms
-8060 on timer 0 gosub adjust
+8060 on timer 0 do gosub adjust
 8070 rem ----------
 8080 while target!=-1 do
 8090   sleep secs*1000
@@ -2868,7 +3107,7 @@ out of code ram
 9030 dim relay as pin an1 for digital output
 9040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 9050 configure timer 0 for 1000 ms
-9060 on timer 0 gosub adjust
+9060 on timer 0 do gosub adjust
 9070 rem ----------
 9080 while target!=-1 do
 9090   sleep secs*1000
@@ -2889,7 +3128,7 @@ out of code ram
 10030 dim relay as pin an1 for digital output
 10040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 10050 configure timer 0 for 1000 ms
-10060 on timer 0 gosub adjust
+10060 on timer 0 do gosub adjust
 10070 rem ----------
 10080 while target!=-1 do
 10090   sleep secs*1000
@@ -2910,7 +3149,7 @@ out of code ram
 11030 dim relay as pin an1 for digital output
 11040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 11050 configure timer 0 for 1000 ms
-11060 on timer 0 gosub adjust
+11060 on timer 0 do gosub adjust
 11070 rem ----------
 11080 while target!=-1 do
 11090   sleep secs*1000
@@ -2931,7 +3170,7 @@ out of code ram
 12030 dim relay as pin an1 for digital output
 12040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 12050 configure timer 0 for 1000 ms
-12060 on timer 0 gosub adjust
+12060 on timer 0 do gosub adjust
 12070 rem ----------
 12080 while target!=-1 do
 12090   sleep secs*1000
@@ -2952,7 +3191,7 @@ out of code ram
 13030 dim relay as pin an1 for digital output
 13040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 13050 configure timer 0 for 1000 ms
-13060 on timer 0 gosub adjust
+13060 on timer 0 do gosub adjust
 13070 rem ----------
 13080 while target!=-1 do
 13090   sleep secs*1000
@@ -2973,7 +3212,7 @@ out of code ram
 14030 dim relay as pin an1 for digital output
 14040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 14050 configure timer 0 for 1000 ms
-14060 on timer 0 gosub adjust
+14060 on timer 0 do gosub adjust
 14070 rem ----------
 14080 while target!=-1 do
 14090   sleep secs*1000
@@ -2994,7 +3233,7 @@ out of code ram
 15030 dim relay as pin an1 for digital output
 15040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 15050 configure timer 0 for 1000 ms
-15060 on timer 0 gosub adjust
+15060 on timer 0 do gosub adjust
 15070 rem ----------
 15080 while target!=-1 do
 15090   sleep secs*1000
@@ -3015,7 +3254,7 @@ out of code ram
 16030 dim relay as pin an1 for digital output
 16040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 16050 configure timer 0 for 1000 ms
-16060 on timer 0 gosub adjust
+16060 on timer 0 do gosub adjust
 16070 rem ----------
 16080 while target!=-1 do
 16090   sleep secs*1000
@@ -3036,7 +3275,7 @@ out of code ram
 17030 dim relay as pin an1 for digital output
 17040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 17050 configure timer 0 for 1000 ms
-17060 on timer 0 gosub adjust
+17060 on timer 0 do gosub adjust
 17070 rem ----------
 17080 while target!=-1 do
 17090   sleep secs*1000
@@ -3057,7 +3296,7 @@ out of code ram
 18030 dim relay as pin an1 for digital output
 18040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 18050 configure timer 0 for 1000 ms
-18060 on timer 0 gosub adjust
+18060 on timer 0 do gosub adjust
 18070 rem ----------
 18080 while target!=-1 do
 18090   sleep secs*1000
@@ -3078,7 +3317,7 @@ out of code ram
 19030 dim relay as pin an1 for digital output
 19040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 19050 configure timer 0 for 1000 ms
-19060 on timer 0 gosub adjust
+19060 on timer 0 do gosub adjust
 19070 rem ----------
 19080 while target!=-1 do
 19090   sleep secs*1000
@@ -3099,7 +3338,7 @@ out of code ram
 20030 dim relay as pin an1 for digital output
 20040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 20050 configure timer 0 for 1000 ms
-20060 on timer 0 gosub adjust
+20060 on timer 0 do gosub adjust
 20070 rem ----------
 20080 while target!=-1 do
 20090   sleep secs*1000
@@ -3120,7 +3359,7 @@ out of code ram
 21030 dim relay as pin an1 for digital output
 21040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 21050 configure timer 0 for 1000 ms
-21060 on timer 0 gosub adjust
+21060 on timer 0 do gosub adjust
 21070 rem ----------
 21080 while target!=-1 do
 21090   sleep secs*1000
@@ -3171,7 +3410,7 @@ save
 1030 dim relay as pin an1 for digital output
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
-1060 on timer 0 gosub adjust
+1060 on timer 0 do gosub adjust
 1070 rem ----------
 1080 while target!=-1 do
 1090   sleep secs*1000
@@ -3192,7 +3431,7 @@ save
 2030 dim relay as pin an1 for digital output
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
-2060 on timer 0 gosub adjust
+2060 on timer 0 do gosub adjust
 2070 rem ----------
 2080 while target!=-1 do
 2090   sleep secs*1000
@@ -3213,7 +3452,7 @@ save
 3030 dim relay as pin an1 for digital output
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
-3060 on timer 0 gosub adjust
+3060 on timer 0 do gosub adjust
 3070 rem ----------
 3080 while target!=-1 do
 3090   sleep secs*1000
@@ -3234,7 +3473,7 @@ save
 4030 dim relay as pin an1 for digital output
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
-4060 on timer 0 gosub adjust
+4060 on timer 0 do gosub adjust
 4070 rem ----------
 4080 while target!=-1 do
 4090   sleep secs*1000
@@ -3255,7 +3494,7 @@ save
 5030 dim relay as pin an1 for digital output
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
-5060 on timer 0 gosub adjust
+5060 on timer 0 do gosub adjust
 5070 rem ----------
 5080 while target!=-1 do
 5090   sleep secs*1000
@@ -3276,7 +3515,7 @@ save
 6030 dim relay as pin an1 for digital output
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
-6060 on timer 0 gosub adjust
+6060 on timer 0 do gosub adjust
 6070 rem ----------
 6080 while target!=-1 do
 6090   sleep secs*1000
@@ -3297,7 +3536,7 @@ save
 7030 dim relay as pin an1 for digital output
 7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 7050 configure timer 0 for 1000 ms
-7060 on timer 0 gosub adjust
+7060 on timer 0 do gosub adjust
 7070 rem ----------
 7080 while target!=-1 do
 7090   sleep secs*1000
@@ -3318,7 +3557,7 @@ save
 8030 dim relay as pin an1 for digital output
 8040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 8050 configure timer 0 for 1000 ms
-8060 on timer 0 gosub adjust
+8060 on timer 0 do gosub adjust
 8070 rem ----------
 8080 while target!=-1 do
 8090   sleep secs*1000
@@ -3339,7 +3578,7 @@ save
 9030 dim relay as pin an1 for digital output
 9040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 9050 configure timer 0 for 1000 ms
-9060 on timer 0 gosub adjust
+9060 on timer 0 do gosub adjust
 9070 rem ----------
 9080 while target!=-1 do
 9090   sleep secs*1000
@@ -3360,7 +3599,7 @@ save
 10030 dim relay as pin an1 for digital output
 10040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 10050 configure timer 0 for 1000 ms
-10060 on timer 0 gosub adjust
+10060 on timer 0 do gosub adjust
 10070 rem ----------
 10080 while target!=-1 do
 10090   sleep secs*1000
@@ -3381,7 +3620,7 @@ save
 11030 dim relay as pin an1 for digital output
 11040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 11050 configure timer 0 for 1000 ms
-11060 on timer 0 gosub adjust
+11060 on timer 0 do gosub adjust
 11070 rem ----------
 11080 while target!=-1 do
 11090   sleep secs*1000
@@ -3402,7 +3641,7 @@ save
 12030 dim relay as pin an1 for digital output
 12040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 12050 configure timer 0 for 1000 ms
-12060 on timer 0 gosub adjust
+12060 on timer 0 do gosub adjust
 12070 rem ----------
 12080 while target!=-1 do
 12090   sleep secs*1000
@@ -3423,7 +3662,7 @@ save
 13030 dim relay as pin an1 for digital output
 13040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 13050 configure timer 0 for 1000 ms
-13060 on timer 0 gosub adjust
+13060 on timer 0 do gosub adjust
 13070 rem ----------
 13080 while target!=-1 do
 13090   sleep secs*1000
@@ -3444,7 +3683,7 @@ save
 14030 dim relay as pin an1 for digital output
 14040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 14050 configure timer 0 for 1000 ms
-14060 on timer 0 gosub adjust
+14060 on timer 0 do gosub adjust
 14070 rem ----------
 14080 while target!=-1 do
 14090   sleep secs*1000
@@ -3465,7 +3704,7 @@ save
 15030 dim relay as pin an1 for digital output
 15040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 15050 configure timer 0 for 1000 ms
-15060 on timer 0 gosub adjust
+15060 on timer 0 do gosub adjust
 15070 rem ----------
 15080 while target!=-1 do
 15090   sleep secs*1000
@@ -3486,7 +3725,7 @@ save
 16030 dim relay as pin an1 for digital output
 16040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 16050 configure timer 0 for 1000 ms
-16060 on timer 0 gosub adjust
+16060 on timer 0 do gosub adjust
 16070 rem ----------
 16080 while target!=-1 do
 16090   sleep secs*1000
@@ -3507,7 +3746,7 @@ save
 17030 dim relay as pin an1 for digital output
 17040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 17050 configure timer 0 for 1000 ms
-17060 on timer 0 gosub adjust
+17060 on timer 0 do gosub adjust
 17070 rem ----------
 17080 while target!=-1 do
 17090   sleep secs*1000
@@ -3528,7 +3767,7 @@ save
 18030 dim relay as pin an1 for digital output
 18040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 18050 configure timer 0 for 1000 ms
-18060 on timer 0 gosub adjust
+18060 on timer 0 do gosub adjust
 18070 rem ----------
 18080 while target!=-1 do
 18090   sleep secs*1000
@@ -3549,6 +3788,10 @@ missing endwhile/next
 missing while/for
 STOP at line 10!
 missing endif
+mismatched else
+STOP at line 10!
+mismatched elseif
+STOP at line 10!
 missing if
 STOP at line 10!
 missing endwhile/next
@@ -3556,13 +3799,15 @@ missing while/for
 STOP at line 10!
 missing endif
 missing endif
+mismatched elseif
+STOP at line 20!
 missing gosub
 STOP at line 10!
 missing gosub
 STOP at line 10!
 missing while/for
 STOP at line 10!
-break without while/for
+break/continue without while/for
 STOP at line 20!
 test negative run conditions
 tick
@@ -3603,7 +3848,7 @@ end
 end
 test interrupt masking
   10 configure timer 0 for 500 ms
-  20 on timer 0 print "tick"
+  20 on timer 0 do print "tick"
   30 sleep 750
   40 mask timer 0
   50 sleep 2000
@@ -3613,8 +3858,8 @@ test interrupt masking
  100 configure uart 0 for 300 baud 8 data no parity loopback
  110 dim tx as pin utxd0 for uart output
  120 dim rx as pin urxd0 for uart input
- 140 on uart 0 input print "rx", rx
- 145 on uart 0 output print "txed"
+ 140 on uart 0 input do print "rx", rx
+ 145 on uart 0 output do print "txed"
  150 let tx = 3
  160 sleep 500
  170 mask uart 0 input
@@ -3635,12 +3880,12 @@ unmasking
 poll 0
 test timers
    1 configure timer 0 for 3500 ms
-   2 on timer 0 gosub seven
+   2 on timer 0 do gosub seven
    9 configure timer 1 for 1000 ms
-  10 on timer 1 print 2
+  10 on timer 1 do print 2
   20 sleep 500
   29 configure timer 2 for 2000 ms
-  30 on timer 2 print 4
+  30 on timer 2 do print 4
   40 sleep 5000
   50 end 
   90 sub seven
@@ -3659,7 +3904,7 @@ seven
 test demo
   10 rem ### blinky ###
   20 dim i
-  30 dim led as pin irq4* for digital output
+  30 dim led as pin dtin2 for digital output
   40 while 1 do
   50   for i = 1 to 16
   60     let led = !led
@@ -3675,8 +3920,8 @@ end
   40 configure uart 0 for 300 baud 8 data no parity loopback
   50 dim tx as pin utxd0 for uart output
   60 dim rx as pin urxd0 for uart input
-  70 on uart 0 input gosub receive
-  80 on uart 0 output gosub transmit
+  70 on uart 0 input do gosub receive
+  80 on uart 0 output do gosub transmit
   90 sleep 1000
  100 end 
  110 sub receive
@@ -3714,7 +3959,7 @@ end
   40 dim relay as pin an1 for digital output
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
-  70 on timer 0 gosub adjust
+  70 on timer 0 do gosub adjust
   75 sleep 500
   80 rem ----------
   90 while target!=-1 do

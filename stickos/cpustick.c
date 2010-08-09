@@ -49,8 +49,7 @@ main_run(void)
 
     // we just poll here waiting for commands
     for (;;) {
-        os_yield();        
-        sleep_poll();
+        basic_poll();
 
         ready = 0;
         autoend = false;
@@ -58,6 +57,7 @@ main_run(void)
             basic_run("run");
             autoend = true;
         } else if (main_command) {
+            basic_poll();
             if (terminal_echo) {
                 printf("\n");
             }
@@ -98,9 +98,15 @@ main_ip_address()
 }
 #endif
 
+int
+main_nodeid()
+{
+    return var_get_flash(FLASH_NODEID);    
+}
+
 // this function is called by upper level code to register callback
 // functions.
-extern void
+void
 main_initialize(void)
 {
     // if we're in device mode...

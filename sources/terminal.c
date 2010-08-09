@@ -5,6 +5,8 @@ extern void *rich_so;
 #endif
 
 bool terminal_echo = true;
+int terminal_rxid = -1;
+int terminal_txid = -1;
 
 static terminal_command_cbfn command_cbfn;
 static terminal_ctrlc_cbfn ctrlc_cbfn;
@@ -13,6 +15,8 @@ static terminal_ctrlc_cbfn ctrlc_cbfn;
 
 static bool discard;
 static char command[TERMINAL_INPUT_LINE_SIZE];
+
+#define DELAY  20
 
 static byte hist_in;
 static byte hist_out;
@@ -31,7 +35,7 @@ static char keys[8];
 static int cursor;
 static char echo[TERMINAL_INPUT_LINE_SIZE*2];
 
-static bool ack;
+static bool ack = true;
 
 static asm __declspec(register_abi)
 unsigned char
@@ -51,34 +55,30 @@ TRKAccessFile(long command, unsigned long file_handle, int *length_ptr, char *bu
 void
 terminal_print(byte *buffer, int length)
 {
-#pragma unused(length)
+    int id;
+    
+    assert(gpl() == 0);
+    
+    led_unknown_progress();
+
+    // if we're connected to another node...
+    id = terminal_txid;
+    if (id != -1) {
+#if ! FLASHER && ! PICTOCRYPT
+        // forward packets
+        zb_send(id, zb_class_print, length, buffer);
+#endif
+    }
+    
 #if MCF52221
 #if ! FLASHER
     if (ftdi_attached) {
-        ftdi_print((char *)buffer);
+        ftdi_print(buffer, length);
     } else
 #endif
     if (debugger_attached) {
         TRKAccessFile(0xD0, 0, &length, (char *)buffer);
     }
-#elif MCF52233
-    if (rich_so) {
-        m_send(rich_so, buffer, length);
-    } else if (debugger_attached) {
-        TRKAccessFile(0xD0, 0, &length, (char *)buffer);
-    }
-#else
-#error
-#endif
-}
-
-static
-void
-terminal_send(byte *buffer, int length)
-{
-#pragma unused(length)
-#if MCF52221
-    ftdi_send(buffer, length);
 #elif MCF52233
     if (rich_so) {
         m_send(rich_so, buffer, length);
@@ -137,8 +137,10 @@ accumulate(char c)
     int n;
     int orig;
     int again;
-
-    echo[0] = '\0';
+  
+#if MCF52221  
+    assert(gpl() >= MIN(SPL_USB, SPL_IRQ4));
+#endif
 
     if (c == '\003') {
         if (cursor) {
@@ -147,9 +149,9 @@ accumulate(char c)
             cursor = 0;
         }
         strcat(echo, KEY_CLEAR);
+        assert(strlen(echo) < sizeof(echo));
         command[0] = '\0';
         ki = 0;
-        terminal_send((byte *)echo, strlen(echo));
         return;
     }
 
@@ -215,10 +217,12 @@ accumulate(char c)
                                 cursor = 0;
                             }
                             strcat(echo, KEY_CLEAR);
+                            assert(strlen(echo) < sizeof(echo));
                             strcpy(command, history[hist_out]);
 
                             // reprint the line
                             strcat(echo, command);
+                            assert(strlen(echo) < sizeof(echo));
                             cursor = strlen(command);
                         }
                         break;
@@ -240,7 +244,9 @@ accumulate(char c)
                     case KEY_BS:
                         if (cursor) {
                             strcat(echo, keycodes[KEY_LEFT].keys);
+                            assert(strlen(echo) < sizeof(echo));
                             strcat(echo, KEY_DELETE);
+                            assert(strlen(echo) < sizeof(echo));
                             cursor--;
                             memmove(command+cursor, command+cursor+1, sizeof(command)-cursor-1);
                         }
@@ -248,6 +254,7 @@ accumulate(char c)
                     case KEY_DEL:
                         if (command[cursor]) {
                             strcat(echo, KEY_DELETE);
+                            assert(strlen(echo) < sizeof(echo));
                             memmove(command+cursor, command+cursor+1, sizeof(command)-cursor-1);
                         }
                         break;
@@ -256,7 +263,6 @@ accumulate(char c)
                         break;
                 }
                 ki = 0;
-                terminal_send((byte *)echo, strlen(echo));
                 return;
             }
         }
@@ -286,34 +292,56 @@ accumulate(char c)
         if (cursor > orig) {
             // reprint the line
             strcat(echo, command+orig);
+            assert(strlen(echo) < sizeof(echo));
 
             // and back the cursor up
             assert(strlen(command+orig));
             if (strlen(command+orig)-1) {
                 sprintf(echo+strlen(echo), KEYS_LEFT, strlen(command+orig)-1);
+                assert(strlen(echo) < sizeof(echo));
             }
         }
 
         ki = 0;
     } while (again);
-
-    if (terminal_echo) {
-        terminal_send((byte *)echo, strlen(echo));
-    }
 }
 
-bool
-terminal_receive(byte *buffer, int length)
+// N.B. if this routine returns false, ftdi will drop the ball and we'll
+// call ftdi_command_ack() later to pick it up again.
+static bool
+terminal_receive_internal(byte *buffer, int length)
 {
     int j;
+    int id;
 
     led_unknown_progress();
+    
+    // if we're connected to another node...
+    id = terminal_rxid;
+    if (id != -1) {
+#if ! FLASHER && ! PICTOCRYPT
+        // forward packets
+        zb_send(id, zb_class_receive, length, buffer);
+#endif
+        
+        if (length == 1 && buffer[0] == '\004') {
+            // stop forwarding packets on Ctrl-D
+            terminal_rxid = -1;
+        }
+        
+        return true;
+    }
     
     // accumulate commands
     for (j = 0; j < length; j++) {
         if (buffer[j] == '\003') {
             assert(ctrlc_cbfn);
             ctrlc_cbfn();
+        }
+        
+        // if the other node just disconnected from us...
+        if (buffer[j] == '\004') {
+            terminal_txid = -1;
         }
 
         if (! discard) {
@@ -323,26 +351,43 @@ terminal_receive(byte *buffer, int length)
                     hist_in = HISTWRAP(hist_in+1);
                 }
 
+                ack = false;
+#if ! FLASHER && ! PICTOCRYPT
+                zb_drop(true);
+#endif
+                
                 assert(command_cbfn);
                 command_cbfn(command);
                 
                 // wait for terminal_command_ack();
-#if MCF52221
                 return false;
-#elif MCF52233
-                while (! ack) {
-                    os_yield();
-                }
-                ack = false;
-#else
-#error
-#endif
             } else {
                 accumulate(buffer[j]);
             }
         }
     }
     return true;
+}
+
+
+
+bool
+terminal_receive(byte *buffer, int length)
+{
+    if (length) {
+        // reply to local node
+        terminal_txid = -1;
+    }
+
+    return terminal_receive_internal(buffer, length);
+}
+
+void
+terminal_wait(void)
+{
+    while (! ack) {
+        os_yield();
+    }
 }
 
 // this function allows the user to edit a recalled history line.
@@ -382,10 +427,15 @@ terminal_command_ack(bool edit)
     }
 
 #if MCF52221
-    ftdi_command_ack();
+    if (terminal_txid == -1) {
+        ftdi_command_ack();
+    }
 #endif
     
     ack = true;
+#if ! FLASHER && ! PICTOCRYPT
+    zb_drop(false);
+#endif
 }
 
 // this function is called by upper level code in response to an
@@ -420,10 +470,73 @@ terminal_command_error(int offset)
     printf("%s\n", buffer);
 }
 
+// deliver any pending echo characters the isr stack accumulated
+void
+terminal_poll(void)
+{
+    int x;
+    char copy[TERMINAL_INPUT_LINE_SIZE*2];
+    
+#if MCF52221
+    assert(gpl() == 0);
+#endif
+
+    x = splx(MAX(SPL_USB, SPL_IRQ4));
+    strcpy(copy, echo);
+    assert(strlen(copy) < sizeof(copy));
+    echo[0] = '\0';
+    splx(x);
+    
+    if (terminal_echo && copy[0]) {
+        terminal_print((byte *)copy, strlen(copy));
+    }
+    
+#if ! FLASHER && ! PICTOCRYPT
+    zb_poll();
+#endif
+    
+    sleep_poll();
+    
+    os_yield();
+}
+
 void
 terminal_register(terminal_command_cbfn command, terminal_ctrlc_cbfn ctrlc)
 {
     command_cbfn = command;
     ctrlc_cbfn = ctrlc;
+}
+
+static void
+class_receive(int nodeid, int length, byte *buffer)
+{
+    if (length) {
+        // reply to remote node
+        terminal_txid = nodeid;
+        terminal_rxid = -1;
+    }
+    
+    (void)terminal_receive_internal(buffer, length);
+}
+
+static void
+class_print(int nodeid, int length, byte *buffer)
+{
+#pragma unused(nodeid)
+    int x;
+    
+    x = splx(MAX(SPL_USB, SPL_IRQ4));
+    strncat(echo, (char *)buffer, length);
+    assert(strlen(echo) < sizeof(echo));
+    splx(x);
+}
+
+void
+terminal_initialize(void)
+{
+#if ! FLASHER && ! PICTOCRYPT
+    zb_register(zb_class_receive, class_receive);
+    zb_register(zb_class_print, class_print);
+#endif
 }
 

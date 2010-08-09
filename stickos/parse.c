@@ -47,8 +47,10 @@ const struct keyword {
     "assert", code_assert,
     "break", code_break,
     "configure", code_configure,
+    "continue", code_continue,
     "data", code_data,
     "dim", code_dim,
+    "do", code_do,
     "elseif", code_elseif,
     "else", code_else,  // N.B. must follow code_elseif
     "endif", code_endif,
@@ -58,6 +60,7 @@ const struct keyword {
     "for", code_for,
     "gosub", code_gosub,
     "if", code_if,
+    "label", code_label,
     "let", code_let,
     "mask", code_mask,
     "next", code_next,
@@ -73,13 +76,11 @@ const struct keyword {
     "stop", code_stop,
     "sub", code_sub,
     "unmask", code_unmask,
+    "until", code_until,
     "while", code_while
 };
 
 
-// revisit -- merge these with basic.c/parse.c???
-
-static
 void
 parse_trim(IN char **p)
 {
@@ -89,7 +90,6 @@ parse_trim(IN char **p)
     }
 }
 
-static
 bool
 parse_char(IN OUT char **text, IN char c)
 {
@@ -104,7 +104,6 @@ parse_char(IN OUT char **text, IN char c)
     return true;
 }
 
-static
 bool
 parse_word(IN OUT char **text, IN char *word)
 {
@@ -526,9 +525,9 @@ bool
 parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *syntax_error)
 {
     int i;
+    char *d;
     char *p;
     int len;
-    int size;
     bool neg;
     int length;
     char *text;
@@ -601,11 +600,39 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                     goto XXX_ERROR_XXX;
                 }
             } else {
-                goto XXX_ERROR_XXX;
-            }
+                // this should be an expression
+                
+                // find the "do"
+                d = find_keyword(text, "do");
 
+                bytecode[length++] = device_watch;
+                
+                // parse the expression
+                if (d) {
+                    assert(*d == 'd');
+                    *d = '\0';
+                }
+                len = length+sizeof(int);
+                if (! parse_expression(0, &text, &len, bytecode)) {
+                    goto XXX_ERROR_XXX;
+                }
+                *(int *)(bytecode+length) = len-(length+sizeof(int));
+                length = len;
+                text += strlen(text);
+                if (d) {
+                    *d = 'd';
+                }
+
+                bytecode[length++] = code_comma;
+            }
+            
             // if we're enabling interrupts...
             if (keywords[i].code == code_on) {
+                // parse the "do"
+                if (! parse_word(&text, "do")) {
+                    goto XXX_ERROR_XXX;
+                }
+
                 // parse the interrupt handler statement
                 if (! parse_line(text, &len, bytecode+length+sizeof(int), syntax_error)) {
                     goto XXX_ERROR_XXX;
@@ -781,20 +808,6 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             }
             break;
 
-        case code_restore:
-            // if the user specified a line number...
-            if (*text) {
-                // parse the line number to restore to
-                if (! parse_const(&text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
-            } else {
-                // restore to the beginning of the program
-                *(int *)(bytecode+length) = 0;
-                length += sizeof(int);
-            }
-            break;
-
         case code_dim:
             if (! *text) {
                 goto XXX_ERROR_XXX;
@@ -813,102 +826,105 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                     goto XXX_ERROR_XXX;
                 }
 
-                // parse the "as"
-                (void)parse_word(&text, "as");
-
-                // parse the size specifier
-                if (parse_word(&text, "byte")) {
-                    size = sizeof(byte);
-                } else if (parse_word(&text, "short")) {
-                    size = sizeof(short);
-                } else if (parse_word(&text, "integer")) {
-                    size = sizeof(int);
-                } else {
-                    size = sizeof(int);
-                }
-                bytecode[length++] = size;
-
-                // parse the type specifier
-                if (parse_word(&text, "ram")) {
-                    bytecode[length++] = code_ram;
-                } else if (parse_word(&text, "flash")) {
-                    if (size != sizeof(int)) {
-                        goto XXX_ERROR_XXX;
-                    }
-                    bytecode[length++] = code_flash;
-                } else if (parse_word(&text, "pin")) {
-                    bytecode[length++] = code_pin;
-
-                    // parse the pin name
-                    assert(PIN_LAST == LENGTHOF(pins));
-                    for (pin_number = 0; pin_number < PIN_LAST; pin_number++) {
-                        if (parse_word(&text, pins[pin_number].name)) {
-                            break;
-                        }
-                    }
-                    if (pin_number == PIN_LAST) {
-                        goto XXX_ERROR_XXX;
-                    }
-                    assert(pin_number < 256);
-                    bytecode[length++] = pin_number;
-
-                    if (! parse_word(&text, "for")) {
-                        goto XXX_ERROR_XXX;
-                    }
-
-                    // parse the pin usage
-                    if (parse_word(&text, "analog")) {
-                        if (parse_word(&text, "input")) {
-                            bytecode[length++] = pin_type_analog_input;
-                        } else if (parse_word(&text, "output")) {
-                            bytecode[length++] = pin_type_analog_output;
-                        } else {
-                            goto XXX_ERROR_XXX;
-                        }
-                    } else if (parse_word(&text, "digital")) {
-                        if (parse_word(&text, "input")) {
-                            bytecode[length++] = pin_type_digital_input;
-                        } else if (parse_word(&text, "output")) {
-                            bytecode[length++] = pin_type_digital_output;
-                        } else {
-                            goto XXX_ERROR_XXX;
-                        }
-                    } else if (parse_word(&text, "uart")) {
-                        if (parse_word(&text, "input")) {
-                            bytecode[length++] = pin_type_uart_input;
-                        } else if (parse_word(&text, "output")) {
-                            bytecode[length++] = pin_type_uart_output;
-                        } else {
-                            goto XXX_ERROR_XXX;
-                        }
-                    } else if (parse_word(&text, "frequency")) {
-                        if (parse_word(&text, "input")) {
-                            printf("unsupported pin type\n");
-                            goto XXX_ERROR_XXX;
-                        } else if (parse_word(&text, "output")) {
-                            bytecode[length++] = pin_type_frequency_output;
-                        } else {
-                            goto XXX_ERROR_XXX;
-                        }
+                // if the user specified "as"...
+                if (parse_word(&text, "as")) {
+                    // parse the size specifier
+                    if (parse_word(&text, "byte")) {
+                        bytecode[length++] = sizeof(byte);
+                        bytecode[length++] = code_ram;
+                    } else if (parse_word(&text, "short")) {
+                        bytecode[length++] = sizeof(short);
+                        bytecode[length++] = code_ram;
                     } else {
-                        goto XXX_ERROR_XXX;
-                    }
+                        bytecode[length++] = sizeof(int);
 
-                    assert(length);
-                    pin_type = bytecode[length-1];
-                    assert(! (pin_type & (pin_type-1)));  // only 1 bit set
-                    if (pins[pin_number].pin_types == pin_type_unused) {
-                        printf("unsupported pin\n");
-                        goto XXX_ERROR_XXX;
-                    }
-                    if (pin_type != pin_type_digital_input && pin_type != pin_type_digital_output) {
-                        if (! (pins[pin_number].pin_types & pin_type)) {
-                            printf("unsupported pin type\n");
+                        // parse the type specifier
+                        if (parse_word(&text, "flash")) {
+                            bytecode[length++] = code_flash;
+                        } else if (parse_word(&text, "pin")) {
+                            bytecode[length++] = code_pin;
+
+                            // parse the pin name
+                            assert(PIN_LAST == LENGTHOF(pins));
+                            for (pin_number = 0; pin_number < PIN_LAST; pin_number++) {
+                                if (parse_word(&text, pins[pin_number].name)) {
+                                    break;
+                                }
+                            }
+                            if (pin_number == PIN_LAST) {
+                                goto XXX_ERROR_XXX;
+                            }
+                            assert(pin_number < 256);
+                            bytecode[length++] = pin_number;
+
+                            if (! parse_word(&text, "for")) {
+                                goto XXX_ERROR_XXX;
+                            }
+
+                            // parse the pin usage
+                            if (parse_word(&text, "analog")) {
+                                if (parse_word(&text, "input")) {
+                                    bytecode[length++] = pin_type_analog_input;
+                                } else if (parse_word(&text, "output")) {
+                                    bytecode[length++] = pin_type_analog_output;
+                                } else {
+                                    goto XXX_ERROR_XXX;
+                                }
+                            } else if (parse_word(&text, "digital")) {
+                                if (parse_word(&text, "input")) {
+                                    bytecode[length++] = pin_type_digital_input;
+                                } else if (parse_word(&text, "output")) {
+                                    bytecode[length++] = pin_type_digital_output;
+                                } else {
+                                    goto XXX_ERROR_XXX;
+                                }
+                            } else if (parse_word(&text, "uart")) {
+                                if (parse_word(&text, "input")) {
+                                    bytecode[length++] = pin_type_uart_input;
+                                } else if (parse_word(&text, "output")) {
+                                    bytecode[length++] = pin_type_uart_output;
+                                } else {
+                                    goto XXX_ERROR_XXX;
+                                }
+                            } else if (parse_word(&text, "frequency")) {
+                                if (parse_word(&text, "input")) {
+                                    printf("unsupported pin type\n");
+                                    goto XXX_ERROR_XXX;
+                                } else if (parse_word(&text, "output")) {
+                                    bytecode[length++] = pin_type_frequency_output;
+                                } else {
+                                    goto XXX_ERROR_XXX;
+                                }
+                            } else {
+                                goto XXX_ERROR_XXX;
+                            }
+
+                            assert(length);
+                            pin_type = bytecode[length-1];
+                            assert(! (pin_type & (pin_type-1)));  // only 1 bit set
+                            if (pins[pin_number].pin_types == pin_type_unused) {
+                                printf("unsupported pin\n");
+                                goto XXX_ERROR_XXX;
+                            }
+                            if (pin_type != pin_type_digital_input && pin_type != pin_type_digital_output) {
+                                if (! (pins[pin_number].pin_types & pin_type)) {
+                                    printf("unsupported pin type\n");
+                                    goto XXX_ERROR_XXX;
+                                }
+                            }
+                        } else if (parse_word(&text, "remote") && parse_word(&text, "on") && parse_word(&text, "nodeid")) {
+                            bytecode[length++] = code_nodeid;
+                            
+                            // parse the nodeid
+                            if (! parse_const(&text, &length, bytecode)) {
+                                goto XXX_ERROR_XXX;
+                            }
+                        } else {
                             goto XXX_ERROR_XXX;
                         }
                     }
                 } else {
-                    // default to ram variables
+                    bytecode[length++] = sizeof(int);
                     bytecode[length++] = code_ram;
                 }
             }
@@ -1022,13 +1038,14 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
         case code_if:
         case code_elseif:
         case code_while:
+        case code_until:
             if (keywords[i].code == code_if || keywords[i].code == code_elseif) {
                 // make sure we have a "then"
                 if (! parse_tail(&text, "then")) {
                     text += strlen(text);
                     goto XXX_ERROR_XXX;
                 }
-            } else {
+            } else if (keywords[i].code == code_while) {
                 // make sure we have a "do"
                 if (! parse_tail(&text, "do")) {
                     text += strlen(text);
@@ -1045,13 +1062,15 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
         case code_else:
         case code_endif:
         case code_endwhile:
+        case code_do:
             // nothing to do here
             break;
 
         case code_break:
-            // if the user specified a break level...
+        case code_continue:
+            // if the user specified a break/continue level...
             if (*text) {
-                // parse the break level
+                // parse the break/continue level
                 if (! parse_const(&text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
@@ -1060,7 +1079,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                     goto XXX_ERROR_XXX;
                 }
             } else {
-                // break 1 level
+                // break/continue 1 level
                 *(int *)(bytecode+length) = 1;
                 length += sizeof(int);
             }
@@ -1129,12 +1148,14 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             // nothing to do here
             break;
 
+        case code_label:
+        case code_restore:
         case code_gosub:
         case code_sub:
-            if (! *text) {
+            if (! *text && keywords[i].code != code_restore) {
                 goto XXX_ERROR_XXX;
             }
-            // generate the subname to bytecode, and advance length and *text past the name
+            // generate the label/subname to bytecode
             while (*text) {
                 bytecode[length++] = *text++;
             }
@@ -1353,7 +1374,6 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
     int uart;
     int baud;
     int data;
-    int line;
     int value;
     byte parity;
     byte loopback;
@@ -1365,6 +1385,7 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
     char *out;
     byte *bytecode;
     bool output;
+    int nodeid;
 
     bytecode = bytecode_in;
 
@@ -1418,13 +1439,23 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                 // and the uart data direction
                 output = *bytecode++;
                 out += sprintf(out, "%s", output?"output":"input");
+            } else if (device == device_watch) {
+
+                // this is an expression
+                len = *(int *)bytecode;
+                bytecode += sizeof(int);
+
+                bytecode += unparse_expression(0, bytecode, len, &out);
+
+                assert(*bytecode == code_comma);
+                bytecode++;
             } else {
                 assert(0);
             }
 
             // if we're enabling interrupts...
             if (code == code_on) {
-                out += sprintf(out, " ");
+                out += sprintf(out, " do ");
 
                 len = *(int *)bytecode;
                 bytecode += sizeof(int);
@@ -1528,16 +1559,6 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
             }
             break;
 
-        case code_restore:
-            line = *(int *)bytecode;
-            bytecode += sizeof(int);
-            // if the user specified a line number...
-            if (line) {
-                // decompile the line number
-                out += sprintf(out, "%d", line);
-            }
-            break;
-
         case code_dim:
             cw7bug++;
             // while there are more variables...
@@ -1558,55 +1579,58 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                 // decompile the "as"
                 if (size != sizeof(int) || code2 != code_ram) {
                     out += sprintf(out, " as ");
-                }
 
-                // decompile the size specifier
-                if (size == sizeof(byte)) {
-                    out += sprintf(out, "byte");
-                } else if (size == sizeof(short)) {
-                    out += sprintf(out, "short");
-                } else {
-                    assert(size == sizeof(int));
-                }
-
-                if (size != sizeof(int) && code2 != code_ram) {
-                    out += sprintf(out, " ");
-                }
-
-                // decompile the type specifier
-                if (code2 == code_flash) {
-                    out += sprintf(out, "flash");
-                } else if (code2 == code_pin) {
-                    out += sprintf(out, "pin ");
-
-                    pin = *bytecode++;
-                    type = *bytecode++;
-
-                    // decompile the pin name
-                    assert(pin >= 0 && pin < PIN_LAST);
-                    out += sprintf(out, "%s ", pins[pin].name);
-
-                    out += sprintf(out, "for ");
-
-                    // decompile the pin usage
-                    if (type == pin_type_frequency_output) {
-                        out += sprintf(out, "%s", "frequency output");
-                    } else if (type == pin_type_analog_input) {
-                        out += sprintf(out, "%s", "analog input");
-                    } else if (type == pin_type_analog_output) {
-                        out += sprintf(out, "%s", "analog output");
-                    } else if (type == pin_type_uart_input) {
-                        out += sprintf(out, "%s", "uart input");
-                    } else if (type == pin_type_uart_output) {
-                        out += sprintf(out, "%s", "uart output");
-                    } else if (type == pin_type_digital_input) {
-                        out += sprintf(out, "%s", "digital input");
+                    // decompile the size specifier
+                    if (size == sizeof(byte)) {
+                        assert(code2 == code_ram);
+                        out += sprintf(out, "byte ");
+                    } else if (size == sizeof(short)) {
+                        assert(code2 == code_ram);
+                        out += sprintf(out, "short ");
                     } else {
-                        assert(type == pin_type_digital_output);
-                        out += sprintf(out, "%s", "digital output");
+                        assert(size == sizeof(int));
+                        
+                        // decompile the type specifier
+                        if (code2 == code_flash) {
+                            out += sprintf(out, "flash");
+                        } else if (code2 == code_pin) {
+                            out += sprintf(out, "pin ");
+
+                            pin = *bytecode++;
+                            type = *bytecode++;
+
+                            // decompile the pin name
+                            assert(pin >= 0 && pin < PIN_LAST);
+                            out += sprintf(out, "%s ", pins[pin].name);
+
+                            out += sprintf(out, "for ");
+
+                            // decompile the pin usage
+                            if (type == pin_type_frequency_output) {
+                                out += sprintf(out, "%s", "frequency output");
+                            } else if (type == pin_type_analog_input) {
+                                out += sprintf(out, "%s", "analog input");
+                            } else if (type == pin_type_analog_output) {
+                                out += sprintf(out, "%s", "analog output");
+                            } else if (type == pin_type_uart_input) {
+                                out += sprintf(out, "%s", "uart input");
+                            } else if (type == pin_type_uart_output) {
+                                out += sprintf(out, "%s", "uart output");
+                            } else if (type == pin_type_digital_input) {
+                                out += sprintf(out, "%s", "digital input");
+                            } else {
+                                assert(type == pin_type_digital_output);
+                                out += sprintf(out, "%s", "digital output");
+                            }
+                        } else {
+                            assert(code2 == code_nodeid);
+
+                            nodeid = *(int *)bytecode;
+                            bytecode += sizeof(int);
+                            
+                            out += sprintf(out, "remote on nodeid %u", nodeid);
+                        }
                     }
-                } else {
-                    assert(code2 == code_ram);
                 }
             }
             break;
@@ -1686,12 +1710,13 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
         case code_if:
         case code_elseif:
         case code_while:
+        case code_until:
             // decompile the conditional expression
             bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
             // decompile the "then" or "do"
             if (code == code_if || code == code_elseif) {
                 out += sprintf(out, " then");
-            } else {
+            } else if (code == code_while) {
                 out += sprintf(out, " do");
             }
             break;
@@ -1699,15 +1724,17 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
         case code_else:
         case code_endif:
         case code_endwhile:
+        case code_do:
             // nothing to do here
             break;
 
         case code_break:
+        case code_continue:
             n = *(int *)bytecode;
             bytecode += sizeof(int);
-            // if the break level is not 1...
+            // if the break/continue level is not 1...
             if (n != 1) {
-                // decompile the break level
+                // decompile the break/continue level
                 out += sprintf(out, " %d", n);
             }
             break;
@@ -1746,6 +1773,8 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
             // nothing to do here
             break;
 
+        case code_label:
+        case code_restore:
         case code_gosub:
         case code_sub:
             // decompile the subname

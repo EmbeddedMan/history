@@ -3,6 +3,9 @@
 
 #include "main.h"
 
+#define QSPI_BAUD_FAST  500000  // zigbee
+#define QSPI_BAUD_SLOW  150000  // default
+
 static int csiv;
 static int csav;
 
@@ -11,8 +14,11 @@ void
 qspi_transfer(byte *buffer, int length)
 {
     int i;
+    int x;
     int request;
 
+    x = splx(7);
+    
     // while there is data remaining...
     while (length) {
         // process up to 16 bytes at a time
@@ -31,7 +37,7 @@ qspi_transfer(byte *buffer, int length)
 
         // set the queue pointers
         assert(request);
-        MCF_QSPI_QWR = csiv|MCF_QSPI_QWR_ENDQP(request-1)|MCF_QSPI_QWR_NEWQP(0);
+        MCF_QSPI_QWR = csav|MCF_QSPI_QWR_ENDQP(request-1)|MCF_QSPI_QWR_NEWQP(0);
 
         // start the transfer
         MCF_QSPI_QDLYR = MCF_QSPI_QDLYR_SPE;
@@ -57,7 +63,9 @@ qspi_transfer(byte *buffer, int length)
     }
 
     // transfer complete
-    MCF_QSPI_QWR = csav;
+    MCF_QSPI_QWR = csiv;
+    
+    splx(x);
 }
 
 extern void
@@ -69,15 +77,24 @@ qspi_inactive(bool csiv_in)
 }
 
 extern void
+qspi_baud_fast(void)
+{
+    // initialize qspi master at 500k baud
+    assert(fsys_frequency/2/QSPI_BAUD_FAST < 256);
+    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/fsys_frequency/2/QSPI_BAUD_FAST;
+}
+
+extern void
 qspi_initialize(void)
 {
     // QS is primary
     MCF_GPIO_PQSPAR = 0x1555;
 
     // initialize qspi master at 150k baud
-    assert(fsys_frequency/2/150000 < 256);
-    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/fsys_frequency/2/150000;
-    
+    assert(fsys_frequency/2/QSPI_BAUD_SLOW < 256);
+    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/fsys_frequency/2/QSPI_BAUD_SLOW;
+
+    // initialize qspi to active low chip select
     qspi_inactive(1);
 }
 

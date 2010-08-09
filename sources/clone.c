@@ -88,6 +88,8 @@ clone(bool and_run)
     delay(1);
     MCF_GPIO_SETAS = 1;
     delay(1);
+    
+    qspi_inactive(1);
 
     status = flash_status();
     if (status & (WRITE_ERROR|WRITE_IN_PROGRESS)) {
@@ -174,8 +176,6 @@ clone(bool and_run)
 
     if (and_run) {
         // allow the target to run!
-        qspi_inactive(1);
-
         // pulse slave rsti* low
         MCF_GPIO_CLRAS = ~1;
         delay(1);

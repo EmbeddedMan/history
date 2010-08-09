@@ -5,28 +5,13 @@
 
 static volatile int sleep_seconds;
 
-#if MCF52233
-#undef MCF_EPORT_EPPDR
-#undef MCF_EPORT_EPPAR
-#undef MCF_EPORT_EPFR
-#undef MCF_EPORT_EPIER
-#define MCF_EPORT_EPPDR  MCF_EPORT0_EPPDR
-#define MCF_EPORT_EPPAR  MCF_EPORT0_EPPAR
-#define MCF_EPORT_EPFR  MCF_EPORT0_EPFR
-#define MCF_EPORT_EPIER  MCF_EPORT0_EPIER
-#elif MCF52221
-#else
-#error
-#endif
-
 // called on sleep entry and exit (sw1 depressed)
 __declspec(interrupt)
 void
 sleep_isr(void)
 {
-    while (! (MCF_EPORT_EPPDR & MCF_EPORT_EPPDR_EPPD1)) {
-        // NULL
-    }
+    (void)splx(-SPL_IRQ1);
+    
     delay(100);  // debounce
     while (! (MCF_EPORT_EPPDR & MCF_EPORT_EPPDR_EPPD1)) {
         // NULL
@@ -77,9 +62,6 @@ sleep_poll(void)
     }
 
     if (sleep_mode) {
-        // we're going to sleep; program irq1 for level trigger
-        MCF_EPORT_EPPAR = MCF_EPORT_EPPAR_EPPA1_LEVEL;
-
         // save our data directions and pin assignments
         ddrnq = MCF_GPIO_DDRNQ;
         ddran = MCF_GPIO_DDRAN;
@@ -102,7 +84,7 @@ sleep_poll(void)
         pucpar = MCF_GPIO_PUCPAR;
 
         // configure all pins for digital input, except IRQ1*
-        MCF_GPIO_DDRNQ = 0x04;
+        MCF_GPIO_DDRNQ = 0;
         MCF_GPIO_DDRAN = 0;
         MCF_GPIO_DDRAS = 0;
         MCF_GPIO_DDRQS = 0;
@@ -131,7 +113,7 @@ sleep_poll(void)
 
         // prepare for stop mode
         MCF_PMM_LPCR = MCF_PMM_LPCR_LPMD_STOP|0x18/*all clocks off*/;
-#if MCF52221
+#if MCF52221 && ! FLASHER
         if (usb_host_mode && other_attached) {
             // prepare for doze mode to keep USB SOF's alive for other devices
             MCF_PMM_LPCR = MCF_PMM_LPCR_LPMD_DOZE|0x18/*all clocks off*/;
@@ -141,10 +123,17 @@ sleep_poll(void)
         // allow us to wake from stop mode
         MCF_PMM_LPICR = MCF_PMM_LPICR_ENBSTOP|MCF_PMM_LPICR_XLPM_IPL(0);
 
-        // stop!
-        asm {
-            stop #0x2000
-        };
+        if (initialized) {
+            // stop!
+            asm {
+                stop #0x2000
+            };
+        } else {
+            // stop!
+            asm {
+                stop #0x2700
+            };
+        }
         
         wake_mode = true;
         sleep_seconds = 0;
@@ -158,9 +147,6 @@ sleep_poll(void)
             asm { halt }
         }
 #endif
-
-        // we're waking up; program irq1 for falling edge trigger
-        MCF_EPORT_EPPAR = MCF_EPORT_EPPAR_EPPA1_FALLING;
 
         // restore our data directions and pin assignments
         MCF_GPIO_DDRNQ = ddrnq;
@@ -196,13 +182,14 @@ sleep_poll(void)
 void
 sleep_initialize(void)
 {
-    // NQ is gpio output (irq7) and primary (irq1)
-    MCF_GPIO_DDRNQ = 0x80;
-    MCF_GPIO_PNQPAR = 0x04;
+    
+    // NQ is primary (irq1)
+    irq1_enable = true;
+    MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(1*2))) | (1<<(1*2));  // irq1 is primary
 
-    // we're awake; program irq1 for falling edge trigger
-    MCF_EPORT_EPPAR = MCF_EPORT_EPPAR_EPPA1_FALLING;
-    MCF_EPORT_EPIER = MCF_EPORT_EPIER_EPIE1;
+    // we're awake; program irq1 for level trigger
+    MCF_EPORT_EPPAR = (MCF_EPORT_EPPAR &~ MCF_EPORT_EPPAR_EPPA1_BOTH) | MCF_EPORT_EPPAR_EPPA1_LEVEL;
+    MCF_EPORT_EPIER |= MCF_EPORT_EPIER_EPIE1;
 
     // enable irq1 interrupt
     MCF_INTC0_ICR01 = MCF_INTC_ICR_IL(SPL_IRQ1)|MCF_INTC_ICR_IP(SPL_IRQ1);

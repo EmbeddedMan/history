@@ -17,7 +17,7 @@ extern bool debugger_attached;
 #if PICTOCRYPT
 extern byte big_buffer[8192];
 #else
-extern byte big_buffer[2048];
+extern byte big_buffer[1024];
 #endif
 
 typedef void (*flash_upgrade_ram_begin_f)(bool);

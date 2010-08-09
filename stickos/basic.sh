@@ -199,7 +199,7 @@ echo test some variable types
 debug/basic -q <<EOF
 1dim a as byte
 2dim b as short
-3dim c as integer
+3dim c 
 4let c=-1
 5let b=c
 6let a=b
@@ -313,7 +313,7 @@ new
 300 print "here"
 310 return
 320 endsub
-400 on timer 1 gosub timer
+400 on timer 1 do gosub timer
 410 end
 490 sub timer
 500 print "timer"
@@ -381,6 +381,22 @@ list 90-110
 list -
 EOF
 
+echo test do/until
+debug/basic -q <<EOF
+10 dim a
+20 do
+30 print a
+40 let a=a+1
+50 until a==10
+list
+run
+20
+list
+20 do
+50
+list
+EOF
+
 echo test help
 debug/basic -q <<EOF
 help
@@ -395,6 +411,7 @@ help variables
 help pins
 help board
 help clone
+help zigbee
 EOF
 
 echo test dims
@@ -403,11 +420,13 @@ debug/basic -q <<EOF
 20 dim b as pin dtin1 for digital input
 30 dim c as pin an0 for analog input
 40 dim d as flash
+41 dim m as remote on nodeid 7
+42 dim n[4] as remote on nodeid 8
 50 dim e
 55 let e=5
 60 dim f as byte flash
 70 dim g
-80 print a, b, c, d, e, f, g
+80 print a, b, c, d, e, f, g, m, n[3]
 list
 run
 EOF
@@ -455,7 +474,7 @@ debug/basic -q <<EOF
 40 dim a[(3+4)*2]
 50 dim a[(3+4)*2]
 60 dim a[(3+4)*2] as byte
-70 dim a[(3+4)*2] as integer flash
+70 dim a[(3+4)*2] as flash
 80 dim a[(3+4)-3]
 110 let a[3] = b[3]
 120 let a[3+4] = b[3+4]
@@ -535,6 +554,7 @@ cont 80
    1 dim a, b, c
   10 data 1, 0x2, 3
   20 data 0x4
+  29 label middle
   30 data 5, 0x6
   35 data 7
   40 while 1 do
@@ -542,7 +562,7 @@ cont 80
   60   print a, b, c
   70 endwhile
   75 data 0x10
-  80 restore 30
+  80 restore middle
   90   read a, b, c
   100   print a, b, c
   list
@@ -597,6 +617,37 @@ list
 run
 EOF
 
+echo test variable scope overflow
+debug/basic -q <<EOF
+10 dim a
+15 dim b[500] as byte
+20 gosub alloc
+30 end
+90 sub alloc
+95 dim b[500] as byte
+100 let a=a+1
+110 if a < 20 then
+120 gosub alloc
+125 endif
+130 endsub
+list
+92 dim g as flash
+list 92
+run
+92 dim g as pin dtin0 for digital output
+list 92
+run
+92
+run
+print a
+15 for a = 1 to 10
+25 next
+delete 100-125
+96 print b[499]
+list
+run
+EOF
+
 echo test while breaks
 debug/basic -q <<EOF
 10 dim a
@@ -614,6 +665,30 @@ run
 71 let a=a+1
 72 endwhile
 40 break 2
+list
+run
+EOF
+
+echo test while continues
+debug/basic -q <<EOF
+  10 dim i
+  20 while i<15 do
+  30   let i=i+1
+  40   sleep 100
+  50   if i%5==0 then
+  60     continue
+  70   endif
+  80   print i
+  90 endwhile
+list
+run
+11 dim j
+45 for j = 1 to 3
+46 print "   ",j
+50 if j==2&&i%5==0 then
+60 continue 2
+62 print "not"
+75 next
 list
 run
 EOF
@@ -815,6 +890,46 @@ dir
 list
 EOF
 
+### on/off/mask/unmask ###
+
+echo on/off/mask/unmask
+debug/basic -q <<EOF
+10 on xxx do gosub yyy
+20 on zzz+aaa do stop
+30 off xxx
+40 off zzz+aaa
+50 unmask xxx
+60 unmask zzz+aaa
+70 on timer 1 do gosub tick
+80 on uart 0 input do gosub rx
+90 off timer 1
+100 off uart 0 input
+list
+EOF
+
+### watchpoints ###
+
+echo watchpoints
+debug/basic -q <<EOF
+10 dim i
+20 on i%5 do stop
+30 while 1 do
+40 let i=i+1
+50 let i=i+1
+51 if i==100 then
+52 break
+53 endif
+60 endwhile
+list
+run
+print i
+cont
+print i
+off i%5
+cont
+print i
+EOF
+
 ### parse errors ###
 
 echo parse errors
@@ -873,21 +988,24 @@ debug/basic -q <<EOF
 print "on"
 on xxx
 on timer a
+on timer do a
 on timer 1
-on timer 1 xxx
-on timer 1 let xxx =
-on timer 1 let xxx = *
-on timer 4 let a=0
-on timer 1 let a=0
+on timer 1 do
+on timer 1 do xxx
+on timer 1 do let xxx =
+on timer 1 do let xxx = *
+on timer 4 do let a=0
+on timer 1 do let a=0
 on uart a
 on uart 1
 on uart 1 xxx
-on uart 1 input
-on uart 1 input xxx
-on uart 1 input let xxx =
-on uart 1 input let xxx = *
-on uart 4 input let a=0
-on uart 1 input let a=0
+on uart 1 input a
+on uart 1 input do
+on uart 1 input do xxx
+on uart 1 input do let xxx =
+on uart 1 input do let xxx = *
+on uart 4 input do let a=0
+on uart 1 input do let a=0
 print "off"
 off xxx
 off timer
@@ -949,10 +1067,10 @@ data q
 data ,10
 data 10,
 data (10)
+print "label"
+label
 print "restore"
-restore ,
-restore (10)
-restore a
+restore xxx
 print "dim"
 dim
 dim ,
@@ -968,7 +1086,7 @@ dim a[(0]
 dim a as flash b
 dim a as byte flash
 dim a as byte
-dim a as integer flash
+dim a as flash
 dim b as pin www
 dim b as pin an0
 dim b as pin an0 xxx
@@ -978,6 +1096,13 @@ dim b as pin an0 for analog yyy xxx
 dim b as pin an0 for yyy input xxx
 dim b as pin an0 for analog input
 dim c as pin an0 for frequency input
+dim d as
+dim ee as remote
+dim eee as remote on
+dim eeee as remote on x
+dim e as remote on nodeid
+dim f[4] as remote on nodeid
+dim g as remote on nodeid 3+
 print "let"
 let
 let 0=0
@@ -1147,7 +1272,7 @@ print !!!!!!!!!!!0
 print !!!!!!!!!!!!0
 10 dim ticks
 20 configure timer 0 for 10 ms
-30 on timer 0 gosub tick
+30 on timer 0 do gosub tick
 40 gosub main
 50 end
 60 sub main
@@ -1162,7 +1287,7 @@ run
 new
 10 dim ticks
 20 configure timer 0 for 10 ms
-30 on timer 0 gosub tick
+30 on timer 0 do gosub tick
 40 gosub main
 50 end
 60 sub main
@@ -1306,12 +1431,12 @@ debug/basic -q <<EOF
 20 print 3/0
 30 print "hello",1,"there"
 40 configure timer 1 for 1ms
-50 on timer 1 gosub aaa
+50 on timer 1 do gosub aaa
 60 sleep 100000000
 70 endif
 80 sleep 100
 90 configure timer 1 for 700ms
-100 on timer 1 print "tick"
+100 on timer 1 do print "tick"
 110 if 0 then
 120 unmask timer 1
 130 mask timer 1
@@ -1384,7 +1509,7 @@ EOF
 echo test interrupt masking
 debug/basic -q <<EOF
 10 configure timer 0 for 500 ms
-20 on timer 0 print "tick"
+20 on timer 0 do print "tick"
 30 sleep 750
 40 mask timer 0
 50 sleep 2000
@@ -1394,8 +1519,8 @@ debug/basic -q <<EOF
  100 configure uart 0 for 300 baud 8 data no parity loopback
  110 dim tx as pin utxd0 for uart output
  120 dim rx as pin urxd0 for uart input
- 140 on uart 0 input print "rx", rx
- 145 on uart 0 output print "txed"
+ 140 on uart 0 input do print "rx", rx
+ 145 on uart 0 output do print "txed"
  150 let tx = 3
  160 sleep 500
  170 mask uart 0 input
@@ -1415,12 +1540,12 @@ EOF
 echo test timers
 debug/basic -q <<EOF
 1 configure timer 0 for 3500 ms
-2 on timer 0 gosub seven
+2 on timer 0 do gosub seven
 9 configure timer 1 for 1000 ms
-10 on timer 1 print 2
+10 on timer 1 do print 2
 20 sleep 500
 29 configure timer 2 for 2000 ms
-30 on timer 2 print 4
+30 on timer 2 do print 4
 40 sleep 5000
 50 end
 90 sub seven

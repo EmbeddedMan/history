@@ -152,7 +152,7 @@ do_other_wait(void)
 // if we see the pause state radically changing, we panic and wipe
 // the card!
 void
-main_poll(void)
+main_timer_poll(void)
 {
     bool pause;
     static int changes;
@@ -190,12 +190,12 @@ main_run_admin(void)
 
     // we just poll here waiting for commands
     for (;;) {
-        os_yield();        
-        sleep_poll();
+        terminal_poll();
 
         ready = 0;
         autoend = false;
         if (main_command) {
+            terminal_poll();
             if (terminal_echo) {
                 printf("\n");
             }
@@ -257,8 +257,7 @@ main_run(void)
             main_run_admin();
         }
 
-        os_yield();
-        sleep_poll();
+        terminal_poll();
     }
 }
 

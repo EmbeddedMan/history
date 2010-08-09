@@ -25,7 +25,7 @@ led_sad(enum code code);  // red running
 #endif
 
 void
-led_poll();
+led_timer_poll();
 
 void
 led_line(int line);  // red crashed

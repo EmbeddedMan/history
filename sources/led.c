@@ -105,7 +105,7 @@ led_set(enum led n, int on)
 }
 
 void
-led_poll()
+led_timer_poll()
 {
 #if PICTOCRYPT
     int i;
@@ -155,6 +155,7 @@ led_line(int line)
 {
     int i;
     int j;
+    int n;
     
     if (debugger_attached) {
         asm {
@@ -164,7 +165,15 @@ led_line(int line)
         splx(7);
         initialized = 0;
         
+        n = 0;
         for (;;) {
+            if (n++ >= 10) {
+#if PICTOCRYPT
+                sleep_delay(0);
+#endif
+                sleep_poll();
+            }
+            
             for (i = 1000; i > 0; i /= 10) {
                 if (line < i) {
                     continue;

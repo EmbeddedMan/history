@@ -1,9 +1,14 @@
 // *** basic.h ********************************************************
 
+#if ! _WIN32
+#define SHRINK  0  // turn on for building debug code
+#endif
+
 enum devices {
     device_timer,
     device_uart,
-    device_qspi
+    device_qspi,
+    device_watch
 };
 
 // bytecodes
@@ -20,12 +25,14 @@ enum bytecode {
     code_assert,
     code_read,
       code_data,
+      code_label,
       code_restore,
     code_dim,
       code_comma,  // used for dim and print
       code_ram,  // page_offset in RAM_VARIABLE_PAGE (allocated internally)
       code_flash,  // page_offset in FLASH_PARAM_PAGE (allocated internally)
       code_pin,  // pin_number, pin_type
+      code_nodeid,
     code_let,
     code_print,
       code_string,
@@ -39,9 +46,12 @@ enum bytecode {
       code_endif,
     code_while,
       code_break,
+      code_continue,
       code_endwhile,  // N.B. for loops translate into while/endwhile
     code_for,
       code_next,
+    code_do,
+      code_until,
     code_gosub,
       code_sub,
       code_return,
@@ -68,10 +78,16 @@ enum bytecode {
 
 
 #define BASIC_SMALL_PAGE_SIZE  2048
-#define BASIC_LARGE_PAGE_SIZE  (10*1024)
-#define BASIC_BYTECODE_SIZE  (4*BASIC_LINE_SIZE)
 
+#if SHRINK
+#define BASIC_LARGE_PAGE_SIZE  (8*1024)
+#define BASIC_STORES  2
+#else
+#define BASIC_LARGE_PAGE_SIZE  (10*1024)
 #define BASIC_STORES  3
+#endif
+
+#define BASIC_BYTECODE_SIZE  (4*BASIC_LINE_SIZE)
 
 #if ! _WIN32
 #define START_DYNAMIC  (FLASH_BYTES - ((2+BASIC_STORES)*BASIC_LARGE_PAGE_SIZE+3*BASIC_SMALL_PAGE_SIZE))
@@ -98,6 +114,8 @@ extern byte *start_of_dynamic;
 extern byte *end_of_dynamic;
 
 void basic_run(char *line);
+
+void basic_poll(void);
 
 void basic_initialize(void);
 

@@ -3,8 +3,6 @@
 
 #include "main.h"
 
-#define SHRINK  0  // turn on when building unoptimized code
-
 #if _WIN32
 byte FLASH_CODE1_PAGE[BASIC_LARGE_PAGE_SIZE];
 byte FLASH_CODE2_PAGE[BASIC_LARGE_PAGE_SIZE];
@@ -24,54 +22,45 @@ byte *end_of_dynamic;
 
 // phase #2
 // features:
+//  have nodeid and clusterid, and broadcast clusterid^0x4242 as magic number
+//  save zigbee channel in nvparam!
+//  get rid of on uart/on timer???
+//  multiple watchpoints?
 //  auto line number (for paste)
-//  allow qspi baud rate configuration
+//  builtin operators -- lengthof(a) or a#
 //  short circuit && and || operators
-//  add character constants 'c', '\n'; do we want a way to print in character or hex?
-//  add "label" statement for use by restore
-//  allow interrupts on all digital input pins!
+//  add character constants 'c', '\n'; do we want a way to print in character form?
 //  add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
 //  add sub parameter mappings? sub return values?
 //  add strings
 //  multiple (main) threads?  "input" statement?
-//  zigbee wireless daughter card over spi
 //  "on usb [connect|disconnect]" statement for slave mode!
+//  allow "digital input debounce" for pin type!  also "digital|analog input|output invert"!
+//  ?: operator!
+//  add support for comments at the end of lines '?  //?
+//  switch statement (on xxx goto...?)
+//  allow gosub from command line?
+//  sub stack trace?  (with sub local vars?)
+//  one line "if <expression> then <statement> [else <statement>]"
+//  optional "let" statement
 // perf:
 //  mave var one slot towards "last in gosub scope" on usage rand()%16?
 //  code optimization for advancing to the next program line; remember backwards loops (10)?
 // user guide:
-//  add "restore" to UG; add print hex/dec; add "short"; add "qspi"; change operator precedence order
-//  multiple let assignments
-//  list/delete by sub names
 // bugs:
-//  dim in sub eventually runs out of memory!!! (unit test!)
-//  renumber won't work on restore line numbers! (unit test!)
+//  "clear" or "new" should set max_gosubs to 0!
+//  re-dim pin should allow pin_type change (and reconfigure)?  or verify it has not!
 //  sleep switch power draw is too high!
 //  need mechanism to reconfigure pins irq1* and irq7*, other than reset!
-//  allow "digital input debounce" for pin type!  also "digital|analog input|output invert"!
-//  debug watchpoints (break on expression true)
-//  ?: operator!
-//  add support for comments at the end of lines '?  //?
-//  switch statement (on xxx goto...?)
-//  re-dim pin should allow pin_type change (and reconfigure)?  or verify it has not!
 //  need a second catalog page for safe updates!
 //  can we make sub/endsub block behave more like for/next, from error and listing perspective?
 //  should we attempt to make rx transfers never time out/clear feature?
 //  core dump -- copy ram to secondary code flash on assert/exception/halt?
 //  handle uart errors (interrupt as well as poll)
-//  allow gosub from command line?
-//  sub stack trace?  (with sub local vars?)
-//  list, delete, etc., should allow sub names
-//  builtin vars -- ticks, rand -- or ticks(), rand()?  will we support functions?
-//  builtin operators -- lengthof(a) or a#
-//  one line "if <expression> then <statement> [else <statement>]"
-//  we need a better story for preserving hex constants in listings!
-//  optional "let" statement
 //  sleeps and timers don't work with single-stepping
 
 // phase #3
 // features:
-//  add spi control
 //  add i2c control
 //  add usb host control
 //  add usb device control
@@ -81,6 +70,8 @@ enum cmdcode {
     command_autorun,  // [on|off]
     command_clear,  // [flash]
     command_clone,  // [run]
+    command_cls,
+    command_connect,  // nnn
     command_cont,  // [nnn]
     command_delete,  // ([nnn] [-] [nnn]|<subname>)
     command_demo,  // [n [nnn]]
@@ -96,6 +87,7 @@ enum cmdcode {
     command_load,  // <name>
     command_memory,
     command_new,
+    command_nodeid,  // nnn
     command_prompt,  // [on|off]
     command_purge, // <name>
     command_renumber,
@@ -118,6 +110,8 @@ const struct commands {
     "autorun", command_autorun,
     "clear", command_clear,
     "clone", command_clone,
+    "cls", command_cls,
+    "connect", command_connect,
     "cont", command_cont,
     "delete", command_cont,
     "demo", command_demo,
@@ -133,6 +127,7 @@ const struct commands {
     "load", command_load,
     "memory", command_memory,
     "new", command_new,
+    "nodeid", command_nodeid,
     "prompt", command_prompt,
     "purge", command_purge,
     "renumber", command_renumber,
@@ -147,50 +142,6 @@ const struct commands {
 };
 
 // revisit -- merge these with basic.c/parse.c???
-
-static
-void
-basic_trim(IN OUT char **p)
-{
-    // advance *p past any leading spaces
-    while (isspace(**p)) {
-        (*p)++;
-    }
-}
-
-static
-bool
-basic_char(IN OUT char **text, IN char c)
-{
-    if (**text != c) {
-        return false;
-    }
-
-    // advance *text past c
-    (*text)++;
-
-    basic_trim(text);
-    return true;
-}
-
-static
-bool
-basic_word(IN OUT char **text, IN char *word)
-{
-    int len;
-
-    len = strlen(word);
-
-    if (strncmp(*text, word, len)) {
-        return false;
-    }
-
-    // advance *text past word
-    (*text) += len;
-
-    basic_trim(text);
-    return true;
-}
 
 static
 bool
@@ -210,7 +161,7 @@ basic_const(IN OUT char **text, OUT int *value_out)
     }
 
     *value_out = value;
-    basic_trim(text);
+    parse_trim(text);
     return true;
 }
 
@@ -234,7 +185,6 @@ static char *help_about =
 
 static char *help_general =
 "for more information:\n"
-#if ! SHRINK
 "  help about\n"
 "  help commands\n"
 "  help modes\n"
@@ -246,42 +196,40 @@ static char *help_general =
 "  help pins\n"
 "  help board\n"
 "  help clone\n"
+"  help zigbee\n"
 "\n"
 "see also:\n"
 "  http://www.cpustick.com\n"
-#endif
 ;
 
 static char *help_commands =
-"clear [flash]               -- clear ram [and flash] variables\n"
-#if ! SHRINK
-"clone [run]                 -- clone flash to slave CPUStick [and run]\n"
-"cont [<line>]               -- continue program from stop\n"
-"delete [<line>][-][<line>]  -- delete program lines or <subname>\n"
-"dir                         -- list saved programs\n"
-"edit <line>                 -- edit program line\n"
-"help [<topic>]              -- online help\n"
-"list [<line>][-][<line>]    -- list program lines or <subname>\n"
-"load <name>                 -- load saved program\n"
-"memory                      -- print memory usage\n"
-"new                         -- erase code ram and flash memories\n"
-"purge <name>                -- purge saved program\n"
-"renumber [<line>]           -- renumber program lines (and save)\n"
-"reset                       -- reset the CPUStick!\n"
-"run [<line>]                -- run program\n"
-"save [<name>]               -- save code ram to flash memory\n"
-"undo                        -- undo code changes since last save\n"
-"upgrade                     -- upgrade StickOS firmware!\n"
-"uptime                      -- print time since last reset\n"
+"clear [flash]                 -- clear ram [and flash] variables\n"
+"clone [run]                   -- clone flash to slave CPUStick [and run]\n"
+"cls                           -- clear terminal screen\n"
+"cont [<line>]                 -- continue program from stop\n"
+"delete [<line>][-][<line>]    -- delete program lines or <subname>\n"
+"dir                           -- list saved programs\n"
+"edit <line>                   -- edit program line\n"
+"help [<topic>]                -- online help\n"
+"list [<line>][-][<line>]      -- list program lines or <subname>\n"
+"load <name>                   -- load saved program\n"
+"memory                        -- print memory usage\n"
+"new                           -- erase code ram and flash memories\n"
+"purge <name>                  -- purge saved program\n"
+"renumber [<line>]             -- renumber program lines (and save)\n"
+"reset                         -- reset the CPUStick!\n"
+"run [<line>]                  -- run program\n"
+"save [<name>]                 -- save code ram to flash memory\n"
+"undo                          -- undo code changes since last save\n"
+"upgrade                       -- upgrade StickOS firmware!\n"
+"uptime                        -- print time since last reset\n"
 "\n"
 "for more information:\n"
 "  help modes\n"
-#endif
 ;
 
 static char *help_modes =
 "autoreset [on|off]            -- autoreset (on wake) mode\n"
-#if ! SHRINK
 "autorun [on|off]              -- autorun (on reset) mode\n"
 "echo [on|off]                 -- terminal echo mode\n"
 "indent [on|off]               -- listing indent mode\n"
@@ -291,23 +239,22 @@ static char *help_modes =
 "prompt [on|off]               -- terminal prompt mode\n"
 "step [on|off]                 -- debugger single-step mode\n"
 "trace [on|off]                -- debugger trace mode\n"
-#endif
 ;
 
 static char *help_statements =
 "<line> <statement>                     -- enter program line into code ram\n"
-#if ! SHRINK
 "\n"
 "assert <expression>                    -- break if expression is false\n"
 "data <n> [, ...]                       -- read-only data\n"
 "dim <variable>[[n]] [as ...] [, ...]   -- dimension variables\n"
 "end                                    -- end program\n"
+"label <label>                          -- read/data label\n"
 "let <variable> = <expression> [, ...]  -- assign variable\n"
 "print (\"string\"|<expression>) [, ...]  -- print strings/expressions\n"
 "qspi <variable> [, ...]                -- perform qspi I/O by reference\n"
 "read <variable> [, ...]                -- read read-only data into variables\n"
 "rem <remark>                           -- remark\n"
-"restore [<line>]                       -- restore read-only data pointer\n"
+"restore [<label>]                      -- restore read-only data pointer\n"
 "sleep <expression>                     -- delay program execution (ms)\n"
 "stop                                   -- insert breakpoint in code\n"
 "\n"
@@ -316,56 +263,60 @@ static char *help_statements =
 "  help devices\n"
 "  help expressions\n"
 "  help variables\n"
-#endif
 ;
 
 static char *help_blocks =
 "if <expression> then\n"
-#if ! SHRINK
 "[elseif <expression> then]\n"
 "[else]\n"
 "endif\n"
 "\n"
 "for <variable> = <expression> to <expression> [step <expression>]\n"
-"  [break [n]]\n"
+"  [(break|continue) [n]]\n"
 "next\n"
 "\n"
 "while <expression> do\n"
-"  [break [n]]\n"
+"  [(break|continue) [n]]\n"
 "endwhile\n"
+"\n"
+"do\n"
+"  [(break|continue) [n]]\n"
+"until <expression>\n"
 "\n"
 "gosub <subname>\n"
 "\n"
 "sub <subname>\n"
 "  [return]\n"
 "endsub\n"
-#endif
 ;
 
 static char *help_devices =
 "qspi:\n"
-#if ! SHRINK
 "  configure qspi for <n> csiv\n"
 "\n"
 "timers:\n"
 "  configure timer <n> for <n> ms\n"
-"  on timer <n> <statement>                -- on timer execute <statement>\n"
-"  off timer <n>                           -- disable timer interrupt\n"
-"  mask timer <n>                          -- mask (hold) timer interrupt\n"
-"  unmask timer <n>                        -- unmask timer interrupt\n"
+"  on timer <n> do <statement>                -- on timer execute statement\n"
+"  off timer <n>                              -- disable timer interrupt\n"
+"  mask timer <n>                             -- mask/hold timer interrupt\n"
+"  unmask timer <n>                           -- unmask timer interrupt\n"
 "\n"
 "uarts:\n"
 "  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]\n"
-"  on uart <n> (input|output) <statement>  -- on uart execute <statement>\n"
-"  off uart <n> (input|output)             -- disable uart interrupt\n"
-"  mask uart <n> (input|output)            -- mask (hold) uart interrupt\n"
-"  unmask uart <n> (input|output)          -- unmask uart interrupt\n"
-#endif
+"  on uart <n> (input|output) do <statement>  -- on uart execute statement\n"
+"  off uart <n> (input|output)                -- disable uart interrupt\n"
+"  mask uart <n> (input|output)               -- mask/hold uart interrupt\n"
+"  unmask uart <n> (input|output)             -- unmask uart interrupt\n"
+"\n"
+"watchpoints:\n"
+"  on <expression> do <statement>             -- on expr execute statement\n"
+"  off <expression>                           -- disable expr watchpoint\n"
+"  mask <expression>                          -- mask/hold expr watchpoint\n"
+"  unmask <expression>                        -- unmask expr watchpoint\n"
 ;
 
 static char *help_expressions =
 "the following operators are supported as in C,\n"
-#if ! SHRINK
 "in order of decreasing precedence:\n"
 "  <n>                       -- decimal constant\n"
 "  0x<n>                     -- hexadecimal constant\n"
@@ -382,18 +333,16 @@ static char *help_expressions =
 "  ||  ^^  &&                -- logical or, xor, and\n"
 "for more information:\n"
 "  help variables\n"
-#endif
 ;
 
 static char *help_variables =
 "all variables must be dimensioned!\n"
-#if ! SHRINK
 "variables dimensioned in a sub are local to that sub\n"
 "array variable indices start at 0; v[0] is the same as v\n"
 "\n"
 "ram variables:\n"
 "  dim <var>[[n]]\n"
-"  dim <var>[[n]] as (byte|short|integer)\n"
+"  dim <var>[[n]] as (byte|short)\n"
 "\n"
 "flash parameter variables:\n"
 "  dim <varflash>[[n]] as flash\n"
@@ -402,14 +351,16 @@ static char *help_variables =
 "  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \\\n"
 "                                      (input|output)\n"
 "\n"
+"system variables (read-only)\n"
+"  drops     failures  nodeid    receives\n"
+"  retries   seconds   ticks     transmits\n"
+"\n"
 "for more information:\n"
 "  help pins\n"
-#endif
 ;
 
 static char *help_pins =
 "pin names:\n"
-#if ! SHRINK
 "  dtin3     dtin2     dtin1     dtin0\n"
 "  an0       an1       an2       an3\n"
 "  an4       an5       an6       an7\n"
@@ -434,19 +385,17 @@ static char *help_pins =
 "dtin? = potential frequency output pins (Hz)\n"
 "urxd? = potential uart input pins (received byte)\n"
 "utxd? = potential uart output pins (transmit byte)\n"
-#endif
 ;
 
 static char *help_board =
-"              1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
-#if ! SHRINK
+"                1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
 "\n"
-"              g  +  u  u  u  u  u  u  u  u  i  i  i  +\n"
-"              n  3  c  r  r  t  c  r  r  t  r  r  r  5\n"
-"              d  V  t  t  x  x  t  t  x  x  q  q  q  V\n"
-"                    s  s  d  d  s  s  d  d  7  4  1\n"
-"1  gnd              0  0  0  0  1  1  1  1  *  *  *\n"
-"2  +3V              *  *        *  *\n"
+"                g  +  u  u  u  u  u  u  u  u  i  i  i  +\n"
+"                n  3  c  r  r  t  c  r  r  t  r  r  r  5\n"
+"                d  V  t  t  x  x  t  t  x  x  q  q  q  V\n"
+"                      s  s  d  d  s  s  d  d  7  4  1\n"
+"1  gnd                0  0  0  0  1  1  1  1  *  *  *\n"
+"2  +3V                *  *        *  *\n"
 "3  rsti*\n"
 "4  scl\n"
 "5  sda\n"
@@ -454,18 +403,16 @@ static char *help_board =
 "7  qspi_dout\n"
 "8  qspi_clk\n"
 "9  qspi_cs0         d  d  d  d\n"
-"10 rcon*            t  t  t  t\n"
-"              g  +  i  i  i  i  a  a  a  a  a  a  a  a\n"
-"              n  3  n  n  n  n  n  n  n  n  n  n  n  n\n"
-"              d  V  3  2  1  0  0  1  2  3  4  5  6  7\n"
+"10 rcon*/irq4*      t  t  t  t\n"
+"                g  +  i  i  i  i  a  a  a  a  a  a  a  a\n"
+"                n  3  n  n  n  n  n  n  n  n  n  n  n  n\n"
+"                d  V  3  2  1  0  0  1  2  3  4  5  6  7\n"
 "\n"
-"              1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
-#endif
+"                1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
 ;
 
 static char *help_clone =
 "clone cable:\n"
-#if ! SHRINK
 "  master     slave\n"
 "  ---------  ----------------\n"
 "  qspi_clk   qspi_clk (ezpck)\n"
@@ -475,7 +422,28 @@ static char *help_clone =
 "  scl        rsti*\n"
 "  vss        vss\n"
 "  vdd        vdd\n"
-#endif
+;
+
+static char *help_zigbee =
+"nodeid (<nodeid>|none)        -- set/display zigbee nodeid\n"
+"\n"
+"connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee\n"
+"\n"
+"remote node variables\n"
+"  dim <varremote>[[n]] as remote on nodeid <nodeid>\n"
+"\n"
+"zigbee cable:\n"
+"  MCU        MC1320X\n"
+"  ---------  -------\n"
+"  qspi_clk   spiclk\n"
+"  qspi_din   miso\n"
+"  qspi_dout  mosi\n"
+"  qspi_cs0   ce*\n"
+"  irq4*      irq*\n"
+"  scl        rst*\n"
+"  sda        rxtxen\n"
+"  vss        vss\n"
+"  vdd        vdd\n"
 ;
 
 static
@@ -511,10 +479,9 @@ help(IN char *text_in)
 }
 
 static const char * const demo0[] = {
-#if ! SHRINK
   "rem ### blinky ###",
   "dim i",
-  "dim led as pin irq4* for digital output",
+  "dim led as pin dtin2 for digital output",
   "while 1 do",
   "  for i = 1 to 16",
   "    let led = !led",
@@ -522,21 +489,19 @@ static const char * const demo0[] = {
   "  next",
   "  sleep 800",
   "endwhile",
-#endif
   "end"
 };
 
 
 static const char *const demo1[] = {
-#if ! SHRINK
   "rem ### uart isr ###",
   "dim data",
   "data 1, 1, 2, 3, 5, 8, 13, 21, 0",
   "configure uart 0 for 300 baud 8 data no parity loopback",
   "dim tx as pin utxd0 for uart output",
   "dim rx as pin urxd0 for uart input",
-  "on uart 0 input gosub receive",
-  "on uart 0 output gosub transmit",
+  "on uart 0 input do gosub receive",
+  "on uart 0 output do gosub transmit",
   "sleep 1000",
   "end",
   "sub receive",
@@ -550,12 +515,10 @@ static const char *const demo1[] = {
   "  assert !tx",
   "  print \"sending\", data",
   "  let tx = data",
-#endif
   "endsub"
 };
 
 static const char *const demo2[] = {
-#if ! SHRINK
   "rem ### uart pio ###",
   "configure uart 0 for 9600 baud 7 data even parity loopback",
   "dim tx as pin utxd0 for uart output",
@@ -567,19 +530,17 @@ static const char *const demo2[] = {
   "print rx",
   "print rx",
   "print rx",
-#endif
   "end"
 };
 
 static const char *const demo3[] = {
-#if ! SHRINK
   "rem ### toaster ###",
   "dim target, secs",
   "dim thermocouple as pin an0 for analog input",
   "dim relay as pin an1 for digital output",
   "data 5124, 6, 7460, 9, 8940, 3, -1, -1",
   "configure timer 0 for 1000 ms",
-  "on timer 0 gosub adjust",
+  "on timer 0 do gosub adjust",
   "rem ----------",
   "while target!=-1 do",
   "  sleep secs*1000",
@@ -593,7 +554,6 @@ static const char *const demo3[] = {
   "  else",
   "    let relay = 1",
   "  endif",
-#endif
   "endsub",
 };
 
@@ -627,7 +587,7 @@ basic_run(char *text_in)
         text = text_in;
     }
 
-    basic_trim(&text);
+    parse_trim(&text);
 
     for (cmd = 0; cmd < LENGTHOF(commands); cmd++) {
         len = strlen(commands[cmd].command);
@@ -639,7 +599,7 @@ basic_run(char *text_in)
     if (cmd != LENGTHOF(commands)) {
         text += len;
     }
-    basic_trim(&text);
+    parse_trim(&text);
 
     number1 = 0;
     number2 = 0;
@@ -648,9 +608,9 @@ basic_run(char *text_in)
         case command_autoreset:
         case command_autorun:
             if (*text) {
-                if (basic_word(&text, "on")) {
+                if (parse_word(&text, "on")) {
                     boo = true;
-                } else if (basic_word(&text, "off")) {
+                } else if (parse_word(&text, "off")) {
                     boo = false;
                 } else {
                     goto XXX_ERROR_XXX;
@@ -671,15 +631,15 @@ basic_run(char *text_in)
 #if MCF52233
         case command_ipaddress:
             if (*text) {
-                if (basic_word(&text, "dhcp")) {
+                if (parse_word(&text, "dhcp")) {
                     a0 = a1 = a2 = a3 = 0;
                 } else {
                     (void)basic_const(&text, &a0);
-                    (void)basic_char(&text, '.');
+                    (void)parse_char(&text, '.');
                     (void)basic_const(&text, &a1);
-                    (void)basic_char(&text, '.');
+                    (void)parse_char(&text, '.');
                     (void)basic_const(&text, &a2);
-                    (void)basic_char(&text, '.');
+                    (void)parse_char(&text, '.');
                     boo = basic_const(&text, &a3);
                     if (! boo || (a0|a1|a2|a3)>>8) {
                         goto XXX_ERROR_XXX;
@@ -700,9 +660,35 @@ basic_run(char *text_in)
             break;
 #endif
 
+        case command_nodeid:
+            if (*text) {
+                if (parse_word(&text, "none")) {
+                    number1 = -1;
+                } else {
+                    if (! basic_const(&text, &number1) || number1 == -1) {
+                        goto XXX_ERROR_XXX;
+                    }
+                }
+                if (*text) {
+                    goto XXX_ERROR_XXX;
+                }
+                var_set_flash(FLASH_NODEID, number1);
+#if ! _WIN32
+                zb_nodeid = number1;
+#endif
+            } else {
+                i = var_get_flash(FLASH_NODEID);
+                if (i == -1) {
+                    printf("none\n");
+                } else {
+                    printf("%u\n", i);
+                }
+            }
+            break;
+        
         case command_clear:
             boo = false;
-            if (basic_word(&text, "flash")) {
+            if (parse_word(&text, "flash")) {
                 boo = true;
             }
             if (*text) {
@@ -714,7 +700,7 @@ basic_run(char *text_in)
 
         case command_clone:
             boo = false;
-            if (basic_word(&text, "run")) {
+            if (parse_word(&text, "run")) {
                 boo = true;
             }
             if (*text) {
@@ -724,6 +710,45 @@ basic_run(char *text_in)
             help(help_about);
             printf("cloning...\n");
             clone(boo);
+            break;
+            
+        case command_cls:
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+            printf("%c[2J\n", '\033');
+            break;
+            
+        case command_connect:
+            if (! zb_present) {
+                printf("zigbee not present\n");
+#if ! _WIN32
+            } else if (zb_nodeid == -1) {
+                printf("zigbee nodeid not set\n");
+#endif
+            } else {
+                if (! basic_const(&text, &number1) || number1 == -1) {
+                    goto XXX_ERROR_XXX;
+                }
+                if (*text) {
+                    goto XXX_ERROR_XXX;
+                }
+                
+                printf("press Ctrl-D to disconnect\n");
+
+#if ! _WIN32
+                assert(main_command);
+                main_command = NULL;
+                terminal_command_ack(false);
+
+                terminal_rxid = number1;
+                terminal_txid = -1;
+                
+                while (terminal_rxid != -1) {
+                    basic_poll();
+                }
+#endif
+            }
             break;
 
         case command_cont:
@@ -756,12 +781,12 @@ basic_run(char *text_in)
                 boo = basic_const(&text, &number1);
                 number2 = number1;
                 if (*text) {
-                    boo |= basic_char(&text, '-');
+                    boo |= parse_char(&text, '-');
                     number2 = 0;
                     boo |= basic_const(&text, &number2);
                 }
                 if (! boo) {
-                    number1 = code_sub_line((byte *)text);
+                    number1 = code_line(code_sub, (byte *)text);
                     if (! number1) {
                         goto XXX_ERROR_XXX;
                     }
@@ -842,28 +867,30 @@ basic_run(char *text_in)
         case command_help:
             if (! *text) {
                 help(help_general);
-            } else if (basic_word(&text, "about")) {
+            } else if (parse_word(&text, "about")) {
                 help(help_about);
-            } else if (basic_word(&text, "commands")) {
+            } else if (parse_word(&text, "commands")) {
                 help(help_commands);
-            } else if (basic_word(&text, "modes")) {
+            } else if (parse_word(&text, "modes")) {
                 help(help_modes);
-            } else if (basic_word(&text, "statements")) {
+            } else if (parse_word(&text, "statements")) {
                 help(help_statements);
-            } else if (basic_word(&text, "devices")) {
+            } else if (parse_word(&text, "devices")) {
                 help(help_devices);
-            } else if (basic_word(&text, "blocks")) {
+            } else if (parse_word(&text, "blocks")) {
                 help(help_blocks);
-            } else if (basic_word(&text, "expressions")) {
+            } else if (parse_word(&text, "expressions")) {
                 help(help_expressions);
-            } else if (basic_word(&text, "variables")) {
+            } else if (parse_word(&text, "variables")) {
                 help(help_variables);
-            } else if (basic_word(&text, "pins")) {
+            } else if (parse_word(&text, "pins")) {
                 help(help_pins);
-            } else if (basic_word(&text, "board")) {
+            } else if (parse_word(&text, "board")) {
                 help(help_board);
-            } else if (basic_word(&text, "clone")) {
+            } else if (parse_word(&text, "clone")) {
                 help(help_clone);
+            } else if (parse_word(&text, "zigbee")) {
+                help(help_zigbee);
             } else {
                 goto XXX_ERROR_XXX;
             }
@@ -944,9 +971,9 @@ basic_run(char *text_in)
             }
 
             if (*text) {
-                if (basic_word(&text, "on")) {
+                if (parse_word(&text, "on")) {
                     *boolp = true;
-                } else if (basic_word(&text, "off")) {
+                } else if (parse_word(&text, "off")) {
                     *boolp = false;
                 } else {
                     goto XXX_ERROR_XXX;
@@ -1018,6 +1045,15 @@ basic_run(char *text_in)
 XXX_ERROR_XXX:
     terminal_command_error(text-text_in);
 }
+
+#if ! _WIN32
+void
+basic_poll(void)
+{
+    terminal_poll();
+    var_poll();
+}
+#endif
 
 // this function initializes the basic module.
 void

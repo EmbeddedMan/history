@@ -37,24 +37,55 @@ byteswap(uint32 x, uint32 size)
     return x;
 }
 
+// return the current interrupt mask level
+int
+gpl(void)
+{
+    short csr;
+    int oldlevel;
+    
+    // get the sr
+    asm {
+        move.w     sr,d0
+        move.w     d0,csr
+    }
+
+    oldlevel = (csr >> 8) & 7;
+    
+    return oldlevel;
+}
+
 // set the current interrupt mask level and return the old one
 int
 splx(int level)
 {
-    short oldlevel = 0;
+    short csr;
+    int oldlevel;
+    
+    // get the sr
+    asm {
+        move.w     sr,d0
+        move.w     d0,csr
+    }
 
-    level = (level & 7) << 8;
+    oldlevel = (csr >> 8) & 7;
+    if (level <= 0) {
+        // we're going down
+        level = -level;
+    } else {
+        // we're going up
+        level = MAX(level, oldlevel);
+    }
+    assert(level >= 0 && level <= 7);
+    csr = (csr & 0xf8ff) | (level << 8);
 
     // update the sr
     asm {
-        move.w     sr,d0
-        move.w     d0,oldlevel  // get the old level from the sr
-        and        #0xf8ff,d0
-        or         level,d0     // insert the new level into the sr
+        move.w     csr,d0
         move.w     d0,sr
     }
 
-    return (oldlevel >> 8) & 7;
+    return -oldlevel;
 }
 
 static volatile int g;
@@ -69,19 +100,11 @@ delay(int ms)
 
     // if interrupts are initialized...
     if (initialized) {
-        // make sure timer interrupts (at least) are enabled while we wait
-        x = splx(SPL_PIT0-1);
-        if (x < SPL_PIT0-1) {
-            (void)splx(x);
-        }
-
         // wait for the pit0 to count off the ticks
         t = ticks;
         while (ticks-t < ms+1) {
             // NULL
         }
-
-        splx(x);
     // otherwise; make a good guess with a busywait
     } else {
         y = fsys_frequency/6000;

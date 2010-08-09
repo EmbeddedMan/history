@@ -17,12 +17,14 @@ timer_isr(void)
 {
     assert(! timer_in_isr);
     timer_in_isr = true;
+    
+    (void)splx(-SPL_PIT0);
 
     MCF_PIT0_PCSR |= MCF_PIT_PCSR_PIF;
     ticks++;
 
     // poll the adc every millisecond
-    adc_poll();
+    adc_timer_poll();
 
     if (ticks%125 == 0) {
         if (ticks%1000 == 0) {
@@ -30,11 +32,11 @@ timer_isr(void)
         }
         
         // poll the LEDs 8 times a second
-        led_poll();
+        led_timer_poll();
         
 #if PICTOCRYPT
         // poll for panics 8 times a second
-        main_poll();
+        main_timer_poll();
 #endif
     }
 

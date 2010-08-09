@@ -7,7 +7,7 @@ extern char *volatile main_command;
 extern bool panic;
 
 void
-main_poll(void);
+main_timer_poll(void);
 
 extern void
 main_run(void);

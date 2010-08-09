@@ -242,7 +242,7 @@ flash_upgrade()
         }
 
         while (! main_command) {
-            os_yield();
+            terminal_poll();
         }
 
         s19 = main_command;

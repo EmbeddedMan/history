@@ -8,8 +8,6 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-#define dprintf printf
-
 /* 
  * Force functions to return values in D0 
  */

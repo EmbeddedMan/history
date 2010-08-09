@@ -29,7 +29,7 @@ main()  // we're called directly by startup.c
     adc_initialize();
 
 #if PICTOCRYPT
-    boo = adc_poll();
+    boo = adc_timer_poll();
     assert(boo);
 
     // determine if we're in host or device mode
@@ -61,6 +61,14 @@ main()  // we're called directly by startup.c
     splx(0);
 #endif
     initialized = 1;
+    
+#if ! FLASHER && ! PICTOCRYPT
+    // initialize zigbee
+    zb_initialize();
+    
+    // initialize the terminal interface
+    terminal_initialize();
+#endif
     
     // run the main application program loop
     main_run();

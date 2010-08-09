@@ -24,6 +24,7 @@ PC on port 1234.
 
 The skeleton code also provides the following features:
 
+* remote wireless command-line over zigbee via MC1320x transceiver
 * upgrade firmware via the terminal command-line
 * clone firmware to another MCU via QSPI/EzPort
 * a host mode USB driver and MST class driver to connect to USB devices
@@ -53,6 +54,11 @@ Putty is an excellent alternative to HyperTerminal, and is available
 from http://www.putty.org.  Be sure to use a raw connection and to force
 local echo and line feeds off when talking to the MCF52233.
 
+If you have an IOStick or a 1320xRFC RF daughter card, you can use
+zigbee to connect from one node to another -- just set the nodeid with
+the "nodeid" command and then use the "connect" command to connect to
+the remote node.
+
 The code starts at startup.c which calls init.c.  For the MCF52221 bits,
 it continues to main.c.  For the MCF52233 bits, on the other hand, it
 continues to the Niche Lite code which starts a tasking system, and then
@@ -74,6 +80,7 @@ terminal.[ch]  -- vt100 terminal emulator driver (on FTDI or tcp/ip)
 timer.[ch]     -- simple programmable timer interrupt driver
 usb.[ch]       -- dual mode host controller/device driver
 util.[ch]      -- basic utility routines
+zigbee.[ch]    -- zigbee wireless transport over qspi
 
 Once you install the real Freescale headers (MCF52221.h, MCF52235.h,
 and their descendants) in your headers directory, you can turn off the

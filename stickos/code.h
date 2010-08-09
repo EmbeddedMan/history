@@ -15,7 +15,7 @@ extern bool code_indent;
 // used for code execution
 struct line *code_next_line(IN bool deleted_ok, IN OUT int *line_number);  // returns NULL at eop
 
-int code_sub_line(byte *sub_name);
+int code_line(enum bytecode code, byte *name);
 
 // used for code management
 void code_insert(IN int line_number, IN char *text, IN int text_offset);

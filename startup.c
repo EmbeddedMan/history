@@ -68,7 +68,7 @@ bool debugger_attached;
 #if PICTOCRYPT
 byte big_buffer[8192];
 #else
-byte big_buffer[2048];
+byte big_buffer[1024];
 #endif
 
 // *** page0 ***
@@ -267,7 +267,6 @@ p0_c_startup(void)
 
 #if MCF52221
     // if we don't have a crystal...
-    MCF_GPIO_PNQPAR = 0;
     if (MCF_CLOCK_SYNSR & MCF_CLOCK_SYNSR_OCOSC) {
         // we use the 8MHz internal oscillator divided by 1
         MCF_CLOCK_CCHR = 0;
@@ -312,9 +311,7 @@ p0_c_startup(void)
     MCF_CLOCK_RTCDR = fsys_frequency;
 
     // enable on-chip modules to access internal SRAM
-    MCF_SCM_RAMBAR = (0
-        | MCF_SCM_RAMBAR_BA(RAMBAR_ADDRESS)
-        | MCF_SCM_RAMBAR_BDE);
+    MCF_SCM_RAMBAR = (0|MCF_SCM_RAMBAR_BA(RAMBAR_ADDRESS)|MCF_SCM_RAMBAR_BDE);
         
     // we read MCF_GPIO_PORTAN's initial value to determine if the debugger is
     // attached
