@@ -12,10 +12,12 @@ main2()  // the tasking system is called by startup.c, before us
 main()  // we're called directly by startup.c
 #endif
 {
-#if ! FLASHER
+#if PICTOCRYPT
+    bool boo;
+#endif
+
     // configure leds
     led_initialize();
-#endif
 
     // initialize timer
     timer_initialize();
@@ -23,11 +25,13 @@ main()  // we're called directly by startup.c
     // initialize qspi
     qspi_initialize();
 
-#if ! FLASHER
     // initialize adc
     adc_initialize();
 
 #if PICTOCRYPT
+    boo = adc_poll();
+    assert(boo);
+
     // determine if we're in host or device mode
     if (adc_result[0] < 10000) {
         usb_host_mode = false;
@@ -39,10 +43,11 @@ main()  // we're called directly by startup.c
     // initialize sleep
     sleep_initialize();
 
+#if ! FLASHER
     // initialize flash
     flash_initialize();
 
-#if MCF52221 && ! FLASHER
+#if MCF52221
     // initialize usb
     usb_initialize();
 #endif

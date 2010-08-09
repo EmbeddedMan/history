@@ -2,7 +2,7 @@
 #include "main.h"
 
 byte big_buffer[8192];
-byte huge_buffer[128*1024*1024];
+byte huge_buffer[65536];
 
 void
 flash_erase_pages(uint32 *addr, uint32 npages)
@@ -30,7 +30,8 @@ char *dest;
 void
 usage(char *argv0)
 {
-    printf("%s [-b <aesbits>] [-k <aeskey>] <sourcedir> <destdir>\n", argv0);
+    printf("usage: %s [-b <aesbits>] [-k <aeskey>] <sourcedir> <destdir>\n", argv0);
+    printf("v" VERSION "\n");
 }
 
 char *
@@ -94,6 +95,8 @@ decrypt_file(char *source, char *file, char *dest)
     HANDLE r;
     HANDLE w;
     DWORD actual;
+    DWORD remain;
+    DWORD partial;
     DWORD wsize;
     char *wname;
     byte chain[16];
@@ -111,38 +114,35 @@ decrypt_file(char *source, char *file, char *dest)
     r = CreateFile(rpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     assert(r != INVALID_HANDLE_VALUE);
 
-    boo = ReadFile(r, huge_buffer, sizeof(huge_buffer), &actual, NULL);
-    assert(boo);
-
     aes_pre_dec(global_params.aesbits, global_params.aeskey, chain);
 
     // first decrypt the header
-    aes_dec(chain, sizeof(big_buffer), huge_buffer);
+    boo = ReadFile(r, big_buffer, sizeof(big_buffer), &actual, NULL);
+    assert(boo);
 
-    wsize = W32BYTESWAP(*(int *)huge_buffer);
-    wname = huge_buffer+4;
+    if (actual < sizeof(big_buffer)) {
+        printf("Decryption failed (size check)\n");
+        return false;
+    }
+
+    aes_dec(chain, sizeof(big_buffer), big_buffer);
+
+    wsize = W32BYTESWAP(*(int *)big_buffer);
+    wname = big_buffer+4;
 
     n = strlen(wname);
-    for (p = huge_buffer+4+n; p < huge_buffer+sizeof(big_buffer); p++) {
+    for (p = big_buffer+4+n; p < big_buffer+sizeof(big_buffer); p++) {
         if (*p) {
             break;
         }
     }
 
-    if (p != huge_buffer+sizeof(big_buffer)) {
+    if (p != big_buffer+sizeof(big_buffer)) {
         printf("Decryption failed (zero check)\n");
         return false;
     }
 
-    if (actual < wsize+sizeof(big_buffer)) {
-        printf("Decryption failed (size check)\n");
-        return false;
-    }
-
     printf("decrypting %s (%d bytes)\r\n", wname, wsize);
-
-    aes_dec(chain, (wsize+15)&~15, huge_buffer+sizeof(big_buffer));
-
     strcpy(wpath, dest);
     n = strlen(wpath);
     if (! n || wpath[n-1] != '\\') {
@@ -163,15 +163,33 @@ decrypt_file(char *source, char *file, char *dest)
         return false;
     }
 
-    boo = WriteFile(w, huge_buffer+sizeof(big_buffer), wsize, &actual, NULL);
-    assert(boo);
-    if (! boo) {
-        printf("Cannot write file (0x%x)\n", GetLastError());
-        return false;
-    }
-    if (actual != wsize) {
-        printf("Cannot write file\n");
-        return false;
+    remain = wsize;
+
+    while (remain) {
+        partial = MIN(remain, sizeof(huge_buffer));
+        assert(((partial+15)&~15) < sizeof(huge_buffer));
+
+        boo = ReadFile(r, huge_buffer, (partial+15)&~15, &actual, NULL);
+        assert(boo);
+        if (actual < ((partial+15)&~15)) {
+            printf("Decryption failed (size check)\n");
+            return false;
+        }
+
+        aes_dec(chain, (partial+15)&~15, huge_buffer);
+
+        boo = WriteFile(w, huge_buffer, partial, &actual, NULL);
+        if (! boo) {
+            printf("Cannot write file (0x%x)\n", GetLastError());
+            return false;
+        }
+        if (actual != partial) {
+            printf("Cannot write file\n");
+            return false;
+        }
+
+        assert(partial <= remain);
+        remain -= partial;
     }
 
     CloseHandle(w);

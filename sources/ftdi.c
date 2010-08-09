@@ -42,7 +42,11 @@ static const byte ftdi_configuration_descriptor[] = {
     0x01,  // configuration value
     0x00,  // configuration (string)
     0x80,  // attributes
+#if PICTOCRYPT
+    250,  // 500 mA
+#else
     100,  // 200 mA
+#endif
 
     9,  // length
     0x04,  // interface descriptor
@@ -176,50 +180,6 @@ ftdi_print(char *line)
     return n;
 }
 
-static uint16 eeprom[64] = {
-    0x0,
-    0x0403,  // VID
-    0x6001,  // PID
-    0x0400,  // Device release number
-    0x9180,  // Config descriptor and Max power consumption
-    0x0018,  // Chip configuration
-    0x0200,  // USB version
-
-    0x1c94,  // vendor
-    0x12b0,  // product
-    0x12c2,  // serial
-
-    0x031c, 'R', 'i', 'c', 'h', ' ', 'T', 'e', 's', 't', 'a', 'r', 'd', 'i',
-    0x0312, 'C', 'P', 'U', 'S', 't', 'i', 'c', 'k',
-    0x0312, 'R', 'T', '0', '0', '0', '0', '0', '0'
-};
-
-static
-void
-ftdi_checksum(void)
-{
-    unsigned char i;
-    unsigned char *output;
-    unsigned short value;
-    unsigned short checksum;
-
-    output = (unsigned char *)eeprom;
-
-    // calculate checksum
-    checksum = 0xAAAA;
-
-    for (i = 0; i < LENGTHOF(eeprom)-1; i++) {
-        value = output[i*2];
-        value += output[(i*2)+1] << 8;
-
-        checksum = value^checksum;
-        checksum = (checksum << 1) | (checksum >> 15);
-    }
-
-    output[i*2] = checksum;
-    output[(i*2)+1] = checksum >> 8;
-}
-
 // this function implements the FTDI usb setup control transfer.
 static int
 ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
@@ -257,18 +217,14 @@ ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
             break;
         case 0x90:  // read eeprom?
             assert(length == 2);
-            buffer[0] = eeprom[BYTESWAP(setup->index)%LENGTHOF(eeprom)] & 0xff;
-            buffer[1] = eeprom[BYTESWAP(setup->index)%LENGTHOF(eeprom)] >> 8;
+            buffer[0] = 0;
+            buffer[1] = 0;
             break;
         case 0x91:  // write eeprom?
-            assert(BYTESWAP(setup->index) < LENGTHOF(eeprom));
-            eeprom[BYTESWAP(setup->index)] = setup->value;
             assert(length == 0);
             break;
         case 0x92:  // erase eeprom?
             assert(length == 0);
-            memset(eeprom, 0xff, sizeof(eeprom));
-            ftdi_checksum();
             break;
         default:
             assert(0);
@@ -369,8 +325,6 @@ ftdi_register(ftdi_reset_cbfn reset)
     }
 
     reset_cbfn = reset;
-
-    ftdi_checksum();
 
     usb_register(ftdi_reset, ftdi_control_transfer, ftdi_bulk_transfer);
 

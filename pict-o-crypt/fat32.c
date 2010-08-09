@@ -73,6 +73,11 @@ uint32_t DFS_GetPtnStart(uint8_t unit, uint8_t *scratchsector, uint8_t pnum, uin
 	  (((uint32_t) mbr->ptable[pnum].start_1) << 8) |
 	  (((uint32_t) mbr->ptable[pnum].start_2) << 16) |
 	  (((uint32_t) mbr->ptable[pnum].start_3) << 24);
+	  
+	if (result > 0x10000000) {
+	    // no partition table here RPT
+	    return 0;
+	}
 
 	if (pactive)
 		*pactive = mbr->ptable[pnum].active;
@@ -105,6 +110,11 @@ uint32_t DFS_GetVolInfo(uint8_t unit, uint8_t *scratchsector, uint32_t startsect
 
 	if(DFS_ReadSector(unit,scratchsector,startsector,1))
 		return DFS_ERRMISC;
+	
+	if (lbr->bpb.bytepersec_l != 0x00 || lbr->bpb.bytepersec_h != 0x02) {
+	    // no volume here RPT
+		return DFS_ERRMISC;
+	}
 
 // tag: OEMID, refer dosfs.h
 //	strncpy(volinfo->oemid, lbr->oemid, 8);
@@ -1167,6 +1177,7 @@ uint32_t DFS_RenameFile(PVOLINFO volinfo, uint8_t *path, uint8_t *newpath, uint8
 	// Read the directory sector and rewrite that entry
 	if (DFS_ReadSector(volinfo->unit, scratch, fi.dirsector, 1))
 		return DFS_ERRMISC;
+	((PDIRENT) scratch)[fi.diroffset].attr &= ~ATTR_READ_ONLY;
 	memcpy(((PDIRENT) scratch)[fi.diroffset].name, filename, sizeof(((PDIRENT) scratch)[fi.diroffset].name));
 	if (DFS_WriteSector(volinfo->unit, scratch, fi.dirsector, 1))
 		return DFS_ERRMISC;

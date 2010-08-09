@@ -137,9 +137,9 @@ static char *help_general =
 
 static char *help_about =
 #if MCF52233
-"Welcome to Skeleton for Freescale MCF52233 v1.06!\n"
+"Welcome to Skeleton for Freescale MCF52233 v" VERSION "!\n"
 #elif MCF52221
-"Welcome to Skeleton for Freescale MCF52221 v1.06!\n"
+"Welcome to Skeleton for Freescale MCF52221 v" VERSION "!\n"
 #else
 #error
 #endif
@@ -371,20 +371,43 @@ main_run(void)
             } while (rv == 36);
             usb_host_detach();
         }
+        
+        // if some other usb device is attached...
+        if (other_attached) {
+            int rv;
+            struct setup setup;
+            byte configuration[18];
+            
+            do {
+                // get the first 9 bytes of the configuration descriptor
+                usb_setup(1, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_GET_DESCRIPTOR, (CONFIGURATION_DESCRIPTOR<<8)|0, 0, sizeof(configuration), &setup);
+                rv = usb_control_transfer(&setup, configuration, sizeof(configuration));
+                if (rv > 0) {
+                    assert(configuration[4]);
+                
+                    printf("found 0x%x.0x%x\n", configuration[14], configuration[15]);
+                    led_unknown_progress();
+                    delay(1000);
+                }
+            } while (rv > 0);
+            usb_host_detach();
+        }
 
         // if our usb host is attached...
         if (ftdi_attached) {
             main_run_admin();
         }
+        
 #elif MCF52233
         // if our network client is attached...
         if (rich_so) {
             main_run_admin();
         }
-        os_yield();
 #else
 #error
 #endif
+        os_yield();
+        sleep_poll();
     }
 }
 

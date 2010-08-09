@@ -95,11 +95,7 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 62
     UINT32HALT, 0,                               // 63
     UINT32HALT, 0,                               // 64
-#if ! FLASHER
     UINT32JMP, (uint32)sleep_isr,                // 65
-#else
-    UINT32HALT, 0,                               // 65
-#endif
     UINT32HALT, 0,                               // 66
     UINT32HALT, 0,                               // 67
     UINT32HALT, 0,                               // 68

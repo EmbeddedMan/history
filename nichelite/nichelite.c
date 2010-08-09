@@ -330,6 +330,7 @@ int rich_callback(int code, M_SOCK so, void * data)
    		        m_close(rich_so);
    		    }
 		    rich_so = so;
+            led_unknown_progress();
 			break;
       
 		// socket has closed      

@@ -67,6 +67,7 @@ flash.[ch]     -- flash access and FTDI-based USB upgrade routines
 ftdi.[ch]      -- FTDI device class driver
 led.[ch]       -- trivial LED status driver
 printf.[ch]    -- lightweight printf to terminal or CW debug console
+qspi.[ch]      -- qspi transport driver
 scsi.[ch]      -- mst class host controller driver
 sleep.[ch]     -- sleep mode driver
 terminal.[ch]  -- vt100 terminal emulator driver (on FTDI or tcp/ip)
@@ -76,4 +77,4 @@ util.[ch]      -- basic utility routines
 
 Once you install the real Freescale headers (MCF52221.h, MCF52235.h,
 and their descendants) in your headers directory, you can turn off the
-#define EXTRACT in main.h to begin using them.
+#define EXTRACT in config.h to begin using them.

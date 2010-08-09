@@ -6,5 +6,8 @@ bool
 adc_poll();
 
 void
+adc_sleep();
+
+void
 adc_initialize(void);
 

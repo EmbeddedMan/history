@@ -216,9 +216,9 @@ basic_const(IN OUT char **text, OUT int *value_out)
 
 static char *help_about =
 #if MCF52233
-"Welcome to StickOS for Freescale MCF52233 v1.06!\n"
+"Welcome to StickOS for Freescale MCF52233 v" VERSION "!\n"
 #elif MCF52221
-"Welcome to StickOS for Freescale MCF52221 v1.06!\n"
+"Welcome to StickOS for Freescale MCF52221 v" VERSION "!\n"
 #else
 #error
 #endif

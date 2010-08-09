@@ -118,7 +118,7 @@ static char *help_general =
 ;
 
 static char *help_about =
-"Welcome to Pict-o-Crypt v1.06!\n"
+"Welcome to Pict-o-Crypt v" VERSION "!\n"
 "Copyright (c) 2008; all rights reserved.\n"
 "pict.o.crypt@gmail.com\n"
 #if INCOMPAT
@@ -313,7 +313,7 @@ admin_run(char *text_in)
                 params_default_aeskey(&params);
                 params_set(&params);
                 params_set(&params);  // twice to wipe alternate page
-                printf("default key updated.\n");
+                printf("key reset to default value.\n");
 
             } else {
                 // get the original key

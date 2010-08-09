@@ -163,6 +163,10 @@ encrypt_file(PVOLINFO vi, byte *scratch, char *rfilename, int rfilesize, char *w
     
         // then read all the data of the file
         for (;;) {
+            if (panic) {
+                return false;
+            }
+            
             ms2 = ticks;
             result = DFS_ReadFile(&rfi, scratch, big_buffer, &actual, sizeof(big_buffer));
             if (result == DFS_EOF || (! result && ! actual)) {
@@ -186,6 +190,7 @@ encrypt_file(PVOLINFO vi, byte *scratch, char *rfilename, int rfilesize, char *w
                 return false;
             }
             write_ticks += ticks-ms2;
+            
             assert(actual == sizeof(big_buffer));
             filesize += actual;
             encrypt_bytes += actual;
@@ -195,11 +200,16 @@ encrypt_file(PVOLINFO vi, byte *scratch, char *rfilename, int rfilesize, char *w
     // wipe the input file up to its original length
     memset(big_buffer, 0, sizeof(big_buffer));
     while (filesize < wfilesize) {
+        if (panic) {
+            return false;
+        }
+        
         ms2 = ticks;
         if (DFS_WriteFile(&wfi, scratch, big_buffer, &actual, sizeof(big_buffer))) {
             return false;
         }
         write_ticks += ticks-ms2;
+        
         assert(actual == sizeof(big_buffer));
         filesize += actual;
     }
@@ -227,8 +237,7 @@ walkfs(int pass)
     uint32 i;
     uint32 j;
     uint32 rv;
-    uint8 pactive, ptype;
-    uint32 pstart, psize;
+    uint32 pstart;
     uint32 rfilesize;
     VOLINFO vi;
     DIRINFO di;
@@ -261,13 +270,18 @@ walkfs(int pass)
     assert(params.roflip == true || params.roflip == false);
 
     memset(scratch, -1, sizeof(scratch));  // remove
-    pstart = DFS_GetPtnStart(0, scratch, 0, &pactive, &ptype, &psize);
+    pstart = DFS_GetPtnStart(0, scratch, 0, NULL, NULL, NULL);
     if (pstart == DFS_ERRMISC) {
         return 0;
     }
 
     memset(scratch, -1, sizeof(scratch));  // remove
     if (DFS_GetVolInfo(0, scratch, pstart, &vi)) {
+        return 0;
+    }
+    
+    if (! vi.secperclus || (vi.secperclus & (vi.secperclus-1))) {
+        printf("invalid fs cluster size %d\n", vi.secperclus);
         return 0;
     }
     
@@ -281,6 +295,10 @@ walkfs(int pass)
     first = 1;
     for (;;) {
 XXX_LOOP_XXX:        
+        if (panic) {
+            return 0;
+        }
+        
         // open a new directory
         memset(scratch, -1, sizeof(scratch));  // remove
         di.scratch = scratch;
@@ -491,22 +509,8 @@ XXX_LOOP_XXX:
         dirname[namei[i]] = '\0';
     }
     
+    DFS_HostFlush(0);
     total_ticks += ticks-ms;
-    
-#if ! _WIN32
-    if (pass == 1) {
-        led_happy();
-    
-        // wait for usb disconnect
-        DFS_HostFlush(0);
-        while (! DFS_GetVolInfo(0, scratch, pstart, &vi)) {
-            DFS_HostPurge();
-            delay(1000);
-        }
-        
-        led_unknown();
-    }
-#endif
     
     return 1;
 }

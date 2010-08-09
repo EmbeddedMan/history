@@ -30,14 +30,17 @@ adc_poll(void)
     return 1;
 }
 
+void
+adc_sleep()
+{
+    // power off the adc
+    MCF_ADC_POWER = MCF_ADC_POWER_PUDELAY(13)|MCF_ADC_POWER_PD2|MCF_ADC_POWER_PD1|MCF_ADC_POWER_PD0;  // disable adc
+}
+
 // this function initializes the adc module.
 void
 adc_initialize(void)
 {
-#if PICTOCRYPT
-    bool boo;
-#endif
-
     // initialize adc to read all channels
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_SMODE(0);  // once sequential
     MCF_ADC_CTRL2 = 0x0005;  // divisor for 48 MHz
@@ -55,10 +58,5 @@ adc_initialize(void)
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_START0;
 
     delay(10);
-#if PICTOCRYPT
-    boo = adc_poll();
-    assert(boo);
-    delay(10);
-#endif
 }
 

@@ -307,6 +307,8 @@ terminal_receive(byte *buffer, int length)
 {
     int j;
 
+    led_unknown_progress();
+    
     // accumulate commands
     for (j = 0; j < length; j++) {
         if (buffer[j] == '\003') {

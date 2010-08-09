@@ -5,8 +5,8 @@
 
 bool timer_in_isr;
 
-int volatile ticks;  // incremented by pit0 isr every millisecond
-int volatile seconds;  // incremented by pit0 isr every second
+volatile int ticks;  // incremented by pit0 isr every millisecond
+volatile int seconds;  // incremented by pit0 isr every second
 
 bool initialized;  // set when pit0 interrupts are initialized
 
@@ -21,19 +21,20 @@ timer_isr(void)
     MCF_PIT0_PCSR |= MCF_PIT_PCSR_PIF;
     ticks++;
 
-#if STICKOS
     // poll the adc every millisecond
     adc_poll();
-#endif
 
     if (ticks%125 == 0) {
         if (ticks%1000 == 0) {
             seconds++;
         }
         
+        // poll the LEDs 8 times a second
         led_poll();
-#if ! FLASHER
-        adc_poll();
+        
+#if PICTOCRYPT
+        // poll for panics 8 times a second
+        main_poll();
 #endif
     }
 
@@ -62,6 +63,6 @@ timer_initialize(void)
     // configure pit0 to interrupt every 1 ms
     MCF_PIT0_PCSR = 0;
     MCF_PIT0_PMR = fsys_frequency/2/1000;  // 1 ms
-    MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
+    MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_DOZE|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
 }
 

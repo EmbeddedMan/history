@@ -11,18 +11,8 @@
 #define DEVICE_DESCRIPTOR_SIZE  18
 #define CONFIGURATION_DESCRIPTOR_SIZE  128
 
-#define DEVICE_DESCRIPTOR  1
-#define CONFIGURATION_DESCRIPTOR  2
-#define STRING_DESCRIPTOR  3
-#define ENDPOINT_DESCRIPTOR  5
-
 #define BULK_ATTRIBUTES  2
 #define INTERRUPT_ATTRIBUTES  3
-
-#define REQUEST_CLEAR_FEATURE  0x01
-#define REQUEST_SET_ADDRESS  0x05
-#define REQUEST_GET_DESCRIPTOR  0x06
-#define REQUEST_SET_CONFIGURATION  0x09
 
 #define FEATURE_ENDPOINT_HALT  0x00
 
@@ -75,6 +65,8 @@ bool usb_in_isr;
 
 bool scsi_attached;  // set when usb mass storage device is attached
 uint32 scsi_attached_count;
+bool other_attached;  // set when other device is attached
+
 bool ftdi_attached;  // set when ftdi host is attached
 
 static
@@ -186,7 +178,6 @@ transaction(int endpoint, int token, void *buffer, int length)
 
         stat = MCF_USB_OTG_STAT;
         flags = BYTESWAP(bdt->flags);
-        assert(! (flags & BD_FLAGS_OWN));
 
         bc = BD_FLAGS_BC_DEC(flags);
         pid = BD_FLAGS_TOK_PID_DEC(flags);
@@ -201,6 +192,8 @@ transaction(int endpoint, int token, void *buffer, int length)
             MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
             return -1;
         }
+
+        assert(! (flags & BD_FLAGS_OWN));
 
         if (pid) {
             assert(tx == !! (stat & MCF_USB_OTG_STAT_TX));
@@ -378,6 +371,7 @@ usb_host_detach()
     memset(endpoints, 0, sizeof(endpoints));
 
     scsi_attached = 0;
+    other_attached = 0;
 
     MCF_USB_OTG_INT_STAT = 0xff;
     MCF_USB_OTG_INT_STAT = 0xff;
@@ -525,6 +519,10 @@ usb_isr(void)
         
         MCF_USB_OTG_INT_ENB &= ~MCF_USB_OTG_INT_ENB_ATTACH_EN;
 
+#if PICTOCRYPT
+        led_unknown();
+#endif
+
         // default address 0 on attach
         MCF_USB_OTG_ADDR = (uint8)0;
 
@@ -559,15 +557,13 @@ usb_isr(void)
         usb_setup(1, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_GET_DESCRIPTOR, (DEVICE_DESCRIPTOR<<8)|0, 0, 8, &setup);
         rv = usb_control_transfer(&setup, descriptor, 8);
         if (rv < 0) {
-            // N.B. we get spurios attach interrupts when a mab cable is
-            // plugged in even with no device at the other end of it...
             usb_host_detach();
             goto XXX_SKIP_XXX;
         }
         assert(rv == 8);
 
 #if PICTOCRYPT
-        led_unknown();
+        led_unknown_progress();
 #endif
 
         // extract the maximum packet size
@@ -576,8 +572,7 @@ usb_isr(void)
         // then get the whole device descriptor
         usb_setup(1, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_GET_DESCRIPTOR, (DEVICE_DESCRIPTOR<<8)|0, 0, sizeof(descriptor), &setup);
         rv = usb_control_transfer(&setup, descriptor, sizeof(descriptor));
-        assert(rv == sizeof(descriptor));
-        led_unknown_progress();
+        assert(rv >= 8);
 
         // set address to 1
         usb_setup(0, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_SET_ADDRESS, 1, 0, 0, &setup);
@@ -598,11 +593,10 @@ usb_isr(void)
         // then get the whole configuration descriptor
         usb_setup(1, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_GET_DESCRIPTOR, (CONFIGURATION_DESCRIPTOR<<8)|0, 0, size, &setup);
         rv = usb_control_transfer(&setup, configuration, size);
-        assert(rv == size);
+        assert(rv >= 17);
 
         // parse it
         parse_configuration(configuration, size);
-        assert(bulk_in_ep && bulk_out_ep);
 
         // set configuration
         usb_setup(0, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_SET_CONFIGURATION, configuration[5], 0, 0, &setup);
@@ -614,14 +608,16 @@ usb_isr(void)
             assert(endpoints[e].toggle[1] == 0);
         }
 
-        if (descriptor[4] == CLASS_SCSI || (descriptor[4] == 0x00 && configuration[9+5] == CLASS_SCSI)) {
+        if (bulk_in_ep && bulk_out_ep && (descriptor[4] == CLASS_SCSI || (descriptor[4] == 0x00 && configuration[9+5] == CLASS_SCSI))) {
             assert(configuration[9+6] == 0x01 || configuration[9+6] == 0x05 || configuration[9+6] == 0x06);  // RBC or SFF or transparent
             assert(configuration[9+7] == 0x50);  // bulk-only
             scsi_attached_count++;
             scsi_attached = 1+(configuration[9+6] != 0x06);
         } else {
-            scsi_attached = 0;
+            other_attached = 1;
         }
+        
+        led_unknown_progress();
     }
 #endif
     
@@ -852,8 +848,6 @@ usb_isr(void)
         }
 
         MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_TOK_DNE;
-        
-        led_unknown_progress();
     }
 
     // if we just got reset by the host...
@@ -874,9 +868,9 @@ usb_isr(void)
         // prepare to receive setup token
         usb_device_enqueue(0, 0, setup_buffer, sizeof(setup_buffer));
 
-        MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
-        
         led_unknown_progress();
+
+        MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
     }
 
     // if we just went idle...

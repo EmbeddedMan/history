@@ -36,6 +36,11 @@ void
 led_unknown_progress(void)
 {
     led_count[led_blue]++;
+    
+#if PICTOCRYPT
+    // go to sleep SLEEP_DELAY seconds after progress stops
+    sleep_delay(SLEEP_DELAY);
+#endif
 }
 
 #if PICTOCRYPT
@@ -69,6 +74,13 @@ led_set(enum led n, int on)
     assert (n >= 0 && n < led_max);
     
 #if PICTOCRYPT
+    // red LED workaround; tri-state when off!
+    if (on) {
+        MCF_GPIO_DDRTC = 1 << n;
+    } else {
+        MCF_GPIO_DDRTC = 0;
+    }
+
     MCF_GPIO_SETTC = (uint8)~(1 << n);
     if (on) {
         MCF_GPIO_CLRTC = (uint8)~(1 << n);
@@ -90,7 +102,6 @@ led_set(enum led n, int on)
         MCF_GPIO_SETNQ = (uint8)(1 << (7));
     }
 #endif
-
 }
 
 void
@@ -182,5 +193,10 @@ led_initialize(void)
     // TC is gpio output
     MCF_GPIO_PTCPAR = 0;
     MCF_GPIO_DDRTC = 0xf;
+#if PICTOCRYPT
+    MCF_GPIO_CLRTC = ~0xf;  // all LEDs on to indicate reset!
+#else
+    MCF_GPIO_SETTC = 0xf;  // all LEDs on to indicate reset!
+#endif
 }
 

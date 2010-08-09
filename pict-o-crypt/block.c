@@ -13,7 +13,6 @@ static struct lru {
     int dirty;  // non-0 is ticks -> write back on purge
 } lrus[NLRUS];
 
-static
 int PhysReadWriteSector(bool read, uint8_t *buffer, uint32_t sector, uint32_t count)
 {
     int rv;
@@ -58,7 +57,6 @@ XXX_NEXTLUN_XXX:
             return rv;
         }
         assert(rv == 36);
-        led_unknown_progress();
         
         // test unit ready
         memset(cdb, 0, sizeof(cdb));
@@ -74,7 +72,6 @@ XXX_NEXTLUN_XXX:
             return rv;
         }
         assert(rv);
-        led_unknown_progress();
         
         // test unit ready
         memset(cdb, 0, sizeof(cdb));
@@ -87,7 +84,6 @@ XXX_NEXTLUN_XXX:
         if (rv < 0) {
             return rv;
         }
-        led_unknown_progress();
             
         // read format capacities
         memset(cdb, 0, sizeof(cdb));
@@ -95,14 +91,12 @@ XXX_NEXTLUN_XXX:
         cdb[8] = sizeof(buf);
         rv = scsi_bulk_transfer(1, cdb, 12, buf, sizeof(buf));
         assert(rv);
-        led_unknown_progress();
         
         // read capacity
         memset(cdb, 0, sizeof(cdb));
         cdb[0] = 0x25;  // read capacity
         rv = scsi_bulk_transfer(1, cdb, 10, buf, 8);
         assert(rv == 8);
-        led_unknown_progress();
         
         // request sense
         memset(cdb, 0, sizeof(cdb));
@@ -110,20 +104,7 @@ XXX_NEXTLUN_XXX:
         cdb[4] = 18;
         rv = scsi_bulk_transfer(1, cdb, 6, buf, 18);
         assert(rv);
-        led_unknown_progress();
 
-/*
-        // read/write block
-        memset(cdb, 0, sizeof(cdb));
-        cdb[0] = read?0x28:0x2a;  // read10/write10
-        cdb[2] = sector>>24;
-        cdb[3] = sector>>16;
-        cdb[4] = sector>>8;
-        cdb[5] = sector>>0;
-        assert(count < 256);
-        cdb[8] = count;
-        rv = scsi_bulk_transfer(read, cdb, 10, buffer, count*512);
-*/        
         // test unit ready
         memset(cdb, 0, sizeof(cdb));
         cdb[0] = 0x00;  // test unit ready
@@ -160,6 +141,7 @@ XXX_RETRY_XXX:
             
         goto XXX_RETRY_XXX;
     }
+    
     assert(rv == count*512);
     led_unknown_progress();
     return 0;

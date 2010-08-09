@@ -1,12 +1,10 @@
 // *** main.h *********************************************************
 
-#if ! _WIN32
+#define SLEEP_DELAY  60
 
-#define DEMO  1  // 1 enables DEMO board USB power and dtin3 LED
-#define DEBUG  1  // 0 is fastest but riskiest (removes all assert()s)
-#define RELEASE  1  // 1 disables expensive check functions
-#define SECURE  0  // 1 sets flash security
-#define EXTRACT  1  // 1 uses extracted headers rather than Freescale
+#include "config.h"
+
+#if ! _WIN32
 
 #if EXTRACT
 #include "extract.h"
@@ -97,9 +95,9 @@ enum {
 #include "walkfs.h"
 
 #elif STICKOS
+#include "cpustick.h"
 #include "basic.h"
 #include "code.h"
-#include "cpustick.h"
 #include "parse.h"
 #include "run.h"
 #include "vars.h"

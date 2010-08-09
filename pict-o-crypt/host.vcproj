@@ -118,9 +118,6 @@
 			Name="sources"
 			Filter="">
 			<File
-				RelativePath="..\sources\main.h">
-			</File>
-			<File
 				RelativePath="..\sources\printf.c">
 			</File>
 			<File
@@ -144,6 +141,12 @@
 		</File>
 		<File
 			RelativePath=".\aes.h">
+		</File>
+		<File
+			RelativePath="..\config.h">
+		</File>
+		<File
+			RelativePath="..\main.h">
 		</File>
 		<File
 			RelativePath=".\params.c">

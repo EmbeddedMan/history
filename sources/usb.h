@@ -10,6 +10,16 @@
 #define SETUP_RECIP_INTERFACE  1
 #define SETUP_RECIP_ENDPOINT  2
 
+#define REQUEST_CLEAR_FEATURE  0x01
+#define REQUEST_SET_ADDRESS  0x05
+#define REQUEST_GET_DESCRIPTOR  0x06
+#define REQUEST_SET_CONFIGURATION  0x09
+
+#define DEVICE_DESCRIPTOR  1
+#define CONFIGURATION_DESCRIPTOR  2
+#define STRING_DESCRIPTOR  3
+#define ENDPOINT_DESCRIPTOR  5
+
 #define TOKEN_STALL  0x0e  // for mst stall disaster
 
 struct setup {
@@ -24,6 +34,8 @@ extern bool usb_in_isr;  // set when in isr
 
 extern bool scsi_attached;  // set when usb mass storage device is attached
 extern uint32 scsi_attached_count;
+extern bool other_attached;
+
 extern bool ftdi_attached;  // set when ftdi host is attached
 
 extern byte bulk_in_ep;

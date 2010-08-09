@@ -12,10 +12,11 @@ typedef uint8 uint8_t;
 typedef uint16 uint16_t;
 typedef uint32 uint32_t;
 
+int PhysReadWriteSector(bool read, uint8_t *buffer, uint32_t sector, uint32_t count);
+
 // Override media sector functions
 #define DFS_ReadSector(unit,buffer,sector,count) DFS_HostReadSector(buffer,sector,count)
 #define DFS_WriteSector(unit,buffer,sector,count) DFS_HostWriteSector(buffer,sector,count)
-
 
 /*
 	Read sector from image
