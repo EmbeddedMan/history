@@ -1,6 +1,16 @@
-// *** usb.h **********************************************************
+// *** usb ******************************************************************
 
 #define SETUP_SIZE  8
+
+#define SETUP_TYPE_STANDARD  0
+#define SETUP_TYPE_CLASS  1
+#define SETUP_TYPE_VENDOR  2
+
+#define SETUP_RECIP_DEVICE  0
+#define SETUP_RECIP_INTERFACE  1
+#define SETUP_RECIP_ENDPOINT  2
+
+#define TOKEN_STALL  0x0e  // for mst stall disaster
 
 struct setup {
     byte requesttype;  // 7:in, 6-5:type, 4-0:recip
@@ -12,11 +22,33 @@ struct setup {
 
 extern bool usb_in_isr;  // set when in isr
 
-extern bool usb_device_configured;  // set when usb device is configured
+extern bool scsi_attached;  // set when usb mass storage device is attached
+extern uint32 scsi_attached_count;
+extern bool ftdi_attached;  // set when ftdi host is attached
 
 extern byte bulk_in_ep;
 extern byte bulk_out_ep;
 extern byte int_ep;
+
+// *** host ***
+
+// initialize a setup data0 buffer
+void
+usb_setup(int in, int type, int recip, byte request, short value, short index, short length, struct setup *setup);
+
+// perform a usb host/device control transfer
+int
+usb_control_transfer(struct setup *setup, byte *buffer, int length);
+
+// perform a usb host/device bulk transfer
+int
+usb_bulk_transfer(int in, byte *buffer, int length, bool null_or_short);
+
+// detach from the device and prepare to re-attach
+void
+usb_host_detach(void);
+
+// *** device ***
 
 // enqueue a packet to the usb engine for transfer to/from the host
 void
@@ -31,13 +63,19 @@ void
 usb_register(usb_reset_cbfn reset, usb_control_cbfn control_transfer, usb_bulk_cbfn bulk_transfer);
 
 void
-usb_device_descriptor(byte *descriptor, int length);
+usb_device_descriptor(const byte *descriptor, int length);
 
 void
-usb_configuration_descriptor(byte *descriptor, int length);
+usb_configuration_descriptor(const byte *descriptor, int length);
 
 void
-usb_string_descriptor(byte *descriptor, int length);
+usb_string_descriptor(const byte *descriptor, int length);
+
+// *** init ***
+
+__declspec(interrupt)
+void
+usb_isr(void);
 
 void
 usb_initialize(void);

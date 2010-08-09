@@ -1,13 +1,12 @@
+#if MCF52221
 // *** usb.c **********************************************************
 // this file implements a generic usb device driver; the FTDI transport
 // sits on top of this module to implement a specific usb device.
 
 #include "main.h"
 
-// modules:
-// *** FTDI transport ***
-
-#define SWRETRIES  10
+#define HWRETRIES  1
+#define SWRETRIES  3
 
 #define DEVICE_DESCRIPTOR_SIZE  18
 #define CONFIGURATION_DESCRIPTOR_SIZE  128
@@ -34,11 +33,8 @@
 #define TOKEN_NAK  0x0a
 #define TOKEN_DATA1  0x0b
 #define TOKEN_SETUP  0x0d
-#define TOKEN_STALL  0x0e
 
 #define CLASS_SCSI  0x08
-#define CLASS_PIMA  0x06
-#define CLASS_CANON  0xff
 
 #define BD_FLAGS_BC_ENC(x)  (((x) & 0x3ff) << 16)
 #define BD_FLAGS_BC_DEC(y)  (((y) & 0x3ff0000) >> 16)
@@ -49,14 +45,17 @@
 
 #define MYBDT(endpoint, tx, odd)  (bdts+(endpoint)*4+(tx)*2+(odd))
 
+extern __declspec(system) uint32 __BDT_RAM[];
+#define BDT_RAM_SIZE  0x80
+
 static struct bdt {
     int flags;
     byte *buffer;
 } *bdts;  // 512 byte aligned in buffer
 
-static byte bdtbuffer[512+4*4*sizeof(struct bdt)];
+// N.B. only bdt endpoint 0 is used for host mode!
 
-extern struct endpoint {
+struct endpoint {
     byte toggle[2];  // rx [0] and tx [1] next packet data0 (0) or data1 (BD_FLAGS_DATA)
     byte bdtodd[2];  // rx [0] and tx [1] next bdt even (0) or odd (1)
     byte packetsize;
@@ -68,24 +67,23 @@ extern struct endpoint {
     byte data_buffer[64];  // data to or from host
 } endpoints[4];
 
-struct endpoint endpoints[4];
-
 byte bulk_in_ep;
 byte bulk_out_ep;
 byte int_ep;
 
 bool usb_in_isr;
 
-bool usb_device_configured;  // set when device is configured
+bool scsi_attached;  // set when usb mass storage device is attached
+uint32 scsi_attached_count;
+bool ftdi_attached;  // set when ftdi host is attached
 
-// this function parses a configuration descriptor.
 static
 void
-parse_configuration(byte *configuration, int size)
+parse_configuration(const byte *configuration, int size)
 {
     int i;
 
-    // extract the bulk endpoint information from the configuration descriptor
+    // extract the bulk endpoint information
     for (i = 0; i < size; i += configuration[i]) {
         if (configuration[i+1] == ENDPOINT_DESCRIPTOR) {
             if (configuration[i+3] == BULK_ATTRIBUTES) {
@@ -98,20 +96,302 @@ parse_configuration(byte *configuration, int size)
                     assert(configuration[i+4]);
                     endpoints[bulk_out_ep].packetsize = configuration[i+4];
                 }
+            } else if (configuration[i+3] == INTERRUPT_ATTRIBUTES) {
+                int_ep = (byte)(configuration[i+2] & 0xf);
+                assert(configuration[i+4]);
+                endpoints[int_ep].packetsize = configuration[i+4];
+                endpoints[int_ep].interrupt = 1;
             }
         }
     }
     assert(i == size);
 }
 
+// *** host ***
 
-static byte *device_descriptor;
+// initialize a setup data0 buffer
+void
+usb_setup(int in, int type, int recip, byte request, short value, short index, short length, struct setup *setup)
+{
+    assert(host_mode);
+
+    setup->requesttype = (byte)((in<<7)|(type << 5)|recip);
+    setup->request = request;
+    setup->value = BYTESWAP(value);
+    setup->index = BYTESWAP(index);
+    setup->length = BYTESWAP(length);
+}
+
+// perform a usb host/device transaction
+static
+int
+transaction(int endpoint, int token, void *buffer, int length)
+{
+    int bc;
+    int tx;
+    int pid;
+    int odd;
+    int stat;
+    int toggle;
+    int flags;
+    int retry;
+    int int_stat;
+    struct bdt *bdt;
+
+    assert(host_mode);
+
+    if (token == TOKEN_SETUP) {
+        tx = 1;
+
+        // setup always uses data0; following transactions start with data1
+        assert(! endpoint);
+        endpoints[0].toggle[tx] = 0;
+        endpoints[0].toggle[! tx] = BD_FLAGS_DATA;
+    } else if (token == TOKEN_IN) {
+        tx = 0;
+    } else {
+        assert(token == TOKEN_OUT);
+        tx = 1;
+    }
+
+    toggle = endpoints[endpoint].toggle[tx];
+
+    retry = 0;
+    for (;;) {
+        odd = endpoints[0].bdtodd[tx];
+        endpoints[0].bdtodd[tx] = (byte)(! odd);
+
+        // N.B. only bdt endpoint 0 is used for host mode!
+        bdt = MYBDT(0, tx, odd);
+        bdt->buffer = (byte *)BYTESWAP((int)buffer);
+        flags = BYTESWAP(bdt->flags);
+        assert(! (flags & BD_FLAGS_OWN));
+        assert(length <= endpoints[endpoint].packetsize);
+        bdt->flags = BYTESWAP(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|toggle);
+
+        assert(! (MCF_USB_OTG_CTL & MCF_USB_OTG_CTL_TXSUSPEND_TOKENBUSY));
+        //MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_STALL|MCF_USB_OTG_INT_STAT_TOK_DNE|MCF_USB_OTG_INT_STAT_USB_RST;
+
+        MCF_USB_OTG_TOKEN = (uint8)(MCF_USB_OTG_TOKEN_TOKEN_PID(token)|MCF_USB_OTG_TOKEN_TOKEN_ENDPT(endpoint));
+
+        // wait for stall or token done or reset
+        for (;;) {
+            int_stat = MCF_USB_OTG_INT_STAT;
+            assert(! (int_stat & MCF_USB_OTG_INT_STAT_ERROR));
+            if (int_stat & (/*MCF_USB_OTG_INT_STAT_STALL|*/MCF_USB_OTG_INT_STAT_TOK_DNE|MCF_USB_OTG_INT_STAT_USB_RST)) {
+                break;
+            }
+        }
+
+        stat = MCF_USB_OTG_STAT;
+        flags = BYTESWAP(bdt->flags);
+        assert(! (flags & BD_FLAGS_OWN));
+
+        bc = BD_FLAGS_BC_DEC(flags);
+        pid = BD_FLAGS_TOK_PID_DEC(flags);
+
+        // if we got token done...
+        if (int_stat & MCF_USB_OTG_INT_STAT_TOK_DNE) {
+            MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_TOK_DNE;
+        }
+
+        // if we got reset...
+        if (int_stat & MCF_USB_OTG_INT_STAT_USB_RST) {
+            MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
+            return -1;
+        }
+
+        if (pid) {
+            assert(tx == !! (stat & MCF_USB_OTG_STAT_TX));
+            assert(odd == !! (stat & MCF_USB_OTG_STAT_ODD));
+            assert(0 == (stat >> 4));
+        }
+
+        switch (pid) {
+            case TOKEN_DATA0:
+            case TOKEN_DATA1:  // we received a data0/data1 packet
+                assert(! tx);
+                // if we expected it...
+                if (pid == (toggle?TOKEN_DATA1:TOKEN_DATA0)) {
+                    // flip the data toggle to acknowledge
+                    endpoints[endpoint].toggle[tx] ^= BD_FLAGS_DATA;
+                    return bc;
+                } else {
+                    goto XXX_RETRY_XXX;
+                }
+            case TOKEN_ACK:  // the device accepted the data packet we sent
+                assert(tx);
+                // flip the data toggle to acknowledge
+                endpoints[endpoint].toggle[tx] ^= BD_FLAGS_DATA;
+                return bc;
+            case TOKEN_STALL:
+                {
+                    int rv;
+                    struct setup setup;
+
+                    if (endpoint) {
+                        // clear the stall!
+                        usb_setup(0, SETUP_TYPE_STANDARD, SETUP_RECIP_ENDPOINT, REQUEST_CLEAR_FEATURE, FEATURE_ENDPOINT_HALT, tx?endpoint:0x80|endpoint, 0, &setup);
+                        rv = usb_control_transfer(&setup, NULL, 0);
+                        assert(! rv);
+                    }
+
+                    endpoints[endpoint].toggle[0] = 0;
+                    endpoints[endpoint].toggle[1] = 0;
+
+                    return -TOKEN_STALL;
+                }
+            default:
+                assert(0);
+                // FALL THRU
+            case 0:  // bus timeout
+            case TOKEN_NAK:
+            case 0xf:  // data error
+XXX_RETRY_XXX:
+                // ignore the packet and try again
+                if (retry++ < SWRETRIES) {
+                    delay(100);
+                    continue;
+                }
+                //assert(0);
+                return -15;
+        }
+    }
+}
+
+// perform a usb host/device control transfer
+int
+usb_control_transfer(struct setup *setup, byte *buffer, int length)
+{
+    int in;
+    int rv;
+    int total;
+    int request;
+
+    assert(host_mode);
+
+    rv = transaction(0, TOKEN_SETUP, setup, SETUP_SIZE);
+    if (rv < 0) {
+        return rv;
+    }
+    assert(rv == SETUP_SIZE);
+
+    in = !! (setup->requesttype & 0x80);
+    assert(in ? length : 1);  // if you don't have a length, use out!
+
+    total = 0;
+    while (total < length) {
+        request = MIN(endpoints[0].packetsize, length-total);
+        rv = transaction(0, in?TOKEN_IN:TOKEN_OUT, buffer+total, request);
+        if (rv < 0) {
+            return rv;
+        }
+        total += rv;
+        if (rv < request) {
+            break;
+        }
+    }
+
+    // N.B. we always switch directions from the previous transaction
+    // N.B. the new direction was initialized to data1 at setup time
+    rv = transaction(0, in?TOKEN_OUT:TOKEN_IN, NULL, 0);
+    if (rv < 0) {
+        return rv;
+    }
+    assert(! rv);
+
+    return total;
+}
+
+// perform a usb host/device bulk transfer
+int
+usb_bulk_transfer(int in, byte *buffer, int length, bool null_or_short)
+{
+    int rv;
+    int total;
+    int request;
+    int endpoint;
+    uint8 endpt0;
+
+    assert(host_mode);
+
+    endpt0 = MCF_USB_OTG_ENDPT0;
+    if (in == -1 || ! HWRETRIES) {
+        MCF_USB_OTG_ENDPT0 |= MCF_USB_OTG_ENDPT_RETRY_DIS;
+    }
+
+    if (in == -1) {
+        endpoint = int_ep;
+    } else if (in) {
+        endpoint = bulk_in_ep;
+    } else {
+        endpoint = bulk_out_ep;
+    }
+    assert(endpoint);
+    assert(endpoints[endpoint].packetsize);
+
+    total = 0;
+    while (total < length) {
+        request = MIN(endpoints[endpoint].packetsize, length-total);
+        rv = transaction(endpoint, in?TOKEN_IN:TOKEN_OUT, buffer+total, request);
+        if (rv < 0) {
+            total = rv;
+            break;
+        }
+        total += rv;
+        if (rv < request) {
+            break;
+        }
+    }
+
+    // if the caller wants to end with a null or short packet and we ended
+    // with a full packet...
+    if (null_or_short && rv == endpoints[endpoint].packetsize) {
+        rv = transaction(endpoint, in?TOKEN_IN:TOKEN_OUT, NULL, 0);
+        if (rv < 0) {
+            total = rv;
+        }
+    }
+
+    MCF_USB_OTG_ENDPT0 = endpt0;
+
+    return total;
+}
+
+// detach from the device and prepare to re-attach
+void
+usb_host_detach()
+{
+    assert(host_mode);
+
+    delay(100);  // debounce
+
+    // enable host mode
+    MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_ODD_RST;
+    MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_HOST_MODE_EN;
+
+    // enable usb pull downs
+    MCF_USB_OTG_OTG_CTRL = MCF_USB_OTG_OTG_CTRL_DM_LOW|MCF_USB_OTG_OTG_CTRL_DP_LOW|MCF_USB_OTG_OTG_CTRL_OTG_EN;
+
+    memset(bdts, 0, BDT_RAM_SIZE);
+    memset(endpoints, 0, sizeof(endpoints));
+
+    scsi_attached = 0;
+
+    MCF_USB_OTG_INT_STAT = 0xff;
+    MCF_USB_OTG_INT_STAT = 0xff;
+    MCF_USB_OTG_INT_ENB |= MCF_USB_OTG_INT_ENB_ATTACH_EN;
+}
+
+// *** device ***
+
+static const byte *device_descriptor;
 static int device_descriptor_length;
 
-static byte *configuration_descriptor;
+static const byte *configuration_descriptor;
 static int configuration_descriptor_length;
 
-static byte *string_descriptor;
+static const byte *string_descriptor;
 static int string_descriptor_length;
 
 static usb_reset_cbfn reset_cbfn;
@@ -124,6 +404,8 @@ static
 void
 usb_device_wait()
 {
+    assert(! host_mode);
+
     // enable usb device mode
     MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_USB_EN_SOF_EN;
 
@@ -135,23 +417,22 @@ usb_device_wait()
     MCF_USB_OTG_INT_ENB = MCF_USB_OTG_INT_ENB_USB_RST_EN;
 }
 
-static int resets;
-
 // this function puts our state machine into the default state,
 // waiting for a "set configuration" command from the host.
 static
 void
 usb_device_default()
 {
+    assert(! host_mode);
+
     // default to address 0 on reset
-    resets++;
     MCF_USB_OTG_ADDR = (uint8)0;
 
     // enable usb device mode
     MCF_USB_OTG_CTL |= MCF_USB_OTG_CTL_ODD_RST;
     MCF_USB_OTG_CTL &= ~MCF_USB_OTG_CTL_ODD_RST;
 
-    memset(bdtbuffer, 0, sizeof(bdtbuffer));
+    memset(bdts, 0, BDT_RAM_SIZE);
     memset(endpoints, 0, sizeof(endpoints));
 
     assert(configuration_descriptor);
@@ -174,6 +455,8 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
     bool odd;
     int flags;
     struct bdt *bdt;
+
+    assert(! host_mode);
 
     // transfer up to one packet at a time
     assert(device_descriptor[7]);
@@ -202,22 +485,142 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
 static byte setup_buffer[SETUP_SIZE];  // from host
 static byte next_address;  // set after successful status
 
+// *** isr ***
+
 static byte descriptor[DEVICE_DESCRIPTOR_SIZE];
 static byte configuration[CONFIGURATION_DESCRIPTOR_SIZE];
 
-static int line;
-
-// called by the usb engine on external events.
-static
+// called by usb on device attach
 __declspec(interrupt)
 void
 usb_isr(void)
 {
+    int e;
     int rv;
 
     assert(! usb_in_isr);
     usb_in_isr = true;
+    
+    // *** host ***
+    
+    if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_ATTACH) {
+        int size;
+        struct setup setup;
 
+        assert(host_mode);
+        
+        delay(100);  // debounce
+
+        MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_ATTACH;
+        
+        // if this attach is not real...
+        if (! (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_ATTACH)) {
+            goto XXX_SKIP_XXX;
+        }
+        
+        MCF_USB_OTG_INT_ENB &= ~MCF_USB_OTG_INT_ENB_ATTACH_EN;
+
+        // default address 0 on attach
+        MCF_USB_OTG_ADDR = (uint8)0;
+
+        // if this is a low speed device...
+        if (! (MCF_USB_OTG_CTL & MCF_USB_OTG_CTL_JSTATE)) {
+            MCF_USB_OTG_ADDR |= MCF_USB_OTG_ADDR_LS_EN;
+        }
+
+        // reset the device
+        MCF_USB_OTG_CTL |= MCF_USB_OTG_CTL_RESET;
+        delay(10);
+        MCF_USB_OTG_CTL &= ~MCF_USB_OTG_CTL_RESET;
+        MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
+
+        // enable sof
+        MCF_USB_OTG_CTL |= MCF_USB_OTG_CTL_USB_EN_SOF_EN;
+        MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_SLEEP|MCF_USB_OTG_INT_STAT_RESUME;
+
+        delay(100);  // post reset
+
+        // enable transfers
+        MCF_USB_OTG_ENDPT0 = MCF_USB_OTG_ENDPT_HOST_WO_HUB/*|MCF_USB_OTG_ENDPT_RETRY_DIS*/;
+        MCF_USB_OTG_ENDPT0 |= (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+
+        // data0 follows configuration event
+        memset(endpoints, 0, sizeof(endpoints));
+
+        // default packetsize
+        endpoints[0].packetsize = 8;
+
+        // get the first 8 bytes of the device descriptor
+        usb_setup(1, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_GET_DESCRIPTOR, (DEVICE_DESCRIPTOR<<8)|0, 0, 8, &setup);
+        rv = usb_control_transfer(&setup, descriptor, 8);
+        if (rv < 0) {
+            // N.B. we get spurios attach interrupts when a mab cable is
+            // plugged in even with no device at the other end of it...
+            usb_host_detach();
+            goto XXX_SKIP_XXX;
+        }
+        assert(rv == 8);
+
+#if PICTOCRYPT
+        led_unknown();
+#endif
+
+        // extract the maximum packet size
+        endpoints[0].packetsize = descriptor[7];
+
+        // then get the whole device descriptor
+        usb_setup(1, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_GET_DESCRIPTOR, (DEVICE_DESCRIPTOR<<8)|0, 0, sizeof(descriptor), &setup);
+        rv = usb_control_transfer(&setup, descriptor, sizeof(descriptor));
+        assert(rv == sizeof(descriptor));
+        led_unknown_progress();
+
+        // set address to 1
+        usb_setup(0, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_SET_ADDRESS, 1, 0, 0, &setup);
+        rv = usb_control_transfer(&setup, NULL, 0);
+        assert(rv == 0);
+        MCF_USB_OTG_ADDR |= 1;
+
+        delay(100);  // post set address recovery
+
+        // get the first 9 bytes of the configuration descriptor
+        usb_setup(1, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_GET_DESCRIPTOR, (CONFIGURATION_DESCRIPTOR<<8)|0, 0, 9, &setup);
+        rv = usb_control_transfer(&setup, configuration, 9);
+        assert(rv > 0);
+
+        size = configuration[2];
+        assert(size >= 9 && size < sizeof(configuration));
+
+        // then get the whole configuration descriptor
+        usb_setup(1, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_GET_DESCRIPTOR, (CONFIGURATION_DESCRIPTOR<<8)|0, 0, size, &setup);
+        rv = usb_control_transfer(&setup, configuration, size);
+        assert(rv == size);
+
+        // parse it
+        parse_configuration(configuration, size);
+        assert(bulk_in_ep && bulk_out_ep);
+
+        // set configuration
+        usb_setup(0, SETUP_TYPE_STANDARD, SETUP_RECIP_DEVICE, REQUEST_SET_CONFIGURATION, configuration[5], 0, 0, &setup);
+        rv = usb_control_transfer(&setup, NULL, 0);
+        assert(rv == 0);
+        
+        for (e = 1; e < LENGTHOF(endpoints); e++) {
+            assert(endpoints[e].toggle[0] == 0);
+            assert(endpoints[e].toggle[1] == 0);
+        }
+
+        if (descriptor[4] == CLASS_SCSI || (descriptor[4] == 0x00 && configuration[9+5] == CLASS_SCSI)) {
+            assert(configuration[9+6] == 0x01 || configuration[9+6] == 0x05 || configuration[9+6] == 0x06);  // RBC or SFF or transparent
+            assert(configuration[9+7] == 0x50);  // bulk-only
+            scsi_attached_count++;
+            scsi_attached = 1+(configuration[9+6] != 0x06);
+        } else {
+            scsi_attached = 0;
+        }
+    }
+    
+    // *** device ***
+    
     // if we just transferred a token...
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_TOK_DNE) {
         int bc;
@@ -233,6 +636,8 @@ usb_isr(void)
         short value;
         struct bdt *bdt;
         struct setup *setup;
+        
+        assert(! host_mode);
 
         // we just completed a packet transfer
         stat = MCF_USB_OTG_STAT;
@@ -324,7 +729,7 @@ usb_isr(void)
                         next_address = value;
                     } else if (setup->request == REQUEST_SET_CONFIGURATION) {
                         assert(value == 1);
-                        usb_device_configured = 1;
+                        ftdi_attached = 1;
                     } else {
                         assert(0);
                     }
@@ -441,11 +846,15 @@ usb_isr(void)
         }
 
         MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_TOK_DNE;
+        
+        led_unknown_progress();
     }
 
-    // if we just got reset by athe host...
+    // if we just got reset by the host...
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_USB_RST) {
-        usb_device_configured = 0;
+        assert(! host_mode);
+    
+        ftdi_attached = 0;
 
         usb_device_default();
 
@@ -460,17 +869,22 @@ usb_isr(void)
         usb_device_enqueue(0, 0, setup_buffer, sizeof(setup_buffer));
 
         MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
+        
+        led_unknown_progress();
     }
 
     // if we just went idle...
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_SLEEP) {
-        usb_device_configured = 0;
+        assert(! host_mode);
+    
+        ftdi_attached = 0;
 
         // disable usb sleep interrupts
         MCF_USB_OTG_INT_ENB &= ~MCF_USB_OTG_INT_ENB_SLEEP_EN;
         MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_SLEEP;
     }
-
+    
+XXX_SKIP_XXX:
     assert(usb_in_isr);
     usb_in_isr = false;
 }
@@ -480,6 +894,7 @@ usb_isr(void)
 void
 usb_register(usb_reset_cbfn reset, usb_control_cbfn control_transfer, usb_bulk_cbfn bulk_transfer)
 {
+    assert(! host_mode);
     reset_cbfn = reset;
     control_transfer_cbfn = control_transfer;
     bulk_transfer_cbfn = bulk_transfer;
@@ -488,8 +903,9 @@ usb_register(usb_reset_cbfn reset, usb_control_cbfn control_transfer, usb_bulk_c
 // called by upper level code to specify the device descriptor to
 // return to the host.
 void
-usb_device_descriptor(byte *descriptor, int length)
+usb_device_descriptor(const byte *descriptor, int length)
 {
+    assert(! host_mode);
     device_descriptor = descriptor;
     device_descriptor_length = length;
 }
@@ -497,8 +913,9 @@ usb_device_descriptor(byte *descriptor, int length)
 // called by upper level code to specify the configuration descriptor
 // to return to the host.
 void
-usb_configuration_descriptor(byte *descriptor, int length)
+usb_configuration_descriptor(const byte *descriptor, int length)
 {
+    assert(! host_mode);
     configuration_descriptor = descriptor;
     configuration_descriptor_length = length;
 }
@@ -506,26 +923,31 @@ usb_configuration_descriptor(byte *descriptor, int length)
 // called by upper level code to specify the string descriptors to
 // return to the host.
 void
-usb_string_descriptor(byte *descriptor, int length)
+usb_string_descriptor(const byte *descriptor, int length)
 {
+    assert(! host_mode);
     string_descriptor = descriptor;
     string_descriptor_length = length;
 }
 
-// this function initializes the usb module.
 void
 usb_initialize(void)
 {
-    bdts = (struct bdt *)(((unsigned int)bdtbuffer+512)/512*512);
+    bdts = (struct bdt *)__BDT_RAM;
+    assert(BDT_RAM_SIZE >= 4*4*sizeof(struct bdt));
 
     // enable usb interrupt
-    __VECTOR_RAM[117] = (uint32)usb_isr;
     MCF_INTC0_ICR53 = MCF_INTC_ICR_IL(SPL_USB)|MCF_INTC_ICR_IP(SPL_USB);
     MCF_INTC0_IMRH &= ~MCF_INTC_IMRH_INT_MASK53;  // usb
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
 
     // initialize usb timing
-    MCF_USB_OTG_USB_CTRL = MCF_USB_OTG_USB_CTRL_CLK_SRC(3);
+    if (oscillator_frequency == 48000000) {
+        MCF_USB_OTG_USB_CTRL = MCF_USB_OTG_USB_CTRL_CLK_SRC(1);
+    } else {
+        assert(fsys_frequency == 48000000);
+        MCF_USB_OTG_USB_CTRL = MCF_USB_OTG_USB_CTRL_CLK_SRC(3);
+    }
     MCF_USB_OTG_SOF_THLD = 74;
 
     // initialize usb bdt
@@ -534,7 +956,21 @@ usb_initialize(void)
     MCF_USB_OTG_BDT_PAGE_02 = (uint8)((unsigned int)bdts >> 16);
     MCF_USB_OTG_BDT_PAGE_03 = (uint8)((unsigned int)bdts >> 24);
 
-    // enable usb to interrupt on reset
-    usb_device_wait();
+    // if we are in host mode...
+    if (host_mode) {
+#if DEMO
+        // usb power on
+        MCF_GPIO_PUAPAR = 0;
+        MCF_GPIO_DDRUA = 0xf;
+        MCF_GPIO_CLRUA = (uint8)~0x08;
+#endif
+
+        // enable usb to interrupt on attach
+        usb_host_detach();
+    } else {
+        // enable usb to interrupt on reset
+        usb_device_wait();
+    }
 }
+#endif
 

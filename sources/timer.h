@@ -1,5 +1,9 @@
 // *** timer.h ********************************************************
 
+__declspec(interrupt)
+void
+timer_isr(void);
+
 extern bool timer_in_isr;
 
 extern volatile int ticks;  // incremented by pit0 isr every millisecond

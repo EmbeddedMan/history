@@ -4,9 +4,6 @@
 
 #include "main.h"
 
-// modules:
-// *** external pin control and access ***
-
 volatile short adc_result[8];
 
 // poll the analog-to-digital converters
@@ -37,6 +34,10 @@ adc_poll(void)
 void
 adc_initialize(void)
 {
+#if PICTOCRYPT
+    bool boo;
+#endif
+
     // initialize adc to read all channels
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_SMODE(0);  // once sequential
     MCF_ADC_CTRL2 = 0x0005;  // divisor for 48 MHz
@@ -45,11 +46,19 @@ adc_initialize(void)
     MCF_ADC_ADSDIS = 0x00;
     MCF_ADC_POWER = MCF_ADC_POWER_PUDELAY(13);  // enable adc
 
+    // AN is primary
+    MCF_GPIO_PANPAR = 0xff;
+
     delay(10);
 
     // start the adc
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_START0;
 
     delay(10);
+#if PICTOCRYPT
+    boo = adc_poll();
+    assert(boo);
+    delay(10);
+#endif
 }
 

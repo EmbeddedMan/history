@@ -5,7 +5,6 @@
 
 #include "main.h"
 
-#define MASTER_FSYS  48000000  // frequency of M52221DEMO board
 #define SLAVE_FSYS    8000000  // frequency of target board
 
 #define CLONE_PAGE_SIZE  256
@@ -128,10 +127,12 @@ flash_write(byte *buffer, int length)
 void
 clone(bool and_run)
 {
+    int i;
     unsigned n;
     byte status;
-    static byte buffer[4+CLONE_PAGE_SIZE];
 
+    assert(sizeof(big_buffer) >= 4+CLONE_PAGE_SIZE);
+    
     // AS is gpio output; bit 0 is slave rsti*
     MCF_GPIO_PASPAR = 0;
     MCF_GPIO_DDRAS = 0x3;
@@ -148,9 +149,9 @@ clone(bool and_run)
     MCF_GPIO_SETAS = 1;
     delay(1);
 
-    // initialize qspi master at 100k baud
-    assert(MASTER_FSYS/2/100000 < 256);
-    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/MASTER_FSYS/2/100000;
+    // initialize qspi master at 150k baud
+    assert(fsys_frequency/2/150000 < 256);
+    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/fsys_frequency/2/150000;
     MCF_QSPI_QWR = MCF_QSPI_QWR_CSIV;
 
     status = flash_status();
@@ -160,55 +161,76 @@ clone(bool and_run)
     }
 
     // write configuration register
-    buffer[0] = WRITE_CONFIGURATION_REGISTER;
+    big_buffer[0] = WRITE_CONFIGURATION_REGISTER;
     if (SLAVE_FSYS > 25600000) {
-        buffer[1] = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((SLAVE_FSYS-1)/2/8/200000);
+        big_buffer[1] = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((SLAVE_FSYS-1)/2/8/200000);
     } else {
-        buffer[1] = MCF_CFM_CFMCLKD_DIV((SLAVE_FSYS-1)/2/200000);
+        big_buffer[1] = MCF_CFM_CFMCLKD_DIV((SLAVE_FSYS-1)/2/200000);
     }
-    if (! flash_write(buffer, 2+0)) {
+    if (! flash_write(big_buffer, 2+0)) {
         printf("write configuration register failed\n");
         return;
     }
 
     // bulk erase
-    buffer[0] = BULK_ERASE;
-    if (! flash_write(buffer, 1+0)) {
+    big_buffer[0] = BULK_ERASE;
+    if (! flash_write(big_buffer, 1+0)) {
         printf("bulk erase failed\n");
         return;
     }
 
     // for all bytes to clone...
     for (n = 0; n < FLASH_BYTES; n += CLONE_PAGE_SIZE) {
-        // get the reference data from our flash
-        memcpy(buffer+4, (void *)n, CLONE_PAGE_SIZE);
+        if (SECURE && n >= FLASH_BYTES/2) {
+            // reference data is secure; just erase it
+            memset(big_buffer+4, -1, CLONE_PAGE_SIZE);
+        } else {
+            // get the reference data from our flash
+            memcpy(big_buffer+4, (void *)n, CLONE_PAGE_SIZE);
+        }
 
         // program the data to the target device
-        buffer[0] = PAGE_PROGRAM;
-        buffer[1] = n/0x10000;
-        buffer[2] = n/0x100;
-        buffer[3] = n;
-        if (! flash_write(buffer, 4+CLONE_PAGE_SIZE)) {
+        big_buffer[0] = PAGE_PROGRAM;
+        big_buffer[1] = n/0x10000;
+        big_buffer[2] = n/0x100;
+        big_buffer[3] = n;
+        if (! flash_write(big_buffer, 4+CLONE_PAGE_SIZE)) {
             printf("\npage program failed\n");
             return;
         }
 
-        memset(buffer+4, 0x5a, CLONE_PAGE_SIZE);
+        memset(big_buffer+4, 0x5a, CLONE_PAGE_SIZE);
 
         // read the data back from the target device
-        buffer[0] = READ_DATA;
-        buffer[1] = n/0x10000;
-        buffer[2] = n/0x100;
-        buffer[3] = n;
-        flash_qspi(buffer, 4+CLONE_PAGE_SIZE);
+        big_buffer[0] = READ_DATA;
+        big_buffer[1] = n/0x10000;
+        big_buffer[2] = n/0x100;
+        big_buffer[3] = n;
+        flash_qspi(big_buffer, 4+CLONE_PAGE_SIZE);
 
         // verify the data
-        if (memcmp(buffer+4, (void *)n, CLONE_PAGE_SIZE)) {
-            printf("\nverification failed at offset %d\n", n);
-            return;
+        if (SECURE && n >= FLASH_BYTES/2) {
+            // reference data was erased
+            for (i = 0; i < CLONE_PAGE_SIZE; i++) {
+                if (*(char *)(big_buffer+4+i) != (char)-1) {
+                    printf("\nverification failed at offset 0x%x\n", n+i);
+                    return;
+                }
+            }
+        } else {
+            // reference data came from our flash
+            if (memcmp(big_buffer+4, (void *)n, CLONE_PAGE_SIZE)) {
+                printf("\nverification failed at offset ~0x%x\n", n);
+                return;
+            }
         }
 
         printf(".");
+#if FLASHER
+        if (n/CLONE_PAGE_SIZE % 80 == 79) {
+            printf("\n");
+        }
+#endif
     }
 
     if (and_run) {

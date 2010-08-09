@@ -1,12 +1,25 @@
 // *** sleep.c ********************************************************
-// this file implements the low power sleep mode for stickos.
+// this file implements the low power sleep mode.
 
 #include "main.h"
 
 static bool volatile sleep_mode;
 
+#if MCF52233
+#undef MCF_EPORT_EPPDR
+#undef MCF_EPORT_EPPAR
+#undef MCF_EPORT_EPFR
+#undef MCF_EPORT_EPIER
+#define MCF_EPORT_EPPDR  MCF_EPORT0_EPPDR
+#define MCF_EPORT_EPPAR  MCF_EPORT0_EPPAR
+#define MCF_EPORT_EPFR  MCF_EPORT0_EPFR
+#define MCF_EPORT_EPIER  MCF_EPORT0_EPIER
+#elif MCF52221
+#else
+#error
+#endif
+
 // called on sleep entry and exit (sw1 depressed)
-static
 __declspec(interrupt)
 void
 sleep_isr(void)
@@ -104,11 +117,13 @@ sleep_poll(void)
     }
 
     if (! initial) {
+#if STICKOS
         // if we need to autoreset...
         if (var_get_flash(FLASH_AUTORESET) == 1) {
             MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
             asm { halt }
         }
+#endif
 
         // restore our data directions and pin assignments
         MCF_GPIO_DDRNQ = ddrnq;
@@ -149,7 +164,6 @@ sleep_initialize(void)
     MCF_EPORT_EPIER = MCF_EPORT_EPIER_EPIE1;
 
     // enable irq1 interrupt
-    __VECTOR_RAM[65] = (uint32)sleep_isr;
     MCF_INTC0_ICR01 = MCF_INTC_ICR_IL(SPL_IRQ1)|MCF_INTC_ICR_IP(SPL_IRQ1);
     //MCF_INTC0_IMRH &= ~0;
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK1;  // irq1

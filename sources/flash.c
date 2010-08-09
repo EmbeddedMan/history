@@ -1,22 +1,14 @@
 // *** flash.c ********************************************************
-// this file implements the low level flash control and access for
-// stickos, as well as the "s19 upgrade" functionality for upgrading
-// stickos itself.
+// this file implements the low level flash control and access, as well
+// as the "s19 upgrade" functionality for upgrading firmware.
 
 #include "main.h"
-
-// modules:
-// *** flash control and access ***
-
-#define FSYS  48000000  // frequency of M52221DEMO board
 
 static
 void
 flash_command(uint8 cmd, uint32 *addr, uint32 data)
 {
     uint32 *backdoor_addr;
-
-    // N.B. this code generates no relocations so we can run it from RAM!!!
 
     // assert we're initialized
     assert(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
@@ -49,8 +41,10 @@ flash_command(uint8 cmd, uint32 *addr, uint32 data)
 void
 flash_erase_pages(uint32 *addr, uint32 npages)
 {
-    // N.B. this code generates no relocations so we can run it from RAM!!!
-
+    int x;
+    
+    x = splx(7);
+    
     // while there are more pages to erase...
     while (npages) {
         flash_command(MCF_CFM_CFMCMD_PAGE_ERASE, addr, 0);
@@ -62,6 +56,8 @@ flash_erase_pages(uint32 *addr, uint32 npages)
     while (! (MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CCIF)) {
         // NULL
     };
+    
+    (void)splx(x);
 }
 
 // this function writes the specified words of flash memory.
@@ -69,15 +65,16 @@ void
 flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 {
     int i;
+    int x;
     uint32 *addr;
     uint32 *data;
     uint32 nwords;
 
-    // N.B. this code generates no relocations so we can run it from RAM!!!
-
     addr = addr_in;
     data = data_in;
     nwords = nwords_in;
+    
+    x = splx(7);
 
     // while there are more words to program...
     while (nwords) {
@@ -91,13 +88,15 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     while (! (MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CCIF)) {
         // NULL
     };
+    
+    (void)splx(x);
 
     for (i = 0; i < nwords_in; i++) {
         assert(addr_in[i] == data_in[i]);
     }
 }
 
-// this function performs the final step of a stickos flash upgrade.
+// this function performs the final step of a firmware flash upgrade.
 static
 void
 flash_upgrade_begin(void)
@@ -110,7 +109,7 @@ flash_upgrade_begin(void)
 
     // N.B. this code generates no relocations so we can run it from RAM!!!
 
-    // erase the StickOS code
+    // erase the firmware code
     // flash_erase_pages(NULL, FLASH_BYTES/2/FLASH_PAGE_SIZE)
     addr = NULL;
     npages = FLASH_BYTES/2/FLASH_PAGE_SIZE;
@@ -175,7 +174,7 @@ flash_upgrade_begin(void)
     while (! (MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CCIF)) {
     };
 
-    // reset the CPUStick
+    // reset the MCU
     MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
     asm { halt }
 }
@@ -188,48 +187,13 @@ flash_upgrade_end(void)
     // NULL
 }
 
-static
-int
-gethex(char **p)
-{
-    char c;
-
-    c = **p;
-    if (c >= '0' && c <= '9') {
-        (*p)++;
-        return c - '0';
-    } else if (c >= 'A' && c <= 'F') {
-        (*p)++;
-        return 10 + c - 'A';
-    } else {
-        return -1;
-    }
-}
-
-static
-int
-get2hex(char **p)
-{
-    int v1, v0;
-
-    v1 = gethex(p);
-    if (v1 == -1) {
-        return -1;
-    }
-    v0 = gethex(p);
-    if (v0 == -1) {
-        return -1;
-    }
-
-    return v1*16+v0;
-}
-
-// this function downloads a new stickos s19 firmward file to a staging
+// this function downloads a new s19 firmware file to a staging
 // area, and then installs it by calling a RAM copy of
 // flash_upgrade_begin().
 void
 flash_upgrade()
 {
+    int b;
     int i;
     int n;
     int x;
@@ -243,6 +207,7 @@ flash_upgrade()
     uint32 data;
     bool s0_found;
     void (*fn)(void);
+    uint32 buffer[16];
 
     if ((int)end_of_static > FLASH_BYTES/2) {
         printf("code exceeds half of flash\n");
@@ -253,7 +218,7 @@ flash_upgrade()
     flash_erase_pages((uint32 *)(FLASH_BYTES/2), FLASH_BYTES/2/FLASH_PAGE_SIZE);
 
     printf("paste S19 upgrade file now...\n");
-    ftdi_echo = false;
+    terminal_echo = false;
 
     y = 0;
     done = false;
@@ -261,16 +226,16 @@ flash_upgrade()
 
     do {
         // wait for an s19 command line
-        if (cpustick_ready) {
-            cpustick_ready = NULL;
-            ftdi_command_ack(false);
+        if (main_command) {
+            main_command = NULL;
+            terminal_command_ack(false);
         }
 
-        while (! cpustick_ready) {
-            // NULL
+        while (! main_command) {
+            os_yield();
         }
 
-        s19 = cpustick_ready;
+        s19 = main_command;
         while (isspace(*s19)) {
             s19++;
         }
@@ -326,6 +291,7 @@ flash_upgrade()
             count -= 4;
 
             // while there is more data
+            b = 0;
             while (count > 1) {
                 assert((count-1) % 4 == 0);
 
@@ -344,15 +310,32 @@ flash_upgrade()
                     break;
                 }
 
-                // program the word
-                flash_write_words((uint32 *)(FLASH_BYTES/2+addr), &data, 1);
+                // accumulate the words
+                buffer[b++] = data;
+                if (b == LENGTHOF(buffer)) {
+                    if ((int)addr < FLASH_BYTES/2) {
+                        // program the words
+                        flash_write_words((uint32 *)(FLASH_BYTES/2+addr), buffer, b);
+                    }
+                    b = 0;
+                    addr += b*4;
+                }
 
                 assert(count > 4);
                 count -= 4;
-                addr += 4;
             }
             if (count > 1) {
                 break;
+            }
+            
+            // process leftover data
+            if (b) {
+                if ((int)addr < FLASH_BYTES/2) {
+                    // program the words
+                    flash_write_words((uint32 *)(FLASH_BYTES/2+addr), buffer, b);
+                }
+                b = 0;
+                addr += b*4;
             }
 
             // verify 1 byte of checksum
@@ -368,8 +351,14 @@ flash_upgrade()
                 break;
             }
 
-            if (y++%2) {
+            if (++y%4 == 0) {
                 printf(".");
+#if MCF52233
+            } else if (y%2) {
+                // fec gets confused with interrupts off and no
+                // characters in flight!
+                printf("%c", '\0');
+#endif
             }
         } else if (c == '7') {
             done = true;
@@ -380,9 +369,9 @@ flash_upgrade()
     } while (! done);
 
     if (! s0_found || ! done) {
-        if (cpustick_ready) {
-            cpustick_ready = NULL;
-            ftdi_command_ack(false);
+        if (main_command) {
+            main_command = NULL;
+            terminal_command_ack(false);
         }
 
         // we're in trouble!
@@ -393,31 +382,35 @@ flash_upgrade()
             printf("s7 record not found\n");
         }
         printf("upgrade failed\n");
-        ftdi_echo = true;
+        terminal_echo = true;
 
+#if STICKOS
         // erase the staging area
         code_new();
+#endif
     } else {
         printf("\npaste done!\n");
         printf("programming flash...\n");
+#if STICKOS
         printf("wait for CPUStick LED e1 to blink!\n");
+#else
+        printf("wait for LED to blink!\n");
+#endif
         delay(100);
 
         // disable interrupts
         x = splx(7);
 
         // copy our flash upgrade routine to RAM
-        assert((int)flash_upgrade_end - (int)flash_upgrade_begin <= BASIC_SMALL_PAGE_SIZE);
-        memcpy(RAM_CODE_PAGE, flash_upgrade_begin, (int)flash_upgrade_end - (int)flash_upgrade_begin);
+        assert((int)flash_upgrade_end - (int)flash_upgrade_begin <= sizeof(big_buffer));
+        memcpy(big_buffer, flash_upgrade_begin, (int)flash_upgrade_end - (int)flash_upgrade_begin);
 
         // and run it!
-        fn = (void *)RAM_CODE_PAGE;
+        fn = (void *)big_buffer;
         fn();
 
         // we should not come back!
-        assert(0);
-        memset(RAM_CODE_PAGE, 0, BASIC_SMALL_PAGE_SIZE);
-        splx(x);
+        ASSERT(0);  // stop!
     }
 }
 
@@ -425,10 +418,10 @@ flash_upgrade()
 void
 flash_initialize(void)
 {
-    if (FSYS > 25600000) {
-        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((FSYS-1)/2/8/200000);
+    if (fsys_frequency > 25600000) {
+        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((fsys_frequency-1)/2/8/200000);
     } else {
-        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((FSYS-1)/2/200000);
+        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((fsys_frequency-1)/2/200000);
     }
 
     MCF_CFM_CFMPROT = 0;

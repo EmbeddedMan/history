@@ -1,17 +1,18 @@
 // *** printf.c *******************************************************
 // this file implements a lightweight printf utility on top of the
-// FTDI transport for use by stickos.
+// console transport.
 
 #include "main.h"
 #include <stdarg.h>
+extern bool debugger_attached;
 
 #define isdigit(c)  ((c) >= '0' && (c) <= '9')
 
 #define MAXDIGITS  32
 
-static char digits[] = "0123456789abcdef";
-static char zeros[] = "00000000000000000000000000000000";
-static char spaces[] = "                                ";
+static const char digits[] = "0123456789abcdef";
+static const char zeros[] = "00000000000000000000000000000000";
+static const char spaces[] = "                                ";
 
 static
 int
@@ -23,14 +24,17 @@ convert(unsigned value, unsigned radix, char *buffer)
     unsigned lastscale;
     int digit;
 
-    assert(radix >= 2 && radix < sizeof(digits));
-
     i = 0;
 
-    if (radix == 10 && (int)value < 0) {
-        buffer[i++] = '-';
-        value = 0-value;
+    if (radix == -10) {
+        if ((int)value < 0) {
+            buffer[i++] = '-';
+            value = 0-value;
+        }
+        radix = 10;
     }
+
+    assert(radix >= 2 && radix < sizeof(digits));
 
     // first find our scale
     lastscale = 1;
@@ -60,16 +64,17 @@ convert(unsigned value, unsigned radix, char *buffer)
 
 static
 int
-vsnprintf(char *buffer, int length, char *format, va_list ap)
+vsnprintf(char *buffer, int length, const char *format, va_list ap)
 {
     int i;
     int j;
     int n;
     char c;
-    char *p;
     bool nl;
     int zero;
     int width;
+    int prec;
+    const char *p;
     char temp[1+MAXDIGITS+1];
 
     i = 0;
@@ -90,6 +95,11 @@ vsnprintf(char *buffer, int length, char *format, va_list ap)
                 continue;
             }
 
+            if (c == '-') {
+                // revisit -- implement
+                c = *++p;
+            }
+            
             if (isdigit(c)) {
                 if (c == '0') {
                     zero = 1;
@@ -103,6 +113,20 @@ vsnprintf(char *buffer, int length, char *format, va_list ap)
                     c = *++p;
                 }
             }
+            
+            prec = 0x7fffffff;
+            if (c == '.') {
+                prec = 0;
+                c = *++p;
+                while (isdigit(c)) {
+                    prec = prec*10 + c - '0';
+                    c = *++p;
+                }
+            }
+            
+            if (c == 'h' || c == 'l') {
+                c = *++p;
+            }
 
             n = va_arg(ap, int);
             switch (c) {
@@ -115,15 +139,19 @@ vsnprintf(char *buffer, int length, char *format, va_list ap)
                     j = 1;
                     break;
                 case 'd':
+                    j = convert(n, -10, temp);
+                    break;
+                case 'u':
                     j = convert(n, 10, temp);
                     break;
                 case 'o':
                     j = convert(n, 8, temp);
                     break;
                 case 's':
-                    j = strlen((char *)n);
+                    j = MIN((int)strlen((char *)n), prec);
                     break;
                 case 'x':
+                case 'X':
                     j = convert(n, 16, temp);
                     break;
                 default:
@@ -172,10 +200,10 @@ vsnprintf(char *buffer, int length, char *format, va_list ap)
         if (nl) {
 #if ! _WIN32
             if (length > 2) {
-                buffer[length-3] = '\n';
+                buffer[length-3] = '\r';
             }
             if (length > 1) {
-                buffer[length-2] = '\r';
+                buffer[length-2] = '\n';
             }
 #else
             if (length > 1) {
@@ -192,7 +220,7 @@ vsnprintf(char *buffer, int length, char *format, va_list ap)
 }
 
 int
-snprintf(char *buffer, int length, char *format, ...)
+snprintf(char *buffer, unsigned long length, const char *format, ...)
 {
     int n;
     va_list ap;
@@ -204,7 +232,7 @@ snprintf(char *buffer, int length, char *format, ...)
 }
 
 int
-sprintf(char *buffer, char *format, ...)
+sprintf(char *buffer, const char *format, ...)
 {
     int n;
     va_list ap;
@@ -215,30 +243,50 @@ sprintf(char *buffer, char *format, ...)
     return n;
 }
 
+#if ! _WIN32
+static char bbuffer[BASIC_LINE_SIZE+2];  // 2 for \r\n
+#else
+static char bbuffer[BASIC_LINE_SIZE+1];  // 1 for \n
+#endif
+
 int
-printf(char *format, ...)
+printf(const char *format, ...)
 {
     int n;
     va_list ap;
-#if ! _WIN32
-    static char buffer[BASIC_LINE_SIZE+2];  // 2 for \r\n
-
-    assert(! usb_in_isr && ! timer_in_isr);
-#else
-    static char buffer[BASIC_LINE_SIZE+1];  // 1 for \n
-#endif
 
     va_start(ap, format);
-    n = vsnprintf(buffer, sizeof(buffer), format, ap);
+    n = vprintf(format, ap);
     va_end(ap);
 
-    assert(! buffer[sizeof(buffer)-1]);
+    return n;
+}
 
-#if ! _WIN32
-    ftdi_print(buffer);
+int
+vprintf(const char *format, va_list ap)
+{
+    int n;
+    
+    n = vsnprintf(bbuffer, sizeof(bbuffer), format, ap);
+    assert(! bbuffer[sizeof(bbuffer)-1]);
+    
+#if _WIN32
+    write(1, bbuffer, MIN(n, sizeof(bbuffer)-1));
 #else
-    write(1, buffer, strlen(buffer));
+    terminal_print((byte *)bbuffer, MIN(n, sizeof(bbuffer)-1));
 #endif
+
+    return n;
+}
+
+int
+vsprintf(char *outbuf, const char *format, va_list ap)
+{
+    int n;
+    
+    n = vsnprintf(outbuf, sizeof(bbuffer), format, ap);
+    assert(! outbuf[sizeof(bbuffer)-1]);
+
     return n;
 }
 

@@ -1,11 +1,17 @@
 // *** printf.h *******************************************************
 
 int
-snprintf(char *buffer, int length, char *format, ...);
+snprintf(char *buffer, unsigned long length, const char *format, ...);
 
 int
-sprintf(char *buffer, char *format, ...);
+sprintf(char *buffer, const char *format, ...);
 
 int
-printf(char *format, ...);
+printf(const char *format, ...);
+
+int
+vprintf(const char *format, va_list ap);
+
+int
+vsprintf(char *outbuf, const char *format, va_list ap);
 

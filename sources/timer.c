@@ -1,8 +1,5 @@
 // *** timer.c ********************************************************
-// this file implements the core interval timer used by stickos
-// internally.  note that application level (BASIC) timers are
-// implemented elsewhere by the bytecode execution engine and interrupt
-// service module.
+// this file implements the core interval timer used internally.
 
 #include "main.h"
 
@@ -14,39 +11,40 @@ int volatile seconds;  // incremented by pit0 isr every second
 bool initialized;  // set when pit0 interrupts are initialized
 
 // called by pit0 every millisecond
-static
 __declspec(interrupt)
 void
 timer_isr(void)
 {
-    int eighths;
-    static int last_run_line_count;
-
     assert(! timer_in_isr);
     timer_in_isr = true;
 
     MCF_PIT0_PCSR |= MCF_PIT_PCSR_PIF;
     ticks++;
 
+#if STICKOS
     // poll the adc every millisecond
     adc_poll();
+#endif
 
     if (ticks%125 == 0) {
-        eighths = ticks/125;
-
-        // if the basic program line is changing...
-        if (run_line_count != last_run_line_count) {
-            led_set(3, eighths&1);  // blink fast
-            last_run_line_count = run_line_count;
-        // otherwise...
-        } else {
-            led_set(3, (eighths>>2)&1);  // blink slow
-        }
-
-        if ((eighths&7) == 0) {
+        if (ticks%1000 == 0) {
             seconds++;
         }
+        
+        led_poll();
+#if ! FLASHER
+        adc_poll();
+#endif
     }
+
+#if MCF52233
+    // 200 Hz cticks
+    if (ticks%5 == 0) {
+        extern volatile unsigned long cticks;
+    
+        cticks++;
+    }
+#endif
 
     assert(timer_in_isr);
     timer_in_isr = false;
@@ -57,14 +55,13 @@ void
 timer_initialize(void)
 {
     // enable pit0 timer interrupt
-    __VECTOR_RAM[119] = (uint32)timer_isr;
     MCF_INTC0_ICR55 = MCF_INTC_ICR_IL(SPL_PIT0)|MCF_INTC_ICR_IP(SPL_PIT0);
     MCF_INTC0_IMRH &= ~MCF_INTC_IMRH_INT_MASK55;  // pit0
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
 
     // configure pit0 to interrupt every 1 ms
     MCF_PIT0_PCSR = 0;
-    MCF_PIT0_PMR = 24000;  // 1 ms @ 48 MHz
+    MCF_PIT0_PMR = fsys_frequency/2/1000;  // 1 ms
     MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
 }
 
