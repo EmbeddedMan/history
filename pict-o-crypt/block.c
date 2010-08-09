@@ -3,7 +3,7 @@
 #define OPTIMIZE  1
 #define RETRIES  2
 
-#define NLRUS  5
+#define NLRUS  4
 
 static struct lru {
     byte buffer[512];

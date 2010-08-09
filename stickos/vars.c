@@ -189,7 +189,6 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
 
     assert(name);
     assert(type >= code_deleted && type < code_max);
-    assert(max_index);
 
     if (! run_condition) {
         return;
@@ -197,6 +196,12 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
 
     if ((type == code_flash || type == code_pin) && gosubs) {
         printf("flash or pin variable declared in sub\n");
+        stop();
+        return;
+    }
+
+    if (! max_index) {
+        printf("declared 0 length array\n");
         stop();
         return;
     }
@@ -398,6 +403,7 @@ var_set(IN char *name, IN int index, IN int value)
                     assert(var->size == sizeof(byte));
                     *(byte *)(RAM_VARIABLE_PAGE+var->u.page_offset+index) = (byte)value;
                 }
+                
                 // *** interactive debugger ***
                 // if debug tracing is enabled...
                 if (var_trace) {
@@ -473,15 +479,15 @@ var_get(IN char *name, IN int index)
     value = 0;
 
     var = var_find(name);
-    if (! var && ! index) {
-        // see if this could be a special system variable
-        for (i = 0; i < LENGTHOF(systems); i++) {
-            if (! strcmp(name, systems[i].name)) {
-                return *systems[i].integer;
+    if (! var) {
+        if (! var && ! index) {
+            // see if this could be a special system variable
+            for (i = 0; i < LENGTHOF(systems); i++) {
+                if (! strcmp(name, systems[i].name)) {
+                    return *systems[i].integer;
+                }
             }
         }
-    }
-    if (! var) {
         printf("var '%s' undefined\n", name);
         stop();
     } else if (index >= var->max_index) {
@@ -586,7 +592,6 @@ var_clear(IN bool flash)
         flash_promote_alternate();
     }
     
-    run_clear();
     pin_clear();
 }
 

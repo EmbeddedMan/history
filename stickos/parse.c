@@ -1606,10 +1606,10 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                     // decompile the size specifier
                     if (size == sizeof(byte)) {
                         assert(code2 == code_ram);
-                        out += sprintf(out, "byte ");
+                        out += sprintf(out, "byte");
                     } else if (size == sizeof(short)) {
                         assert(code2 == code_ram);
-                        out += sprintf(out, "short ");
+                        out += sprintf(out, "short");
                     } else {
                         assert(size == sizeof(int));
                         

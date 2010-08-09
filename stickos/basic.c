@@ -52,7 +52,7 @@ byte *end_of_dynamic;
 //  optional "let" statement
 // perf:
 //  mave var one slot towards "last in gosub scope" on usage rand()%16?
-//  code optimization for advancing to the next program line; remember backwards loops (10)?
+//  can we skip statement execution more fully when run_condition is false?
 // user guide:
 // bugs:
 //  re-dim pin should allow pin_type change (and reconfigure)?  or verify it has not!
@@ -89,11 +89,13 @@ enum cmdcode {
     command_memory,
     command_new,
     command_nodeid,  // nnn
+    command_profile,  // ([nnn] [-] [nnn]|<subname>)
     command_prompt,  // [on|off]
     command_purge, // <name>
     command_renumber,
     command_run,  // [nnn]
     command_save,  // [<name>]
+    command_sleep, // [on|off]
     command_step, // [on|off]
     command_trace, // [on|off]
     command_undo,
@@ -103,38 +105,37 @@ enum cmdcode {
 };
 
 static
-const struct commands {
-    char *command;
-    enum cmdcode code;
-} commands[] = {
-    "autoreset", command_autoreset,
-    "autorun", command_autorun,
-    "clear", command_clear,
-    "clone", command_clone,
-    "cls", command_cls,
-    "connect", command_connect,
-    "cont", command_cont,
-    "delete", command_cont,
-    "dir", command_dir,
-    "echo", command_echo,
-    "edit", command_edit,
-    "indent", command_indent,
-    "list", command_list,
-    "load", command_load,
-    "memory", command_memory,
-    "new", command_new,
-    "nodeid", command_nodeid,
-    "prompt", command_prompt,
-    "purge", command_purge,
-    "renumber", command_renumber,
-    "run", command_run,
-    "save", command_save,
-    "step", command_step,
-    "trace", command_trace,
-    "undo", command_undo,
-    "upgrade", command_upgrade,
-    "uptime", command_uptime,
-    "zigbee", command_zigbee
+const char *commands[] = {
+    "autoreset",
+    "autorun",
+    "clear",
+    "clone",
+    "cls",
+    "connect",
+    "cont",
+    "delete",
+    "dir",
+    "echo",
+    "edit",
+    "indent",
+    "list",
+    "load",
+    "memory",
+    "new",
+    "nodeid",
+    "profile",
+    "prompt",
+    "purge",
+    "renumber",
+    "run",
+    "save",
+    "sleep",
+    "step",
+    "trace",
+    "undo",
+    "upgrade",
+    "uptime",
+    "zigbee"
 };
 
 // revisit -- merge this with basic.c/parse.c???
@@ -192,8 +193,8 @@ basic_run(char *text_in)
     parse_trim(&text);
 
     for (cmd = 0; cmd < LENGTHOF(commands); cmd++) {
-        len = strlen(commands[cmd].command);
-        if (! strncmp(text, commands[cmd].command, len)) {
+        len = strlen(commands[cmd]);
+        if (! strncmp(text, commands[cmd], len)) {
             break;
         }
     }
@@ -266,7 +267,7 @@ basic_run(char *text_in)
                 goto XXX_ERROR_XXX;
             }
 
-            var_clear(boo);
+            run_clear(boo);
             break;
 
         case command_clone:
@@ -347,6 +348,7 @@ basic_run(char *text_in)
 
         case command_delete:
         case command_list:
+        case command_profile:
             if (*text) {
                 boo = basic_const(&text, &number1);
                 number2 = number1;
@@ -371,7 +373,7 @@ basic_run(char *text_in)
             if (cmd == command_delete) {
                 code_delete(number1, number2);
             } else {
-                code_list(number1, number2);
+                code_list(cmd == command_profile, number1, number2);
             }
             break;
 
@@ -437,6 +439,7 @@ basic_run(char *text_in)
         case command_echo:
         case command_indent:
         case command_prompt:
+        case command_sleep:
         case command_step:
         case command_trace:
             // *** interactive debugger ***
@@ -446,6 +449,8 @@ basic_run(char *text_in)
                 boolp = &code_indent;
             } else if (cmd == command_prompt) {
                 boolp = &main_prompt;
+            } else if (cmd == command_sleep) {
+                boolp = &run_sleep;
             } else if (cmd == command_step) {
                 boolp = &run_step;
             } else {

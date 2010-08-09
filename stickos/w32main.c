@@ -93,6 +93,7 @@ main(int argc, char **argv)
     int i;
     char text[2*LINE_INPUT_SIZE];
 
+    SetErrorMode(0);
     SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrlc, true);
 
     flash_erase_pages((uint32 *)FLASH_CODE1_PAGE, BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);

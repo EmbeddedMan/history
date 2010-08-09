@@ -235,8 +235,8 @@ test multiple assignments
 end
 5 10 15
 test some variable types
-   1 dim a as byte 
-   2 dim b as short 
+   1 dim a as byte
+   2 dim b as short
    3 dim c
    4 let c = -1
    5 let b = c
@@ -324,6 +324,61 @@ end
   70 print 3+5*6, 2, 1
   80 print 3+5*6
   90 dim a
+end
+profile tests
+      0ms   10 rem ### blinky ###
+      0ms   20 dim i
+      0ms   30 dim led as pin dtin2 for digital output
+      0ms   40 while 1 do
+      0ms   50   for i = 1 to 16
+      0ms   60     let led = !led
+      0ms   70     sleep 50
+      0ms   80   next 
+      0ms   90   sleep 800
+      0ms   95   break 
+      0ms  100 endwhile 
+      0ms  110 end 
+end
+      0ms   10 rem ### blinky ###
+      0ms   20 dim i
+      0ms   30 dim led as pin dtin2 for digital output
+      0ms   40 while 1 do
+      0ms   50   for i = 1 to 16
+      0ms   60     let led = !led
+      0ms   70     sleep 50
+      0ms   80   next 
+      0ms   90   sleep 800
+      0ms   95   break 
+      0ms  100 endwhile 
+      0ms  110 end 
+end
+      0ms   10 rem ### blinky ###
+            20 dim i
+            30 dim led as pin dtin2 for digital output
+      0ms   40 while 1 do
+            50   for i = 1 to 16
+            60     let led = !led
+      0ms   70     sleep 50
+            80   next 
+            90   sleep 800
+            95   break 
+      0ms  100 endwhile 
+           110 end 
+      0ms 9999 rem 
+end
+      0ms   10 rem ### blinky ###
+            20 dim i
+            30 dim led as pin dtin2 for digital output
+      0ms   40 while 1 do
+            50   for i = 1 to 16
+            60     let led = !led
+      0ms   70     sleep 50
+            80   next 
+            90   sleep 800
+            95   break 
+      0ms  100 endwhile 
+           110 end 
+      0ms 9999 rem 
 end
 larger tests
    1 print 1, 2+2
@@ -601,7 +656,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.21h!
+Welcome to StickOS for Freescale MCF52221 v1.22!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]                 -- clear ram [and flash] variables
@@ -616,6 +671,7 @@ list [<line>][-][<line>]      -- list program lines or <subname>
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
+profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the CPUStick!
@@ -632,6 +688,7 @@ autorun [on|off]              -- autorun (on reset) mode
 echo [on|off]                 -- terminal echo mode
 indent [on|off]               -- listing indent mode
 prompt [on|off]               -- terminal prompt mode
+sleep [on|off]                -- debugger sleep mode
 step [on|off]                 -- debugger single-step mode
 trace [on|off]                -- debugger trace mode
 <line> <statement>                     -- enter program line into code ram
@@ -732,8 +789,7 @@ pin alias variables:
                                       (input|output) [inverted]
 
 system variables (read-only):
-  drops     failures  nodeid    receives
-  retries   seconds   ticks     transmits
+  nodeid    seconds   ticks
 
 for more information:
   help pins
@@ -903,7 +959,7 @@ test array parsing
   30 dim a[3+4*2]
   40 dim a[(3+4)*2]
   50 dim a[(3+4)*2]
-  60 dim a[(3+4)*2] as byte 
+  60 dim a[(3+4)*2] as byte
   70 dim a[(3+4)*2] as flash
   80 dim a[3+4-3]
  110 let a[3] = b[3]
@@ -929,9 +985,9 @@ test long variable names
   60 let evenlonger = 2
   70 let muchmuchmuchmuchlonger = 3
   80 print long, evenlonger, muchmuchmuchmuchlonger
-  90 dim long2 as byte 
- 100 dim evenlonger2 as byte 
- 110 dim muchmuchmuchmuchlonger2 as byte 
+  90 dim long2 as byte
+ 100 dim evenlonger2 as byte
+ 110 dim muchmuchmuchmuchlonger2 as byte
  120 print long2, evenlonger2, muchmuchmuchmuchlonger2
  130 print long, evenlonger, muchmuchmuchmuchlonger
 end
@@ -1083,11 +1139,11 @@ local a 3
 2
 test variable scope overflow
   10 dim a
-  15 dim b[500] as byte 
+  15 dim b[500] as byte
   20 gosub alloc
   30 end 
   90 sub alloc
-  95   dim b[500] as byte 
+  95   dim b[500] as byte
  100   let a = a+1
  110   if a<20 then
  120     gosub alloc
@@ -1109,7 +1165,7 @@ STOP at line 95!
   25 next 
   30 end 
   90 sub alloc
-  95   dim b[500] as byte 
+  95   dim b[500] as byte
   96   print b[499]
  130 endsub 
 end
@@ -1338,7 +1394,7 @@ end
 STOP at line 23!
 257
    1 dim i, j
-   2 dim a[256] as byte 
+   2 dim a[256] as byte
    3 while 1 do
   20   let i = (i*13+7)%256
   21   let j = j+1
@@ -2237,11 +2293,11 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.21h!
+Welcome to StickOS for Freescale MCF52221 v1.22!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.21h!
+Welcome to StickOS for Freescale MCF52221 v1.22!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
@@ -2537,7 +2593,7 @@ solos
        ^ - error
 error -   ^
 break
-missing while/for
+break/continue without while/for
         ^ - error
         ^ - error
 error -    ^
@@ -2563,8 +2619,8 @@ more
      ^ - error
         ^ - error
         ^ - error
-        ^ - error
-        ^ - error
+       ^ - error
+       ^ - error
        ^ - error
       ^ - error
      ^ - error
@@ -2596,7 +2652,7 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.21h!
+Welcome to StickOS for Freescale MCF52221 v1.22!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 list
@@ -3790,17 +3846,17 @@ save
 end
 bad blocks
 missing endwhile/next
-missing while/for
+mismatched endwhile/until/next
 STOP at line 10!
 missing endif
 mismatched else
 STOP at line 10!
 mismatched elseif
 STOP at line 10!
-missing if
+mismatched endif
 STOP at line 10!
 missing endwhile/next
-missing while/for
+mismatched endwhile/until/next
 STOP at line 10!
 missing endif
 missing endif
@@ -3810,7 +3866,7 @@ missing gosub
 STOP at line 10!
 missing gosub
 STOP at line 10!
-missing while/for
+break/continue without while/for
 STOP at line 10!
 break/continue without while/for
 STOP at line 20!

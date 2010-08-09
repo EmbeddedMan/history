@@ -97,6 +97,7 @@ static char *help_commands =
 "load <name>                   -- load saved program\n"
 "memory                        -- print memory usage\n"
 "new                           -- erase code ram and flash memories\n"
+"profile [<line>][-][<line>]   -- like list, but display profile info\n"
 "purge <name>                  -- purge saved program\n"
 "renumber [<line>]             -- renumber program lines (and save)\n"
 #if ! MCF51JM128
@@ -123,6 +124,7 @@ static char *help_modes =
 "ipaddress [dhcp|<ipaddress>]  -- set/display ip address\n"
 #endif
 "prompt [on|off]               -- terminal prompt mode\n"
+"sleep [on|off]                -- debugger sleep mode\n"
 "step [on|off]                 -- debugger single-step mode\n"
 "trace [on|off]                -- debugger trace mode\n"
 ;

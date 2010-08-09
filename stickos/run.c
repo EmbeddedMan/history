@@ -14,6 +14,8 @@ int cw7bug;
 bool watch_armed;
 
 bool run_step;
+bool run_sleep = true;
+
 int run_line_number;
 
 int data_line_number;
@@ -48,10 +50,12 @@ static int timer_interval_ticks[MAX_TIMERS];
 static int timer_last_ticks[MAX_TIMERS];
 
 static bool run_stop;
+bool running;  // for profiler
 
 // these are the conditional scopes
 
 enum scope_type {
+    open_none,
     open_if,
     open_while,
     open_isr
@@ -76,7 +80,7 @@ struct open_scope {
     bool condition_restore;
 } scopes[MAX_SCOPES];
 
-static int max_scopes;
+static int cur_scopes;
 
 // these are the gosub/return stack
 
@@ -187,162 +191,169 @@ run_evaluate(byte *bytecode_in, int length, OUT int *value)
     bytecode = bytecode_in;
 
     clear_stack();
-
-    while (bytecode < bytecode_in+length && *bytecode != code_comma) {
-        code = *bytecode++;
-        switch (code) {
-            case code_add:
-            case code_subtract:
-            case code_multiply:
-            case code_divide:
-            case code_mod:
-            case code_shift_right:
-            case code_shift_left:
-            case code_bitwise_and:
-            case code_bitwise_or:
-            case code_bitwise_xor:
-            case code_logical_and:
-            case code_logical_or:
-            case code_logical_xor:
-            case code_greater:
-            case code_less:
-            case code_equal:
-            case code_greater_or_equal:
-            case code_less_or_equal:
-            case code_not_equal:
-                // get our sides in a deterministic order!
-                rhs = pop_stack();
-                lhs = pop_stack();
+    
+    if (! run_condition) {
+        push_stack(0);
+        while (bytecode < bytecode_in+length && *bytecode != code_comma) {
+            bytecode++;
         }
+    } else {
+        while (bytecode < bytecode_in+length && *bytecode != code_comma) {
+            code = *bytecode++;
+            switch (code) {
+                case code_add:
+                case code_subtract:
+                case code_multiply:
+                case code_divide:
+                case code_mod:
+                case code_shift_right:
+                case code_shift_left:
+                case code_bitwise_and:
+                case code_bitwise_or:
+                case code_bitwise_xor:
+                case code_logical_and:
+                case code_logical_or:
+                case code_logical_xor:
+                case code_greater:
+                case code_less:
+                case code_equal:
+                case code_greater_or_equal:
+                case code_less_or_equal:
+                case code_not_equal:
+                    // get our sides in a deterministic order!
+                    rhs = pop_stack();
+                    lhs = pop_stack();
+            }
 
-        switch (code) {
-            case code_load_and_push_immediate:
-            case code_load_and_push_immediate_hex:
-                push_stack(*(int *)bytecode);
-                bytecode += sizeof(int);
-                break;
+            switch (code) {
+                case code_load_and_push_immediate:
+                case code_load_and_push_immediate_hex:
+                    push_stack(*(int *)bytecode);
+                    bytecode += sizeof(int);
+                    break;
 
-            case code_load_and_push_var:  // variable name, '\0'
-                push_stack(var_get((char *)bytecode, 0));
-                bytecode += strlen((char *)bytecode)+1;
-                break;
+                case code_load_and_push_var:  // variable name, '\0'
+                    push_stack(var_get((char *)bytecode, 0));
+                    bytecode += strlen((char *)bytecode)+1;
+                    break;
 
-            case code_load_and_push_var_indexed:  // index on stack; variable name, '\0'
-                push_stack(var_get((char *)bytecode, pop_stack()));
-                bytecode += strlen((char *)bytecode)+1;
-                break;
+                case code_load_and_push_var_indexed:  // index on stack; variable name, '\0'
+                    push_stack(var_get((char *)bytecode, pop_stack()));
+                    bytecode += strlen((char *)bytecode)+1;
+                    break;
 
-            case code_logical_not:
-                push_stack(! pop_stack());
-                break;
+                case code_logical_not:
+                    push_stack(! pop_stack());
+                    break;
 
-            case code_bitwise_not:
-                push_stack(~ pop_stack());
-                break;
+                case code_bitwise_not:
+                    push_stack(~ pop_stack());
+                    break;
 
-            case code_unary_plus:
-                push_stack(pop_stack());
-                break;
+                case code_unary_plus:
+                    push_stack(pop_stack());
+                    break;
 
-            case code_unary_minus:
-                push_stack(-pop_stack());
-                break;
+                case code_unary_minus:
+                    push_stack(-pop_stack());
+                    break;
 
-            case code_add:
-                push_stack(lhs + rhs);
-                break;
+                case code_add:
+                    push_stack(lhs + rhs);
+                    break;
 
-            case code_subtract:
-                push_stack(lhs - rhs);
-                break;
+                case code_subtract:
+                    push_stack(lhs - rhs);
+                    break;
 
-            case code_multiply:
-                push_stack(lhs * rhs);
-                break;
+                case code_multiply:
+                    push_stack(lhs * rhs);
+                    break;
 
-            case code_divide:
-                if (! rhs) {
-                    if (run_condition) {
-                        printf("divide by 0\n");
-                        stop();
+                case code_divide:
+                    if (! rhs) {
+                        if (run_condition) {
+                            printf("divide by 0\n");
+                            stop();
+                        }
+                        push_stack(0);
+                    } else {
+                        push_stack(lhs / rhs);
                     }
-                    push_stack(0);
-                } else {
-                    push_stack(lhs / rhs);
-                }
-                break;
+                    break;
 
-            case code_mod:
-                if (! rhs) {
-                    if (run_condition) {
-                        printf("divide by 0\n");
-                        stop();
+                case code_mod:
+                    if (! rhs) {
+                        if (run_condition) {
+                            printf("divide by 0\n");
+                            stop();
+                        }
+                        push_stack(0);
+                    } else {
+                        push_stack(lhs % rhs);
                     }
-                    push_stack(0);
-                } else {
-                    push_stack(lhs % rhs);
-                }
-                break;
+                    break;
 
-            case code_shift_right:
-                push_stack(lhs >> rhs);
-                break;
+                case code_shift_right:
+                    push_stack(lhs >> rhs);
+                    break;
 
-            case code_shift_left:
-                push_stack(lhs << rhs);
-                break;
+                case code_shift_left:
+                    push_stack(lhs << rhs);
+                    break;
 
-            case code_bitwise_and:
-                push_stack(lhs & rhs);
-                break;
+                case code_bitwise_and:
+                    push_stack(lhs & rhs);
+                    break;
 
-            case code_bitwise_or:
-                push_stack(lhs | rhs);
-                break;
+                case code_bitwise_or:
+                    push_stack(lhs | rhs);
+                    break;
 
-            case code_bitwise_xor:
-                push_stack(lhs ^ rhs);
-                break;
+                case code_bitwise_xor:
+                    push_stack(lhs ^ rhs);
+                    break;
 
-            case code_logical_and:
-                push_stack(lhs && rhs);
-                break;
+                case code_logical_and:
+                    push_stack(lhs && rhs);
+                    break;
 
-            case code_logical_or:
-                push_stack(lhs || rhs);
-                break;
+                case code_logical_or:
+                    push_stack(lhs || rhs);
+                    break;
 
-            case code_logical_xor:
-                push_stack(!!lhs != !!rhs);
-                break;
+                case code_logical_xor:
+                    push_stack(!!lhs != !!rhs);
+                    break;
 
-            case code_greater:
-                push_stack(lhs > rhs);
-                break;
+                case code_greater:
+                    push_stack(lhs > rhs);
+                    break;
 
-            case code_less:
-                push_stack(lhs < rhs);
-                break;
+                case code_less:
+                    push_stack(lhs < rhs);
+                    break;
 
-            case code_equal:
-                push_stack(lhs == rhs);
-                break;
+                case code_equal:
+                    push_stack(lhs == rhs);
+                    break;
 
-            case code_greater_or_equal:
-                push_stack(lhs >= rhs);
-                break;
+                case code_greater_or_equal:
+                    push_stack(lhs >= rhs);
+                    break;
 
-            case code_less_or_equal:
-                push_stack(lhs <= rhs);
-                break;
+                case code_less_or_equal:
+                    push_stack(lhs <= rhs);
+                    break;
 
-            case code_not_equal:
-                push_stack(lhs != rhs);
-                break;
+                case code_not_equal:
+                    push_stack(lhs != rhs);
+                    break;
 
-            default:
-                assert(0);
-                break;
+                default:
+                    assert(0);
+                    break;
+            }
         }
     }
 
@@ -392,7 +403,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
 
     index = 0;
 
-    run_condition = max_scopes ? scopes[max_scopes-1].condition && scopes[max_scopes-1].condition_initial : true;
+    run_condition = scopes[cur_scopes].condition && scopes[cur_scopes].condition_initial;
     run_condition |= immediate;
 
     switch (code) {
@@ -867,81 +878,77 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             break;
 
         case code_if:
-            if (max_scopes >= MAX_SCOPES-2) {
+            if (cur_scopes >= MAX_SCOPES-2) {
                 printf("too many scopes\n");
                 goto XXX_SKIP_XXX;
             }
             // open a new conditional scope
-            scopes[max_scopes].line_number = run_line_number;
-            scopes[max_scopes].type = open_if;
-            max_scopes++;
+            cur_scopes++;
+            scopes[cur_scopes].line_number = run_line_number;
+            scopes[cur_scopes].type = open_if;
 
             // evaluate the condition
             index += run_evaluate(bytecode+index, length-index, &value);
 
             // incorporate the condition
-            scopes[max_scopes-1].condition = !! value;
-            scopes[max_scopes-1].condition_ever = !! value;
-            scopes[max_scopes-1].condition_initial = run_condition;
-            scopes[max_scopes-1].condition_restore = false;
+            scopes[cur_scopes].condition = !! value;
+            scopes[cur_scopes].condition_ever = !! value;
+            scopes[cur_scopes].condition_initial = run_condition;
+            scopes[cur_scopes].condition_restore = false;
             break;
 
         case code_elseif:
-            if (! max_scopes || scopes[max_scopes-1].type != open_if) {
+            if (scopes[cur_scopes].type != open_if) {
                 printf("mismatched elseif\n");
                 goto XXX_SKIP_XXX;
             }
 
             // reevaluate the condition
-            run_condition = scopes[max_scopes-1].condition_initial;
+            run_condition = scopes[cur_scopes].condition_initial;
             index += run_evaluate(bytecode+index, length-index, &value);
 
             // if the condition has ever been true...
-            if (scopes[max_scopes-1].condition_ever) {
+            if (scopes[cur_scopes].condition_ever) {
                 // elseif's remain false, regardless of the new condition
-                scopes[max_scopes-1].condition = false;
+                scopes[cur_scopes].condition = false;
             } else {
-                scopes[max_scopes-1].condition = !! value;
-                scopes[max_scopes-1].condition_ever |= !! value;
+                scopes[cur_scopes].condition = !! value;
+                scopes[cur_scopes].condition_ever |= !! value;
             }
             break;
 
         case code_else:
-            if (! max_scopes || scopes[max_scopes-1].type != open_if) {
+            if (scopes[cur_scopes].type != open_if) {
                 printf("mismatched else\n");
                 goto XXX_SKIP_XXX;
             }
 
             // flip the condition
-            scopes[max_scopes-1].condition = ! scopes[max_scopes-1].condition_ever;
+            scopes[cur_scopes].condition = ! scopes[cur_scopes].condition_ever;
             break;
 
         case code_endif:
-            if (! max_scopes) {
-                printf("missing if\n");
-                goto XXX_SKIP_XXX;
-            }
-            if (scopes[max_scopes-1].type != open_if) {
+            if (scopes[cur_scopes].type != open_if) {
                 printf("mismatched endif\n");
                 goto XXX_SKIP_XXX;
             }
 
             // close the conditional scope
-            assert(max_scopes);
-            max_scopes--;
+            assert(cur_scopes);
+            cur_scopes--;
             break;
 
         case code_while:
         case code_for:
         case code_do:
-            if (max_scopes >= MAX_SCOPES-2) {
+            if (cur_scopes >= MAX_SCOPES-2) {
                 printf("too many scopes\n");
                 goto XXX_SKIP_XXX;
             }
             // open a new conditional scope
-            scopes[max_scopes].line_number = run_line_number;
-            scopes[max_scopes].type = open_while;
-            max_scopes++;
+            cur_scopes++;
+            scopes[cur_scopes].line_number = run_line_number;
+            scopes[cur_scopes].type = open_while;
 
             // if this is a for loop...
             if (code == code_for) {
@@ -972,14 +979,14 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                 var_set(name, max_index, value);
 
                 assert(name);
-                scopes[max_scopes-1].for_variable_name = name;
-                scopes[max_scopes-1].for_variable_index = max_index;
+                scopes[cur_scopes].for_variable_name = name;
+                scopes[cur_scopes].for_variable_index = max_index;
 
                 assert(bytecode[index] == code_comma);
                 index++;
 
                 // evaluate the final value
-                index += run_evaluate(bytecode+index, length-index, &scopes[max_scopes-1].for_final_value);
+                index += run_evaluate(bytecode+index, length-index, &scopes[cur_scopes].for_final_value);
 
                 // if there is a step value...
                 if (index < length) {
@@ -987,22 +994,22 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     index++;
 
                     // evaluate the step value
-                    index += run_evaluate(bytecode+index, length-index, &scopes[max_scopes-1].for_step_value);
+                    index += run_evaluate(bytecode+index, length-index, &scopes[cur_scopes].for_step_value);
                 } else {
-                    scopes[max_scopes-1].for_step_value = 1;
+                    scopes[cur_scopes].for_step_value = 1;
                 }
 
                 // set the initial condition
-                if (scopes[max_scopes-1].for_step_value >= 0) {
-                    value = value <= scopes[max_scopes-1].for_final_value;
+                if (scopes[cur_scopes].for_step_value >= 0) {
+                    value = value <= scopes[cur_scopes].for_final_value;
                 } else {
-                    value = value >= scopes[max_scopes-1].for_final_value;
+                    value = value >= scopes[cur_scopes].for_final_value;
                 }
             } else if (code == code_while) {
-                scopes[max_scopes-1].for_variable_name = NULL;
-                scopes[max_scopes-1].for_variable_index = 0;
-                scopes[max_scopes-1].for_final_value = 0;
-                scopes[max_scopes-1].for_step_value = 0;
+                scopes[cur_scopes].for_variable_name = NULL;
+                scopes[cur_scopes].for_variable_index = 0;
+                scopes[cur_scopes].for_final_value = 0;
+                scopes[cur_scopes].for_step_value = 0;
 
                 // evaluate the condition
                 index += run_evaluate(bytecode+index, length-index, &value);
@@ -1013,10 +1020,10 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             }
 
             // incorporate the condition
-            scopes[max_scopes-1].condition = !! value;
-            scopes[max_scopes-1].condition_ever = !! value;
-            scopes[max_scopes-1].condition_initial = run_condition;
-            scopes[max_scopes-1].condition_restore = false;
+            scopes[cur_scopes].condition = !! value;
+            scopes[cur_scopes].condition_ever = !! value;
+            scopes[cur_scopes].condition_initial = run_condition;
+            scopes[cur_scopes].condition_restore = false;
             break;
 
         case code_break:
@@ -1026,20 +1033,15 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             index += sizeof(int);
             assert(n);
 
-            if (! max_scopes) {
-                printf("missing while/for\n");
-                goto XXX_SKIP_XXX;
-            }
-
             // find the outermost while loop
-            for (i = max_scopes-1; i >= 0; i--) {
+            for (i = cur_scopes; i > 0; i--) {
                 if (scopes[i].type == open_while) {
                     if (! --n) {
                         break;
                     }
                 }
             }
-            if (i < 0) {
+            if (i == 0) {
                 printf("break/continue without while/for\n");
                 goto XXX_SKIP_XXX;
             }
@@ -1047,7 +1049,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             assert(! n);
             if (run_condition) {
                 // negate all conditions
-                while (i < max_scopes) {
+                while (i <= cur_scopes) {
                     assert(scopes[i].condition_initial);
                     assert(scopes[i].condition);
                     if (code == code_break) {
@@ -1069,23 +1071,15 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
         case code_next:
         case code_endwhile:
         case code_until:
-            if (! max_scopes) {
-                printf("missing while/for\n");
-                goto XXX_SKIP_XXX;
-            }
-            if (scopes[max_scopes-1].type != open_while ||
-                (code == code_next && ! scopes[max_scopes-1].for_variable_name) ||
-                ((code == code_endwhile || code == code_until) && scopes[max_scopes-1].for_variable_name)) {
+            if (scopes[cur_scopes].type != open_while ||
+                (code == code_next && ! scopes[cur_scopes].for_variable_name) ||
+                ((code == code_endwhile || code == code_until) && scopes[cur_scopes].for_variable_name)) {
                 printf("mismatched endwhile/until/next\n");
                 goto XXX_SKIP_XXX;
             }
 
-            // close the conditional scope
-            assert(max_scopes);
-            max_scopes--;
-
-            if (scopes[max_scopes].condition_restore) {
-                scopes[max_scopes].condition = true;
+            if (scopes[cur_scopes].condition_restore) {
+                scopes[cur_scopes].condition = true;
                 run_condition = true;
             }
 
@@ -1098,21 +1092,21 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             if (run_condition) {
                 // if this is a for loop...
                 if (code == code_next) {
-                    value = var_get(scopes[max_scopes].for_variable_name, scopes[max_scopes].for_variable_index);
-                    value += scopes[max_scopes].for_step_value;
+                    value = var_get(scopes[cur_scopes].for_variable_name, scopes[cur_scopes].for_variable_index);
+                    value += scopes[cur_scopes].for_step_value;
 
                     // if the stepped value is still in range...
-                    if (scopes[max_scopes].for_step_value >= 0) {
-                        if (value <= scopes[max_scopes].for_final_value) {
+                    if (scopes[cur_scopes].for_step_value >= 0) {
+                        if (value <= scopes[cur_scopes].for_final_value) {
                             // set the variable to the stepped value
-                            var_set(scopes[max_scopes].for_variable_name, scopes[max_scopes].for_variable_index, value);
+                            var_set(scopes[cur_scopes].for_variable_name, scopes[cur_scopes].for_variable_index, value);
                         } else {
                             run_condition = false;
                         }
                     } else {
-                        if (value >= scopes[max_scopes].for_final_value) {
+                        if (value >= scopes[cur_scopes].for_final_value) {
                             // set the variable to the stepped value
-                            var_set(scopes[max_scopes].for_variable_name, scopes[max_scopes].for_variable_index, value);
+                            var_set(scopes[cur_scopes].for_variable_name, scopes[cur_scopes].for_variable_index, value);
                         } else {
                             run_condition = false;
                         }
@@ -1120,21 +1114,27 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
 
                     // conditionally go back for more (skip the for line)!
                     if (run_condition) {
+                        run_line_number = scopes[cur_scopes].line_number;
                         // N.B we re-open the scope here!
-                        run_line_number = scopes[max_scopes++].line_number;
+                        cur_scopes++;
                     }
                 } else if (code == code_endwhile) {
                     // go back for more (including the while line)!
-                    run_line_number = scopes[max_scopes].line_number-1;
+                    run_line_number = scopes[cur_scopes].line_number-1;
                 } else {
                     // if the condition has not been achieved...
                     if (! value) {
-                        // go back for more!
+                        // go back for more (skip the do line)!
+                        run_line_number = scopes[cur_scopes].line_number;
                         // N.B we re-open the scope here!
-                        run_line_number = scopes[max_scopes++].line_number;
+                        cur_scopes++;
                     }
                 }
             }
+
+            // close the conditional scope
+            assert(cur_scopes);
+            cur_scopes--;
             break;
 
         case code_gosub:
@@ -1147,7 +1147,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                 // open a new gosub scope
                 gosubs[max_gosubs].return_line_number = run_line_number;
                 gosubs[max_gosubs].return_var_scope = var_open_scope();
-                gosubs[max_gosubs].return_scope = max_scopes;
+                gosubs[max_gosubs].return_scope = cur_scopes;
                 max_gosubs++;
 
                 // jump to the gosub line
@@ -1180,7 +1180,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                 assert(max_gosubs);
                 max_gosubs--;
                 var_close_scope(gosubs[max_gosubs].return_var_scope);
-                max_scopes = gosubs[max_gosubs].return_scope;
+                cur_scopes = gosubs[max_gosubs].return_scope;
 
                 // and jump to the return line
                 run_line_number = gosubs[max_gosubs].return_line_number;
@@ -1191,7 +1191,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             // N.B. sleeps occur in the main loop so we can service interrupts
             // evaluate the sleep time
             index += run_evaluate(bytecode+index, length-index, &value);
-            if (run_condition) {
+            if (run_condition && run_sleep) {
                 // prepare to sleep
                 run_sleep_ticks = ticks+value;
                 assert(! run_sleep_line_number);
@@ -1240,10 +1240,22 @@ run_bytecode(bool immediate, byte *bytecode, int length)
 
 
 void
-run_clear(void)
+run_clear(bool flash)
 {
-    max_scopes = 0;
+    // open an unconditional scope to run in
+    cur_scopes = 0;
+    scopes[cur_scopes].line_number = 0;
+    scopes[cur_scopes].type = open_none;
+    scopes[cur_scopes].condition = true;
+    scopes[cur_scopes].condition_ever = true;
+    scopes[cur_scopes].condition_initial = true;
+    scopes[cur_scopes].condition_restore = false;
+
+    
     max_gosubs = 0;
+    
+    code_clear2();
+    var_clear(flash);
 }
 
 
@@ -1264,12 +1276,16 @@ run(bool cont, int start_line_number)
     int tx_empty;
     struct line *line;
 
+    if (! run_sleep) {
+        printf("warning: sleep is off\n");
+    }
+    
     last_tick = ticks;
 
     if (! cont) {
         // prepare for a new run
 
-        var_clear(false);
+        run_clear(false);
 
         run_isr_enabled = 0;
         run_isr_pending = 0;
@@ -1302,9 +1318,10 @@ run(bool cont, int start_line_number)
     run_stop = 1;
 
     // this is the main run loop that executes program statements!
+    running = true;
     for (;;) {
         // if we're still sleeping...
-        if (run_line_number && run_sleep_line_number == run_line_number) {
+        if (run_sleep_line_number == run_line_number && run_line_number) {
             if (ticks >= run_sleep_ticks) {
                 run_sleep_line_number = 0;
             }
@@ -1349,23 +1366,26 @@ run(bool cont, int start_line_number)
             led_unknown_progress();
 #endif
 
-            // see if any timers have expired
-            for (i = 0; i < MAX_TIMERS; i++) {
-                // if the timer is set...
-                if (run_isr_bytecode[TIMER_INT(i)] && timer_interval_ticks[i]) {
-                    // if its time is due...
-                    if ((int)(tick - timer_last_ticks[i]) >= timer_interval_ticks[i]) {
-                        // if it is not already pending...
-                        if (! (run_isr_pending & (1 << TIMER_INT(i)))) {
-                            // mark the interrupt as pending
-                            run_isr_pending |= 1<<TIMER_INT(i);
-                            timer_last_ticks[i] = tick;
+            if (run_isr_enabled) {
+                // see if any timers have expired
+                for (i = 0; i < MAX_TIMERS; i++) {
+                    // if the timer is set...
+                    if (run_isr_bytecode[TIMER_INT(i)] && timer_interval_ticks[i]) {
+                        // if its time is due...
+                        if ((int)(tick - timer_last_ticks[i]) >= timer_interval_ticks[i]) {
+                            // if it is not already pending...
+                            if (! (run_isr_pending & (1 << TIMER_INT(i)))) {
+                                // mark the interrupt as pending
+                                run_isr_pending |= 1<<TIMER_INT(i);
+                                timer_last_ticks[i] = tick;
+                            }
                         }
+                    } else {
+                        timer_last_ticks[i] = tick;
                     }
-                } else {
-                    timer_last_ticks[i] = tick;
                 }
             }
+            
             last_tick = tick;
         }
 
@@ -1423,15 +1443,15 @@ run(bool cont, int start_line_number)
                 mask = 1<<i;
                 if ((run_isr_pending & mask) && ! (run_isr_masked & mask) && run_isr_bytecode[i]) {
                     // open a new temporary (unconditional) scope
-                    assert(max_scopes < MAX_SCOPES);
-                    scopes[max_scopes].line_number = run_line_number;
-                    scopes[max_scopes].type = open_isr;
-                    max_scopes++;
+                    assert(cur_scopes < MAX_SCOPES-1);
+                    cur_scopes++;
+                    scopes[cur_scopes].line_number = run_line_number;
+                    scopes[cur_scopes].type = open_isr;
 
-                    scopes[max_scopes-1].condition = true;
-                    scopes[max_scopes-1].condition_ever = true;
-                    scopes[max_scopes-1].condition_initial = true;
-                    scopes[max_scopes-1].condition_restore = false;
+                    scopes[cur_scopes].condition = true;
+                    scopes[cur_scopes].condition_ever = true;
+                    scopes[cur_scopes].condition_initial = true;
+                    scopes[cur_scopes].condition_restore = false;
 
                     // *** interrupt handler ***
                     
@@ -1452,29 +1472,30 @@ run(bool cont, int start_line_number)
 
         // if we're returning from our isr...
         if (run_line_number == -1) {
-            run_line_number = scopes[max_scopes-1].line_number;
+            run_line_number = scopes[cur_scopes].line_number;
 
             // close the temporary (unconditional) scope
-            assert(max_scopes);
-            assert(scopes[max_scopes-1].type == open_isr);
-            max_scopes--;
+            assert(scopes[cur_scopes].type == open_isr);
+            assert(cur_scopes);
+            cur_scopes--;
 
             assert(isr);
             isr = false;
         }
     }
+    running = false;
 
     if (! run_stop) {
         // we stopped or ended
         return false;
     } else {
         // we fell off the end
-        while (max_scopes) {
-            if (scopes[max_scopes-1].type != open_isr) {
-                printf("missing %s\n", scopes[max_scopes-1].type == open_if ? "endif" : "endwhile/next");
+        while (cur_scopes) {
+            if (scopes[cur_scopes].type != open_isr) {
+                printf("missing %s\n", scopes[cur_scopes].type == open_if ? "endif" : "endwhile/next");
             }
-            assert(max_scopes);
-            max_scopes--;
+            assert(cur_scopes);
+            cur_scopes--;
         }
 
         run_stop = false;

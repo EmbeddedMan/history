@@ -285,6 +285,21 @@ delete
 list
 EOF
 
+echo profile tests
+"$BASIC" -q <<EOF
+demo
+95 break
+save
+profile
+run
+profile
+9999 rem
+save
+profile
+run
+profile
+EOF
+
 echo larger tests
 "$BASIC" -q <<EOF
 new

@@ -18,6 +18,18 @@ bool code_indent = true;
 #define FLASH_CODE_PAGE  ((LGENERATION(FLASH_CODE1_PAGE)+1 > LGENERATION(FLASH_CODE2_PAGE)+1) ? FLASH_CODE1_PAGE : FLASH_CODE2_PAGE)
 
 
+// profiling
+#define PROFILE_BUFFER  (RAM_CODE_PAGE+OFFSETOF(struct line, bytecode))
+#define PROFILE_BUFFER_SIZE  (BASIC_SMALL_PAGE_SIZE-OFFSETOF(struct line, bytecode))
+#define PROFILE_BUCKETS  (PROFILE_BUFFER_SIZE/sizeof(struct bucket))
+
+static uint32 profile_shift;  // right shift, line_number to bucket number
+
+struct bucket {
+    uint32 hits;
+} *profile_buckets;
+
+
 static
 void
 check_line(byte *page, struct line *line)
@@ -179,8 +191,9 @@ insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
 
 // this function finds the next logical code line, from either the
 // ram or flash code page.
+static
 struct line *
-code_next_line(IN bool deleted_ok, IN OUT int *line_number)
+code_next_line_internal(IN bool deleted_ok, IN OUT int *line_number)
 {
     struct line *line;
     struct line *ram_line;
@@ -209,6 +222,53 @@ code_next_line(IN bool deleted_ok, IN OUT int *line_number)
         *line_number = line->line_number;
     } while (! deleted_ok && line->length == 1 && line->bytecode[0] == code_deleted);
 
+    return line;
+}
+
+// LRU cache
+static struct line *last_seq_line;
+static int last_seq_line_number;
+static struct line *last_nonseq_line;
+static int last_nonseq_line_number;
+
+// this function finds the next logical code line, hopefully from
+// the lru cache
+struct line *
+code_next_line(IN bool deleted_ok, IN OUT int *line_number)
+{
+    struct line *line;
+    
+    // performance path
+    // N.B. this works if the code is all in the same page -- i.e., saved
+    if (! ((struct line *)RAM_CODE_PAGE)->line_number && *line_number) {
+        // if we've got a sequential LRU cache hit...
+        if (*line_number == last_seq_line_number && last_seq_line) {
+            line = find_next_line_in_page(FLASH_CODE_PAGE, last_seq_line);
+            check_line(FLASH_CODE_PAGE, line);
+            if (! line->line_number) {
+                return NULL;
+            }
+            *line_number = line->line_number;
+            goto XXX_DONE_XXX;
+        }
+        
+        // if we've got a non-sequential cache hit...
+        if (*line_number == last_nonseq_line_number && last_nonseq_line) {
+            line = last_nonseq_line;
+            *line_number = line->line_number;
+            goto XXX_DONE_XXX;
+        }
+    }
+
+    last_nonseq_line_number = *line_number;
+    
+    line = code_next_line_internal(deleted_ok, line_number);
+    
+    last_nonseq_line = line;  // remember this for subsequent non-sequential accesses
+
+XXX_DONE_XXX:    
+    last_seq_line = line;  // remember this for subsequent sequential accesses
+    last_seq_line_number = *line_number;
     return line;
 }
 
@@ -303,16 +363,26 @@ code_delete(int start_line_number, int end_line_number)
 
 // this function lists lines.
 void
-code_list(int start_line_number, int end_line_number)
+code_list(bool profile, int start_line_number, int end_line_number)
 {
     byte code;
+    int p;
+    int phits;
+    int bucket;
     int indent;
     int line_number;
+    int profiled_buckets;
     struct line *line;
     char text[BASIC_LINE_SIZE+10+20/*2*MAX_SCOPES*/];  // REVISIT -- line number size?
+    
+    if (profile && ((struct line *)RAM_CODE_PAGE)->line_number) {
+        printf("save code to profile\n");
+        return;
+    }
 
     indent = 0;
     line_number = 0;
+    profiled_buckets = start_line_number>>profile_shift;
     for (;;) {
         line = code_next_line(false, &line_number);
         if (line) {
@@ -327,7 +397,21 @@ code_list(int start_line_number, int end_line_number)
             if (line_number >= start_line_number && (! end_line_number || line_number <= end_line_number)) {
                 memset(text, ' ', indent*2);
                 unparse_bytecode(line->bytecode, line->length, text+code_indent*indent*2);
-                printf("%4d %s\n", line_number, text);
+                if (profile) {
+                    bucket = line_number>>profile_shift;
+                    if (bucket >= profiled_buckets) {
+                        phits = 0;
+                        for (p = profiled_buckets; p <= bucket; p++) {
+                            phits += profile_buckets[p].hits;
+                        }
+                        profiled_buckets = bucket+1;
+                        printf("%7dms %4d %s\n", phits, line_number, text);
+                    } else {
+                        printf("          %4d %s\n", line_number, text);
+                    }
+                } else {
+                    printf("%4d %s\n", line_number, text);
+                }
             }
             if (end_line_number && line_number > end_line_number) {
                 break;
@@ -456,12 +540,21 @@ void
 code_save(int renum)
 {
     bool boo;
+    int div;
+    int shift;
     int line_number;
     int line_renumber;
     struct line *line;
     struct line *ram_line;
+    struct line *last_line;
     byte ram_line_buffer[sizeof(struct line)-VARIABLE+BASIC_BYTECODE_SIZE];
 
+    // blow our LRU cache
+    last_seq_line = NULL;
+    last_seq_line_number = 0;
+    last_nonseq_line = NULL;
+    last_nonseq_line_number = 0;
+    
     // erase the alternate flash bank
     code_erase_alternate();
 
@@ -510,6 +603,30 @@ code_save(int renum)
     } else {
         printf("out of code flash\n");
     }
+
+    // if we can profile...
+    // N.B. this works if the code is all in the same page -- i.e., saved
+    if (! ((struct line *)RAM_CODE_PAGE)->line_number) {
+        // find the last line of code
+        last_line = NULL;
+        for (line = find_first_line_in_page(FLASH_CODE_PAGE); line; line = find_next_line_in_page(FLASH_CODE_PAGE, line)) {
+            if (! line->line_number) {
+                break;
+            }
+            last_line = line;
+        }
+        
+        if (last_line) {
+            // compute the shift from line number to bucket number
+            div = (last_line->line_number+PROFILE_BUCKETS-1)/PROFILE_BUCKETS;
+            for (shift = 0; 1<<shift < div; shift++) {
+                // NULL
+            }
+            profile_shift = shift;
+        } else {
+            profile_shift = 0;
+        }
+    }
 }
 
 // this function erases the current program in flash.
@@ -527,7 +644,7 @@ code_new(void)
     *(struct line *)RAM_CODE_PAGE = empty;
 
     // clear variables
-    var_clear(true);
+    run_clear(true);
 }
 
 // this function erases code ram, reverting to the code in flash.
@@ -715,6 +832,30 @@ code_purge(char *name)
     delay(500);  // this always takes a while!
 }
 
+void
+code_timer_poll(void)
+{
+    int bucket;
+    
+    // if we can profile...
+    // N.B. this works if the code is all in the same page -- i.e., saved
+    if (! ((struct line *)RAM_CODE_PAGE)->line_number && running) {
+        bucket = run_line_number >> profile_shift;
+        assert(bucket < PROFILE_BUCKETS);
+        profile_buckets[bucket].hits++;
+    }
+}
+
+void code_clear2(void)
+{
+    // if we can profile...
+    // N.B. this works if the code is all in the same page -- i.e., saved
+    if (! ((struct line *)RAM_CODE_PAGE)->line_number) {
+        // clear the profile buffer
+        memset(PROFILE_BUFFER, 0, PROFILE_BUFFER_SIZE);
+    }
+}
+
 // this function initializes the code module.
 void
 code_initialize(void)
@@ -738,5 +879,7 @@ code_initialize(void)
         memset(RAM_CODE_PAGE, 0, BASIC_SMALL_PAGE_SIZE);
         *(struct line *)RAM_CODE_PAGE = empty;
     }
+
+    profile_buckets = (struct bucket *)PROFILE_BUFFER;
 }
 

@@ -51,7 +51,13 @@ timer_isr(void)
     }
 #endif
 
+#if STICKOS
+    // profile
+    code_timer_poll();
+#endif
+
 #if BADGE_BOARD
+    // manage LED matrix
     jm_timer_poll();
 #endif
 
