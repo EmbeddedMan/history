@@ -2209,7 +2209,7 @@ XXX_AGAIN_XXX:
             break;
     }
 
-    if (bytecode < bytecode_in+length) {
+    if (bytecode < bytecode_in+length && multi) {
         goto XXX_AGAIN_XXX;
     }
     assert(bytecode == bytecode_in+length);
