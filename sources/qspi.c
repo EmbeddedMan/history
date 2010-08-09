@@ -178,8 +178,7 @@ qspi_initialize(void)
     SPI1BRX_SPPR = divisor-1;
     
 #if MCF51CN128
-    PTBPF1 = 0x0a;
-    PTBPF2 = 0x80;
+    PTCPF1 |= 0xa8;  // ptc5,6,7
 #endif
 
 #if MC9S12DT256 || MC9S12DP512

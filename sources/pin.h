@@ -193,9 +193,9 @@ enum pin_number {
     PIN_PTB0,
     PIN_PTB1,
     PIN_PTB2,
-    PIN_PTB3,  // *** zigflea
-    PIN_PTB4,  // *** zigflea
-    PIN_PTB5,  // *** zigflea
+    PIN_PTB3,
+    PIN_PTB4,
+    PIN_PTB5,
     PIN_PTB6,
     PIN_PTB7,
     PIN_PTC0,
@@ -203,9 +203,9 @@ enum pin_number {
     PIN_PTC2,
     PIN_PTC3,
     PIN_PTC4,
-    PIN_PTC5,
-    PIN_PTC6,
-    PIN_PTC7,
+    PIN_PTC5,  // *** zigflea
+    PIN_PTC6,  // *** zigflea
+    PIN_PTC7,  // *** zigflea
     PIN_PTD0,
     PIN_PTD1,
     PIN_PTD2,

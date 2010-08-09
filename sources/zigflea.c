@@ -815,7 +815,7 @@ zb_initialize(void)
     // program irq (level 7) for falling edge trigger
     IRQSC = IRQSC_IRQPE_MASK|IRQSC_IRQIE_MASK;
 #if MCF51CN128
-    PTCPF1 = 0x01;
+    PTCPF1 |= 0x01;  // irq
 #endif
 #elif MC9S12DT256 || MC9S12DP512
 #define setReg8(RegName, val)                                    (RegName = (byte)(val))
