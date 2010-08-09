@@ -791,6 +791,19 @@ let b=0
 let a[1] = 0
 EOF
 
+### pin types ###
+
+echo pin types
+debug/basic -q <<EOF
+10 dim audio as pin dtin0 for frequency output
+20 dim voltage as pin dtin1 for analog output
+30 dim audio2 as pin an0 for frequency output
+40 dim voltage2 as pin an1 for analog output
+50 dim xxx as pin dtin2 for frequency input
+60 dim xxx as pin dtin2 for frequency inpuy
+list
+EOF
+
 ### statement errors ###
 
 echo statement errors
@@ -902,7 +915,7 @@ dim b as pin an0 for analog input xxx
 dim b as pin an0 for analog yyy xxx
 dim b as pin an0 for yyy input xxx
 dim b as pin an0 for analog input
-dim c as pin an0 for analog output
+dim c as pin an0 for frequency input
 print "let"
 let
 let 0=0

@@ -24,10 +24,10 @@ static byte *alternate_flash_param_page;
 // *** pin variables ***
 
 struct pin pins[] = {
-    "dtin0", pin_type_default,  // pin_type_analog_output
-    "dtin1", pin_type_default,  // pin_type_analog_output
-    "dtin2", pin_type_default,  // pin_type_analog_output
-    "dtin3", pin_type_default,  // pin_type_analog_output
+    "dtin0", (enum pin_type)(pin_type_analog_output|pin_type_frequency_output),
+    "dtin1", (enum pin_type)(pin_type_analog_output|pin_type_frequency_output),
+    "dtin2", (enum pin_type)(pin_type_analog_output|pin_type_frequency_output),
+    "dtin3", (enum pin_type)(pin_type_analog_output|pin_type_frequency_output),
     "qspi_dout", pin_type_default,
     "qspi_din", pin_type_default,
     "qspi_clk", pin_type_default,
@@ -205,6 +205,7 @@ void
 var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type)
 {
 #if ! _WIN32
+    int assign;
     int offset;
 #endif
     struct var *var;
@@ -304,7 +305,15 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
                 case PIN_DTIN2:
                 case PIN_DTIN3:
                     offset = pin_number - PIN_DTIN0;
-                    MCF_GPIO_PTCPAR = 0;
+                    if (pin_type == pin_type_digital_output || pin_type == pin_type_digital_input) {
+                        assign = 0;
+                    } else if (pin_type == pin_type_analog_output || pin_type == pin_type_analog_input) {
+                        assign = 3;
+                    } else {
+                        assert(pin_type == pin_type_frequency_output);
+                        assign = 2;
+                    }
+                    MCF_GPIO_PTCPAR = (MCF_GPIO_PTCPAR &~ (3<<offset)) | (assign<<offset);
                     if (pin_type == pin_type_digital_output) {
                         MCF_GPIO_DDRTC |= 1 << offset;
                     } else {
@@ -490,7 +499,7 @@ var_set(IN char *name, IN int index, IN int value)
 
             case code_pin:
                 // *** external pin control and access ***
-                if (! (var->u.pin.type & (pin_type_digital_output|pin_type_uart_output))) {
+                if (! (var->u.pin.type & (pin_type_digital_output|pin_type_analog_output|pin_type_frequency_output|pin_type_uart_output))) {
                     printf("var '%s' readonly\n", name);
                     stop();
                 } else {
@@ -508,10 +517,37 @@ var_set(IN char *name, IN int index, IN int value)
                         case PIN_DTIN2:
                         case PIN_DTIN3:
                             offset = var->u.pin.number - PIN_DTIN0;
-                            if (value) {
-                                MCF_GPIO_SETTC = 1 << offset;
+                            if (var->u.pin.type == pin_type_analog_output) {
+                                // program MCF_PWM_PWMDTY with values 0 (3.3v) to 255 (0v)
+                                if (value < 0) {
+                                    value = 0;
+                                } else if (value > 3300) {
+                                    value = 3300;
+                                }
+                                MCF_PWM_PWMDTY(offset) = 255 - value*255/3300;
+                            } else if (var->u.pin.type == pin_type_frequency_output) {
+                                // program MCF_DTIM_DTRR with 24,000,000 (1Hz) to 1 (24 MHz)
+                                if (value < 0) {
+                                    value = 0;
+                                } else if (value > 24000000) {
+                                    value = 24000000;
+                                }
+                                if (value) {
+                                    MCF_DTIM_DTRR(offset) = 24000000/value;
+                                } else {
+                                    MCF_DTIM_DTRR(offset) = -1;
+                                }
+                                // catch missed wraps
+                                if (MCF_DTIM_DTCN(offset) >= MCF_DTIM_DTRR(offset)) {
+                                    MCF_DTIM_DTCN(offset) = 0;
+                                }
+                            
                             } else {
-                                MCF_GPIO_CLRTC = ~(1 << offset);
+                                if (value) {
+                                    MCF_GPIO_SETTC = 1 << offset;
+                                } else {
+                                    MCF_GPIO_CLRTC = ~(1 << offset);
+                                }
                             }
                             break;
                         case PIN_QSPI_DOUT:
@@ -663,7 +699,20 @@ var_get(IN char *name, IN int index)
                     case PIN_DTIN1:
                     case PIN_DTIN2:
                     case PIN_DTIN3:
-                        value = !!(MCF_GPIO_SETTC & (1 << (var->u.pin.number - PIN_DTIN0)));
+                        offset = var->u.pin.number - PIN_DTIN0;
+                        if (var->u.pin.type == pin_type_analog_output) {
+                            value = (255-MCF_PWM_PWMDTY(offset))*3300/255;
+                        } else if (var->u.pin.type == pin_type_frequency_output) {
+                            if (MCF_DTIM_DTRR(offset) == -1) {
+                                value = 0;
+                            } else if (MCF_DTIM_DTRR(offset)) {
+                                value = 24000000/MCF_DTIM_DTRR(offset);
+                            } else {
+                                value = 24000000;
+                            }                        
+                        } else {
+                            value = !!(MCF_GPIO_SETTC & (1 << (var->u.pin.number - PIN_DTIN0)));
+                        }
                         break;
                     case PIN_QSPI_DOUT:
                     case PIN_QSPI_DIN:
@@ -717,7 +766,7 @@ var_get(IN char *name, IN int index)
                     case PIN_AN7:
                         offset = var->u.pin.number - PIN_AN0;
                         if (var->u.pin.type == pin_type_analog_input) {
-                            value = adc_result[offset];
+                            value = adc_result[offset]*3300/32768;
                         } else {
                             value = !!(MCF_GPIO_SETAN & (1 << offset));
                         }
@@ -796,3 +845,26 @@ var_mem(void)
     printf("%3d%% variables used\n", max_vars*100/MAX_VARS);
 }
 
+void
+var_initialize(void)
+{
+#if ! _WIN32
+    // enable pwm channel 0, 2, 4, 6
+    MCF_PWM_PWME = MCF_PWM_PWME_PWME0|MCF_PWM_PWME_PWME2|MCF_PWM_PWME_PWME4|MCF_PWM_PWME_PWME6;
+    
+    // set prescales to 4 (6MHz)
+    MCF_PWM_PWMPRCLK = MCF_PWM_PWMPRCLK_PCKA(2)|MCF_PWM_PWMPRCLK_PCKB(2);
+    
+    // set periods to 0xff
+    MCF_PWM_PWMPER0 = 0xff;
+    MCF_PWM_PWMPER2 = 0xff;
+    MCF_PWM_PWMPER4 = 0xff;
+    MCF_PWM_PWMPER6 = 0xff;
+        
+    // set dma timer mode registers for frequency output
+    MCF_DTIM0_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
+    MCF_DTIM1_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
+    MCF_DTIM2_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
+    MCF_DTIM3_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
+#endif
+}

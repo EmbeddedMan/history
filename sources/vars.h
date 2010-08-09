@@ -8,7 +8,8 @@ enum pin_type {
     pin_type_analog_output = 8,
     pin_type_uart_input = 16,
     pin_type_uart_output = 32,
-    pin_type_last = 32
+    pin_type_frequency_output = 64,
+    pin_type_last = 64
 };
 
 enum pin_number {
@@ -82,3 +83,4 @@ void var_clear(bool flash);
 
 void var_mem(void);
 
+void var_initialize(void);

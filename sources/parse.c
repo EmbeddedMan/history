@@ -847,8 +847,9 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                     if (parse_word(&text, "analog")) {
                         if (parse_word(&text, "input")) {
                             bytecode[length++] = pin_type_analog_input;
+                        } else if (parse_word(&text, "output")) {
+                            bytecode[length++] = pin_type_analog_output;
                         } else {
-                            printf("unsupported pin type\n");
                             goto XXX_ERROR_XXX;
                         }
                     } else if (parse_word(&text, "digital")) {
@@ -864,6 +865,15 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                             bytecode[length++] = pin_type_uart_input;
                         } else if (parse_word(&text, "output")) {
                             bytecode[length++] = pin_type_uart_output;
+                        } else {
+                            goto XXX_ERROR_XXX;
+                        }
+                    } else if (parse_word(&text, "frequency")) {
+                        if (parse_word(&text, "input")) {
+                            printf("unsupported pin type\n");
+                            goto XXX_ERROR_XXX;
+                        } else if (parse_word(&text, "output")) {
+                            bytecode[length++] = pin_type_frequency_output;
                         } else {
                             goto XXX_ERROR_XXX;
                         }
@@ -1512,8 +1522,12 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                     out += sprintf(out, "for ");
 
                     // decompile the pin usage
-                    if (type == pin_type_analog_input) {
+                    if (type == pin_type_frequency_output) {
+                        out += sprintf(out, "%s", "frequency output");
+                    } else if (type == pin_type_analog_input) {
                         out += sprintf(out, "%s", "analog input");
+                    } else if (type == pin_type_analog_output) {
+                        out += sprintf(out, "%s", "analog output");
                     } else if (type == pin_type_uart_input) {
                         out += sprintf(out, "%s", "uart input");
                     } else if (type == pin_type_uart_output) {

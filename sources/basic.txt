@@ -468,8 +468,8 @@ for more information:
   help pins
   help board
   help clone
-Welcome to StickOS for Freescale MCF52221 v1.01!
-Copyright (c) CPUStick.com, 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.02!
+Copyright (c) 2008; all rights reserved.
 clear [flash]               -- clear ram [and flash] variables
 clone [run]                 -- clone flash to slave CPUStick [and run]
 cont [<line>]               -- continue program from stop
@@ -578,7 +578,8 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables
-  dim <varpin> as pin <pinname> for (analog|digital|uart) (input|output)
+  dim <varpin> as pin <pinname> for (analog|digital|frequency|uart) \
+                                      (input|output)
 
 for more information:
   help pins
@@ -593,8 +594,9 @@ pin names:
   scl       sda
 
 all pins support general purpose digital input/output
-dtin? = potential analog output (PWM actually) pins (scale 0..32767)
-an? = potential analog input pins (scale 0..32767)
+dtin? = potential frequency output pins (Hz)
+dtin? = potential analog output (PWM actually) pins (mV)
+an? = potential analog input pins (mV)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
               1  2  3  4  5  6  7  8  9  10 11 12 13 14
@@ -1919,11 +1921,11 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.01!
-Copyright (c) CPUStick.com, 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.02!
+Copyright (c) 2008; all rights reserved.
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.01!
-Copyright (c) CPUStick.com, 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.02!
+Copyright (c) 2008; all rights reserved.
 cloning...
 filesystem
 out of storage
@@ -2021,6 +2023,17 @@ var 'a' index 1 out of range
 0
 var 'b' undefined
 var 'a' index 1 out of range
+pin types
+unsupported pin type
+error -                                        ^
+unsupported pin type
+error -                                       ^
+unsupported pin type
+error -                                      ^
+error -                                 ^
+  10 dim audio as pin dtin0 for frequency output
+  20 dim voltage as pin dtin1 for analog output
+end
 statement errors
 on
      ^ - error
@@ -2118,11 +2131,10 @@ error -           ^
 error -            ^
 error -               ^
 error -                             ^
-unsupported pin type
 error -                       ^
 error -                ^
 unsupported pin type
-error -                       ^
+error -                               ^
 let
      ^ - error
       ^ - error
@@ -2232,8 +2244,8 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.01!
-Copyright (c) CPUStick.com, 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.02!
+Copyright (c) 2008; all rights reserved.
 list
        ^ - error
        ^ - error

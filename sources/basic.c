@@ -27,6 +27,7 @@ byte *end_of_dynamic;
 
 // phase #2
 // features:
+//  short circuit && and || operators
 //  add character constants 'c', '\n'; do we want a way to print in character or hex?
 //  allow interrupts on all digital input pins!
 //  add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
@@ -212,8 +213,8 @@ basic_const(IN OUT char **text, OUT int *value_out)
 }
 
 static char *help_about =
-"Welcome to StickOS for Freescale MCF52221 v1.01!\n"
-"Copyright (c) CPUStick.com, 2008; all rights reserved.\n"
+"Welcome to StickOS for Freescale MCF52221 v1.02!\n"
+"Copyright (c) 2008; all rights reserved.\n"
 ;
 
 static char *help_general =
@@ -358,7 +359,8 @@ static char *help_variables =
 "  dim <varflash>[[n]] as flash\n"
 "\n"
 "pin alias variables\n"
-"  dim <varpin> as pin <pinname> for (analog|digital|uart) (input|output)\n"
+"  dim <varpin> as pin <pinname> for (analog|digital|frequency|uart) \\\n"
+"                                      (input|output)\n"
 "\n"
 "for more information:\n"
 "  help pins\n"
@@ -376,8 +378,9 @@ static char *help_pins =
 "  scl       sda\n"
 "\n"
 "all pins support general purpose digital input/output\n"
-"dtin? = potential analog output (PWM actually) pins (scale 0..32767)\n"
-"an? = potential analog input pins (scale 0..32767)\n"
+"dtin? = potential frequency output pins (Hz)\n"
+"dtin? = potential analog output (PWM actually) pins (mV)\n"
+"an? = potential analog input pins (mV)\n"
 "urxd? = potential uart input pins (received byte)\n"
 "utxd? = potential uart output pins (transmit byte)\n"
 ;
@@ -913,5 +916,6 @@ basic_initialize(void)
 #endif
 
     code_initialize();
+    var_initialize();
 }
 
