@@ -4,23 +4,26 @@
 extern bool printf_scroll;
 #endif
 
+int
+printf_write(char *buffer, int n);
+
+bool
+open_log_file(void);
+
+bool
+append_log_file(char *buffer);
+
 void
 flush_log_file(void);
 
 int
-snprintf(char *buffer, unsigned long length, const char *format, ...);
+snprintf(char *buffer, int length, const char *format, ...);
 
 int
 sprintf(char *buffer, const char *format, ...);
 
 int
 printf(const char *format, ...);
-
-int
-vprintf(const char *format, va_list ap);
-
-int
-vsprintf(char *outbuf, const char *format, va_list ap);
 
 
 #if IN_MEMORY_TRACE

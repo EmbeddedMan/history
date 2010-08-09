@@ -691,10 +691,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+<Ctrl-C>                      -- stop program
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
@@ -747,9 +748,11 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable> [, ...] -- input data
 label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|<expression>) [, ...]  -- print strings/expressions
+print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
@@ -823,7 +826,8 @@ for more information:
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
-array variable indices start at 0; v[0] is the same as v
+array variable indices start at 0
+v is the same as v[0], except for print and qspi statements
 
 ram variables:
   dim <var>[[n]]
@@ -841,7 +845,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -895,6 +899,7 @@ clone cable:
   vss              vss
   vdd              vdd
 connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
@@ -940,10 +945,10 @@ error -            ^
   94 let abs1 = 1, abs2 = 2, abs3 = 3, abs4 = 4, abs4[1] = 5
   95 print abs1, hex abs2, abs3, abs4, abs4[1]
 end
-0 0 0 0 5 var 'f' undefined
-0 0 0 0 0 0 0 0 0 0
+var 'f' undefined
+0 0 0 0 5  0 0 0 0 0 0 0 0 0
 STOP at line 80!
-0 0x0 0x0 0x0 0x0
+0 0x0 0x0 0x0 0x0 0x0 0x0 0x0
   10 dim y[0] as pin an0 for digital input
   11 dim y[1] as pin an0 for digital input
   12 dim y[2] as pin an0 for digital input
@@ -1403,7 +1408,7 @@ end
   19 while 1 do
   20   while 1 do
   30     if a==10 then
-  40       break  2
+  40       break 2
   50     endif 
   60     let a = a+1
   70   endwhile 
@@ -1444,7 +1449,7 @@ end
   45   for j = 1 to 3
   46     print "   ", j
   50     if j==2&&i%5==0 then
-  60       continue  2
+  60       continue 2
   62       print "not"
   70     endif 
   75   next 
@@ -1573,7 +1578,7 @@ end
   30   for x = 1 to 2
   40     print y+x
   41     if y==8 then
-  42       break  2
+  42       break 2
   43     endif 
   50   next 
   60 next 
@@ -1625,7 +1630,7 @@ STOP at line 23!
   0% flash parameter bytes used
   0% variables used
 test large flash program
- 83% ram code bytes used (unsaved changes!)
+ 84% ram code bytes used (unsaved changes!)
   0% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -1695,7 +1700,7 @@ test large flash program
 3200 endsub 
 end
   0% ram code bytes used
- 13% flash code bytes used
+ 14% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -1763,8 +1768,8 @@ end
 3190   endif 
 3200 endsub 
 end
- 83% ram code bytes used (unsaved changes!)
- 13% flash code bytes used
+ 84% ram code bytes used (unsaved changes!)
+ 14% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -1896,7 +1901,7 @@ end
 6200 endsub 
 end
   0% ram code bytes used
- 27% flash code bytes used
+ 28% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -2027,8 +2032,8 @@ end
 6190   endif 
 6200 endsub 
 end
- 83% ram code bytes used (unsaved changes!)
- 27% flash code bytes used
+ 84% ram code bytes used (unsaved changes!)
+ 28% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -2223,7 +2228,7 @@ end
 1890 endsub 
 end
   0% ram code bytes used
- 41% flash code bytes used
+ 42% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -2502,13 +2507,13 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 cloning...
@@ -2784,7 +2789,9 @@ end
 1000000000 ---------1---------2---------3---------4---------5-------- 100000
 1000000000 ---------1---------2---------3---------4---------5-------- 1000000
 1000000000 ---------1---------2---------3---------4---------5-------- 10000000
-1000000000 ---------1---------2---------3---------4---------5-------- 100000000 1000000000 ---------1---------2---------3---------4---------5-------- 100000000   10 dim i, j
+1000000000 ---------1---------2---------3---------4---------5-------- 10000000
+1000000000 ---------1---------2---------3---------4---------5-------- 10000000
+  10 dim i, j
   11 let i = 1
   12 let j = 1
   20 while i<1000000000 do
@@ -2816,7 +2823,9 @@ end
 100000 1000000000 ---------1---------2---------3---------4---------5--------
 1000000 1000000000 ---------1---------2---------3---------4---------5--------
 10000000 1000000000 ---------1---------2---------3---------4---------5--------
-100000000 1000000000 ---------1---------2---------3---------4---------5-------- 1000000000 1000000000 ---------1---------2---------3---------4---------5------- parse errors
+100000000 1000000000 ---------1---------2---------3---------4---------5-------
+1000000000 1000000000 ---------1---------2---------3---------4---------5------
+parse errors
 error -   ^
         ^ - error
 error -   ^
@@ -2843,18 +2852,18 @@ assertion failed
 var 'a' already defined at this scope
 0
 var 'b' undefined
-0
+
 var 'a' index 1 out of range
 0
 var 'b' undefined
 var 'a' index 1 out of range
 pin types
 unsupported pin type
-error -                                        ^
+error -                        ^
 unsupported pin type
-error -                                       ^
-error -                       ^
-error -                       ^
+error -                          ^
+error -                                 ^
+error -                                 ^
   10 dim audio as pin dtin0 for frequency output
   20 dim voltage as pin dtin1 for analog output
 end
@@ -2868,7 +2877,7 @@ error -        ^
 error -         ^
 error -         ^
 error -         ^
-error -      ^
+error -    ^
 error -   ^
 error -    ^
 error -     ^
@@ -2881,14 +2890,14 @@ error -   ^
 off
 error -    ^
 error -       ^
-error -      ^
+error -     ^
 error -   ^
 error -            ^
 error -    ^
 mask
 error -     ^
 error -        ^
-error -       ^
+error -      ^
 error -    ^
 error -             ^
 error -     ^
@@ -2900,7 +2909,7 @@ error -                ^
 error -             ^
 error -                   ^
 error -                    ^
-error -             ^
+error -           ^
 error -         ^
 error -           ^
 error -               ^
@@ -2909,13 +2918,13 @@ error -                  ^
 error -                   ^
 error -                       ^
 error -                         ^
-error -                              ^
+error -                        ^
 error -                              ^
 error -                               ^
 error -                                   ^
 error -                                    ^
 error -                                           ^
-error -                               ^
+error -                        ^
 error -          ^
 assert
         ^ - error
@@ -2958,13 +2967,13 @@ error -            ^
 error -               ^
 analog 1
 error -                             ^
-error -                ^
+error -                       ^
 error -                ^
 analog 2
 error -                             ^
 error -                                       ^
 frequency
-error -                ^
+error -                          ^
 error -   ^
 digital io
 error -                              ^
@@ -3033,7 +3042,7 @@ print
         ^ - error
         ^ - error
         ^ - error
-error -    ^
+error -   ^
 error -   ^
 error -     ^
 error -     ^
@@ -3220,8 +3229,8 @@ out of variable ram
 STOP at line 60!
 auto save
 auto save
- 66% ram code bytes used (unsaved changes!)
- 34% flash code bytes used
+ 69% ram code bytes used (unsaved changes!)
+ 35% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3437,78 +3446,31 @@ auto save
 9200 endsub 
 end
   0% ram code bytes used
- 45% flash code bytes used
+ 46% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 auto save
 auto save
 auto save
-  5% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+ 12% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
- 32% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+ 40% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 out of code flash
- 60% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+ 68% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
- 88% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
-  0% ram variable bytes used
-  0% flash parameter bytes used
-  0% variables used
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
- 99% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+ 97% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3569,14 +3531,76 @@ out of code ram
 auto save
 out of code flash
 out of code ram
+100% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
 auto save
 out of code flash
 out of code ram
 auto save
 out of code flash
 out of code ram
- 99% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+100% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -4085,49 +4109,44 @@ out of code ram
 23190   endif 
 23200 endsub 
 24000 rem ### toaster ###
-24010 dim target, secs
-24020 dim thermocouple as pin an0 for analog input
 24030 dim relay as pin an1 for digital output
-24040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-24050 configure timer 0 for 1000 ms
-24060 on timer 0 do gosub adjust
 end
 delete line 10
 auto save
 out of code flash
 out of code ram
- 99% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+100% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 24000
  99% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 24000-
- 93% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+ 98% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 22000-
- 71% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+ 75% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line -1000
- 88% ram code bytes used (unsaved changes!)
- 95% flash code bytes used
+ 92% ram code bytes used (unsaved changes!)
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 save
   0% ram code bytes used
- 96% flash code bytes used
+ 98% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -4909,11 +4928,11 @@ STOP at line 120!
  120 endsub 
 end
 sub param nested type error
-f 0
+f 0 0
 y 0
 f 0
-y var 'p' index 1 out of range
-0
+var 'p' index 1 out of range
+y 0
 STOP at line 110!
   10 print "sub param with same-name local"
   20 dim a

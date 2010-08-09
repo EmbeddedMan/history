@@ -4,6 +4,7 @@ typedef void (*terminal_ctrlc_cbfn)(void);
 extern bool terminal_echo;
 extern int terminal_rxid;  // we send received characters to this node to be received
 extern int terminal_txid;  // we send printed characters to this node to be printed
+extern volatile int32 terminal_getchar;
 
 void
 terminal_print(const byte *buffer, int length);
@@ -19,6 +20,9 @@ terminal_edit(char *line);
 
 void
 terminal_command_discard(bool discard);
+
+bool
+terminal_command_discarding(void);
 
 void
 terminal_command_ack(bool edit);

@@ -124,6 +124,9 @@ adc_timer_poll(bool debouncing)
     for (i = 0; i < adc_num_channel; i++) {
         // store the result*4 to be compatible with MCF52221/MCF52233
         adc_result[i] = ReadADC10(i)<<2;  // 0..4095
+        if (debouncing) {
+            adc_debounce[i][adc_debounce_set] = adc_result[i];
+        }
     }
 #else
 #error

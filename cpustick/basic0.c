@@ -19,7 +19,7 @@ enum cmdcode {
     command_reset,
     command_upgrade,
     command_uptime,
-#if DEBUG || MCF52259 || PIC32
+#if SODEBUG || MCF52259 || PIC32
     command_zigflea,
 #endif
     command_dummy
@@ -41,7 +41,7 @@ const char * const commands[] = {
     "reset",
     "upgrade",
     "uptime",
-#if DEBUG || MCF52259 || PIC32
+#if SODEBUG || MCF52259 || PIC32
     "zigflea",
 #endif
 };
@@ -83,6 +83,8 @@ char * const help_about =
 "Welcome to StickOS for Microchip PIC32MXx-F256H v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v" VERSION "!\n"
+#elif PIC32 && defined(__32MX440F512H__)
+"Welcome to StickOS for Microchip PIC32MXx-F512H v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__)
@@ -90,7 +92,7 @@ char * const help_about =
 #else
 #error
 #endif
-"Copyright (c) 2008-2009; all rights reserved.\n"
+"Copyright (c) 2008-2010; all rights reserved.\n"
 "http://www.cpustick.com\n"
 "support@cpustick.com\n"
 #if INCOMPAT
@@ -109,7 +111,7 @@ char * const help_about =
 // functions that copy these to RAM in unbanked memory.
 #endif
 
-#if ! DEBUG || STICK_GUEST
+#if ! SODEBUG || STICK_GUEST
 static char *const help_general =
 "for more information:\n"
 "  help about\n"
@@ -134,6 +136,7 @@ static char *const help_general =
 ;
 
 static char * const help_commands =
+"<Ctrl-C>                      -- stop program\n"
 "auto <line>                   -- automatically number program lines\n"
 "clear [flash]                 -- clear ram [and flash] variables\n"
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
@@ -210,9 +213,11 @@ static char * const help_statements =
 "jm(clear|set) <r>, <c>                 -- clear/set row/column of LED matrix\n"
 "jmscroll ...                           -- scroll printout to LED matrix\n"
 #endif
+"halt                                   -- loop forever\n"
+"input [dec|hex|raw] <variable> [, ...] -- input data\n"
 "label <label>                          -- read/data label\n"
 "let <variable> = <expression> [, ...]  -- assign variable\n"
-"print (\"string\"|<expression>) [, ...]  -- print strings/expressions\n"
+"print (\"string\"|[dec|hex|raw] <expression>) [, ...]  -- print results\n"
 "qspi <variable> [, ...]                -- perform qspi I/O by reference\n"
 "read <variable> [, ...]                -- read read-only data into variables\n"
 "rem <remark>                           -- remark\n"
@@ -298,7 +303,8 @@ static char *const help_variables =
 "all variables must be dimensioned!\n"
 "variables dimensioned in a sub are local to that sub\n"
 "simple variables are passed to sub params by reference\n"
-"array variable indices start at 0; v[0] is the same as v\n"
+"array variable indices start at 0\n"
+"v is the same as v[0], except for print and qspi statements\n"
 "\n"
 "ram variables:\n"
 "  dim <var>[[n]]\n"
@@ -316,7 +322,7 @@ static char *const help_variables =
 "                                      [debounced] [inverted] [open_drain]\n"
 "\n"
 "system variables:\n"
-"  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)\n"
+"  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)\n"
 "\n"
 "for more information:\n"
 "  help pins\n"
@@ -544,6 +550,7 @@ static char *const help_clone =
 
 static char *const help_zigflea =
 "connect <nodeid>              -- connect to MCU <nodeid> via zigflea\n"
+"<Ctrl-D>                      -- disconnect from zigflea\n"
 "\n"
 "remote node variables:\n"
 "  dim <varremote>[[n]] as remote on nodeid <nodeid>\n"
@@ -602,7 +609,7 @@ basic0_help(IN char *text_in)
 {
     char *p;
     char *text;
-    char line[BASIC_LINE_SIZE];
+    char line[BASIC_OUTPUT_LINE_SIZE];
 
     text = text_in;
 
@@ -611,7 +618,7 @@ basic0_help(IN char *text_in)
         // print the next line of help
         p = strchr(text, '\n');
         assert(p);
-        assert(p-text < BASIC_LINE_SIZE);
+        assert(p-text < BASIC_OUTPUT_LINE_SIZE);
         memcpy(line, text, p-text);
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma STRING_SEG DEFAULT
@@ -822,7 +829,7 @@ basic0_run(char *text_in)
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     bool boo;
 #endif
-#if DEBUG || MCF52259 || PIC32
+#if SODEBUG || MCF52259 || PIC32
     bool reset;
     bool init;
 #endif
@@ -940,14 +947,14 @@ basic0_run(char *text_in)
             break;
 
         case command_help:
-#if ! DEBUG || STICK_GUEST
+#if ! SODEBUG || STICK_GUEST
             if (! *text) {
                 p = help_general;
             } else
 #endif
             if (parse_word(&text, "about")) {
                 p = help_about;
-#if ! DEBUG || STICK_GUEST
+#if ! SODEBUG || STICK_GUEST
             } else if (parse_word(&text, "commands")) {
                 p = help_commands;
             } else if (parse_word(&text, "modes")) {
@@ -1108,7 +1115,7 @@ basic0_run(char *text_in)
             printf("%dd %dh %dm\n", d, h, m);
             break;
             
-#if DEBUG || MCF52259 || PIC32
+#if SODEBUG || MCF52259 || PIC32
         case command_zigflea:
             reset = parse_word(&text, "reset");
             init = parse_word(&text, "init");

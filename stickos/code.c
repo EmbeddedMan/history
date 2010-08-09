@@ -2,7 +2,7 @@
 // this file implements bytecode code storage and access and merge
 // functionality, as well as the stickos filesystem.
 
-// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
@@ -49,7 +49,7 @@ check_line(byte *page, struct line *line)
     }
 }
 
-#if ! DEBUG
+#if ! SODEBUG
 #define check_line(a, b)
 #endif
 
@@ -310,7 +310,7 @@ code_insert(int line_number, char *text_in, IN int text_offset)
 {
     int length;
     int syntax_error;
-    char text[BASIC_LINE_SIZE];
+    char text[BASIC_OUTPUT_LINE_SIZE];
     byte bytecode[BASIC_BYTECODE_SIZE];
 
     syntax_error = -1;
@@ -382,7 +382,7 @@ code_list(bool profile, int start_line_number, int end_line_number)
     int line_number;
     int profiled_buckets;
     struct line *line;
-    char text[BASIC_LINE_SIZE+10+20/*2*MAX_SCOPES*/];  // REVISIT -- line number size?
+    char text[BASIC_OUTPUT_LINE_SIZE+10+20/*2*MAX_SCOPES*/];  // REVISIT -- line number size?
     
     if (profile && ((struct line *)RAM_CODE_PAGE)->line_number) {
         printf("save code to profile\n");
@@ -453,7 +453,7 @@ code_edit(int line_number_in)
     int n;
     int line_number;
     struct line *line;
-    char text[BASIC_LINE_SIZE+10];  // REVISIT -- line number size?
+    char text[BASIC_OUTPUT_LINE_SIZE+10];  // REVISIT -- line number size?
 
     line_number = line_number_in-1;
     line = code_next_line(false, &line_number);

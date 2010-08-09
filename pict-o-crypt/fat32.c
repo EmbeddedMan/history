@@ -14,6 +14,7 @@
 #define OPTIMIZE  1
 
 #if ! _WIN32
+#if ! PIC32
 typedef struct div {
     int quot; 
     int rem;
@@ -43,6 +44,7 @@ ldiv_t ldiv(long a, long b)
     c.rem = a%b;
     return c;
 }
+#endif
 #endif
 
 /*

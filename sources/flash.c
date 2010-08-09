@@ -46,7 +46,7 @@ flash_command(uint8 cmd, uint32 *addr, uint32 data)
 void
 flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 {
-#if DEBUG
+#if SODEBUG
     int i;
 #endif
     int x;
@@ -72,7 +72,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
     
     (void)splx(x);
 
-#if DEBUG
+#if SODEBUG
     for (i = 0; i < npages_in*FLASH_PAGE_SIZE/sizeof(uint32); i++) {
         assert(addr_in[i] == -1);
     }
@@ -83,7 +83,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 void
 flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 {
-#if DEBUG
+#if SODEBUG
     int i;
 #endif
     int x;
@@ -112,7 +112,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     
     (void)splx(x);
 
-#if DEBUG
+#if SODEBUG
     for (i = 0; i < nwords_in; i++) {
         assert(addr_in[i] == data_in[i]);
     }
@@ -181,7 +181,7 @@ flash_command(uint8 cmd, uint32 *addr, uint32 data)
 void
 flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 {
-#if DEBUG
+#if SODEBUG
     int i;
 #endif
     int x;
@@ -202,7 +202,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 
     (void)splx(x);
 
-#if DEBUG
+#if SODEBUG
     for (i = 0; i < npages_in*FLASH_PAGE_SIZE/sizeof(uint32); i++) {
         assert(addr_in[i] == -1);
     }
@@ -213,7 +213,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 void
 flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 {
-#if DEBUG
+#if SODEBUG
     int i;
 #endif
 #if MC9S08QE128
@@ -281,7 +281,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     (void)splx(x);
 #endif
 
-#if DEBUG
+#if SODEBUG
     for (i = 0; i < nwords_in; i++) {
         assert(addr_in[i] == data_in[i]);
     }
@@ -323,7 +323,7 @@ flash_operation(unsigned int nvmop)
 void
 flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 {
-#if DEBUG
+#if SODEBUG
     int i;
 #endif
     int x;
@@ -354,7 +354,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
     DMACONCLR = _DMACON_SUSPEND_MASK;
     (void)splx(x);
 
-#if DEBUG
+#if SODEBUG
     for (i = 0; i < npages_in*FLASH_PAGE_SIZE/sizeof(uint32); i++) {
         assert(addr_in[i] == -1);
     }
@@ -364,7 +364,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 void
 flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 {
-#if DEBUG
+#if SODEBUG
     int i;
 #endif
     int x;
@@ -399,7 +399,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     DMACONCLR = _DMACON_SUSPEND_MASK;
     (void)splx(x);
 
-#if DEBUG
+#if SODEBUG
     for (i = 0; i < nwords_in; i++) {
         assert(addr_in[i] == data_in[i]);
     }

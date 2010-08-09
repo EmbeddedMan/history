@@ -4,8 +4,8 @@
 
 MEMORY {
    page0       (RX)  : ORIGIN = 0x00000000, LENGTH = 0x00000800
-   page1       (RX)  : ORIGIN = 0x00000800, LENGTH = 0x00000800
-   code        (RX)  : ORIGIN = 0x00001000, LENGTH = 0x0001f000
+   page1       (RX)  : ORIGIN = 0x00000800, LENGTH = 0x00000400
+   code        (RX)  : ORIGIN = 0x00000c00, LENGTH = 0x0001f400
    bdtram      (RWX) : ORIGIN = 0x00800000, LENGTH = 0x00000080
    userram     (RWX) : ORIGIN = 0x00800080, LENGTH = 0x00003f80
 }

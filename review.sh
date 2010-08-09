@@ -1,28 +1,19 @@
 #! /bin/sh
 
-# To make a branch in your current sandbox:
-# 
-#  cd project   # current sandbox
-#  cvs tag -b NAMEn
-#  cvs update -r NAMEn
-#  cvs commit
-#  [review -r HEAD   # as needed]
-# 
-# Then, when it comes time to check in to the HEAD, create a new sandbox and
-# merge with the branch prior to HEAD checkin:
-# 
-#  cvs co project   # new sandbox
-#  cd project
-#  cvs update -j NAMEn
-#  [review   # as needed]
-#  cvs commit
-
+shopt -s expand_aliases
+if git.cmd --version >/dev/null 2>&1; then
+  alias git=git.cmd
+fi
 
 echo "did you remember to rebuild all CW targets?"
 echo "did you run test.sh and test2.sh?"
 echo
 
-if [ -d /temp ]; then
+if [ -d /cygdrive/c/tmp ]; then
+  TEMP=/cygdrive/c/tmp
+elif [ -d /cygdrive/c/temp ]; then
+  TEMP=/cygdrive/c/temp
+elif [ -d /temp ]; then
   TEMP=/temp
 elif [ -d /tmp ]; then
   TEMP=/tmp
@@ -31,96 +22,104 @@ else
   exit 1
 fi
 
-exec 3>&1
-exec >$TEMP/review.txt 2>&1
-
 grep -E "___DATA_ROM|___SP_INIT" bin/*.xMAP 
 echo
 
-# N.B. -N doesn't work on cvsnt :-(
-cvs diff -ubp ${*:-}
-echo
+# get current branch
+branch=`git branch | grep \* | sed 's!\* !!'`
 
 # find modified files
-modified=`grep "^Index: " $TEMP/review.txt | awk '{print $2}'`
+modified=`git diff --name-only --diff-filter=M ${1:-origin/$branch} --`
 
 # find added files
-added=`egrep "^cvs (diff|server):.*is a new entry, no comparison available$" $TEMP/review.txt | awk '{print $3}'`
+added=`git diff --name-only --diff-filter=A ${1:-origin/$branch} --`
 
 # find removed files
-removed=`egrep "^cvs (diff|server):.*was removed, no comparison available$" $TEMP/review.txt | awk '{print $3}'`
+removed=`git diff --name-only --diff-filter=D ${1:-origin/$branch} --`
 
-# add added files to diff
-if [ "$added" ]; then
-  echo "****************************** ADDED FILES ******************************"
-  for i in $added; do
-    echo "******************** $i ********************"
-    if cvs status $i | grep "Expansion option:.*b" >/dev/null; then
-      echo "binary file"
-    else
-      cat $i
-    fi
-  done
-  echo
+# find binary files
+binary=`git diff ${1:-origin/$branch} -- | grep "Binary files" | sed 's!.* a/!!; s! .*!!'`
+
+# verify all non-binary modified and added files have proper line endings
+BAD=
+if [ "X$CSAARCH" != "X${CSAARCH%*linux*}" ]; then
+  CONV=dos2unix
+else
+  CONV=unix2dos
 fi
+for f in $modified $added; do
+  if echo "$binary" | grep "^$f$" >/dev/null; then
+    continue
+  fi
+  rm -f $TEMP/f
+  cp $f $TEMP/f
+  $CONV $TEMP/f >/dev/null 2>&1
+  if cmp $f $TEMP/f; then
+    :
+  else
+    echo "BAD LINE ENDINGS in $f"
+    echo
+    BAD="$BAD $f"
+  fi
+done
 
-# display removed files
-if [ "removed" ]; then
-  echo "****************************** REMOVED FILES ******************************"
-  for i in $removed; do
-    echo "******************** $i ********************"
-  done
-  echo
-fi
-
-# create tar.gz archive
-rm -f $TEMP/review.tar.gz
-tar -cvf $TEMP/review.tar $TEMP/review.txt $modified $added
-gzip $TEMP/review.tar
-
-exec >&3
-
-# scan changes for any tabs.  not all tabs are errors (esp Makefile rules), so it is just a warning.
-tabs=`egrep '^[-+!].*	' $TEMP/review.txt | egrep -v '^---' | egrep -v '^\+\+\+'`
-if [ -n "$tabs" ]; then
-  echo "WARNING: found changing lines with tabs.  See $TEMP/review.txt for details.  Here are the offending diff lines:"
-  echo "$tabs"
-  echo
-fi
-
-# scan changes for XXX, which usually indicates junk code that should not be committed.
-# Ingore XXX_*_XXX, which is a legit token.
-junk=`egrep -i '^[-+!].*XXX' $TEMP/review.txt | sed -e 's/XXX_[A-Z_]*_XXX//' | egrep -i XXX`
-if [ -n "$junk" ]; then
-  echo "WARNING: found changing lines with XXX, which usually indicates junk code.  See $TEMP/review.txt for details.  Here are the offending lines:"
-  echo "$junk"
-  echo
-fi
-
-# scan changes for REVISIT, which might indicate junk code that should not be committed.
-junk=`egrep -i '^[-+!].*REVISIT' $TEMP/review.txt`
-if [ -n "$junk" ]; then
-  echo "WARNING: found changing lines with REVISIT, which usually indicates junk code.  See $TEMP/review.txt for details.  Here are the offending lines:"
-  echo "$junk"
-  echo
-fi
-
-# scan changes for WIN32, which might indicate Rich is coding.
-junk=`egrep -i '^[-+!].*_WIN32' $TEMP/review.txt`
-if [ -n "$junk" ]; then
-  echo "WARNING: found changing lines with _WIN32, which usually indicates Rich is coding.  See $TEMP/review.txt for details.  Here are the offending lines:"
-  echo "$junk"
-  echo
-fi
-
+# create review.txt
+(
+echo "Origin:" `grep url .git/config | sed 's!.*= !!'`
+echo "Branch: $branch"
+# summary
 echo "modified files:"
 echo "$modified" | sed 's!^!  !'
-echo "added files:"
-echo "$added" | sed 's!^!  !'
-echo "removed files:"
-echo "$removed" | sed 's!^!  !'
+if [ -n "$added" ]; then
+  echo "added files:"
+  echo "$added" | sed 's!^!  !'
+fi
+if [ -n "$removed" ]; then
+  echo "removed files:"
+  echo "$removed" | sed 's!^!  !'
+fi
+echo
+
+# primary diff
+git fetch origin
+git diff -b ${1:-origin/$branch} --
+
+# look for bad line endings
+echo
+echo "************************** BAD LINE ENDINGS ****************************"
+echo $BAD
+
+# look for tabs
+echo
+echo "********************************* TABS *********************************"
+grep "	" $modified $added /dev/null | grep -vE "vcproj|vssettings|Makefile" | dos2unix
+
+# look for XXX
+echo
+echo "********************************* XXX *********************************"
+grep "^[+].*XXX" $modified $added /dev/null | dos2unix
+
+# finally, diff the whitespace
+echo
+echo "****************************** WHITESPACE ******************************"
+git diff -b ${1:-origin/$branch} -- >$TEMP/diff1.txt
+git diff ${1:-origin/$branch} -- >$TEMP/diff2.txt
+diff $TEMP/diff1.txt $TEMP/diff2.txt
+) >$TEMP/review.txt 2>&1
+
+# create review.tar.gz archive
+rm -f $TEMP/review.tar.gz
+tar -cvf $TEMP/review.tar $modified $added >/dev/null
+gzip $TEMP/review.tar
+
+# echo the summary
+awk '!length{exit}{print}' <$TEMP/review.txt
 echo
 
 echo "see $TEMP/review.txt, $TEMP/review.tar.gz"
+echo
+
+echo "see also:"
+echo "  coding conventions in convents.txt"
 echo
 

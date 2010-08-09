@@ -1,6 +1,6 @@
 // prior 1
 // =======
-// include device type in pic32 help about
+// mode to disable usb device (and autorun disable to override)
 // print raw ... to print raw bytes
 // "input" BASIC statement?  "get" statement to get a character
 // ";" at end of print statement to supress crlf?
@@ -27,6 +27,7 @@
 
 // prior 2
 // =======
+// add configurable file name for usb host mode
 // consider doing servos in sw w/ lightweight isr rather than using hw timers
 // add "modes" to turn off USB and QSPI and get their pins back for gpio
 // saw bug changing pic32 pin from servo to freq mode on fly?

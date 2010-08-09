@@ -82,6 +82,7 @@
 #define TOKEN_DATA1  0x0b
 #define TOKEN_SETUP  0x0d
 
+#define CLASS_CDC  0x02
 #define CLASS_SCSI  0x08
 
 #define BD_FLAGS_BC_ENC(x)  (((x) & 0x3ff) << 16)
@@ -129,13 +130,14 @@ byte bulk_in_ep;
 byte bulk_out_ep;
 byte int_ep;
 
-#if DEBUG
+#if SODEBUG
 volatile bool usb_in_isr;
 volatile int32 usb_in_ticks;
 volatile int32 usb_out_ticks;
 volatile int32 usb_max_ticks;
 #endif
 
+bool cdc_attached;  // set when cdc acm device is attached
 bool scsi_attached;  // set when usb mass storage device is attached
 uint32 scsi_attached_count;
 bool other_attached;  // set when other device is attached
@@ -438,20 +440,24 @@ usb_host_detach()
 
     delay(100);  // debounce
 
-    // enable host mode
-    MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_ODD_RST;
-    MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_HOST_MODE_EN;
-
     // enable usb pull downs
     MCF_USB_OTG_OTG_CTRL = MCF_USB_OTG_OTG_CTRL_DM_LOW|MCF_USB_OTG_OTG_CTRL_DP_LOW|MCF_USB_OTG_OTG_CTRL_OTG_EN;
 #if STARTER
     // usb power on
     MCF_USB_OTG_OTG_CTRL |= _U1OTGCON_VBUSON_MASK;
 #endif
+#if DEMO
+    MCF_GPIO_PQSPAR |= MCF_GPIO_PQSPAR_QSPI_CS2_USB_DM_PDOWN | MCF_GPIO_PQSPAR_QSPI_CS3_USB_DP_PDOWN;
+#endif
+
+    // enable host mode
+    MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_ODD_RST;
+    MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_HOST_MODE_EN;
 
     memset(bdts, 0, BDT_RAM_SIZE);
     memset(endpoints, 0, sizeof(endpoints));
 
+    cdc_attached = 0;
     scsi_attached = 0;
     other_attached = 0;
 
@@ -737,6 +743,10 @@ usb_isr(void)
             assert(configuration[9+7] == 0x50);  // bulk-only
             scsi_attached_count++;
             scsi_attached = 1+(configuration[9+6] != 0x06);
+        } else if (bulk_in_ep && bulk_out_ep && (descriptor[4] == CLASS_CDC || (descriptor[4] == 0x00 && configuration[9+5] == CLASS_CDC))) {
+            assert(configuration[9+6] == 0x02);  // ACM
+            // assert(configuration[9+7] == 0x01);  // AT
+            cdc_attached = 1;
         } else {
             other_attached = 1;
         }
@@ -869,6 +879,13 @@ usb_isr(void)
                         assert(value == 1);
                         ftdi_attached_count++;
                         ftdi_attached = 1;
+                    } else if (setup->request == REQUEST_GET_CONFIGURATION) {
+                        endpoints[endpoint].data_length = 1;
+                        endpoints[endpoint].data_buffer[0] = 1;
+
+                        // data phase starts with data1
+                        assert(endpoints[endpoint].toggle[1] == BD_FLAGS_DATA);
+                        usb_device_enqueue(0, 1, endpoints[endpoint].data_buffer, MIN(endpoints[endpoint].data_length, endpoints[endpoint].packetsize));
                     } else {
                         assert(0);
                     }
@@ -1107,8 +1124,10 @@ usb_initialize(void)
 
     // enable int
     IEC1bits.USBIE = 1;
-    INTEnable(INT_USB, 1);
-    INTSetPriority(INT_USB, 6);
+    IPC11bits.USBIP = 6;
+    IPC11bits.USBIS = 0;
+    //INTEnable(INT_USB, 1);
+    //INTSetPriority(INT_USB, 6);
 #endif
 
 #if MCF52221 || MCF52259 || MCF51JM128

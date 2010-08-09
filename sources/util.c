@@ -306,7 +306,7 @@ tailtrim(char *text)
 }
 
 // without compiler optimizations 32 bit optimizations make mem*() routines too big for precious page0.
-#if (MCU_CORE_BITS >= 32) && (!MCU_HAS_PAGE0 || !DEBUG)
+#if (MCU_CORE_BITS >= 32) && (!MCU_HAS_PAGE0 || !SODEBUG)
 #define MEM_32_BIT_ROUTINES 1
 #else
 #define MEM_32_BIT_ROUTINES 0

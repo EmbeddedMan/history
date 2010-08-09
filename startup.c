@@ -82,7 +82,9 @@ typedef unsigned char byte;
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 typedef uint16 size_t;
 #else
+#if ! PIC32
 typedef uint32 size_t;
+#endif
 #endif
 
 enum {
@@ -90,7 +92,7 @@ enum {
     true
 };
 
-#if DEBUG
+#if SODEBUG
 #define assert(x)  if (! (x)) { asm_halt(); }
 #else
 #define assert(x)

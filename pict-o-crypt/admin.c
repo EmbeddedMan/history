@@ -135,7 +135,7 @@ help(IN char *text_in)
 {
     char *p;
     char *text;
-    char line[BASIC_LINE_SIZE];
+    char line[BASIC_OUTPUT_LINE_SIZE];
     
     text = text_in;
 
@@ -144,7 +144,7 @@ help(IN char *text_in)
         // print the next line of help
         p = strchr(text, '\n');
         assert(p);
-        assert(p-text < BASIC_LINE_SIZE);
+        assert(p-text < BASIC_OUTPUT_LINE_SIZE);
         memcpy(line, text, p-text);
         line[p-text] = '\0';
         printf("%s\n", line);

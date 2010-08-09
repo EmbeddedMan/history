@@ -8,6 +8,8 @@
 bool zb_present = true;
 bool main_prompt = true;
 bool terminal_echo = true;
+volatile int32 terminal_getchar;
+char *volatile main_command;
 
 byte big_buffer[1024];
 
@@ -33,15 +35,15 @@ clone(bool and_run)
 {
 }
 
-#define LINE_INPUT_SIZE  72
+#define BASIC_INPUT_LINE_SIZE  72
 
 void
 terminal_command_error(int offset)
 {
     int i;
-    char buffer[2+LINE_INPUT_SIZE+1];
+    char buffer[2+BASIC_INPUT_LINE_SIZE+1];
 
-    assert(offset < LINE_INPUT_SIZE);
+    assert(offset < BASIC_INPUT_LINE_SIZE);
 
     offset += 2;
 
@@ -89,7 +91,7 @@ int
 main(int argc, char **argv)
 {
     int i;
-    char text[2*LINE_INPUT_SIZE];
+    char text[2*BASIC_INPUT_LINE_SIZE];
 
 #if __unix__
     signal(SIGINT, ctrlc);
@@ -120,7 +122,7 @@ main(int argc, char **argv)
         if (! gets(text)) {
             break;
         }
-        text[LINE_INPUT_SIZE-1] = '\0';
+        text[BASIC_INPUT_LINE_SIZE-1] = '\0';
         basic0_run(text);
     }
     return 0;

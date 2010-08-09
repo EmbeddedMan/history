@@ -24,11 +24,12 @@ int var_open_scope(void);
 void var_close_scope(int scope);
 
 // called at runtime to manipulate variables
-void var_declare(const char *name, int gosubs, int type, int size, int max_index, int pin_number, int pin_type, int pin_qual, int nodeid, uintptr abs_addr);
+void var_declare(const char *name, int gosubs, int type, bool string, int size, int max_index, int pin_number, int pin_type, int pin_qual, int nodeid, uintptr abs_addr);
 void var_declare_reference(const char *name, int gosubs, const char *target_name);
 void var_set(const char *name, int index, int32 value);
 int32 var_get(const char *name, int index, uint32 running_watchpoint_mask);
 int var_get_size(const char *name, int *max_index);
+int var_get_length(const char *name);
 
 void var_set_flash(int var, int32 value);
 int32 var_get_flash(int var);

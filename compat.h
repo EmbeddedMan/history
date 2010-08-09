@@ -105,7 +105,7 @@ typedef unsigned int uint32;
 #define MCF_CFM_CFMCLKD_DIV(x)  (x)
 #endif
 
-#if MCF51CN128 || MCF51QE128 || MC9S08QE128
+#if MCF51QE128 || MC9S08QE128
 #define SPI1DL  SPI1D
 #endif
 

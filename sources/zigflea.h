@@ -37,7 +37,7 @@ zb_poll(void);
 void
 zb_drop(bool drop);
 
-#if DEBUG || MCF52259 || PIC32
+#if SODEBUG || MCF52259 || PIC32
 void
 zb_diag(bool reset, bool init);
 #endif

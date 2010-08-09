@@ -1,7 +1,7 @@
 // *** basic.c ********************************************************
 // this file implements the stickos command interpreter.
 
-// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
@@ -74,8 +74,6 @@ const char * const commands[] = {
     "servo",
     "undo",
 };
-
-// revisit -- merge this with basic.c/parse.c???
 
 bool
 basic_const(IN OUT char **text, OUT int *value_out)

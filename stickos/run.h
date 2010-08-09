@@ -30,6 +30,7 @@ extern bool watch_mode_smart;
 extern int run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int32 *value);
 
 extern bool run_bytecode(bool immediate, const byte *bytecode, int length);
+extern int32 run_bytecode_const(IN const byte *bytecode, IN OUT int *index);
 extern bool run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length);
 
 extern void run_clear(bool flash);

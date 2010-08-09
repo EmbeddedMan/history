@@ -1,8 +1,8 @@
 
 ### platform MCF52221 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -21,10 +21,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+<Ctrl-C>                      -- stop program
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
@@ -77,9 +78,11 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable> [, ...] -- input data
 label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|<expression>) [, ...]  -- print strings/expressions
+print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
@@ -153,7 +156,8 @@ for more information:
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
-array variable indices start at 0; v[0] is the same as v
+array variable indices start at 0
+v is the same as v[0], except for print and qspi statements
 
 ram variables:
   dim <var>[[n]]
@@ -171,7 +175,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -225,6 +229,7 @@ clone cable:
   vss              vss
   vdd              vdd
 connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
@@ -249,8 +254,8 @@ test usb host
   ^ - error
   ^ - error
 ... testing pins
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 heartbeat dtin3
@@ -261,8 +266,8 @@ zigflea_rst* an2
 zigflea_attn* an3
 zigflea_rxtxen an5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -276,8 +281,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -286,15 +291,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF52221 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF52233 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52233 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -312,10 +317,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52233 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+<Ctrl-C>                      -- stop program
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
@@ -369,9 +375,11 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable> [, ...] -- input data
 label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|<expression>) [, ...]  -- print strings/expressions
+print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
@@ -445,7 +453,8 @@ for more information:
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
-array variable indices start at 0; v[0] is the same as v
+array variable indices start at 0
+v is the same as v[0], except for print and qspi statements
 
 ram variables:
   dim <var>[[n]]
@@ -463,7 +472,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -499,6 +508,7 @@ clone cable:
   vss              vss
   vdd              vdd
 connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
@@ -523,8 +533,8 @@ test usb host
   ^ - error
   ^ - error
 ... testing pins
-Welcome to StickOS for Freescale MCF52233 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 heartbeat dtin3
@@ -535,8 +545,8 @@ zigflea_rst* gpt0
 zigflea_attn* gpt1
 zigflea_rxtxen an5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52233 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -550,23 +560,23 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52233 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 dhcp
 1.2.3.4
 dhcp
 ... testing reset
-Welcome to StickOS for Freescale MCF52233 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF52259 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52252 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -585,10 +595,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52252 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+<Ctrl-C>                      -- stop program
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
@@ -642,9 +653,11 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable> [, ...] -- input data
 label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|<expression>) [, ...]  -- print strings/expressions
+print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
@@ -718,7 +731,8 @@ for more information:
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
-array variable indices start at 0; v[0] is the same as v
+array variable indices start at 0
+v is the same as v[0], except for print and qspi statements
 
 ram variables:
   dim <var>[[n]]
@@ -736,7 +750,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -796,6 +810,7 @@ clone cable:
   vss              vss
   vdd              vdd
 connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
@@ -819,8 +834,8 @@ error -   ^
 error -       ^
 on
 ... testing pins
-Welcome to StickOS for Freescale MCF52252 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 heartbeat dtin3
@@ -831,8 +846,8 @@ zigflea_rst* an2
 zigflea_attn* an3
 zigflea_rxtxen an5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52252 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -846,8 +861,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52252 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -856,15 +871,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF52252 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF5211 ###
 ... testing help
-Welcome to StickOS for Freescale MCF5211 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -882,10 +897,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF5211 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+<Ctrl-C>                      -- stop program
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
@@ -938,9 +954,11 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable> [, ...] -- input data
 label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|<expression>) [, ...]  -- print strings/expressions
+print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
@@ -1014,7 +1032,8 @@ for more information:
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
-array variable indices start at 0; v[0] is the same as v
+array variable indices start at 0
+v is the same as v[0], except for print and qspi statements
 
 ram variables:
   dim <var>[[n]]
@@ -1032,7 +1051,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -1067,6 +1086,7 @@ clone cable:
   vss              vss
   vdd              vdd
 connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
@@ -1091,8 +1111,8 @@ test usb host
   ^ - error
   ^ - error
 ... testing pins
-Welcome to StickOS for Freescale MCF5211 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 heartbeat dtin3
@@ -1103,8 +1123,8 @@ zigflea_rst* gpt0
 zigflea_attn* gpt1
 zigflea_rxtxen an5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF5211 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -1118,8 +1138,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF5211 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -1128,15 +1148,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF5211 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF51JM128 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -1153,10 +1173,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+<Ctrl-C>                      -- stop program
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
@@ -1208,9 +1229,11 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable> [, ...] -- input data
 label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|<expression>) [, ...]  -- print strings/expressions
+print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
@@ -1284,7 +1307,8 @@ for more information:
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
-array variable indices start at 0; v[0] is the same as v
+array variable indices start at 0
+v is the same as v[0], except for print and qspi statements
 
 ram variables:
   dim <var>[[n]]
@@ -1302,7 +1326,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -1327,6 +1351,7 @@ pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
 connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
@@ -1351,8 +1376,8 @@ test usb host
   ^ - error
   ^ - error
 ... testing pins
-Welcome to StickOS for Freescale MCF51JM128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 heartbeat ptf0
@@ -1363,8 +1388,8 @@ zigflea_rst* pte2
 zigflea_attn* pte3
 zigflea_rxtxen ptb5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -1378,8 +1403,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -1388,15 +1413,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF51QE128 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51QE128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -1413,10 +1438,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51QE128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+<Ctrl-C>                      -- stop program
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
@@ -1468,9 +1494,11 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable> [, ...] -- input data
 label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|<expression>) [, ...]  -- print strings/expressions
+print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
@@ -1544,7 +1572,8 @@ for more information:
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
-array variable indices start at 0; v[0] is the same as v
+array variable indices start at 0
+v is the same as v[0], except for print and qspi statements
 
 ram variables:
   dim <var>[[n]]
@@ -1562,7 +1591,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -1587,6 +1616,7 @@ ptb1 (u1), ptc7 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
 connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
@@ -1611,8 +1641,8 @@ test usb host
   ^ - error
   ^ - error
 ... testing pins
-Welcome to StickOS for Freescale MCF51QE128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 heartbeat ptc2
@@ -1623,8 +1653,8 @@ zigflea_rst* ptc0
 zigflea_attn* ptc1
 zigflea_rxtxen ptf1
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51QE128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -1638,8 +1668,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51QE128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -1648,15 +1678,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51QE128 v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform BADGE_BOARD ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -1673,10 +1703,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+<Ctrl-C>                      -- stop program
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
@@ -1729,9 +1760,11 @@ dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
 jm(clear|set) <r>, <c>                 -- clear/set row/column of LED matrix
 jmscroll ...                           -- scroll printout to LED matrix
+halt                                   -- loop forever
+input [dec|hex|raw] <variable> [, ...] -- input data
 label <label>                          -- read/data label
 let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|<expression>) [, ...]  -- print strings/expressions
+print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
 qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
@@ -1805,7 +1838,8 @@ for more information:
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
-array variable indices start at 0; v[0] is the same as v
+array variable indices start at 0
+v is the same as v[0], except for print and qspi statements
 
 ram variables:
   dim <var>[[n]]
@@ -1823,7 +1857,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -1848,6 +1882,7 @@ pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
 connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
@@ -1872,8 +1907,8 @@ test usb host
   ^ - error
   ^ - error
 ... testing pins
-Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 heartbeat ptf0
@@ -1884,8 +1919,8 @@ zigflea_rst* pte2
 zigflea_attn* pte3
 zigflea_rxtxen ptb5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 error -     ^
@@ -1900,8 +1935,8 @@ error -         ^
 end
 hello
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -1910,7 +1945,7 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.72!
-Copyright (c) 2008-2009; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.80!
+Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com

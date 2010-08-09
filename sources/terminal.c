@@ -7,14 +7,13 @@ extern void *rich_so;
 bool terminal_echo = true;
 int terminal_rxid = -1;  // node we forward our receives to
 int terminal_txid = -1;  // node we forward our prints to
+volatile int32 terminal_getchar;
 
 static terminal_command_cbfn command_cbfn;
 static terminal_ctrlc_cbfn ctrlc_cbfn;
 
-#define TERMINAL_INPUT_LINE_SIZE  72
-
 static bool discard;
-static char command[TERMINAL_INPUT_LINE_SIZE];
+static char command[BASIC_INPUT_LINE_SIZE];
 
 // this buffer holds the extra command characters provided by the inbound
 // transport beyond the end of the current comamnd.
@@ -34,7 +33,7 @@ static bool hist_first = true;
 #endif
 #endif
 #define HISTWRAP(x)  (((unsigned)(x))%NHIST)
-static char history[NHIST][TERMINAL_INPUT_LINE_SIZE];
+static char history[NHIST][BASIC_INPUT_LINE_SIZE];
 
 static int ki;
 static char keys[8];
@@ -42,11 +41,11 @@ static int cursor;
 
 // this buffer holds characters queued by an isr to be echoed later by
 // terminal_poll().
-static char echo[TERMINAL_INPUT_LINE_SIZE*2];
+static char echo[BASIC_INPUT_LINE_SIZE*2];
 
 // this buffer holds characters queued by an isr to be forwarded later
 // by terminal_poll().
-static char forward[TERMINAL_INPUT_LINE_SIZE*2];
+static char forward[BASIC_INPUT_LINE_SIZE*2];
 
 static bool ack = true;
 
@@ -416,6 +415,8 @@ terminal_receive_internal(const byte *buffer, int length)
             } else {
                 accumulate(buffer[j]);
             }
+        } else {
+            terminal_getchar = buffer[j];
         }
     }
     return true;
@@ -454,12 +455,19 @@ terminal_edit(char *line)
     strncpy(command, line, sizeof(command)-1);
 }
 
-// this function causes us to discard typed commands while the
+// this function causes us to discard typed characters while the
 // BASIC program is running, except Ctrl-C.
 void
 terminal_command_discard(bool discard_in)
 {
     discard = discard_in;
+    terminal_getchar = 0;
+}
+
+bool
+terminal_command_discarding(void)
+{
+    return discard;
 }
 
 // this function acknowledges receipt of an FTDI command from upper
@@ -514,9 +522,9 @@ void
 terminal_command_error(int offset)
 {
     int i;
-    char buffer[2+TERMINAL_INPUT_LINE_SIZE+1];
+    char buffer[2+BASIC_INPUT_LINE_SIZE+1];
 
-    assert(offset < TERMINAL_INPUT_LINE_SIZE);
+    assert(offset < BASIC_INPUT_LINE_SIZE);
 
     offset += 2;  // prompt -- revisit, this is decided elsewhere!
 
@@ -547,7 +555,7 @@ terminal_poll(void)
 {
     int x;
     static int last;
-    char copy[TERMINAL_INPUT_LINE_SIZE*2];
+    char copy[BASIC_INPUT_LINE_SIZE*2];
     
 #if MCF52221 || MCF52259 || MCF51JM128 || PIC32
     assert(gpl() == 0);

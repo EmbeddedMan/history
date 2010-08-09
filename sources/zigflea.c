@@ -24,7 +24,7 @@ typedef struct packet {
 int32 zb_nodeid;
 bool zb_present;
 
-#if DEBUG
+#if SODEBUG
 volatile bool zb_in_isr;
 volatile int32 zb_in_ticks;
 volatile int32 zb_out_ticks;
@@ -663,7 +663,7 @@ zb_reset(void)
     delay(50);
 }
 
-#if DEBUG || MCF52259 || PIC32
+#if SODEBUG || MCF52259 || PIC32
 void
 zb_diag(bool reset, bool init)
 {
@@ -824,8 +824,10 @@ zb_initialize(void)
 #elif PIC32
     // enable int1*
     IEC0bits.INT1IE = 1;
-    INTEnable(INT_INT1, 1);
-    INTSetPriority(INT_INT1, 6);
+    IPC1bits.INT1IP = 6;
+    IPC1bits.INT1IS = 0;
+    //INTEnable(INT_INT1, 1);
+    //INTSetPriority(INT_INT1, 6);
 #endif
 }
 

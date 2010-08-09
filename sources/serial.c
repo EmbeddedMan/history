@@ -26,7 +26,7 @@ static bool busy;  // we're in the middle of a send() loop
 
 bool serial_active;
 
-#if DEBUG
+#if SODEBUG
 volatile bool serial_in_isr;
 volatile int32 serial_in_ticks;
 volatile int32 serial_out_ticks;

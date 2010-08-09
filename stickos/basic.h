@@ -1,7 +1,7 @@
 // *** basic.h ********************************************************
 
 enum devices {
-    device_timer,
+    device_timer = 0x10,
     device_uart,
     device_qspi,
     device_watch
@@ -32,11 +32,14 @@ enum bytecode {
       code_var_reference, // for sub reference parameters
       code_absolute, // for absolute variables
     code_let,
+    code_input,
     code_print,
-      code_string,
       code_hex,
       code_dec,
+      code_raw,
+      code_string,
       code_expression,
+      code_semi,
     code_qspi,
     code_if,
       code_elseif,
@@ -55,13 +58,16 @@ enum bytecode {
       code_return,
       code_endsub,
     code_sleep,
+    code_halt,
     code_stop,
     code_end,
     
     // exressions
     code_load_and_push_immediate,  // integer
     code_load_and_push_immediate_hex,  // hex integer
+    code_load_and_push_immediate_ascii,  // ascii integer
     code_load_and_push_var,  // variable name, '\0'
+    code_load_and_push_var_length,  // variable name, '\0'
     code_load_and_push_var_indexed, // index on stack; variable name, '\0'
     code_logical_not, code_bitwise_not,
     code_unary_plus, code_unary_minus,
@@ -71,11 +77,17 @@ enum bytecode {
     code_logical_and, code_logical_or, code_logical_xor,
     code_greater, code_less, code_equal,
     code_greater_or_equal, code_less_or_equal, code_not_equal,
+
+    // strings
+    code_text,  // literal, '\0'
+    code_load_string,  // name, '\0'
+    code_load_string_indexed,  // length, expr, length, expr, name, '\0'
+
     code_max
 };
 
 enum timer_unit_type {
-    timer_unit_usecs,
+    timer_unit_usecs = 0x01,
     timer_unit_msecs,
     timer_unit_secs,
     timer_unit_max
@@ -86,7 +98,7 @@ extern struct timer_unit {
     int scale;  // negative -> less than tick; positive -> tick or greater
 } const timer_units[/*timer_unit_max*/];
 
-#define BASIC_BYTECODE_SIZE  (4*BASIC_LINE_SIZE)
+#define BASIC_BYTECODE_SIZE  (4*BASIC_OUTPUT_LINE_SIZE)
 
 #if ! STICK_GUEST
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512

@@ -72,7 +72,9 @@ typedef uint16 size_t;
 #define MCU_CORE_BITS 32
 typedef int intptr;
 typedef unsigned int uintptr;
+#if ! PIC32
 typedef uint32 size_t;
+#endif
 #endif
 
 #if GCC
@@ -119,23 +121,23 @@ typedef uint32 size_t;
 #if WIN32
 // _DEBUG/NDEBUG win
 #if _DEBUG
-#define DEBUG  1
+#define SODEBUG  1
 #else
 #if NDEBUG
-#define DEBUG  0
+#define SODEBUG  0
 #else
 #error _DEBUG/NDEBUG?
 #endif
 #endif  // _DEBUG
 #else  // WIN32
-// DEBUG wins
-#if DEBUG
+// SODEBUG wins
+#if SODEBUG
 #define _DEBUG
 #undef NDEBUG
 #else
 #define NDEBUG
 #undef _DEBUG
-#endif  // DEBUG
+#endif  // SODEBUG
 #endif  // WIN32
 
 #if GCC
@@ -200,6 +202,9 @@ enum {
 #define LENGTHOF(a)  (sizeof(a)/sizeof(a[0]))
 #define OFFSETOF(t, f)  ((int)(intptr)(&((t *)0)->f))
 #define IS_POWER_OF_2(x) ((((x)-1)&(x))==0)
+
+#define BASIC_OUTPUT_LINE_SIZE  79
+#define BASIC_INPUT_LINE_SIZE  72
 
 #include <stdarg.h>
 
@@ -286,12 +291,12 @@ extern void os_yield(void);
 
 #if ! STICK_GUEST
 
-#if DEBUG
+#if SODEBUG
 #define assert(x)  do { if (! (x)) { led_line(__LINE__); } } while (0)
 #else
 #define assert(x)
 #endif
-#if DEBUG || PIC32
+#if SODEBUG || PIC32
 #define assert_ram(x)  do { if (! (x)) { asm_halt(); } } while (0)
 #else
 #define assert_ram(x)
@@ -316,8 +321,6 @@ extern byte big_buffer[1024];
 #ifndef FLASH_UPGRADE_RAM_END
 #define FLASH_UPGRADE_RAM_END
 #endif
-
-#define BASIC_LINE_SIZE  79
 
 #define MAIN_INCLUDED  1
 #endif  // MAIN_INCLUDED

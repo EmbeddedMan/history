@@ -128,7 +128,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
                 }
             }
             
-            prec = BASIC_LINE_SIZE;
+            prec = BASIC_OUTPUT_LINE_SIZE;
             if (c == '.') {
                 prec = 0;
                 c = *++p;
@@ -191,10 +191,12 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
             }
 
             if (j < width) {
-                if (zero) {
-                    strncpy(buffer+i, zeros, width-j);
-                } else {
-                    strncpy(buffer+i, spaces, width-j);
+                if (i < length) {
+                    if (zero) {
+                        strncpy(buffer+i, zeros, MIN(width-j, length-i));
+                    } else {
+                        strncpy(buffer+i, spaces, MIN(width-j, length-i));
+                    }
                 }
                 i += width-j;
             }
@@ -251,7 +253,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
 }
 
 int
-snprintf(char *buffer, unsigned long length, const char *format, ...)
+snprintf(char *buffer, int length, const char *format, ...)
 {
     int n;
     va_list ap;
@@ -269,60 +271,66 @@ sprintf(char *buffer, const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    n = vsnprintf(buffer, BASIC_LINE_SIZE, format, ap);
+    n = vsnprintf(buffer, 32767, format, ap);
     va_end(ap);
     return n;
 }
 
-#if ! MCF51QE128 && ! MC9S08QE128
-#define FASTPRINT  1
-#endif
-
 #if ! STICK_GUEST
-#if FASTPRINT
-static char abuffer[BASIC_LINE_SIZE+2];  // 2 for \r\n
-#endif
-static char bbuffer[BASIC_LINE_SIZE+2];  // 2 for \r\n
+static char printf_buffer[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
 #else
-#if FASTPRINT
-static char abuffer[BASIC_LINE_SIZE+1];  // 1 for \n
-#endif
-static char bbuffer[BASIC_LINE_SIZE+1];  // 1 for \n
+static char printf_buffer[BASIC_OUTPUT_LINE_SIZE+1];  // 1 for \n
 #endif
 
-static int tprintf(char *buffer, int n);
+int
+printf_write(char *buffer, int n)
+{
+    static uint32 last_scsi_attached_count;
+
+#if STICK_GUEST
+    write(1, buffer, n);
+    return n;
+#else
+#if BADGE_BOARD && STICKOS
+    if (run_printf && run2_scroll) {
+        jm_scroll(buffer, n);
+        return n;
+    }
+#endif
+
+#if STICKOSPLUS && STICKOS
+    if (run_printf && scsi_attached) {
+        bool open;
+
+        if (scsi_attached_count != last_scsi_attached_count) {
+            open = open_log_file();
+            last_scsi_attached_count = scsi_attached_count;
+        }
+        
+        if (open) {
+            open = append_log_file(buffer);
+        }
+    }
+#endif
+
+    terminal_print((byte *)buffer, n);
+    return n;
+#endif
+}
 
 int
 printf(const char *format, ...)
 {
-    int n;
-#if FASTPRINT
-    int m;
-#endif
+    uint n;
     va_list ap;
 
-#if FASTPRINT
-    if (run_printf) {
-        m = strlen(abuffer);
-        va_start(ap, format);
-        n = vsnprintf(abuffer+m, sizeof(abuffer)-m, format, ap);
-        va_end(ap);
-        if (strchr(format, '\n')) {
-            n = tprintf(abuffer, m+n);
-            abuffer[0] = '\0';
-        }
-    } else {
-        if (abuffer[0]) {
-            tprintf(abuffer, strlen(abuffer));
-        }
-        abuffer[0] = '\0';
-#endif
-        va_start(ap, format);
-        n = vprintf(format, ap);
-        va_end(ap);
-#if FASTPRINT
-    }
-#endif
+    assert(gpl() == 0);
+
+    va_start(ap, format);
+    n = vsnprintf(printf_buffer, sizeof(printf_buffer), format, ap);
+    assert(! printf_buffer[sizeof(printf_buffer)-1]);
+    n = printf_write(printf_buffer, MIN(n, sizeof(printf_buffer)-1));
+    va_end(ap);
 
     return n;
 }
@@ -332,15 +340,6 @@ static bool open;
 static VOLINFO vi;
 static FILEINFO wfi;
 
-void
-flush_log_file(void)
-{
-    if (open) {
-        DFS_HostFlush(1000);
-    }
-}
-
-static
 bool
 open_log_file(void)
 {
@@ -373,7 +372,6 @@ open_log_file(void)
     return true;        
 }
 
-static
 bool
 append_log_file(char *buffer)
 {    
@@ -390,67 +388,15 @@ append_log_file(char *buffer)
 
     return true;
 }
-#endif
 
-int
-vprintf(const char *format, va_list ap)
+void
+flush_log_file(void)
 {
-    int n;
-    
-    assert(gpl() == 0);
-
-    n = vsnprintf(bbuffer, sizeof(bbuffer), format, ap);
-    assert(! bbuffer[sizeof(bbuffer)-1]);
-    
-    n = tprintf(bbuffer, MIN(n, sizeof(bbuffer)-1));
-    return n;
-}
-
-static
-int
-tprintf(char *buffer, int n)
-{
-    static uint32 last_scsi_attached_count;
-
-#if STICK_GUEST
-    write(1, buffer, n);
-    return n;
-#else
-#if BADGE_BOARD && STICKOS
-    if (run_printf && run2_scroll) {
-        jm_scroll(buffer, n);
-        return n;
+    if (open) {
+        DFS_HostFlush(1000);
     }
-#endif
-
-#if STICKOSPLUS && STICKOS
-    if (run_printf && scsi_attached) {
-        if (scsi_attached_count != last_scsi_attached_count) {
-            open = open_log_file();
-            last_scsi_attached_count = scsi_attached_count;
-        }
-        
-        if (open) {
-            open = append_log_file(buffer);
-        }
-    }
-#endif
-
-    terminal_print((byte *)buffer, n);
-    return n;
-#endif
 }
-
-int
-vsprintf(char *outbuf, const char *format, va_list ap)
-{
-    int n;
-    
-    n = vsnprintf(outbuf, sizeof(bbuffer), format, ap);
-    assert(! outbuf[sizeof(bbuffer)-1]);
-
-    return n;
-}
+#endif
 
 
 #if IN_MEMORY_TRACE

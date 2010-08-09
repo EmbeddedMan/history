@@ -50,10 +50,9 @@ main()  // we're called directly by startup.c
     SYSTEMConfig(80000000L, SYS_CFG_WAIT_STATES | SYS_CFG_PCACHE);
     INTEnableSystemMultiVectoredInt();
     (void)splx(7);
-    // XXX -- comment this out to run under the debugger
+#if ! DEBUGGING
     DDPCON = 0;  // disable JTAG
-    
-#if DEBUG
+#else
     debugger_attached = true;
 #endif
 

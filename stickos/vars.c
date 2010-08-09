@@ -3,7 +3,7 @@
 // pin, and flash variables, as well as the external pin control and
 // access module.
 
-// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
@@ -27,6 +27,7 @@ static struct system_var {
 #if ! STICK_GUEST
     "nodeid", &zb_nodeid, 0, NULL,
 #endif
+    "getchar", &terminal_getchar, 0, NULL,
     "msecs", &msecs, 0, NULL,
     "seconds", &seconds, 0, NULL,
     "ticks", &ticks, 0, NULL,
@@ -35,13 +36,14 @@ static struct system_var {
 
 bool var_trace;
 
-#define VAR_NAME_SIZE  15
+#define VAR_NAME_SIZE  14
 
 static
 struct var {
-    char name[VAR_NAME_SIZE];  // 14 char max variable name
+    char name[VAR_NAME_SIZE];  // 13 char max variable name
     byte gosubs;
     byte type;
+    byte string;
     byte size;  // 4 bytes per integer, 2 bytes per short, 1 byte per byte
     uint16 max_index;  // for type == code_pin, this is 1
     union {
@@ -237,6 +239,20 @@ var_find(IN const char *name, IN int index, OUT int *gosubs)
     return NULL;
 }
 
+static
+const struct system_var *
+system_find(const char *name)
+{
+    int i;
+
+    for (i = 0; i < LENGTHOF(systems); i++) {
+        if (! strcmp(name, systems[i].name)) {
+            return systems+i;
+        }
+    }
+    return NULL;
+}
+
 // this function opens a new gosub variable scope; variables declared
 // in the gosub will be automatically undeclared when the gosub
 // returns.
@@ -280,7 +296,7 @@ var_close_scope(IN int scope)
 }
 
 static void
-var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid, IN struct var *target, IN uintptr abs_addr)
+var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN bool string, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid, IN struct var *target, IN uintptr abs_addr)
 {
     struct var *var;
     int var_gosubs;
@@ -345,6 +361,7 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
     assert(var->name[sizeof(var->name)-1] == '\0');
     var->gosubs = gosubs;
     var->type = type;
+    var->string = string;
     assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(uint32));
     var->size = size;
     if (type != code_pin) {  // allow pin array element 0.
@@ -427,11 +444,12 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
 
 // this function declares a ram, flash, pin, or abs variable!
 void
-var_declare(IN const char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid, IN uintptr abs_addr)
+var_declare(IN const char *name, IN int gosubs, IN int type, IN bool string, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid, IN uintptr abs_addr)
 {
     assert(type != code_var_reference);
+    assert(string ? type == code_ram && size == 1 : true);
 
-    var_declare_internal(name, gosubs, type, size, max_index, pin_number, pin_type, pin_qual, nodeid, NULL, abs_addr);
+    var_declare_internal(name, gosubs, type, string, size, max_index, pin_number, pin_type, pin_qual, nodeid, NULL, abs_addr);
 }
 
 void
@@ -448,7 +466,7 @@ var_declare_reference(const char *name, int gosubs, const char *target_name)
         return;
     }
 
-    var_declare_internal(name, gosubs, code_var_reference, target->size, target->max_index, -1, -1, -1, -1, target, -1);
+    var_declare_internal(name, gosubs, code_var_reference, false, target->size, target->max_index, -1, -1, -1, -1, target, -1);
 }
 
 typedef struct remote_set {
@@ -517,22 +535,6 @@ var_set(IN const char *name, IN int index, IN int32 value)
 
     var = var_find(name, index, &var_gosubs);
     if (! var) {
-#if 0  // unused for now
-        if (! index) {
-            // see if this could be a special system variable
-            for (i = 0; i < LENGTHOF(systems); i++) {
-                if (! strcmp(name, systems[i].name)) {
-                    if (systems[i].set_cbfn == NULL) {
-                        printf("var '%s' is read-only\n", name);
-                        stop();
-                    } else {
-                        systems[i].set_cbfn(value);
-                    }
-                    return;
-                }
-            }
-        }
-#endif
         printf("var '%s' undefined\n", name);
         stop();
     } else {
@@ -646,11 +648,11 @@ XXX_PERF_XXX:
 int32
 var_get(IN const char *name, IN int index, IN uint32 running_watchpoint_mask)
 {
-    int i;
     uint type;
     int32 value;
     int var_gosubs;
     struct var *var;
+    const struct system_var *system;
 
     if (! run_condition) {
         return 0;
@@ -662,10 +664,13 @@ var_get(IN const char *name, IN int index, IN uint32 running_watchpoint_mask)
     if (! var) {
         if (! index) {
             // see if this could be a special system variable
-            for (i = 0; i < LENGTHOF(systems); i++) {
-                if (! strcmp(name, systems[i].name)) {
-                    return systems[i].integer ? *systems[i].integer : systems[i].constant;
+            system = system_find(name);
+            if (system) {
+                value = system->integer ? *system->integer : system->constant;
+                if (system->integer == &terminal_getchar && ! running_watchpoint_mask) {
+                    terminal_getchar = 0;
                 }
+                return value;
             }
         }
         printf("var '%s' undefined\n", name);
@@ -751,14 +756,56 @@ var_get_size(IN const char *name, OUT int *max_index)
 
     var = var_find(name, -1, &var_gosubs);
     if (! var) {
+        // see if this could be a special system variable
+        if (system_find(name)) {
+            *max_index = 1;
+            return sizeof(int32);
+        }
         printf("var '%s' undefined\n", name);
         stop();
+        *max_index = 0;
     } else {
         size = var->size;
         *max_index = var->max_index;
     }
     
     return size;
+}
+
+// this function gets the number of elements in an array or string
+int
+var_get_length(IN const char *name)
+{
+    int length;
+    int var_gosubs;
+    struct var *var;
+
+    if (! run_condition) {
+        return 0;
+    }
+
+    length = 0;
+
+    var = var_find(name, -1, &var_gosubs);
+    if (! var) {
+        printf("var '%s' undefined\n", name);
+        stop();
+    } else {
+        // if this is a string...
+        if (var->string) {
+            while (var_get(name, length, 0)) {
+                length++;
+                if (length == var->max_index) {
+                    break;
+                }
+            }
+        } else {
+            // this is an array
+            length = var->max_index;
+        }
+    }
+
+    return length;
 }
 
 // *** flash control and access ***

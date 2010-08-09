@@ -30,7 +30,7 @@ DECLSPEC_PAGE1
 #else
 const
 #endif
-uint32 _swvect[512] = {
+uint32 _swvect[256] = {
 #if ! FLASHER
     (uint32)flash_upgrade_ram_begin, (uint32)flash_upgrade_ram_end,
 #else
@@ -195,134 +195,6 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 125
     UINT32HALT, 0,                               // 126
     UINT32HALT, 0,                               // 127
-    UINT32HALT, 0,                               // 128
-    UINT32HALT, 0,                               // 129
-    UINT32HALT, 0,                               // 130
-    UINT32HALT, 0,                               // 131
-    UINT32HALT, 0,                               // 132
-    UINT32HALT, 0,                               // 133
-    UINT32HALT, 0,                               // 134
-    UINT32HALT, 0,                               // 135
-    UINT32HALT, 0,                               // 136
-    UINT32HALT, 0,                               // 137
-    UINT32HALT, 0,                               // 138
-    UINT32HALT, 0,                               // 139
-    UINT32HALT, 0,                               // 140
-    UINT32HALT, 0,                               // 141
-    UINT32HALT, 0,                               // 142
-    UINT32HALT, 0,                               // 143
-    UINT32HALT, 0,                               // 144
-    UINT32HALT, 0,                               // 145
-    UINT32HALT, 0,                               // 146
-    UINT32HALT, 0,                               // 147
-    UINT32HALT, 0,                               // 148
-    UINT32HALT, 0,                               // 149
-    UINT32HALT, 0,                               // 150
-    UINT32HALT, 0,                               // 151
-    UINT32HALT, 0,                               // 152
-    UINT32HALT, 0,                               // 153
-    UINT32HALT, 0,                               // 154
-    UINT32HALT, 0,                               // 155
-    UINT32HALT, 0,                               // 156
-    UINT32HALT, 0,                               // 157
-    UINT32HALT, 0,                               // 158
-    UINT32HALT, 0,                               // 159
-    UINT32HALT, 0,                               // 160
-    UINT32HALT, 0,                               // 161
-    UINT32HALT, 0,                               // 162
-    UINT32HALT, 0,                               // 163
-    UINT32HALT, 0,                               // 164
-    UINT32HALT, 0,                               // 165
-    UINT32HALT, 0,                               // 166
-    UINT32HALT, 0,                               // 167
-    UINT32HALT, 0,                               // 168
-    UINT32HALT, 0,                               // 169
-    UINT32HALT, 0,                               // 170
-    UINT32HALT, 0,                               // 171
-    UINT32HALT, 0,                               // 172
-    UINT32HALT, 0,                               // 173
-    UINT32HALT, 0,                               // 174
-    UINT32HALT, 0,                               // 175
-    UINT32HALT, 0,                               // 176
-    UINT32HALT, 0,                               // 177
-    UINT32HALT, 0,                               // 178
-    UINT32HALT, 0,                               // 179
-    UINT32HALT, 0,                               // 180
-    UINT32HALT, 0,                               // 181
-    UINT32HALT, 0,                               // 182
-    UINT32HALT, 0,                               // 183
-    UINT32HALT, 0,                               // 184
-    UINT32HALT, 0,                               // 185
-    UINT32HALT, 0,                               // 186
-    UINT32HALT, 0,                               // 187
-    UINT32HALT, 0,                               // 188
-    UINT32HALT, 0,                               // 189
-    UINT32HALT, 0,                               // 190
-    UINT32HALT, 0,                               // 191
-    UINT32HALT, 0,                               // 192
-    UINT32HALT, 0,                               // 193
-    UINT32HALT, 0,                               // 194
-    UINT32HALT, 0,                               // 195
-    UINT32HALT, 0,                               // 196
-    UINT32HALT, 0,                               // 197
-    UINT32HALT, 0,                               // 198
-    UINT32HALT, 0,                               // 199
-    UINT32HALT, 0,                               // 200
-    UINT32HALT, 0,                               // 201
-    UINT32HALT, 0,                               // 202
-    UINT32HALT, 0,                               // 203
-    UINT32HALT, 0,                               // 204
-    UINT32HALT, 0,                               // 205
-    UINT32HALT, 0,                               // 206
-    UINT32HALT, 0,                               // 207
-    UINT32HALT, 0,                               // 208
-    UINT32HALT, 0,                               // 209
-    UINT32HALT, 0,                               // 210
-    UINT32HALT, 0,                               // 211
-    UINT32HALT, 0,                               // 212
-    UINT32HALT, 0,                               // 213
-    UINT32HALT, 0,                               // 214
-    UINT32HALT, 0,                               // 215
-    UINT32HALT, 0,                               // 216
-    UINT32HALT, 0,                               // 217
-    UINT32HALT, 0,                               // 218
-    UINT32HALT, 0,                               // 219
-    UINT32HALT, 0,                               // 220
-    UINT32HALT, 0,                               // 221
-    UINT32HALT, 0,                               // 222
-    UINT32HALT, 0,                               // 223
-    UINT32HALT, 0,                               // 224
-    UINT32HALT, 0,                               // 225
-    UINT32HALT, 0,                               // 226
-    UINT32HALT, 0,                               // 227
-    UINT32HALT, 0,                               // 228
-    UINT32HALT, 0,                               // 229
-    UINT32HALT, 0,                               // 230
-    UINT32HALT, 0,                               // 231
-    UINT32HALT, 0,                               // 232
-    UINT32HALT, 0,                               // 233
-    UINT32HALT, 0,                               // 234
-    UINT32HALT, 0,                               // 235
-    UINT32HALT, 0,                               // 236
-    UINT32HALT, 0,                               // 237
-    UINT32HALT, 0,                               // 238
-    UINT32HALT, 0,                               // 239
-    UINT32HALT, 0,                               // 240
-    UINT32HALT, 0,                               // 241
-    UINT32HALT, 0,                               // 242
-    UINT32HALT, 0,                               // 243
-    UINT32HALT, 0,                               // 244
-    UINT32HALT, 0,                               // 245
-    UINT32HALT, 0,                               // 246
-    UINT32HALT, 0,                               // 247
-    UINT32HALT, 0,                               // 248
-    UINT32HALT, 0,                               // 249
-    UINT32HALT, 0,                               // 250
-    UINT32HALT, 0,                               // 251
-    UINT32HALT, 0,                               // 252
-    UINT32HALT, 0,                               // 253
-    UINT32HALT, 0,                               // 254
-    UINT32HALT, 0,                               // 255
 };
 #elif MCF51JM128 || MCF51CN128 || MCF51QE128
 // this is the software interrupt vector table, in page1.
@@ -331,7 +203,7 @@ __declspec(page1)
 #else
 const
 #endif
-uint32 _swvect[512] = {
+uint32 _swvect[256] = {
     (uint32)flash_upgrade_ram_begin, (uint32)flash_upgrade_ram_end,
     (uint32)init, 0,
     UINT32HALT, 0,                               // 2
@@ -500,134 +372,6 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 125
     UINT32HALT, 0,                               // 126
     UINT32HALT, 0,                               // 127
-    UINT32HALT, 0,                               // 128
-    UINT32HALT, 0,                               // 129
-    UINT32HALT, 0,                               // 130
-    UINT32HALT, 0,                               // 131
-    UINT32HALT, 0,                               // 132
-    UINT32HALT, 0,                               // 133
-    UINT32HALT, 0,                               // 134
-    UINT32HALT, 0,                               // 135
-    UINT32HALT, 0,                               // 136
-    UINT32HALT, 0,                               // 137
-    UINT32HALT, 0,                               // 138
-    UINT32HALT, 0,                               // 139
-    UINT32HALT, 0,                               // 140
-    UINT32HALT, 0,                               // 141
-    UINT32HALT, 0,                               // 142
-    UINT32HALT, 0,                               // 143
-    UINT32HALT, 0,                               // 144
-    UINT32HALT, 0,                               // 145
-    UINT32HALT, 0,                               // 146
-    UINT32HALT, 0,                               // 147
-    UINT32HALT, 0,                               // 148
-    UINT32HALT, 0,                               // 149
-    UINT32HALT, 0,                               // 150
-    UINT32HALT, 0,                               // 151
-    UINT32HALT, 0,                               // 152
-    UINT32HALT, 0,                               // 153
-    UINT32HALT, 0,                               // 154
-    UINT32HALT, 0,                               // 155
-    UINT32HALT, 0,                               // 156
-    UINT32HALT, 0,                               // 157
-    UINT32HALT, 0,                               // 158
-    UINT32HALT, 0,                               // 159
-    UINT32HALT, 0,                               // 160
-    UINT32HALT, 0,                               // 161
-    UINT32HALT, 0,                               // 162
-    UINT32HALT, 0,                               // 163
-    UINT32HALT, 0,                               // 164
-    UINT32HALT, 0,                               // 165
-    UINT32HALT, 0,                               // 166
-    UINT32HALT, 0,                               // 167
-    UINT32HALT, 0,                               // 168
-    UINT32HALT, 0,                               // 169
-    UINT32HALT, 0,                               // 170
-    UINT32HALT, 0,                               // 171
-    UINT32HALT, 0,                               // 172
-    UINT32HALT, 0,                               // 173
-    UINT32HALT, 0,                               // 174
-    UINT32HALT, 0,                               // 175
-    UINT32HALT, 0,                               // 176
-    UINT32HALT, 0,                               // 177
-    UINT32HALT, 0,                               // 178
-    UINT32HALT, 0,                               // 179
-    UINT32HALT, 0,                               // 180
-    UINT32HALT, 0,                               // 181
-    UINT32HALT, 0,                               // 182
-    UINT32HALT, 0,                               // 183
-    UINT32HALT, 0,                               // 184
-    UINT32HALT, 0,                               // 185
-    UINT32HALT, 0,                               // 186
-    UINT32HALT, 0,                               // 187
-    UINT32HALT, 0,                               // 188
-    UINT32HALT, 0,                               // 189
-    UINT32HALT, 0,                               // 190
-    UINT32HALT, 0,                               // 191
-    UINT32HALT, 0,                               // 192
-    UINT32HALT, 0,                               // 193
-    UINT32HALT, 0,                               // 194
-    UINT32HALT, 0,                               // 195
-    UINT32HALT, 0,                               // 196
-    UINT32HALT, 0,                               // 197
-    UINT32HALT, 0,                               // 198
-    UINT32HALT, 0,                               // 199
-    UINT32HALT, 0,                               // 200
-    UINT32HALT, 0,                               // 201
-    UINT32HALT, 0,                               // 202
-    UINT32HALT, 0,                               // 203
-    UINT32HALT, 0,                               // 204
-    UINT32HALT, 0,                               // 205
-    UINT32HALT, 0,                               // 206
-    UINT32HALT, 0,                               // 207
-    UINT32HALT, 0,                               // 208
-    UINT32HALT, 0,                               // 209
-    UINT32HALT, 0,                               // 210
-    UINT32HALT, 0,                               // 211
-    UINT32HALT, 0,                               // 212
-    UINT32HALT, 0,                               // 213
-    UINT32HALT, 0,                               // 214
-    UINT32HALT, 0,                               // 215
-    UINT32HALT, 0,                               // 216
-    UINT32HALT, 0,                               // 217
-    UINT32HALT, 0,                               // 218
-    UINT32HALT, 0,                               // 219
-    UINT32HALT, 0,                               // 220
-    UINT32HALT, 0,                               // 221
-    UINT32HALT, 0,                               // 222
-    UINT32HALT, 0,                               // 223
-    UINT32HALT, 0,                               // 224
-    UINT32HALT, 0,                               // 225
-    UINT32HALT, 0,                               // 226
-    UINT32HALT, 0,                               // 227
-    UINT32HALT, 0,                               // 228
-    UINT32HALT, 0,                               // 229
-    UINT32HALT, 0,                               // 230
-    UINT32HALT, 0,                               // 231
-    UINT32HALT, 0,                               // 232
-    UINT32HALT, 0,                               // 233
-    UINT32HALT, 0,                               // 234
-    UINT32HALT, 0,                               // 235
-    UINT32HALT, 0,                               // 236
-    UINT32HALT, 0,                               // 237
-    UINT32HALT, 0,                               // 238
-    UINT32HALT, 0,                               // 239
-    UINT32HALT, 0,                               // 240
-    UINT32HALT, 0,                               // 241
-    UINT32HALT, 0,                               // 242
-    UINT32HALT, 0,                               // 243
-    UINT32HALT, 0,                               // 244
-    UINT32HALT, 0,                               // 245
-    UINT32HALT, 0,                               // 246
-    UINT32HALT, 0,                               // 247
-    UINT32HALT, 0,                               // 248
-    UINT32HALT, 0,                               // 249
-    UINT32HALT, 0,                               // 250
-    UINT32HALT, 0,                               // 251
-    UINT32HALT, 0,                               // 252
-    UINT32HALT, 0,                               // 253
-    UINT32HALT, 0,                               // 254
-    UINT32HALT, 0,                               // 255
 };
 #else
 #error

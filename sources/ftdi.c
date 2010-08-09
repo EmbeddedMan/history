@@ -1,12 +1,17 @@
 #if MCF52221 || MCF52259 || MCF51JM128 || PIC32
 // *** ftdi.c *********************************************************
-// this file implements the FTDI transport (on top of the usb driver
-// module).
+// N.B. as of v1.80, this file implements a CDC/ACM transport (on top
+// of the usb driver module).
+//
+// prior to v1.80, this file implemented an FTDI transport (on top of
+// the usb driver module).
 
 #include "main.h"
 
 #define PACKET_SIZE  64
 
+// We have allocated 8 PIDs to you from A660 to A667 (hex).
+// The PIDs must be used with VID 0403.
 #define FTDI_VID  0x0403
 #define FTDI_PID  0xA660
 #define FTDI_RID  0x0400
@@ -53,7 +58,7 @@ static const byte ftdi_configuration_descriptor[] = {
     4,  // length
     0x24,  // abstract control model descriptor
     0x02,
-    0x00,  // 02? 06 for mac? 00 cmx
+    0x00,
     
     5,  // length
     0x24,  // union functional descriptor
@@ -64,7 +69,7 @@ static const byte ftdi_configuration_descriptor[] = {
     5,  // length
     0x24,  // call management functional descriptor
     0x01,
-    0x00,  // 01 for mac?
+    0x00,
     0x01,
     
     7,  // length
@@ -113,9 +118,9 @@ static const byte ftdi_string_descriptor[] = {
     0x03,  // string descriptor
     'P', 0, 'i', 0, 'c', 0, 't', 0, '-', 0, 'o', 0, '-', 0, 'C', 0, 'r', 0, 'y', 0, 'p', 0, 't', 0,
 #else
-    28,  // length
+    34,  // length
     0x03,  // string descriptor
-    'R', 0, 'i', 0, 'c', 0, 'h', 0, ' ', 0, 'T', 0, 'e', 0, 's', 0, 't', 0, 'a', 0, 'r', 0, 'd', 0, 'i', 0,
+    'w', 0, 'w', 0, 'w', 0, '.', 0, 'c', 0, 'p', 0, 'u', 0, 's', 0, 't', 0, 'i', 0, 'c', 0, 'k', 0, '.', 0, 'c', 0, 'o', 0, 'm', 0,
 
     18,  // length
     0x03,  // string descriptor
@@ -139,20 +144,6 @@ static byte rx_in;
 static byte rx_out;
 
 static bool discard;  // true when we don't think anyone is listening
-
-
-static byte serial_state[] = {
-    0xA1,                        //   bmRequestType
-    0x20,  // SERIAL_STATE;      //   bNotification
-    0x00,                        //   wValue
-    0x00,
-    0x00,                        //   wIndex
-    0x00,
-    0x02,                        //   wLength
-    0x00,
-    0x03,                        //   UART state bitmap
-    0x00
-};
 
 
 // this function waits for space to be available in the transport
@@ -222,6 +213,7 @@ ftdi_print(const byte *buffer, int length)
     splx(x);
 }
 
+
 /* Mandatory class specific requests. */
 #define CDCRQ_SEND_ENCAPSULATED_COMMAND 0x0
 #define CDCRQ_GET_ENCAPSULATED_RESPONSE 0x1
@@ -243,6 +235,7 @@ static uint8 line_coding[7] = {
 static int
 ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
 {
+#if SODEBUG
     if ((setup->requesttype & 0x60) != (SETUP_TYPE_CLASS<<5)) {
         return 0;
     }
@@ -252,7 +245,7 @@ ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
     if (setup->index != 0 /*comm*/) {
         return 0;
     }
-
+#endif
     switch(setup->request) {
         case CDCRQ_SEND_ENCAPSULATED_COMMAND:
             assert(! (setup->requesttype & 0x80));
@@ -290,6 +283,7 @@ ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
     return length;
 }
 
+
 static bool waiting;
 
 // this function acknowledges receipt of an FTDI command from upper
@@ -309,6 +303,7 @@ ftdi_command_ack(void)
     
     splx(x);
 }
+
 
 // this function implements the FTDI usb bulk transfer.
 static int
@@ -343,12 +338,12 @@ ftdi_bulk_transfer(bool in, byte *buffer, int length)
             assert(rx_out != rx_in);
             assert(rx_length[rx_out] > 0 && rx_length[rx_out] < PACKET_SIZE);
             usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
-            // XXX -- do we need zero length packet if this one is full size?
         }
     }
 
     return 0;
 }
+
 
 // this function is called by the usb driver when the USB device
 // is reset.
@@ -414,3 +409,70 @@ ftdi_register(ftdi_reset_cbfn reset)
 }
 #endif
 
+/*
+From: FTDI Support 
+To: 'Rich Testardi at Home' 
+Sent: Monday, March 24, 2008 4:46 AM
+Subject: RE: Custom PID?
+
+Hello,
+
+We only give out the PIDs in blocks.
+
+We have allocated 8 PIDs to you from A660 to A667 (hex).
+
+The PIDs must be used with VID 0403.
+
+To reprogram the EEPROM use MPROG.
+
+The help appendix of this utility will show you how to edit the driver for
+your new identity.
+
+http://www.ftdichip.com/Resources/Utilities/MProg3.0_Setup.exe
+
+NOTE 1: Editing the driver for your new identity will invalidate any current
+driver certification.
+
+NOTE 2: It will be necessary for you to maintain your own edited driver
+release for distribution to your customers.
+
+Regards,
+ 
+Gordon Lunn
+Support Engineer
+
+FTDI Ltd
+373 Scotland Street
+Glasgow
+Scotland
+UK
+G5 8QB
+
+Tel:     +44 (0) 141 429 2777
+Fax:    +44 (0) 141 429 2758
+Skype: ftdi.support2
+Web:   www.ftdichip.com
+
+-----Original Message-----
+From: Rich Testardi at Home [mailto:rich@testardi.com] 
+Sent: 24 March 2008 06:45
+To: Support1
+Subject: Custom PID?
+
+Hi,
+
+I was wondering if I could get a custom PID to use with your VID?
+(I just need one, not a block of 8, if that matters...  I just want
+to be able to control the version of the driver for my hardware
+independent of the version of the driver for two other FTDI chips
+I already have connected to my development PC!)
+
+Name: Rich Testardi
+Company: Incipient, Inc.
+Country: USA
+E-Mail address: rich@testardi.com
+
+Thank you!
+
+-- Rich
+*/

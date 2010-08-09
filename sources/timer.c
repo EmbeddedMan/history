@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #endif
 
-#if DEBUG
+#if SODEBUG
 volatile bool timer_in_isr;
 volatile int32 timer_in_ticks;
 volatile int32 timer_out_ticks;

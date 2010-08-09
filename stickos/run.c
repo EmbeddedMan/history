@@ -4,7 +4,7 @@
 // handlers.  it also implements the core of the interactive debugger,
 // coupled with the command interpreter and variable access module.
 
-// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
@@ -54,6 +54,12 @@ static struct {
     int length;
     const byte *bytecode;
 } watchpoints[num_watchpoints];
+
+#if ! STICK_GUEST
+static char run_printf_buffer[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
+#else
+static char run_printf_buffer[BASIC_OUTPUT_LINE_SIZE+1];  // 1 for \n
+#endif
 
 static struct {
     int32 interval_ticks; // ticks/interrupt
@@ -280,6 +286,7 @@ run_evaluate_watchpoint(const byte *bytecode_in, int length, IN uint32 running_w
             switch (code) {
                 case code_load_and_push_immediate:
                 case code_load_and_push_immediate_hex:
+                case code_load_and_push_immediate_ascii:
                     push_stack(read32(bytecode));
                     bytecode += sizeof(uint32);
                     break;
@@ -293,6 +300,11 @@ run_evaluate_watchpoint(const byte *bytecode_in, int length, IN uint32 running_w
                         // do not want lvalue, or non-lvalue found, evaluate.
                         push_stack(var_get((char *)bytecode, 0, running_watchpoint_mask));
                     }
+                    bytecode += strlen((char *)bytecode)+1;
+                    break;
+
+                case code_load_and_push_var_length:  // variable name, '\0'
+                    push_stack(var_get_length((char *)bytecode));
                     bytecode += strlen((char *)bytecode)+1;
                     break;
 
@@ -427,12 +439,259 @@ run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var
     return run_evaluate_watchpoint(bytecode_in, length, 0, lvalue_var_name, value);
 }
 
+// revisit -- merge this with basic.c/parse.c???
+
+static
+bool
+run_input_const(IN OUT char **text, OUT int32 *value_out)
+{
+    char c;
+    int32 value;
+
+    if ((*text)[0] && ! isdigit((*text)[0])) {
+        return false;
+    }
+
+    // parse constant value and advance *text past constant
+    value = 0;
+    if ((*text)[0] == '0' && (*text)[1] == 'x') {
+        (*text) += 2;
+        for (;;) {
+            c = (*text)[0];
+            if (c >= 'a' && c <= 'f') {
+                value = value*16 + 10 + c - 'a';
+                (*text)++;
+            } else if (isdigit(c)) {
+                value = value*16 + c - '0';
+                (*text)++;
+            } else {
+                break;
+            }
+        }
+    } else {
+        while (isdigit((*text)[0])) {
+            value = value*10 + (*text)[0] - '0';
+            (*text)++;
+        }
+    }
+
+    *value_out = value;
+    parse_trim(text);
+    return true;
+}
+
+// read the next value from main_command
+static
+int32
+subinput(
+    int format,
+    int size
+    )
+{
+    bool boo;
+    int32 value;
+
+    if (format != code_raw) {
+        parse_trim((char **)&main_command);
+    }
+    
+    value = 0;
+    
+    if (format == code_dec || format == code_hex) {
+        boo = run_input_const((char **)&main_command, &value);
+        if (! boo) {
+            printf("illegal input\n");
+            stop();
+        }
+    } else {
+        assert(format == code_raw);
+        
+        switch (size) {
+            case 4:
+                value = value << 8 | *main_command;
+                if (*main_command) {
+                    main_command++;
+                }
+                value = value << 8 | *main_command;
+                if (*main_command) {
+                    main_command++;
+                }
+            case 2:
+                value = value << 8 | *main_command;
+                if (*main_command) {
+                    main_command++;
+                }
+            case 1:
+                value = value << 8 | *main_command;
+                if (*main_command) {
+                    main_command++;
+                }
+                break;
+            default:
+                assert(0);
+        }
+    }
+
+    return value;
+}
+
+// print the next value
+static
+int
+subprint(
+    char *s,
+    int n,
+    int32 value,
+    int format,
+    int size  // only used for code_raw
+    )
+{
+    int i;
+
+    if (format == code_hex) {
+        i = snprintf(s, n, "0x%lx", value);
+    } else if (format == code_dec) {
+        i = snprintf(s, n, "%ld", value);
+    } else {
+        assert(format == code_raw);
+        if (size == 1) {
+            i = snprintf(s, n, "%c", value);
+        } else if (size == 2) {
+            i = snprintf(s, n, "%c%c", (unsigned)value>>8, value);
+        } else {
+            assert(size == 4);
+            i = snprintf(s, n, "%c%c%c%c", (unsigned)value>>24, (unsigned)value>>16, (unsigned)value>>8, value);
+        }
+    }
+    return i;
+}
+
+// print an array of values
+static
+int
+subprintarray(
+    char *s,
+    int n,
+    const char *name,
+    int start,
+    int length OPTIONAL,  // -1
+    int format,
+    bool string
+    )
+{
+
+    int i;
+    int j;
+    int size;
+    int count;
+    int32 value;
+
+    i = 0;
+    size = var_get_size(name, &count);
+    if (count) {
+        for (j = 0; j < count; j++) {
+            if (j && format != code_raw) {
+                i += snprintf(s+i, n-i, " ");
+            }
+            value = var_get(name, j, 0);
+            if (string && ! value) {
+                break;
+            }
+            if (j >= start && (length == -1 || j < start+length)) {
+                i += subprint(s+i, n-i, value, format, size);
+            }
+        }
+    }
+    return i;
+}
+
+
+int32
+run_bytecode_const(IN const byte *bytecode, IN OUT int *index)
+{
+    byte code;
+    int32 value;
+
+    // skip the format
+    code = bytecode[*index];
+    assert(code == code_load_and_push_immediate || code == code_load_and_push_immediate_hex || code == code_load_and_push_immediate_ascii);
+    (*index)++;
+
+    // read the const
+    value = read32(bytecode + *index);
+    (*index) += sizeof(int32);
+
+    return value;
+}
+
+static
+int
+run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *string, OUT int *actual_out)
+{
+    int len;
+    int blen;
+    int blen2;
+    byte code;
+    int actual;
+    int32 value1;
+    int32 value2;
+    const char *name;
+    const byte *bytecode;
+
+    actual = 0;
+    bytecode = bytecode_in;
+    while (bytecode < bytecode_in+length) {
+        code = *bytecode;
+        if (code == code_comma) {
+            break;
+        }
+        bytecode++;
+
+        switch (code) {
+            case code_text:
+                actual += snprintf(string+actual, size-actual, "%s", bytecode);
+                len = strlen((const char *)bytecode);
+                bytecode += len+1;
+                break;
+            case code_load_string:
+            case code_load_string_indexed:
+                if (code == code_load_string) {
+                    value1 = -1;
+                    value2 = -1;
+                } else {
+                    blen = read32(bytecode);
+                    bytecode += sizeof(uint32);
+                    blen2 = read32(bytecode);
+                    bytecode += sizeof(uint32);
+                    len = run_evaluate(bytecode, blen, NULL, &value1);
+                    assert(len == blen);
+                    bytecode += blen;
+                    len = run_evaluate(bytecode, blen2, NULL, &value2);
+                    assert(len == blen2);
+                    bytecode += blen2;
+                }
+                name = (const char *)bytecode;
+                len = strlen(name);
+                bytecode += len+1;
+                actual += subprintarray(string+actual, size-actual, name, value1, value2, code_raw, true);
+                break;
+            default:
+                assert(0);
+        }
+    }
+
+    *actual_out = actual;
+    return bytecode-bytecode_in;
+}
+
 // this function executes a bytecode statement, with an independent keyword
 // bytecode.
 bool  // end
 run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 {
     int i;
+    int j;
+    int k;
     int n;
     int uart;
     int32 baud;
@@ -444,6 +703,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
     int blen;
     int32 value;
     byte *p;
+    char *s;
     int index;
     int oindex;
     int pass;
@@ -460,8 +720,10 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
     int pin_type;
     int pin_qual;
     struct line *line;
-    bool hex;
+    int format;
+    bool semi;
     bool output;
+    bool string;
     bool simple_var;
     int isr_length;
     const byte *isr_bytecode;
@@ -502,8 +764,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             if (device == device_timer) {
                 // *** timer control ***
                 // get the timer number
-                timer = read32(bytecode + index);
-                index += sizeof(uint32);
+                timer = run_bytecode_const(bytecode, &index);
                 assert(timer >= 0 && timer < MAX_TIMERS);
 
                 inter = TIMER_INT(timer);
@@ -616,11 +877,9 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
             if (device == device_timer) {
                 // *** timer control ***
-                // get the timer number and interval
-                timer = read32(bytecode+index);
-                index += sizeof(uint32);
-                interval = read32(bytecode+index);
-                index += sizeof(uint32);
+                // get the timer number, interval, and unit specifier
+                timer = run_bytecode_const(bytecode, &index);
+                interval = run_bytecode_const(bytecode, &index);
                 timer_unit = (enum timer_unit_type)bytecode[index++];
 
                 if (run_condition) {
@@ -641,10 +900,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 uart = *(bytecode+index);
                 index++;
                 assert(uart >= 0 && uart < MAX_UARTS);
-                baud = read32(bytecode+index);
-                index += sizeof(uint32);
-                data = read32(bytecode+index);
-                index += sizeof(uint32);
+                baud = run_bytecode_const(bytecode, &index);
+                data = run_bytecode_const(bytecode, &index);
                 parity = *(bytecode+index);
                 index++;
                 loopback = *(bytecode+index);
@@ -743,16 +1000,25 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index++;
                 }
 
+                // if we're dimensioning a string...
+                if (bytecode[index] == code_string) {
+                    string = true;
+                } else {
+                    assert(bytecode[index] == code_expression);
+                    string = false;
+                }
+                index++;
+
                 // if we're dimensioning a simple variable
-                if (bytecode[index] == code_load_and_push_var) {
+                if (bytecode[index] == code_load_and_push_var || bytecode[index] == code_load_string) {
                     // set the array length to 1
                     simple_var = true;
                     index++;
                     max_index = 1;
                 } else {
                     // we're dimensioning an array
+                    assert(bytecode[index] == code_load_and_push_var_indexed || bytecode[index] == code_load_string_indexed);
                     simple_var = false;
-                    assert(bytecode[index] == code_load_and_push_var_indexed);
                     index++;
 
                     blen = read32(bytecode+index);
@@ -804,8 +1070,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                         break;
 
                     case code_nodeid:
-                        nodeid = read32(bytecode+index);
-                        index += sizeof(uint32);
+                        nodeid = run_bytecode_const(bytecode, &index);
                         break;
 
                     default:
@@ -813,11 +1078,11 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                         break;
                 }
 
-                var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type, pin_qual, nodeid, abs_addr);
+                var_declare(name, max_gosubs, var_type, string, size, max_index, pin_number, pin_type, pin_qual, nodeid, abs_addr);
             } while (index < length && bytecode[index] == code_comma);
             break;
 
-        case code_let:
+        case code_let:  // N.B. code_letstring is below
 #if ! GCC
             cw7bug++;  // CW7 BUG
 #endif
@@ -828,14 +1093,139 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index++;
                 }
 
-                // revisit -- share with code_for!
-                // if we're assigning a simple variable...
-                if (bytecode[index] == code_load_and_push_var) {
+                // if we're assigning a string...
+                if (bytecode[index] == code_string) {
+                    index++;
+
+                    assert(bytecode[index] == code_load_string);
+                    index++;
+
+                    // get the variable name
+                    name = (char *)bytecode+index;
+                    index += strlen(name)+1;
+
+                    // evaluate the assignment string
+                    index += run_string(bytecode+index, length-index, sizeof(run_printf_buffer), run_printf_buffer, &k);
+
+                    // this is how many characetrs we actually printed
+                    k = MIN(k, sizeof(run_printf_buffer)-1);
+
+                    // assign an array of values
+                    size = var_get_size(name, &count);
+                    for (j = 0; j < count; j++) {
+                        var_set(name, j, j<k?(byte)(run_printf_buffer[j]):0);
+                    }
+
+                } else {
+                    // we're assigning an expression
+                    assert(bytecode[index] == code_expression);
+                    index++;
+
+                    // revisit -- share with code_for!
+                    // if we're assigning a simple variable...
+                    if (bytecode[index] == code_load_and_push_var) {
+                        // use array index 0
+                        index++;
+                        max_index = 0;
+                    } else {
+                        // we're assigning an array element
+                        assert(bytecode[index] == code_load_and_push_var_indexed);
+                        index++;
+
+                        blen = read32(bytecode+index);
+                        index += sizeof(uint32);
+
+                        // evaluate the array index
+                        index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                    }
+
+                    // get the variable name
+                    name = (char *)bytecode+index;
+                    index += strlen(name)+1;
+
+                    // evaluate the assignment expression
+                    index += run_evaluate(bytecode+index, length-index, NULL, &value);
+
+                    // assign the variable with the assignment expression
+                    var_set(name, max_index, value);
+                }
+            } while (index < length && bytecode[index] == code_comma);
+            break;
+
+        case code_input:
+            if (! run_condition) {
+                index = length;  // blindly skip the bytecode
+                break;
+            }
+            
+#if STICK_GUEST
+            {
+                static char text[2*BASIC_INPUT_LINE_SIZE];
+
+                if (isatty(0) && main_prompt) {
+                    write(1, "? ", 2);
+                }
+                if (! gets(text)) {
+                    break;
+                }
+                text[BASIC_INPUT_LINE_SIZE-1] = '\0';
+                main_command = text;
+            }
+#else
+            // if this is a new input statement...
+            if (terminal_command_discarding()) {
+                // temporarily stop discarding input
+                terminal_command_discard(false);
+                if (main_prompt) {
+                    printf("? ");
+                }
+            }
+            
+            // if we don't yet have input...
+            if (! main_command) {
+                index = length;  // blindly skip the bytecode
+                
+                // wait for input by simply execuuting the bytecode again
+                // N.B. waits occur in the main loop so we can service interrupts
+                run_line_number--;
+                break;
+            }
+            
+            // process the input
+            printf("\n");
+#endif
+
+            format = code_dec;
+            // while there are more items to input...
+            do {
+                // skip commas
+                if (bytecode[index] == code_comma) {
+                    index++;
+                }
+
+                // if we're changing format specifiers...
+                if (bytecode[index] == code_hex || bytecode[index] == code_dec || bytecode[index] == code_raw) {
+                    format = bytecode[index];
+                    index++;
+                }
+
+                // if we're dimensioning a string...
+                if (bytecode[index] == code_string) {
+                    string = true;
+                } else {
+                    assert(bytecode[index] == code_expression);
+                    string = false;
+                }
+                index++;
+
+                // if we're reading into a simple variable...
+                if (bytecode[index] == code_load_and_push_var || bytecode[index] == code_load_string) {
                     // use array index 0
                     index++;
                     max_index = 0;
+                    max_count = -1;
                 } else {
-                    // we're assigning an array element
+                    // we're reading into an array element
                     assert(bytecode[index] == code_load_and_push_var_indexed);
                     index++;
 
@@ -844,40 +1234,70 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
                     // evaluate the array index
                     index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                    max_count = max_index+1;
                 }
 
                 // get the variable name
                 name = (char *)bytecode+index;
                 index += strlen(name)+1;
 
-                // evaluate the assignment expression
-                index += run_evaluate(bytecode+index, length-index, NULL, &value);
+                // get the variable size
+                size = var_get_size(name, &count);
+                if (max_count == -1) {
+                    max_count = count;
+                }
 
-                // assign the variable with the assignment expression
-                var_set(name, max_index, value);
+                // for all variables...
+                for (i = max_index; i < max_count; i++) {
+                    // get and set the variable
+                    value = subinput(string?code_raw:format, size);
+                    var_set(name, i, value);
+                }
             } while (index < length && bytecode[index] == code_comma);
+            
+            if (*main_command) {
+                printf("extra input ignored\n");
+            }
+            
+            main_command = NULL;
+#if ! STICK_GUEST
+            terminal_command_ack(false);
+            
+            // resume discarding input
+            terminal_command_discard(true);
+#endif
             break;
 
         case code_print:
 #if ! GCC
             cw7bug++;  // CW7 BUG
 #endif
-            hex = false;
+            s = run_printf_buffer;
+            n = sizeof(run_printf_buffer);
+
+            // if we're not printing a newline...
+            semi = false;
+            if (bytecode[index] == code_semi) {
+                index++;
+                semi = true;
+            }
+
+            format = code_dec;
             // while there are more items to print...
             do {
                 // skip commas
                 if (bytecode[index] == code_comma) {
-                    if (run_condition) {
-                        run_printf = true;
-                        printf(" ");
-                        run_printf = false;
+                    if (format != code_raw) {
+                        i = snprintf(s, n, " ");
+                        s += i;
+                        n -= i;
                     }
                     index++;
                 }
 
                 // if we're changing format specifiers...
-                if (bytecode[index] == code_hex || bytecode[index] == code_dec) {
-                    hex = bytecode[index] == code_hex;
+                while (bytecode[index] == code_hex || bytecode[index] == code_dec || bytecode[index] == code_raw) {
+                    format = bytecode[index];
                     index++;
                 }
                 
@@ -885,34 +1305,50 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 if (bytecode[index] == code_string) {
                     index++;
 
-                    if (run_condition) {
-                        run_printf = true;
-                        printf("%s", bytecode+index);
-                        run_printf = false;
-                    }
-                    index += strlen((char *)bytecode+index)+1;
+                    index += run_string(bytecode+index, length-index, n, s, &i);
+                    s += i;
+                    n -= i;
                 } else {
                     // we're printing an expression
                     assert(bytecode[index] == code_expression);
                     index++;
 
                     // evaluate the expression
-                    index += run_evaluate(bytecode+index, length-index, NULL, &value);
-                    if (run_condition) {
-                        run_printf = true;
-                        if (hex) {
-                            printf("0x%lx", value);
-                        } else {
-                            printf("%ld", value);
-                        }
-                        run_printf = false;
+                    index += run_evaluate(bytecode+index, length-index, &name, &value);
+                    if (name) {
+                        // print an array of values
+                        i = subprintarray(s, n, name, -1, -1, format, false);
+                    } else {
+                        // print a single value
+                        i = subprint(s, n, value, format, 4);
                     }
+                    s += i;
+                    n -= i;
                 }
             } while (index < length && bytecode[index] == code_comma);
 
+            if (! semi) {
+                i = snprintf(s, n, "\n");
+                s += i;
+                n -= i;
+            }
+
+            // this is how many characetrs we actually printed
+            k = MIN(s - run_printf_buffer, sizeof(run_printf_buffer)-1);
+
+            // make sure the run_printf_buffer has a trailing \r\n or \n
+            assert(! run_printf_buffer[sizeof(run_printf_buffer)-1]);
+            if (k == sizeof(run_printf_buffer)-1) {
+#if ! STICK_GUEST
+                strcpy(run_printf_buffer+sizeof(run_printf_buffer)-3, "\r\n");
+#else
+                strcpy(run_printf_buffer+sizeof(run_printf_buffer)-2, "\n");
+#endif
+            }
+
             if (run_condition) {
                 run_printf = true;
-                printf("\n");
+                printf_write(run_printf_buffer, k);
                 run_printf = false;
             }
             break;
@@ -974,6 +1410,7 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                     }
                     
                     if (! pass) {
+                        // for all variables...
                         for (i = max_index; i < max_count; i++) {
                             // get the variable data
                             value = var_get(name, i, 0);
@@ -998,6 +1435,7 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                             }
                         }
                     } else {
+                        // for all variables...
                         for (i = max_index; i < max_count; i++) {
                             // unpack it from the qspi buffer
                             if (size == sizeof(byte)) {
@@ -1193,9 +1631,12 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
 
         case code_break:
         case code_continue:
-            // get the break/continue level
-            n = read32(bytecode + index);
-            index += sizeof(uint32);
+            // if the user specified a break/continue level...
+            if (index < length) {
+                n = run_bytecode_const(bytecode, &index);
+            } else {
+                n = 1;
+            }
             assert(n);
 
             // find the outermost while loop
@@ -1347,11 +1788,11 @@ XXX_PERF_XXX:
                     index += run_evaluate(bytecode+index, length-index, &name, &value);
 
                     // if the param is an lvalue, then just get its name and index (if its an array element).
-                    if (name != NULL) {
+                    if (name) {
                         var_declare_reference((const char *)sub_bytecode, max_gosubs, name);
                     } else {
                         // the current parameter value is not an lvalue expression, pass it by-value into the sub's parameter.
-                        var_declare((const char *)sub_bytecode, max_gosubs, code_ram, sizeof(uint32), 1, 0, 0, 0, -1, -1);
+                        var_declare((const char *)sub_bytecode, max_gosubs, code_ram, false, sizeof(uint32), 1, 0, 0, 0, -1, -1);
                         var_set((const char *)sub_bytecode, 0, value);
                     }
 
@@ -1447,6 +1888,14 @@ XXX_PERF_XXX:
                 run_sleep_line_number = run_line_number;
             }
             break;
+            
+        case code_halt:
+            if (run_condition) {                
+                // loop forever
+                run_line_number--;
+            }
+            break;
+            
         case code_stop:
             if (run_condition) {
                 stop();

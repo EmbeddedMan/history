@@ -156,6 +156,7 @@ led_line(int line)
     int i;
     int j;
     int n;
+    int inv;
     
     if (debugger_attached) {
         asm_halt();
@@ -163,6 +164,7 @@ led_line(int line)
         splx(7);
         
         n = 0;
+        inv = 0;
         for (;;) {
             if (n++ >= 10) {
 #if PICTOCRYPT
@@ -180,13 +182,16 @@ led_line(int line)
                     j = 10;
                 }
                 while (j--) {
-                    led_set(led_red, 1);
+                    led_set(led_red, 1^inv);
                     delay(200);
-                    led_set(led_red, 0);
+                    led_set(led_red, 0^inv);
                     delay(200);
                 }
                 delay(1000);
             }
+            delay(3000);
+            inv = ! inv;
+            led_set(led_red, 0^inv);
             delay(3000);
         }
     }
@@ -199,6 +204,7 @@ led_hex(int hex)
     int i;
     int j;
     int n;
+    int inv;
     
     if (debugger_attached) {
         asm_halt();
@@ -206,6 +212,7 @@ led_hex(int hex)
         splx(7);
         
         n = 0;
+        inv = 0;
         for (;;) {
             if (n++ >= 10) {
 #if PICTOCRYPT
@@ -223,13 +230,16 @@ led_hex(int hex)
                     j = 16;
                 }
                 while (j--) {
-                    led_set(led_red, 1);
+                    led_set(led_red, 1^inv);
                     delay(200);
-                    led_set(led_red, 0);
+                    led_set(led_red, 0^inv);
                     delay(200);
                 }
                 delay(1000);
             }
+            delay(3000);
+            inv = ! inv;
+            led_set(led_red, 0^inv);
             delay(3000);
         }
     }

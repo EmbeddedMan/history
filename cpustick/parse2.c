@@ -58,7 +58,7 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
             boo = parse_line_code(code_print, text, &length2, bytecode+length, &syntax_error);
             if (! boo) {
                 *syntax_error_in = text - text_in + syntax_error;
-                assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_LINE_SIZE);
+                assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_OUTPUT_LINE_SIZE);
                 return boo;
             }
             *length_out = length+length2;
@@ -100,7 +100,7 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
 
 XXX_ERROR_XXX:
     *syntax_error_in = text - text_in;
-    assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_LINE_SIZE);
+    assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_OUTPUT_LINE_SIZE);
     return false;
 }
 
