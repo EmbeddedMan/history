@@ -3,6 +3,8 @@
 // it just initializes all of the modules of the os and then runs the
 // main application program loop.
 
+#include "main.h"
+
 #if PIC32 && ! HIDBL
     #pragma config UPLLEN   = ON            // USB PLL Enabled
     #pragma config FPLLMUL  = MUL_20        // PLL Multiplier
@@ -24,8 +26,6 @@
     #pragma config ICESEL   = ICS_PGx2      // ICE/ICD Comm Channel Select
     #pragma config DEBUG    = OFF           // Debugger Disabled for Starter Kit
 #endif
-
-#include "main.h"
 
 #if PIC32
 void _general_exception_context(void)
