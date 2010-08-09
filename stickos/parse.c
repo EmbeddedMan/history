@@ -822,6 +822,7 @@ XXX_AGAIN_XXX:
     // if this is a multi-statement...
     if (length) {
         assert(multi);
+        // parse the comma
         if (! parse_char(&text, ',')) {
             goto XXX_ERROR_XXX;
         }
@@ -1197,9 +1198,11 @@ XXX_AGAIN_XXX:
             break;
             
         case code_print:
-            // if we're not printing a newline...
-            if (parse_find_tail(text, ";")) {
-                bytecode[length++] = code_semi;
+            if (! length) {
+                // if we're not printing a newline...
+                if (parse_find_tail(text, ";")) {
+                    bytecode[length++] = code_semi;
+                }
             }
 
             parse_format(&text, &length, bytecode);
@@ -1824,17 +1827,31 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
     int qual;
     int uart;
     bool semi;
+    bool multi;
     byte parity;
     byte loopback;
     enum timer_unit_type timer_unit;
     byte device;
     byte code2;
     byte *bytecode;
-    byte *obytecode;
     bool output;
     bool string;
 
+    semi = false;
+    multi = false;
     bytecode = bytecode_in;
+
+XXX_AGAIN_XXX:
+    // if this is a multi-statement...
+    if (bytecode > bytecode_in) {
+        assert(multi);
+        // separate with a comma
+        out += sprintf(out, ", ");
+        if (code != code_data) {
+            assert(*bytecode == code_comma);
+            bytecode++;
+        }
+    }
 
     switch (code) {
         case code_rem:
@@ -1937,193 +1954,144 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
             break;
 
         case code_read:
-        case code_data:
-            // while there are more variables...
-            while (bytecode < bytecode_in+length) {
-                if (bytecode > bytecode_in+1) {
-                    // separate variables with a comma
-                    out += sprintf(out, ", ");
-                    if (code == code_read) {
-                        assert(*bytecode == code_comma);
-                        bytecode++;
-                    }
-                }
+            // decompile the variable
+            bytecode += unparse_var(false, true, 1, bytecode, &out);
 
-                if (code == code_read) {
-                    // decompile the variable
-                    bytecode += unparse_var(false, true, 1, bytecode, &out);
-                } else {
-                    // decompile the constant
-                    assert(code == code_data);
-                    bytecode += unparse_const(0, bytecode, &out);
-                }
-            }
+            multi = true;
+            break;
+
+        case code_data:
+            // decompile the constant
+            assert(code == code_data);
+            bytecode += unparse_const(0, bytecode, &out);
+
+            multi = true;
             break;
 
         case code_dim:
 #if ! GCC
             cw7bug++;
 #endif
-            // while there are more variables...
-            while (bytecode < bytecode_in+length) {
-                if (bytecode > bytecode_in+1) {
-                    // separate variables with a comma
-                    out += sprintf(out, ", ");
-                    assert(*bytecode == code_comma);
-                    bytecode++;
-                }
+            bytecode += unparse_class(bytecode, &string);
 
-                bytecode += unparse_class(bytecode, &string);
+            // decompile the variable
+            bytecode += unparse_var(string, true, 1, bytecode, &out);
 
-                // decompile the variable
-                bytecode += unparse_var(string, true, 1, bytecode, &out);
+            size = *bytecode++;
+            code2 = *bytecode++;
 
-                size = *bytecode++;
-                code2 = *bytecode++;
+            // decompile the "as"
+            if (! string) {
+                if (size != sizeof(uint32) || (code2 != code_ram) && (code2 != code_absolute)) {
+                    out += sprintf(out, " as ");
 
-                // decompile the "as"
-                if (! string) {
-                    if (size != sizeof(uint32) || (code2 != code_ram) && (code2 != code_absolute)) {
-                        out += sprintf(out, " as ");
-
-                        // decompile the size specifier
-                        if (size == sizeof(byte)) {
-                            assert(code2 == code_ram || code2 == code_absolute);
-                            out += sprintf(out, "byte");
-                        } else if (size == sizeof(short)) {
-                            assert(code2 == code_ram || code2 == code_absolute);
-                            out += sprintf(out, "short");
-                        } else {
-                            assert(size == sizeof(uint32));
-                        }
+                    // decompile the size specifier
+                    if (size == sizeof(byte)) {
+                        assert(code2 == code_ram || code2 == code_absolute);
+                        out += sprintf(out, "byte");
+                    } else if (size == sizeof(short)) {
+                        assert(code2 == code_ram || code2 == code_absolute);
+                        out += sprintf(out, "short");
+                    } else {
+                        assert(size == sizeof(uint32));
                     }
-                }
-
-                // decompile the type specifier
-                if (code2 == code_ram) {
-                    // NULL
-                } else if (code2 == code_flash) {
-                    out += sprintf(out, "flash");
-                } else if (code2 == code_pin) {
-                    out += sprintf(out, "pin ");
-
-                    pin = *bytecode++;
-                    type = *bytecode++;
-                    qual = *bytecode++;
-
-                    // decompile the pin name
-                    assert(pin >= 0 && pin < PIN_LAST);
-                    out += sprintf(out, "%s ", pins[pin].name);
-
-                    out += sprintf(out, "for ");
-
-                    // decompile the pin usage
-                    assert(type >= 0 && type < pin_type_last);
-                    out += sprintf(out, "%s", pin_type_names[type]);
-
-                    // decompile the pin qualifier(s)
-                    for (i = 0; i < pin_qual_last; i++) {
-                        if (qual & (1<<i)) {
-                            out += sprintf(out, " %s", pin_qual_names[i]);
-                        }
-                    }
-                } else if (code2 == code_absolute) {
-                    out += sprintf(out, " at address ");
-                    bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
-                } else {
-                    assert(code2 == code_nodeid);
-
-                    bytecode += unparse_word_const_word("remote on nodeid", NULL, bytecode, &out);
                 }
             }
+
+            // decompile the type specifier
+            if (code2 == code_ram) {
+                // NULL
+            } else if (code2 == code_flash) {
+                out += sprintf(out, "flash");
+            } else if (code2 == code_pin) {
+                out += sprintf(out, "pin ");
+
+                pin = *bytecode++;
+                type = *bytecode++;
+                qual = *bytecode++;
+
+                // decompile the pin name
+                assert(pin >= 0 && pin < PIN_LAST);
+                out += sprintf(out, "%s ", pins[pin].name);
+
+                out += sprintf(out, "for ");
+
+                // decompile the pin usage
+                assert(type >= 0 && type < pin_type_last);
+                out += sprintf(out, "%s", pin_type_names[type]);
+
+                // decompile the pin qualifier(s)
+                for (i = 0; i < pin_qual_last; i++) {
+                    if (qual & (1<<i)) {
+                        out += sprintf(out, " %s", pin_qual_names[i]);
+                    }
+                }
+            } else if (code2 == code_absolute) {
+                out += sprintf(out, " at address ");
+                bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+            } else {
+                assert(code2 == code_nodeid);
+
+                bytecode += unparse_word_const_word("remote on nodeid", NULL, bytecode, &out);
+            }
+
+            multi = true;
             break;
 
         case code_let:
-            // while there are more items...
-            while (bytecode < bytecode_in+length) {
-                if (bytecode > bytecode_in+1) {
-                    // separate items with a comma
-                    out += sprintf(out, ", ");
-                    assert(*bytecode == code_comma);
-                    bytecode++;
-                }
+            bytecode += unparse_class(bytecode, &string);
 
-                bytecode += unparse_class(bytecode, &string);
+            // decompile the variable
+            bytecode += unparse_var(string, true, string?0:1, bytecode, &out);
 
-                // decompile the variable
-                bytecode += unparse_var(string, true, string?0:1, bytecode, &out);
+            // decompile the assignment
+            out += sprintf(out, " = ");
 
-                // decompile the assignment
-                out += sprintf(out, " = ");
+            // decompile the string or expression
+            bytecode += unparse_string_or_expression(string, bytecode, bytecode_in+length-bytecode, &out);
 
-                // decompile the string or expression
-                bytecode += unparse_string_or_expression(string, bytecode, bytecode_in+length-bytecode, &out);
-            }
+            multi = true;
             break;
 
         case code_input:
-            // while there are more items...
-            while (bytecode < bytecode_in+length) {
-                if (bytecode > bytecode_in+1) {
-                    // separate items with a comma
-                    out += sprintf(out, ", ");
-                    assert(*bytecode == code_comma);
-                    bytecode++;
-                }
+            bytecode += unparse_format(bytecode, &out);
 
-                bytecode += unparse_format(bytecode, &out);
+            bytecode += unparse_class(bytecode, &string);
 
-                bytecode += unparse_class(bytecode, &string);
+            // decompile the variable
+            bytecode += unparse_var(string, true, string?0:1, bytecode, &out);
 
-                // decompile the variable
-                bytecode += unparse_var(string, true, string?0:1, bytecode, &out);
-            }
+            multi = true;
             break;
             
         case code_print:
             // if we're not printing a newline...
-            semi = false;
             if (*bytecode == code_semi) {
+                assert(bytecode == bytecode_in);
                 bytecode++;
                 semi = true;
             }
 
-            // while there are more items...
-            obytecode = bytecode;
-            while (bytecode < bytecode_in+length) {
-                if (bytecode > obytecode) {
-                    // separate items with a comma
-                    out += sprintf(out, ", ");
-                    assert(*bytecode == code_comma);
-                    bytecode++;
+            bytecode += unparse_format(bytecode, &out);
+
+            bytecode += unparse_class(bytecode, &string);
+
+            // decompile the string or expression
+            bytecode += unparse_string_or_expression(string, bytecode, bytecode_in+length-bytecode, &out);
+
+            if (bytecode == bytecode_in+length) {
+                if (semi) {
+                    out += sprintf(out, ";");
                 }
-
-                bytecode += unparse_format(bytecode, &out);
-
-                bytecode += unparse_class(bytecode, &string);
-
-                // decompile the string or expression
-                bytecode += unparse_string_or_expression(string, bytecode, bytecode_in+length-bytecode, &out);
             }
-
-            if (semi) {
-                out += sprintf(out, ";");
-            }
+            multi = true;
             break;
 
         case code_qspi:
-            // while there are more variables...
-            while (bytecode < bytecode_in+length) {
-                if (bytecode > bytecode_in+1) {
-                    // separate variables with a comma
-                    out += sprintf(out, ", ");
-                    assert(*bytecode == code_comma);
-                    bytecode++;
-                }
+            // decompile the variable
+            bytecode += unparse_var(false, true, 1, bytecode, &out);
 
-                // decompile the variable
-                bytecode += unparse_var(false, true, 1, bytecode, &out);
-            }
+            multi = true;
             break;
 
         case code_if:
@@ -2241,6 +2209,9 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
             break;
     }
 
+    if (bytecode < bytecode_in+length) {
+        goto XXX_AGAIN_XXX;
+    }
     assert(bytecode == bytecode_in+length);
 }
 
