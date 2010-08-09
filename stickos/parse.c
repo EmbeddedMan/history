@@ -802,6 +802,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
     int length;
     int olength;
     bool string;
+    bool multi;
     char *text;
     char *text_ok;
     char *text_err;
@@ -811,10 +812,23 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
     int pin_number;
     int ram_or_abs_var_size;
 
+    length = 0;
     text = text_in;
+    multi = false;
+
+XXX_AGAIN_XXX:
     parse_trim(&text);
 
-    length = 0;
+    // if this is a multi-statement...
+    if (length) {
+        assert(multi);
+        if (! parse_char(&text, ',')) {
+            goto XXX_ERROR_XXX;
+        }
+        if (code != code_data) {
+            bytecode[length++] = code_comma;
+        }
+    }
 
     switch (code) {
         case code_rem:
@@ -1000,9 +1014,6 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
             } else {
                 goto XXX_ERROR_XXX;
             }
-            if (*text) {
-                goto XXX_ERROR_XXX;
-            }
             break;
 
         case code_assert:
@@ -1013,277 +1024,203 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
             break;
 
         case code_read:
-        case code_data:
-            if (! *text) {
+            // parse the variable
+            if (! parse_var(false, true, 1, 0, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
             }
 
-            // while there are more variables to parse...
-            while (*text) {
-                if (length > 1) {
-                    if (! parse_char(&text, ',')) {
-                        goto XXX_ERROR_XXX;
-                    }
-                    if (code == code_read) {
-                        bytecode[length++] = code_comma;
-                    }
-                }
+            multi = true;
+            break;
 
-                if (code == code_read) {
-                    // parse the variable
-                    if (! parse_var(false, true, 1, 0, &text, &length, bytecode)) {
-                        goto XXX_ERROR_XXX;
-                    }
-                } else {
-                    // parse the constant
-                    assert(code == code_data);
-                    if (! parse_const(&text, &length, bytecode)) {
-                        goto XXX_ERROR_XXX;
-                    }
-                }
+        case code_data:
+            // parse the constant
+            assert(code == code_data);
+            if (! parse_const(&text, &length, bytecode)) {
+                goto XXX_ERROR_XXX;
             }
+
+            multi = true;
             break;
 
         case code_dim:
-            if (! *text) {
+            string = parse_class(text, &length, bytecode);
+
+            // parse the variable
+            if (! parse_var(string, true, 1, 0, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
             }
 
-            // while there are more variables to parse...
-            while (*text) {
-                if (length > 1) {
-                    if (! parse_char(&text, ',')) {
-                        goto XXX_ERROR_XXX;
-                    }
-                    bytecode[length++] = code_comma;
-                }
+            ram_or_abs_var_size = 0;
 
-                string = parse_class(text, &length, bytecode);
-
-                // parse the variable
-                if (! parse_var(string, true, 1, 0, &text, &length, bytecode)) {
+            // if the user specified "as"...
+            if (parse_word(&text, "as")) {
+                if (string) {
                     goto XXX_ERROR_XXX;
                 }
 
-                ram_or_abs_var_size = 0;
-
-                // if the user specified "as"...
-                if (parse_word(&text, "as")) {
-                    if (string) {
-                        goto XXX_ERROR_XXX;
-                    }
-
-                    // parse the size specifier
-                    if (parse_word(&text, "byte")) {
-                        ram_or_abs_var_size = 1;
-                    } else if (parse_word(&text, "short")) {
-                        ram_or_abs_var_size = 2;
-                    } else {
-                        bytecode[length++] = sizeof(uint32);
-
-                        // parse the type specifier
-                        if (parse_word(&text, "flash")) {
-                            bytecode[length++] = code_flash;
-                        } else if (parse_word(&text, "pin")) {
-                            bytecode[length++] = code_pin;
-
-                            // parse the pin name
-                            for (pin_number = 0; pin_number < PIN_LAST; pin_number++) {
-                                if (parse_wordn(&text, pins[pin_number].name)) {
-                                    break;
-                                }
-                            }
-                            if (pin_number == PIN_LAST) {
-                                goto XXX_ERROR_XXX;
-                            }
-                            assert(pin_number < PIN_LAST);
-                            bytecode[length++] = pin_number;
-
-                            if (! parse_word(&text, "for")) {
-                                goto XXX_ERROR_XXX;
-                            }
-
-                            // parse the pin usage
-                            text_ok = text;
-                            text_err = NULL;
-                            for (pin_type = 0; pin_type < pin_type_last; pin_type++) {
-                                if (parse_words(&text, &text_err, pin_type_names[pin_type])) {
-                                    break;
-                                }
-                            }
-                            if (pin_type == pin_type_last) {
-                                assert(text_err);
-                                text = text_err;
-                                goto XXX_ERROR_XXX;
-                            }
-                            bytecode[length++] = pin_type;
-                            
-                            // parse the pin qualifier(s)
-                            pin_qual = 0;
-                            for (i = 0; i < pin_qual_last; i++) {
-                                if (parse_word(&text, pin_qual_names[i])) {
-                                    pin_qual |= 1<<i;
-                                }
-                            }
-                            bytecode[length++] = pin_qual;
-                            
-                            // see if the pin usage is legal
-                            if (! (pins[pin_number].pin_type_mask & (1<<pin_type))) {
-                                text = text_ok;
-                                printf("unsupported pin type\n");
-                                goto XXX_ERROR_XXX;
-                            }
-                            
-                            // see if the pin qualifier usage is legal
-                            if (pin_qual &~ pin_qual_mask[pin_type]) {
-                                printf("unsupported pin qualifier\n");
-                                goto XXX_ERROR_XXX;
-                            }
-                        } else if (parse_words(&text, &text, "remote on nodeid")) {
-                            bytecode[length++] = code_nodeid;
-
-                            // parse the nodeid
-                            if (! parse_const(&text, &length, bytecode)) {
-                                goto XXX_ERROR_XXX;
-                            }
-                        } else {
-                            goto XXX_ERROR_XXX;
-                        }
-                    }
+                // parse the size specifier
+                if (parse_word(&text, "byte")) {
+                    ram_or_abs_var_size = 1;
+                } else if (parse_word(&text, "short")) {
+                    ram_or_abs_var_size = 2;
                 } else {
-                    ram_or_abs_var_size = string?1:4;
-                }
+                    bytecode[length++] = sizeof(uint32);
 
-                // if parsing a ram or absolute variable...
-                if (ram_or_abs_var_size) {
-                    bytecode[length++] = ram_or_abs_var_size;
-                    // parse optional "at address <address>" suffix
-                    text_err = NULL;
-                    if (parse_words(&text, &text_err, "at address")) {
-                        bytecode[length++] = code_absolute;
-                        // parse the <address>
-                        if (! parse_expression(0, &text, &length, bytecode)) {
+                    // parse the type specifier
+                    if (parse_word(&text, "flash")) {
+                        bytecode[length++] = code_flash;
+                    } else if (parse_word(&text, "pin")) {
+                        bytecode[length++] = code_pin;
+
+                        // parse the pin name
+                        for (pin_number = 0; pin_number < PIN_LAST; pin_number++) {
+                            if (parse_wordn(&text, pins[pin_number].name)) {
+                                break;
+                            }
+                        }
+                        if (pin_number == PIN_LAST) {
                             goto XXX_ERROR_XXX;
                         }
-                    } else if (*text && *text != ',') {
-                        assert(text_err);
-                        text = text_err;
-                        goto XXX_ERROR_XXX;
+                        assert(pin_number < PIN_LAST);
+                        bytecode[length++] = pin_number;
+
+                        if (! parse_word(&text, "for")) {
+                            goto XXX_ERROR_XXX;
+                        }
+
+                        // parse the pin usage
+                        text_ok = text;
+                        text_err = NULL;
+                        for (pin_type = 0; pin_type < pin_type_last; pin_type++) {
+                            if (parse_words(&text, &text_err, pin_type_names[pin_type])) {
+                                break;
+                            }
+                        }
+                        if (pin_type == pin_type_last) {
+                            assert(text_err);
+                            text = text_err;
+                            goto XXX_ERROR_XXX;
+                        }
+                        bytecode[length++] = pin_type;
+                        
+                        // parse the pin qualifier(s)
+                        pin_qual = 0;
+                        for (i = 0; i < pin_qual_last; i++) {
+                            if (parse_word(&text, pin_qual_names[i])) {
+                                pin_qual |= 1<<i;
+                            }
+                        }
+                        bytecode[length++] = pin_qual;
+                        
+                        // see if the pin usage is legal
+                        if (! (pins[pin_number].pin_type_mask & (1<<pin_type))) {
+                            text = text_ok;
+                            printf("unsupported pin type\n");
+                            goto XXX_ERROR_XXX;
+                        }
+                        
+                        // see if the pin qualifier usage is legal
+                        if (pin_qual &~ pin_qual_mask[pin_type]) {
+                            printf("unsupported pin qualifier\n");
+                            goto XXX_ERROR_XXX;
+                        }
+                    } else if (parse_words(&text, &text, "remote on nodeid")) {
+                        bytecode[length++] = code_nodeid;
+
+                        // parse the nodeid
+                        if (! parse_const(&text, &length, bytecode)) {
+                            goto XXX_ERROR_XXX;
+                        }
                     } else {
-                        bytecode[length++] = code_ram;
+                        goto XXX_ERROR_XXX;
                     }
+                }
+            } else {
+                ram_or_abs_var_size = string?1:4;
+            }
+
+            // if parsing a ram or absolute variable...
+            if (ram_or_abs_var_size) {
+                bytecode[length++] = ram_or_abs_var_size;
+                // parse optional "at address <address>" suffix
+                text_err = NULL;
+                if (parse_words(&text, &text_err, "at address")) {
+                    bytecode[length++] = code_absolute;
+                    // parse the <address>
+                    if (! parse_expression(0, &text, &length, bytecode)) {
+                        goto XXX_ERROR_XXX;
+                    }
+                } else if (*text && *text != ',') {
+                    assert(text_err);
+                    text = text_err;
+                    goto XXX_ERROR_XXX;
+                } else {
+                    bytecode[length++] = code_ram;
                 }
             }
+
+            multi = true;
             break;
 
         case code_let:
-            if (! *text) {
+            string = parse_class(text, &length, bytecode);
+
+            // parse the variable
+            if (! parse_var(string, true, string?0:1, 0, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
             }
 
-            // while there are more items to assign...
-            while (*text) {
-                if (length > 1) {
-                    if (! parse_char(&text, ',')) {
-                        goto XXX_ERROR_XXX;
-                    }
-                    bytecode[length++] = code_comma;
-                }
-
-                string = parse_class(text, &length, bytecode);
-
-                // parse the variable
-                if (! parse_var(string, true, string?0:1, 0, &text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
-
-                // parse the assignment
-                if (! parse_char(&text, '=')) {
-                    goto XXX_ERROR_XXX;
-                }
-
-                // parse the string or expression
-                if (! parse_string_or_expression(string, &text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
+            // parse the assignment
+            if (! parse_char(&text, '=')) {
+                goto XXX_ERROR_XXX;
             }
+
+            // parse the string or expression
+            if (! parse_string_or_expression(string, &text, &length, bytecode)) {
+                goto XXX_ERROR_XXX;
+            }
+
+            multi = true;
             break;
 
         case code_input:
-            if (! *text) {
+            parse_format(&text, &length, bytecode);
+
+            string = parse_class(text, &length, bytecode);
+
+            // parse the variable
+            if (! parse_var(string, true, string?0:1, 0, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
             }
 
-            // while there are more items to input...
-            while (*text) {
-                if (length > 1) {
-                    if (! parse_char(&text, ',')) {
-                        goto XXX_ERROR_XXX;
-                    }
-                    bytecode[length++] = code_comma;
-                }
-
-                parse_format(&text, &length, bytecode);
-
-                string = parse_class(text, &length, bytecode);
-
-                // parse the variable
-                if (! parse_var(string, true, string?0:1, 0, &text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
-            }
+            multi = true;
             break;
             
         case code_print:
-            if (! *text) {
-                goto XXX_ERROR_XXX;
-            }
-
             // if we're not printing a newline...
             if (parse_find_tail(text, ";")) {
                 bytecode[length++] = code_semi;
             }
 
-            // while there are more items to print or assign...
-            olength = length;
-            while (*text) {
-                if (length > olength) {
-                    if (! parse_char(&text, ',')) {
-                        goto XXX_ERROR_XXX;
-                    }
-                    bytecode[length++] = code_comma;
-                }
+            parse_format(&text, &length, bytecode);
 
-                parse_format(&text, &length, bytecode);
+            string = parse_class(text, &length, bytecode);
 
-                string = parse_class(text, &length, bytecode);
-
-                // parse the string or expression
-                if (! parse_string_or_expression(string, &text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
-            }
-            break;
-
-        case code_qspi:
-            if (! *text) {
+            // parse the string or expression
+            if (! parse_string_or_expression(string, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
             }
 
-            // while there are more variables to parse...
-            while (*text) {
-                if (length > 1) {
-                    if (! parse_char(&text, ',')) {
-                        goto XXX_ERROR_XXX;
-                    }
-                    bytecode[length++] = code_comma;
-                }
+            multi = true;
+            break;
 
-                // parse the variable
-                if (! parse_var(false, true, 1, 0, &text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
+        case code_qspi:
+            // parse the variable
+            if (! parse_var(false, true, 1, 0, &text, &length, bytecode)) {
+                goto XXX_ERROR_XXX;
             }
+
+            multi = true;
             break;
 
         case code_if:
@@ -1476,6 +1413,10 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
         default:
             assert(0);
             break;
+    }
+
+    if (*text && multi) {
+        goto XXX_AGAIN_XXX;
     }
     if (*text) {
         goto XXX_ERROR_XXX;
