@@ -1,10 +1,17 @@
 #include "main.h"
 
+#if STICKOSPLUS || PICTOCRYPT
+#if STICKOSPLUS
+#define OPTIMIZE  0
+#else
 #define OPTIMIZE  1
+#endif
+
 #define RETRIES  2
 
 #define NLRUS  4
 
+#if OPTIMIZE
 static struct lru {
     byte buffer[512];
     uint32 sector;
@@ -12,6 +19,7 @@ static struct lru {
     bool filled;
     int dirty;  // non-0 is ticks -> write back on purge
 } lrus[NLRUS];
+#endif
 
 int PhysReadWriteSector(bool read, uint8_t *buffer, uint32_t sector, uint32_t count)
 {
@@ -149,10 +157,12 @@ XXX_RETRY_XXX:
 
 int DFS_HostReadSector(uint8_t *buffer, uint32_t sector, uint32_t count)
 {
+#if OPTIMIZE    
     int i;
     int rv;
     int oi;
     int oticks;
+#endif
     
     //DFS_HostFlush(5000);
     
@@ -160,6 +170,7 @@ int DFS_HostReadSector(uint8_t *buffer, uint32_t sector, uint32_t count)
         return PhysReadWriteSector(1, buffer, sector, count);
     }
     
+#if OPTIMIZE    
     // reuse an existing slot
     for (i = 0; i < LENGTHOF(lrus); i++) {
         if (lrus[i].filled && lrus[i].sector == sector) {
@@ -208,14 +219,17 @@ XXX_USE_XXX:
     lrus[i].filled = false;
     
     goto XXX_USE_XXX;
+#endif
 }
 
 int DFS_HostWriteSector(uint8_t *buffer, uint32_t sector, uint32_t count)
 {
+#if OPTIMIZE
     int i;
     int rv;
     int oi;
     int oticks;
+#endif
     
     //DFS_HostFlush(5000);
 
@@ -223,6 +237,7 @@ int DFS_HostWriteSector(uint8_t *buffer, uint32_t sector, uint32_t count)
         return PhysReadWriteSector(0, buffer, sector, count);
     }
     
+#if OPTIMIZE
     // reuse an existing slot
     for (i = 0; i < LENGTHOF(lrus); i++) {
         if (lrus[i].filled && lrus[i].sector == sector) {
@@ -266,10 +281,12 @@ XXX_USE_XXX:
     lrus[i].filled = false;
     
     goto XXX_USE_XXX;
+#endif
 }
 
 void DFS_HostFlush(int ms)
 {
+#if OPTIMIZE
     int i;
     int rv;
     
@@ -280,14 +297,18 @@ void DFS_HostFlush(int ms)
             lrus[i].dirty = 0;
         }
     }
+#endif
 }
 
 void DFS_HostPurge(void)
 {
+#if OPTIMIZE
     int i;
     
     for (i = 0; i < LENGTHOF(lrus); i++) {
         lrus[i].filled = 0;
     }
+#endif
 }
+#endif
 

@@ -8,7 +8,7 @@
 #ifndef NO_UINT_TYPEDEFS
 typedef unsigned char uint8;
 typedef unsigned short uint16;
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 typedef long int32;
 typedef unsigned long uint32;
 #else
@@ -18,7 +18,7 @@ typedef unsigned int uint32;
 #define NO_UINT_TYPEDEFS  1
 #endif
 
-#if MC9S12DT256
+#if MC9S12DT256 || MC9S12DP512
 #define SCI1C1X  SCI0CR1
 #define SCI1C2X  SCI0CR2
 #define SCI1S1X  SCI0SR1

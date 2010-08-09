@@ -6,7 +6,7 @@
 #define SPL_IRQ4  4  // irq4 isr runs at interrupt level 4 (fixed, zigbee)
 #define SPL_SERIAL  4  // uart0 isr runs at interrupt level 4
 #define SPL_IRQ1  1  // irq1 isr runs at interrupt level 1 (fixed, sleep or zigbee)
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #define SPL_PIT0  6  // pit0 isr runs at interrupt level 6
 #define SPL_USB  6  // usb isr runs at interrupt level 6
 #define SPL_IRQ4  4  // irq isr runs at interrupt level 4 (zigbee)
@@ -44,16 +44,22 @@ read16(const byte *addr);
 
 // N.B. the usb controller bdt data structures and the usb protocol
 // layers are defined to be little endian and the coldfire core is
-// big endian, so we have to byteswap.
+// big endian, so we have to byteswap.  the zigbee transceiver and
+// protocol layers are defined to be big endian and the pic32 core
+// is little endian, so we have to byteswap.
 
-// revisit -- rename to indicate this converts to little endian
-#define BYTESWAP(x)  byteswap(x, sizeof(x))
+#if PIC32
+#define TF_BIG(x)  byteswap((x), sizeof(x))
+#define TF_LITTLE(x)  (x)
+#else
+#define TF_BIG(x)  (x)
+#define TF_LITTLE(x)  byteswap((x), sizeof(x))
+#endif
 
-// revisit -- rename to indicate this converts to little endian
 uint32
 byteswap(uint32 x, uint32 size);
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
 // return the current interrupt mask level
@@ -67,7 +73,7 @@ splx(int level);
 // delay for the specified number of milliseconds
 void
 delay(int32 ms);
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 
@@ -80,12 +86,12 @@ get2hex(char **p);
 void
 tailtrim(char *p);
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
 void *
 memcpy(void *d,  const void *s, size_t n);
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 
@@ -119,12 +125,12 @@ strcmp(const char *s1, const char *s2);
 int
 strncmp(const char *s1, const char *s2, size_t n);
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
 char *
 strchr(const char *s, int c);
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 

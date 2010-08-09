@@ -72,17 +72,13 @@ main()  // we're called directly by startup.c
     end_of_static = _data_image_begin;
 
     // if rd6 is asserted on boot, skip autorun
-    if (! (PORTD & 0x40)) {
-        disable_autorun = true;
-    }
+    pin_initialize();
 
     // compute flash checksum
-    for (p = (byte *)FLASH_START; p < (byte *)(FLASH_START+FLASH_BYTES/2); p++) {
+    for (p = (byte *)FLASH_START; p < end_of_static; p++) {
         flash_checksum += *p;
     }
 #elif MC9S08QE128
-    PTAPE = 0x04;
-
     /* Common initialization of the write once registers */
     /* SOPT1: COPE=0,COPT=1,STOPE=0,RSTOPE=0,BKGDPE=1,RSTPE=0 */
     SOPT1 = 0x42;                                      
@@ -116,16 +112,11 @@ main()  // we're called directly by startup.c
     }
 
     // if pta2 is asserted on boot, skip autorun
-    // N.B. pull-up was enabled early
-    if (! (PTAD & 0x04)) {
-        disable_autorun = true;
-    }
-#elif MC9S12DT256
+    pin_initialize();
+#elif MC9S12DT256 || MC9S12DP512
 #define setReg8(RegName, val)                                    (RegName = (byte)(val))
 #define setReg8Bits(RegName, SetMask)                            (RegName |= (byte)(SetMask))
 #define INITRG_ADR  0x0011             /* Register map position register */
-    PERP = 0x01;
-    
     /* ### MC9S12DT256_112 "Cpu" init code ... */
     /*  PE initialization code after reset */
     /* Initialization of the registers INITRG, INITRM, INITEE is done to protect them to be written accidentally later by the application */
@@ -146,8 +137,13 @@ main()  // we're called directly by startup.c
     setReg8(PLLCTL, 177);                /* Disable the PLL */ 
     /* SYNR: ??=0,??=0,SYN5=0,SYN4=1,SYN3=1,SYN2=0,SYN1=0,SYN0=0 */
     setReg8(SYNR, 24);                   /* Set the multiplier register */ 
+#if MC9S12DT256
     /* REFDV: ??=0,??=0,??=0,??=0,REFDV3=0,REFDV2=0,REFDV1=1,REFDV0=1 */
     setReg8(REFDV, 3);                   /* Set the divider register */ 
+#else
+    /* REFDV: ??=0,??=0,??=0,??=0,REFDV3=1,REFDV2=1,REFDV1=1,REFDV0=1 */
+    setReg8(REFDV, 15);                  /* Set the divider register */ 
+#endif
     /* PLLCTL: CME=1,PLLON=1,AUTO=1,ACQ=1,??=0,PRE=0,PCE=0,SCME=1 */
     setReg8(PLLCTL, 241);                 
     while(!CRGFLG_LOCK) {                /* Wait until the PLL is within the desired tolerance of the target frequency */
@@ -158,7 +154,11 @@ main()  // we're called directly by startup.c
 
     cpu_frequency = 50000000;
     bus_frequency = cpu_frequency/2;
+#if MC9S12DT256
     oscillator_frequency = 4000000;
+#else
+    oscillator_frequency = 16000000;
+#endif
 
     // we read RDRH's initial value to determine if the debugger is attached
     // N.B. this value must be set by the debugger's cmd file!
@@ -167,10 +167,7 @@ main()  // we're called directly by startup.c
     }
 
     // if pp0 is asserted on boot, skip autorun
-    // N.B. pull-up was enabled early
-    if (! (PTP & 0x01)) {
-        disable_autorun = true;
-    }
+    pin_initialize();
 #endif
 
     assert(sizeof(byte) == 1);
@@ -191,14 +188,11 @@ main()  // we're called directly by startup.c
     // initialize qspi
     qspi_initialize();
 
+#if ! FLASHER
     // initialize adc
     adc_initialize();
-    
-#if ! FLASHER && ! PICTOCRYPT
-    // initialize pins
-    pin_initialize();
 #endif
-
+    
 #if PICTOCRYPT
     adc_timer_poll(false);
 
@@ -208,6 +202,8 @@ main()  // we're called directly by startup.c
     } else {
         usb_host_mode = true;
     }
+#elif STICKOS
+    usb_host_mode = var_get_flash(FLASH_USBHOST) == 1;
 #endif
 
 #if PICTOCRYPT
@@ -385,7 +381,7 @@ void (* near const _vect[])() @0xFFC0 = { /* Interrupt vector table */
          _Startup                      /* Int.no. 31 Vreset (at FFFE)                Reset vector */
 };
 
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
 
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 __interrupt void AS1_Interrupt(void)

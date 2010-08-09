@@ -55,7 +55,7 @@ check_line(byte *page, struct line *line)
 
 // this function returns the first code line in a page.
 static
-#if ! MCF52259 && ! MC9S08QE128 && ! MC9S12DT256  // 59 BUG
+#if ! MCF52259 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512  // 59 BUG
 inline
 #endif
 struct line *
@@ -70,7 +70,7 @@ find_first_line_in_page(byte *page)
 
 // this function returns the next code line in a page.
 static
-#if ! MCF52259 && ! MC9S08QE128 && ! MC9S12DT256  // 59 BUG
+#if ! MCF52259 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512  // 59 BUG
 inline
 #endif
 struct line *
@@ -372,7 +372,7 @@ code_list(bool profile, int start_line_number, int end_line_number)
 {
     byte code;
     int p;
-    int phits;
+    int32 phits;
     int bucket;
     int indent;
     int line_number;
@@ -410,7 +410,7 @@ code_list(bool profile, int start_line_number, int end_line_number)
                             phits += profile_buckets[p].hits;
                         }
                         profiled_buckets = bucket+1;
-                        printf("%7dms %4d %s\n", phits, line_number, text);
+                        printf("%7ldms %4d %s\n", phits, line_number, text);
                     } else {
                         printf("          %4d %s\n", line_number, text);
                     }
@@ -663,7 +663,7 @@ struct catalog {
 };
 
 // this function stores the current program to the filesystem.
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
 void
@@ -674,7 +674,7 @@ code_store(char *name)
     int n;
     struct catalog temp;
     struct catalog *catalog;
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     int ppage;
 #endif
 
@@ -710,7 +710,7 @@ code_store(char *name)
         n = i;
     }
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // bring the BASIC STORE into the paging window
     // N.B. all routines below flash_erase_pages() must be non-banked!
     ppage = PPAGE;
@@ -718,7 +718,7 @@ code_store(char *name)
 #endif
     // erase the store flash
     flash_erase_pages((uint32 *)FLASH_STORE_PAGE(n), BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     PPAGE = ppage;
 #endif
 
@@ -732,7 +732,7 @@ code_store(char *name)
         flash_write_words((uint32 *)FLASH_CATALOG_PAGE, (uint32 *)&temp, sizeof(temp)/sizeof(uint32));
     }
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // bring the BASIC STORE into the paging window
     // N.B. all routines below flash_write_words() must be non-banked!
     ppage = PPAGE;
@@ -740,7 +740,7 @@ code_store(char *name)
 #endif
     // copy the primary flash to the store flash
     flash_write_words((uint32 *)FLASH_STORE_PAGE(n), (uint32 *)FLASH_CODE_PAGE, BASIC_LARGE_PAGE_SIZE/sizeof(uint32));
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     PPAGE = ppage;
 #endif
 }
@@ -753,7 +753,7 @@ code_load(char *name)
     int32 generation;
     byte *code_page;
     struct catalog *catalog;
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     int ppage;
 #endif
 
@@ -782,7 +782,7 @@ code_load(char *name)
     // erase the primary flash
     flash_erase_pages((uint32 *)code_page, BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // bring the BASIC STORE into the paging window
     // N.B. all routines below flash_write_words() must be non-banked!
     ppage = PPAGE;
@@ -790,14 +790,14 @@ code_load(char *name)
 #endif
     // copy the store flash to the primary flash (except the generation)
     flash_write_words((uint32 *)code_page, (uint32 *)FLASH_STORE_PAGE(i), BASIC_LARGE_PAGE_SIZE/sizeof(uint32)-1);
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     PPAGE = ppage;
 #endif
 
     // then restore the generation
     flash_write_words((uint32 *)(code_page+BASIC_LARGE_PAGE_SIZE-sizeof(uint32)), (uint32 *)&generation, 1);
 }
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 

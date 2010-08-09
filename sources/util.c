@@ -37,66 +37,25 @@ read16(const byte *addr)
 }
 #endif
 
-// N.B. the usb controller bdt data structures are defined to be little
-// endian and the coldfire core is big endian, so we have to byteswap.
-
-#if ! STICK_GUEST
 uint32
 byteswap(uint32 x, uint32 size)
 {
-#if PIC32
-    return x;
-#elif MC9S08QE128 || MC9S12DT256
-    ASSERT(0);
-    return x;
-#else
     // byteswap all bytes of x within size
     switch (size) {
         case 4:
-#if GCC
-            __asm__("byterev.l  %0\n"
-                    : /* outputs */ "=r" (x)
-                    : /* inputs */ "r" (x));
-#else
-            asm {
-                move.l     x,D0
-                byterev.l  D0
-                move.l     D0,x
-            }
-#endif
-            break;
+            return ((x)&0xff)<<24|((x)&0xff00)<<8|((x)&0xff0000)>>8|((x)&0xff000000)>>24;
         case 2:
-#if GCC
-            __asm__("move.l     %0, %%d0\n"
-                    "byterev.l  %%d0\n"
-                    "move.w     #0, %%d0\n"
-                    "swap       %%d0\n"
-                    "move.l     %%d0, %0\n"
-                    : /* outputs */ "=r" (x)
-                    : /* inputs */ "r" (x)
-                    : /* clobber */ "d0");
-#else
-            asm {
-                move.l     x,D0
-                byterev.l  D0
-                move.w     #0,D0
-                swap       D0
-                move.l     D0,x
-            }
-#endif
-            break;
+            return ((x)&0xff)<<8|((x)&0xff00)>>8;
         case 1:
-            break;
+            return (x)&0xff;
         default:
             assert(0);
             break;
     }
     return x;
-#endif
 }
-#endif // ! STICK_GUEST
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
 // return the current interrupt mask level
@@ -116,7 +75,7 @@ gpl(void)
     }
     
     oldlevel = (oldlevel & 8) ? 7 : 0;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     byte oldlevel;
 
     asm {
@@ -164,7 +123,7 @@ splx(int level)
 
     assert(oldlevel >= 0 && oldlevel <= 7);
     return -oldlevel;
-#elif MC9S08QE128 || MC9S12DT256
+#elif MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     byte oldlevel;
     
     oldlevel = gpl();
@@ -260,7 +219,7 @@ delay(int32 ms)
     }
 #endif // ! STICK_GUEST
 }
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 
@@ -311,13 +270,13 @@ tailtrim(char *text)
     *p = '\0';
 }
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
 void *
 memcpy(void *d,  const void *s, size_t n)
 {
-#if ! MC9S08QE128 && ! MC9S12DT256
+#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     if (((uintptr)d&3)+((uintptr)s&3)+(n&3) == 0) {
         uint32 *dtemp = d;
         const uint32 *stemp = s;
@@ -334,12 +293,12 @@ memcpy(void *d,  const void *s, size_t n)
         while (n--) {
             *(dtemp++) = *(stemp++);
         }
-#if ! MC9S08QE128 && ! MC9S12DT256
+#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     }
 #endif
     return d;
 }
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 
@@ -362,7 +321,7 @@ memmove(void *d,  const void *s, size_t n)
 void *
 memset(void *p,  int d, size_t n)
 {
-#if ! MC9S08QE128 && ! MC9S12DT256
+#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     int dd;
     
     if (((uintptr)p&3)+(n&3) == 0) {
@@ -381,7 +340,7 @@ memset(void *p,  int d, size_t n)
         while (n--) {
             *(ptemp++) = d;
         }
-#if ! MC9S08QE128 && ! MC9S12DT256
+#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     }
 #endif
     return p;
@@ -508,7 +467,7 @@ strncmp(const char *s1, const char *s2, size_t n)
     }
 }
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
 char *
@@ -524,7 +483,7 @@ strchr(const char *s, int c)
     }
     return NULL;
 }
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 
@@ -583,7 +542,7 @@ get_sr(void)
     csr = sr;
 #elif GCC
     __asm__("move.w  %/sr, %0\n" : /* outputs */ "=r" (csr));
-#elif MC9S08QE128 || MC9S12DT256
+#elif MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     ASSERT(0);
     csr = 0;
 #else
@@ -604,7 +563,7 @@ set_sr(uint16 csr)
     sr = csr;
 #elif GCC
     __asm__("move.w  %0, %/sr\n" :: /* inputs */ "r" (csr));
-#elif MC9S08QE128 || MC9S12DT256
+#elif MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     ASSERT(0);
 #else
     asm {

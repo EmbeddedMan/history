@@ -473,7 +473,7 @@ XXX_CONFIRMED_XXX:
         case command_upgrade:
             // upgrade pict-o-crypt!
 #if ! _WIN32
-            flash_upgrade();
+            flash_upgrade(0);
 #endif
             break;
 

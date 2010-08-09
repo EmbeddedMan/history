@@ -1,4 +1,4 @@
-#define VERSION  "1.50j"
+#define VERSION  "1.60f"
 
 #if PIC32
 // REVISIT -- we take debug info from the pic32 environment for now
@@ -7,14 +7,15 @@
 #else
 #define DEBUG  0
 #endif
+#elif ! FLASHER
 #endif
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-#define DEMO  1  // 1 enables DEMO board USB power and dtin3 LED
+#define DEMO  1  // 1 enables DEMO board USB power
 #endif
 
 #if PIC32
-#define STARTER  1  // 1 enables STARTER board rd0 LED
+#define STARTER  1  // 1 enables STARTER board USB power
 #endif
 
 #if PICTOCRYPT

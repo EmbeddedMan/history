@@ -23,7 +23,7 @@ static struct system_var {
     volatile int32 *integer;  // if NULL, then variable is constant.
     int32 constant;
     void (*set_cbfn)(int32 value);  // if NULL, then the var is read-only.
-} systems[] = {
+} const systems[] = {
 #if ! STICK_GUEST
     "nodeid", &zb_nodeid, 0, NULL,
 #endif
@@ -386,6 +386,10 @@ class_remote_set(int nodeid, int length, byte *buffer)
     // remember to set the variable as requested by the remote node
     assert(length == sizeof(set));
     set = *(remote_set_t *)buffer;
+    
+    // byteswap in place
+    set.index = TF_BIG(set.index);
+    set.value = TF_BIG(set.value);
 }
 
 void
@@ -470,8 +474,8 @@ var_set(IN const char *name, IN int index, IN int32 value)
                 if (! remote) {
                     // forward the variable set request to the remote node
                     strcpy(set.name, var->name);
-                    set.index = index;
-                    set.value = value;
+                    set.index = TF_BIG((int32)index);
+                    set.value = TF_BIG((int32)value);
                     if (! zb_send(var->nodeid, zb_class_remote_set, sizeof(set), (byte *)&set)) {
                         value = -1;
                     }
@@ -527,9 +531,10 @@ var_set(IN const char *name, IN int index, IN int32 value)
 
             case code_pin:
                 // *** external pin control and access ***
-                if (! (var->u.pin.type & (pin_type_digital_output|pin_type_analog_output|pin_type_frequency_output|pin_type_uart_output))) {
+                if (var->u.pin.type == pin_type_digital_input || var->u.pin.type == pin_type_analog_input || var->u.pin.type == pin_type_uart_input) {
                     printf("var '%s' readonly\n", name);
                     stop();
+                    break;
                 } else {
                     // *** interactive debugger ***
                     // if debug tracing is enabled...
@@ -700,8 +705,4 @@ var_initialize(void)
 #if ! STICK_GUEST
     zb_register(zb_class_remote_set, class_remote_set);
 #endif
-
-    if (var_get_flash(FLASH_ANALOG) != -1) {
-        pin_analog = var_get_flash(FLASH_ANALOG);
-    }
 }

@@ -37,7 +37,7 @@ timer_isr(void)
     assert((timer_in_isr = true) ? true : true);
     assert((timer_in_ticks = ticks) ? true : true);
 
-#if ! MC9S08QE128 && ! MC9S12DT256
+#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     (void)splx(7);
 #endif
 
@@ -47,7 +47,7 @@ timer_isr(void)
     MCF_PIT0_PCSR |= MCF_PIT_PCSR_PIF;
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128
     RTCSC |= RTCSC_RTIF_MASK;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     CRGFLG = 128;                        /* Reset interrupt request flag */
 #elif PIC32
     mT1ClearIntFlag();
@@ -117,8 +117,10 @@ timer_isr(void)
         debouncing = false;
     }
 
+#if ! FLASHER
     // poll the adc to occasionally record debouncing data and to record adc data every tick.
     adc_timer_poll(debouncing);
+#endif
 
     assert(timer_in_isr);
     assert((timer_in_isr = false) ? true : true);
@@ -205,7 +207,7 @@ timer_initialize(void)
     MCF_PIT0_PMR = bus_frequency/1000/ticks_per_msec - 1;
     MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_DOZE|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128
-#if ! MC9S08QE128 && ! MC9S12DT256
+#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     // remap rtc to level 6
     INTC_PL6P7 = 27;
 #endif
@@ -223,7 +225,7 @@ timer_initialize(void)
     RTCSC = RTCSC_RTCLKS1_MASK|RTCSC_RTIE_MASK|8;
     RTCMOD = oscillator_frequency/1000/ticks_per_msec - 1;
 #endif
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
 #define setReg8(RegName, val)                                    (RegName = (byte)(val))
 #define setReg16(RegName, val)                                  (RegName = (word)(val))
 #define clrReg8Bits(RegName, ClrMask)                            (RegName &= ~(byte)(ClrMask))
@@ -252,7 +254,11 @@ timer_initialize(void)
     clrReg8Bits(INTCR, 64);               
     /* ### MC9S12DT256_112 "Cpu" init code ... */
     /* ### TimerInt "TI1" init code ... */
-    setReg8(RTICTL, 19);                  
+#if MC9S12DP512
+    setReg8(RTICTL, 51);  // divide by 16384
+#else
+    setReg8(RTICTL, 19);  // divide by 4096
+#endif
     /* Common peripheral initialization - ENABLE */
     /* CRGFLG: RTIF=1 */
     setReg8Bits(CRGFLG, 128);             

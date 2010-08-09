@@ -1,8 +1,9 @@
-#if MCF52221 || MCF51JM128 || MCF52259
-#if ! STICKOS
+#if MCF52221 || MCF51JM128 || MCF52259 || PIC32
 // *** scsi *****************************************************************
 
 #include "main.h"
+
+#if ! STICKOS || STICKOSPLUS
 
 byte scsi_lun;
 
@@ -17,9 +18,9 @@ scsi_bulk_transfer(int in, byte *cdb, int cdb_length, byte *buffer, int length)
     static int tag;
 
     memset(&cbw, 0, sizeof(cbw));
-    cbw.signature = BYTESWAP(0x43425355);
+    cbw.signature = TF_LITTLE(0x43425355);
     cbw.tag = tag++;
-    cbw.datatransferlength = BYTESWAP(length);
+    cbw.datatransferlength = TF_LITTLE(length);
     cbw.flags = in?FLAGS_DATA_IN:FLAGS_DATA_OUT;
     cbw.lun = scsi_lun;
     cbw.cdblength = (byte)cdb_length;
@@ -48,12 +49,12 @@ scsi_bulk_transfer(int in, byte *cdb, int cdb_length, byte *buffer, int length)
     }
     
     assert(rv == CSW_LENGTH);
-    assert(csw.signature == BYTESWAP(0x53425355));
+    assert(csw.signature == TF_LITTLE(0x53425355));
     assert(csw.tag == cbw.tag);
     if (csw.status) {
         return -csw.status;  // revisit some devices lie!
     }
-    //assert(BYTESWAP(csw.dataresidue) == BYTESWAP(cbw.datatransferlength) - total);
+    //assert(TF_LITTLE(csw.dataresidue) == TF_LITTLE(cbw.datatransferlength) - total);
     assert(csw.status == 0);
 
     return total;

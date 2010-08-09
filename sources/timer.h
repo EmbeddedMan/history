@@ -6,7 +6,7 @@ void
 timer_isr(void);
 #endif
 
-#if PICTOCRYPT || MC9S08QE128 || MC9S12DT256
+#if PICTOCRYPT || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 enum { ticks_per_msec = 1 }; // tunable
 #else
 enum { ticks_per_msec = 4 }; // tunable

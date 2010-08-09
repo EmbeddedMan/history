@@ -1036,6 +1036,11 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
             scope->line_number = run_line_number;
             scope->type = open_while;
 
+            scope->for_variable_name = NULL;
+            scope->for_variable_index = 0;
+            scope->for_final_value = 0;
+            scope->for_step_value = 0;
+
             // if this is a for loop...
             if (code == code_for) {
                 // revisit -- share with code_let!
@@ -1092,11 +1097,6 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     value = value >= scope->for_final_value;
                 }
             } else if (code == code_while) {
-                scope->for_variable_name = NULL;
-                scope->for_variable_index = 0;
-                scope->for_final_value = 0;
-                scope->for_step_value = 0;
-
                 // evaluate the condition
                 index += run_evaluate(bytecode+index, length-index, NULL, &value);
             } else {

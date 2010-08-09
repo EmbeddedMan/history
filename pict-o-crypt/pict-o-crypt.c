@@ -243,13 +243,11 @@ main_run(void)
             }
             
             do_scsi_wait();
-            usb_host_detach();
         }
         
         // if some other usb device is attached...
         if (other_attached) {
             do_other_wait();
-            usb_host_detach();
         }
 
         // if our usb host is attached...

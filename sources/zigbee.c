@@ -82,40 +82,7 @@ zb_seq(int nodeid)
 static void
 zb_rxtxen(bool boo)
 {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-    if (boo) {
-        MCF_GPIO_SETAN = (1<<5);
-        MCF_GPIO_SETAS = (1<<1);
-    } else {
-        MCF_GPIO_CLRAN = ~(1<<5);
-        MCF_GPIO_CLRAS = ~(1<<1);
-    }
-#if MCF52259
-    if (boo) {
-        MCF_GPIO_SETTJ = (1<<1);
-    } else {
-        MCF_GPIO_CLRTJ = ~(1<<1);
-    }
-#endif
-#elif MCF51JM128
-    if (boo) {
-        PTBD |= 0x20;
-    } else {
-        PTBD &= ~0x20;
-    }
-#elif MCF51QE128 || MC9S08QE128
-    if (boo) {
-        PTFD |= 0x02;
-    } else {
-        PTFD &= ~0x02;
-    }
-#elif MC9S12DT256
-    if (boo) {
-        PORTB |= 0x40;
-    } else {
-        PORTB &= ~0x40;
-    }
-#endif
+    pin_set(pin_assignments[pin_assignment_zigbee_rxtxen], pin_type_digital_output, 0, boo);
 }
 
 static void
@@ -140,6 +107,7 @@ zb_delay(int send)
 static void
 zb_rmw(int n, int and, int or)
 {
+    uint16 v;
     byte buf[2+2];
     
     assert(gpl() >= SPL_IRQ4);
@@ -148,7 +116,9 @@ zb_rmw(int n, int and, int or)
     buf[1] = 0x80|n;
     qspi_transfer(buf+1, 1 + 2);
     buf[1] = 0x00|n;
-    *(uint16 *)(buf+2) = (*(uint16 *)(buf+2) & and) | or;
+    v = TF_BIG(*(uint16 *)(buf+2));
+    v = (v & and) | or;
+    *(uint16 *)(buf+2) = TF_BIG(v);
     qspi_transfer(buf+1, 1 + 2);
 }
 
@@ -164,7 +134,7 @@ zb_read(int n)
     buf[1] = 0x80|n;
     qspi_transfer(buf+1, 1 + 2);
     
-    return *(uint16 *)(buf+2);
+    return TF_BIG(*(uint16 *)(buf+2));
 }
 
 // this function writes a tranceiver register, via qspi.
@@ -177,7 +147,7 @@ zb_write(int n, int d)
 
     memset(buf, 0xff, sizeof(buf));
     buf[1] = 0x00|n;
-    *(uint16 *)(buf+2) = (uint16)d;
+    *(uint16 *)(buf+2) = TF_BIG((uint16)d);
     qspi_transfer(buf+1, 1 + 2);
 }
 
@@ -249,9 +219,9 @@ zb_packet_transmit(
     // set payload data
     buf[1] = 0x00|0x02;
     packet = (packet_t *)(buf+2);
-    packet->magic = 0x4242;
-    packet->txid = zb_nodeid;
-    packet->rxid = rxid;
+    packet->magic = TF_BIG((uint16)0x4242);
+    packet->txid = TF_BIG((uint16)zb_nodeid);
+    packet->rxid = TF_BIG((uint16)rxid);
     packet->class = class;
     packet->seq = seq;
     packet->ackseq = ackseq;
@@ -316,6 +286,11 @@ zb_packet_receive(
     
     packet = (packet_t *)(buf+2+2);
     qspi_transfer(buf+1, 1 + 2 + length);
+    
+    // byteswap in place
+    packet->magic = TF_BIG(packet->magic);
+    packet->txid = TF_BIG(packet->txid);
+    packet->rxid = TF_BIG(packet->rxid);
     
     // if not for me...
     if (packet->magic != 0x4242 || packet->rxid != zb_nodeid) {
@@ -407,6 +382,9 @@ static byte payload[ZB_PAYLOAD_SIZE];
 // this function is called when a packet is ready to be received.
 INTERRUPT
 void
+#if PIC32
+__ISR(7, ipl6) // REVISIT -- ipl?
+#endif
 zb_isr(void)
 {
     int irq;
@@ -425,7 +403,7 @@ zb_isr(void)
 #elif MC9S08QE128
     // iack
     IRQSC |= IRQSC_IRQACK_MASK;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     // nothing?
 #endif
 
@@ -433,8 +411,12 @@ zb_isr(void)
     assert((zb_in_isr = true) ? true : true);
     assert((zb_in_ticks = ticks) ? true : true);
     
-#if ! MC9S08QE128 && ! MC9S12DT256
+#if PIC32
+    mINT1ClearIntFlag();
+#else
+#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     (void)splx(7);
+#endif
 #endif
     
     zb_unready();
@@ -664,41 +646,17 @@ void
 zb_reset(void)
 {
     // assert rst*
-#if MCF52221 || MCF52259
-    MCF_GPIO_CLRAN = ~(1<<2);
-    MCF_GPIO_CLRAS = ~(1<<0);
-#if MCF52259
-    MCF_GPIO_CLRTJ = ~(1<<0);
-#endif
-#elif MCF52233 || MCF5211
-    MCF_GPIO_CLRTA = ~(1<<0);
-#elif MCF51JM128
-    PTED &= ~0x04;
-#elif MCF51QE128 || MC9S08QE128
-    PTCD &= ~0x01;
-#elif MC9S12DT256
-    PTT &= ~0x01;
-#endif
+    pin_set(pin_assignments[pin_assignment_zigbee_rst], pin_type_digital_output, 0, 0);
+
     delay(1);
+
     // deassert rst*
-#if MCF52221 || MCF52259
-    MCF_GPIO_SETAN = (1<<2);
-    MCF_GPIO_SETAS = (1<<0);
-#if MCF52259
-    MCF_GPIO_SETTJ = (1<<0);
-#endif
-#elif MCF52233 || MCF5211
-    MCF_GPIO_SETTA = (1<<0);
-#elif MCF51JM128
-    PTED |= 0x04;
-#elif MCF51QE128 || MC9S08QE128
-    PTCD |= 0x01;
-#elif MC9S12DT256
-    PTT |= 0x01;
-#endif
+    pin_set(pin_assignments[pin_assignment_zigbee_rst], pin_type_digital_output, 0, 1);
+
     delay(50);
 }
 
+#if DEBUG
 void
 zb_diag(bool reset, bool init)
 {
@@ -734,6 +692,7 @@ zb_diag(bool reset, bool init)
         printf("\n");
     }
 }
+#endif
 
 void
 zb_register(uint8 class, zb_recv_cbfn cbfn)
@@ -760,66 +719,13 @@ zb_initialize(void)
     
     memset(rxseqid, -1, sizeof(rxseqid));
     
-#if MCF52221 || MCF52259
-    // an2=0 for rst*
-    // an3=0 for attn*
-    // an5=0 for rxtxen
-    MCF_GPIO_PANPAR = 0x00;
-    MCF_GPIO_DDRAN |= (1<<2)|(1<<3)|(1<<5);
-    
-    // scl=0 for rst*
-    // sda=0 for rxtxen
-    MCF_GPIO_PASPAR = 0x00;
-    MCF_GPIO_DDRAS |= (1<<0)|(1<<1);
-#elif MCF52233 || MCF5211
-    // gpt0=0 for rst*
-    // gpt1=0 for attn*
-    // an5=0 for rxtxen
-    MCF_GPIO_PTAPAR = 0x00;
-    MCF_GPIO_DDRTA |= (1<<0)|(1<<1);
-    MCF_GPIO_PANPAR = 0x00;
-    MCF_GPIO_DDRAN |= (1<<5);
-#elif MCF51JM128
-    // e2 for rst*
-    // e3 for attn*
-    // b5 for rxtxen
-    PTEDD |= 0x0c;
-    PTBDD |= 0x20;
-#elif MCF51QE128 || MC9S08QE128
-    // c0 for rst*
-    // c1 for attn*
-    // f1 for rxtxen
-    PTCDD |= 0x03;
-    PTFDD |= 0x02;
-#elif MC9S12DT256
-    // t0 for rst*
-    // t1 for attn*
-    // b6 for rxtxen
-    DDRT |= 0x03;
-    DDRB |= 0x40;
-#elif PIC32
-#else
-#error
-#endif
-
     qspi_inactive(1);
 
     // deassert rst*
-#if MCF52221 || MCF52259
-    MCF_GPIO_SETAN = (1<<2);
-    MCF_GPIO_SETAS = (1<<0);
-#if MCF52259
-    MCF_GPIO_SETTJ = (1<<0);
-#endif
-#elif MCF52233 || MCF5211
-    MCF_GPIO_SETTA = (1<<0);
-#elif MCF51JM128
-    PTED |= 0x04;
-#elif MCF51QE128 || MC9S08QE128
-    PTCD |= 0x01;
-#elif MC9S12DT256
-    PTT |= 0x01;
-#endif
+    pin_set(pin_assignments[pin_assignment_zigbee_rst], pin_type_digital_output, 0, 1);
+
+    // assert attn*
+    pin_set(pin_assignments[pin_assignment_zigbee_attn], pin_type_digital_output, 0, 0);
 
     delay(50);
 
@@ -898,10 +804,15 @@ zb_initialize(void)
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128
     // program irq (level 7) for falling edge trigger
     IRQSC = IRQSC_IRQPE_MASK|IRQSC_IRQIE_MASK;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
 #define setReg8(RegName, val)                                    (RegName = (byte)(val))
     /* INTCR: IRQE=0,IRQEN=1,??=0,??=0,??=0,??=0,??=0,??=0 */
-    setReg8(INTCR, 64);                   
+    setReg8(INTCR, 64);
+#elif PIC32
+    // enable int1*
+    IEC0bits.INT1IE = 1;
+    INTEnable(INT_INT1, 1);
+    INTSetPriority(INT_INT1, 6);
 #endif
 }
 

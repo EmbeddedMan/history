@@ -21,77 +21,89 @@ byte RAM_VARIABLE_PAGE[BASIC_RAM_PAGE_SIZE];
 byte *start_of_dynamic;
 byte *end_of_dynamic;
 
-struct timer_unit timer_units[] = {
+struct timer_unit const timer_units[] = {
     "us", -1000/ticks_per_msec,
     "ms", ticks_per_msec,
     "s", ticks_per_msec*1000,
 };
 
-// allow nvram selection for uart pins, led pins, autorun disable pins
+// prior 1
+// =======
+// help board for '59
+// allow pwm frequency to be specified in flash
+// add "servo output" as pin type?  100% is max scale and it uses the pwm freq from flash.
+// usb host mode/spi-to-cf data logging with fat/fat32
+// spi on pic32; test with zigbee
+// heartbeat/autorun disable flash pin selection
+// add pin "e2" (?? to control led e2 on '59?  do we want control of fec pins?
+// post s19s on web for 9s08, 9s12
+
+// prior 2
+// =======
+// i2c support
+// how to enable different uart selection (other than lowest number) for console?
+// update skeleton.zip to have simplified 51jm128/52259 bootloader interface
+// gets warnings
+// permanent params (protected from upgrade) for nodeid, ipaddress, etc.
+// zigbee read remote variables
 // we need a way to prevent you from upgrading the wrong firmware file!!!
 // dim x as register 0x40000004
-// FAT32 on either usb host mode or SPI!!!
-// PC/Cell framework!!!
-// prompt on|off|ok
-// add zigbee support thru xbee for ubw32?
-// add "register" variables to allow access to chip hw!?!
-// get rid of remaining SPL_USB, SPL_IRQ4, etc.
-// add mst interface for basic progs and fw access
 // change ftdi to cdc and use mst for inf file access
-// if dhcp not found on 33, assign random ip compatible with windows?
-// add spi cf access for data logging (and fprint command)
-// qspi should fill entire array, not just index 0, when reading/writing an array
-// add pin "e2" (?? to control led e2 on '59?  do we want control of fec pins?
+// if data area of flash looks bogus on boot, we should clear it all!
+// have nodeid and clusterid, and broadcast 0x4242 and clusterid as magic number
+// save zigbee channel in nvparam!
+// multiple watchpoints?
+// need a second catalog page for safe updates!
 
-// phase #1
+// prior 3
+// =======
+// PC/Cell framework!!!
+// add mst interface for basic progs and fw access
+// add zigbee support thru xbee for ubw32?
+// prompt on|off|ok
+// get rid of remaining SPL_USB, SPL_IRQ4, etc.
+// get rid of rtc isr remap on jm/qe
+// if dhcp not found on 33, assign random ip compatible with windows?
 // why mcf52xxx dtim freq not off by 2x?
 // figure out usb "pop" on first badge run -- is that the badge issue?
-// document autorun disable switch/pins for all mcus; make work for all boards!
-// move autorun disable off precious irq pin!!!  get rid of sleep mode?
+// add character constants 'c', '\n'; do we want a way to print in character form?
+// add strings
 
-// phase #2
-// features:
-//  add character constants 'c', '\n'; do we want a way to print in character form?
-//  add strings
-//  expose mass storage interface with access to basic programs (and firmware upgrade?)
-//  pic32: add autorun disable switch (rd6?)
-//  if data area of flash looks bogus on boot, we should clear it all!
-//  allow broadcast/remote nodeid setting (with switch), like pagers
-//  need way for upgrade to preserve nodeid (and ipaddress, and maybe just flash param page?)
-//  allow zigbee remote variable to be read as well as written
-//  have nodeid and clusterid, and broadcast 0x4242 and clusterid as magic number
-//  save zigbee channel in nvparam!
-//  multiple watchpoints?
-//  builtin operators -- lengthof(a) or a#
-//  short circuit && and || operators
-//  add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
-//  multiple (main) threads?  "input" statement?
-//  "on usb [connect|disconnect]" statement for slave mode!
-//  ?: operator!
-//  add support for comments at the end of lines '?  //?
-//  switch statement (on xxx goto...?)
-//  allow gosub from command line?
-//  sub stack trace?  (with sub local vars?)
-//  one line "if <expression> then <statement> [else <statement>]"
-//  optional "let" statement
-// perf:
-//  mave var one slot towards "last in gosub scope" on usage rand()%16?
-//  can we skip statement execution more fully when run_condition is false?
-// user guide:
-// bugs:
-//  need mechanism to reconfigure pins irq1* and irq7*, other than reset!
-//  need a second catalog page for safe updates!
-//  can we make sub/endsub block behave more like for/next, from error and listing perspective?
-//  should we attempt to make rx transfers never time out/clear feature?
-//  core dump -- copy ram to secondary code flash on assert/exception/halt?
-//  handle uart errors (interrupt as well as poll)
-//  sleeps and timers don't work with single-stepping
+// prior 4
+// =======
+// can we make sub/endsub block behave more like for/next, from error and listing perspective?
+// expose mass storage interface with access to basic programs (and firmware upgrade?)
+// allow broadcast/remote nodeid setting (with switch), like pagers
+// builtin operators -- lengthof(a) or a#
+// short circuit && and || operators
+// add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
+// multiple (main) threads?  "input" statement?
+// "on usb [connect|disconnect]" statement for slave mode!
+// ?: operator!
+// add support for comments at the end of lines '?  //?
+// switch statement (on xxx goto...?)
+// allow gosub from command line?
+// sub stack trace?  (with sub local vars?)
+// one line "if <expression> then <statement> [else <statement>]"
+// optional "let" statement
+// sleeps and timers don't work with single-stepping
+// should we attempt to make rx transfers never time out/clear feature?
+// core dump -- copy ram to secondary code flash on assert/exception/halt?
+// handle uart errors (interrupt as well as poll)
 
-// phase #3
-// features:
-//  add i2c control
-//  add usb host control
-//  add usb device control
+// perf
+// ====
+// mave var one slot towards "last in gosub scope" on usage rand()%16?
+// can we skip statement execution more fully when run_condition is false?
+
+// pcb
+// ===
+// battery holder
+// pin offset for headers
+// smt power switch and reset switch
+// all diffs in PCBUNDO
+// tp for pstclk
+
 
 enum cmdcode {
     command_analog,  // nnn
@@ -104,6 +116,7 @@ enum cmdcode {
     command_cont,  // [nnn]
     command_delete,  // ([nnn] [-] [nnn]|<subname>)
     command_dir,
+    command_download,  // nnn
     command_echo,  // [on|off]
     command_edit, // nnn
     command_indent,  // [on|off]
@@ -112,6 +125,7 @@ enum cmdcode {
     command_memory,
     command_new,
     command_nodeid,  // nnn
+    command_pins,  // <pinname> <pinnumber>
     command_profile,  // ([nnn] [-] [nnn]|<subname>)
     command_prompt,  // [on|off]
     command_purge, // <name>
@@ -119,17 +133,21 @@ enum cmdcode {
     command_reset,
     command_run,  // [nnn]
     command_save,  // [<name>]
+    command_servo,  // [nnn]
     command_sleep, // [on|off]
     command_step, // [on|off]
     command_trace, // [on|off]
     command_undo,
     command_upgrade,
     command_uptime,
-    command_zigbee
+    command_usbhost  // [on|off]
+#if DEBUG
+    ,command_zigbee
+#endif
 };
 
 static
-const char *commands[] = {
+const char * const commands[] = {
     "analog",
     "autorun",
     "auto",
@@ -140,6 +158,7 @@ const char *commands[] = {
     "cont",
     "delete",
     "dir",
+    "download",
     "echo",
     "edit",
     "indent",
@@ -148,6 +167,7 @@ const char *commands[] = {
     "memory",
     "new",
     "nodeid",
+    "pins",
     "profile",
     "prompt",
     "purge",
@@ -155,13 +175,17 @@ const char *commands[] = {
     "reset",
     "run",
     "save",
+    "servo",
     "sleep",
     "step",
     "trace",
     "undo",
     "upgrade",
     "uptime",
-    "zigbee"
+    "usbhost"
+#if DEBUG
+    ,"zigbee"
+#endif
 };
 
 // revisit -- merge this with basic.c/parse.c???
@@ -200,9 +224,12 @@ basic_run(char *text_in)
     int cmd;
     int len;
     bool boo;
+#if DEBUG
     bool reset;
     bool init;
+#endif
     char *text;
+    int pin;
     int length;
     int number1;
     int number2;
@@ -243,21 +270,34 @@ basic_run(char *text_in)
 
     switch (cmd) {
         case command_analog:
+        case command_servo:
             if (*text) {
                 if (! basic_const(&text, &number1) || number1 == -1) {
                     goto XXX_ERROR_XXX;
                 }
-                if (*text || number1 < 1000 || number1 > 5000) {
+                if (*text) {
                     goto XXX_ERROR_XXX;
                 }
-                var_set_flash(FLASH_ANALOG, number1);
-                pin_analog = number1;
+                if (cmd == command_analog) {
+                    if (number1 < 1000 || number1 > 5000) {
+                        goto XXX_ERROR_XXX;
+                    }
+                    var_set_flash(FLASH_ANALOG, number1);
+                    pin_analog = number1;
+                } else {
+                    if (number1 < 30 || number1 > 400) {
+                        goto XXX_ERROR_XXX;
+                    }
+                    var_set_flash(FLASH_SERVO, number1);
+                    // N.B. used on next reboot
+                }
             } else {
-                printf("%d\n", pin_analog);
+                printf("%d\n", cmd == command_analog ? pin_analog : servo_hz);
             }
             break;
 
         case command_autorun:
+        case command_usbhost:
             if (*text) {
                 if (parse_word(&text, "on")) {
                     boo = true;
@@ -269,12 +309,46 @@ basic_run(char *text_in)
                 if (*text) {
                     goto XXX_ERROR_XXX;
                 }
-                var_set_flash(FLASH_AUTORUN, boo);
+                var_set_flash(cmd == command_autorun ? FLASH_AUTORUN : FLASH_USBHOST, boo);
             } else {
-                if (var_get_flash(FLASH_AUTORUN) == 1) {
+                if (var_get_flash(cmd == command_autorun ? FLASH_AUTORUN : FLASH_USBHOST) == 1) {
                     printf("on\n");
                 } else {
                     printf("off\n");
+                }
+            }
+            break;
+            
+        case command_pins:
+            if (*text) {
+                // find the assignment name
+                for (i = 0; i < pin_assignment_max; i++) {
+                    if (parse_word(&text, pin_assignment_names[i])) {
+                        break;
+                    }
+                }
+                
+                if (*text) {
+                    // find the pin name
+                    for (pin = 0; pin < PIN_LAST; pin++) {
+                        if (parse_word(&text, pins[pin].name)) {
+                            break;
+                        }
+                    }
+                    if (pin == PIN_LAST || *text) {
+                        goto XXX_ERROR_XXX;
+                    }
+                    var_set_flash(FLASH_ASSIGNMENTS_BEGIN+i, pin);
+                    pin_assign(i, pin);
+                } else {
+                    assert(pin_assignments[i] < PIN_LAST);
+                    printf("%s\n", pins[pin_assignments[i]].name);
+                }
+                
+            } else {
+                for (i = 0; i < pin_assignment_max; i++) {
+                    assert(pin_assignments[i] < PIN_LAST);
+                    printf("%s %s\n", pin_assignment_names[i], pins[pin_assignments[i]].name);
                 }
             }
             break;
@@ -577,9 +651,21 @@ basic_run(char *text_in)
             code_undo();
             break;
 
-        case command_upgrade:
-            // upgrade StickOS!
-            flash_upgrade();
+        case command_upgrade:  // upgrade StickOS S19 file
+        case command_download:  // relay S19 file to QSPI to EzPort
+            number1 = 0;
+            if (cmd == command_download) {
+                // get fsys_frequency
+                (void)basic_const(&text, &number1);
+                if (! number1 || *text) {
+                    goto XXX_ERROR_XXX;
+                }
+                // validate fsys_frequency
+                if (number1 < 1000000 || number1 > 80000000) {
+                    goto XXX_ERROR_XXX;
+                }
+            }
+            flash_upgrade(number1);
             break;
 
         case command_uptime:
@@ -596,6 +682,7 @@ basic_run(char *text_in)
             printf("%dd %dh %dm\n", d, h, m);
             break;
             
+#if DEBUG
         case command_zigbee:
             reset = parse_word(&text, "reset");
             init = parse_word(&text, "init");
@@ -606,6 +693,7 @@ basic_run(char *text_in)
             zb_diag(reset, init);
 #endif
             break;
+#endif
 
         case LENGTHOF(commands):
             // if the line begins with a line number
@@ -675,8 +763,9 @@ basic_initialize(void)
     end_of_dynamic = FLASH_PARAM2_PAGE+BASIC_SMALL_PAGE_SIZE;
     ASSERT((uint32)end_of_dynamic <= FLASH_START+FLASH_BYTES);
     
-#if MC9S08QE128
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     ASSERT(BASIC_STORES*BASIC_LARGE_PAGE_SIZE < FLASH2_BYTES);
+    ASSERT(START_DYNAMIC >= 48*1024L);
 #endif
 #endif
 

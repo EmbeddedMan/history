@@ -5,7 +5,7 @@
 
 #include "main.h"
 
-#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 extern unsigned char far __BSS_START[], __BSS_END[];
 extern unsigned char far __DATA_RAM[], __DATA_ROM[], __DATA_END[];
 #endif
@@ -18,7 +18,7 @@ bool disable_autorun;
 uint16 flash_checksum;
 bool usb_host_mode;
 
-#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 
 #if BADGE_BOARD || DEMO_KIT
 extern void pre_main(void);
@@ -65,59 +65,20 @@ init(void)
     // flash beyond this point is available for runtime data
     end_of_static = __DATA_ROM + (__DATA_END - __DATA_RAM);
 
-#if STICKOS || SKELETON
-#if MCF52221 || MCF52233
-    // NQ is gpio output (irq7) and input (irq1)
-    MCF_GPIO_PNQPAR = 0;
-    MCF_GPIO_DDRNQ = 0x80;
-
-    // if irq1 is asserted on boot, skip autorun
-    if (! (MCF_GPIO_SETNQ & 0x02)) {
-        disable_autorun = true;
-    }
-#elif MCF5211
-    // NQ is gpio output (irq7) and input (irq4)
-    MCF_GPIO_PNQPAR = 0;
-    MCF_GPIO_DDRNQ = 0x80;
-
-    // if irq4 is asserted on boot, skip autorun
-    if (! (MCF_GPIO_SETNQ & 0x10)) {
-        disable_autorun = true;
-    }
-#elif MCF52259
-    // NQ is gpio output (irq7) and input (irq5)
-    MCF_GPIO_PNQPAR = 0;
-    MCF_GPIO_DDRNQ = 0x80;
-
-    // if irq5 is asserted on boot, skip autorun
-    if (! (MCF_GPIO_SETNQ & 0x20)) {
-        disable_autorun = true;
-    }
-#elif MCF51JM128
-    // if ptg0 is asserted on boot, skip autorun
-    // N.B. pull-up was enabled early
-    if (! (PTGD & 0x01)) {
-        disable_autorun = true;
-    }
-#elif MCF51QE128
-    // if pta2 is asserted on boot, skip autorun
-    // N.B. pull-up was enabled early
-    if (! (PTAD & 0x04)) {
-        disable_autorun = true;
-    }
-#else
-#error
-#endif
-#endif
-
     // compute flash checksum
-    for (p = (byte *)0; p < (byte *)(FLASH_BYTES/2); p++) {
+    for (p = (byte *)0; p < end_of_static; p++) {
         flash_checksum += *p;
     }
 
 #if BADGE_BOARD || DEMO_KIT
     pre_main();
 #endif
+
+#if ! FLASHER && ! PICTOCRYPT
+    // initialize pins
+    pin_initialize();
+#endif
+
     // finally, call main()
     main();
 }

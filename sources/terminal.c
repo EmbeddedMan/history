@@ -51,13 +51,13 @@ static char forward[TERMINAL_INPUT_LINE_SIZE*2];
 static bool ack = true;
 
 static
-#if ! GCC && ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
+#if ! GCC && ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 asm __declspec(register_abi)
 #endif
 unsigned char
 TRKAccessFile(long command, unsigned long file_handle, int *length_ptr, char *buffer_ptr)
 {
-#if GCC || PIC32 || MC9S08QE128 || MC9S12DT256
+#if GCC || PIC32 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     asm_halt(); // Unimplemented
     return 0;
 #else
@@ -108,7 +108,7 @@ terminal_print(const byte *buffer, int length)
         printed = true;
     }
 #endif
-#elif MCF5211 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF5211 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #elif MCF52233
     if (rich_so) {
         m_send(rich_so, buffer, length);

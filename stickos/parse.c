@@ -145,7 +145,7 @@ parse_wordn(IN OUT char **text, IN const char *word)
 }
 
 bool
-parse_words(IN OUT char **text_in, IN char *words)
+parse_words(IN OUT char **text_in, IN const char *words)
 {
     int len;
     char *p;
@@ -166,7 +166,10 @@ parse_words(IN OUT char **text_in, IN char *words)
         text += len;
         words += len;
         parse_trim(&text);
-        parse_trim(&words);
+        if (words[0]) {
+            assert(words[0] == ' ');
+            words++;  // N.B. we assume a single space
+        }
     }
     
     // advance *text_in past words

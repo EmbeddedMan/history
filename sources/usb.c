@@ -33,6 +33,24 @@
 #define MCF_USB_OTG_BDT_PAGE_01  U1BDTP1
 #define MCF_USB_OTG_BDT_PAGE_02  U1BDTP2
 #define MCF_USB_OTG_BDT_PAGE_03  U1BDTP3
+
+#define MCF_USB_OTG_TOKEN  U1TOK
+#define MCF_USB_OTG_ENDPT0  U1EP0
+#define MCF_USB_OTG_ENDPT_RETRY_DIS  _U1EP0_RETRYDIS_MASK
+#define MCF_USB_OTG_CTL_HOST_MODE_EN  _U1CON_HOSTEN_MASK
+#define MCF_USB_OTG_OTG_CTRL_DM_LOW  _U1OTGCON_DMPULDWN_MASK
+#define MCF_USB_OTG_OTG_CTRL_DP_LOW  _U1OTGCON_DPPULDWN_MASK
+#define MCF_USB_OTG_INT_ENB_ATTACH_EN  _U1IE_ATTACHIE_MASK
+#define MCF_USB_OTG_INT_STAT_ATTACH  _U1IR_ATTACHIF_MASK
+#define MCF_USB_OTG_CTL_JSTATE  _U1CON_JSTATE_MASK
+#define MCF_USB_OTG_ADDR_LS_EN  _U1ADDR_LSPDEN_MASK
+#define MCF_USB_OTG_CTL_RESET  _U1CON_USBRST_MASK
+#define MCF_USB_OTG_INT_STAT_RESUME  _U1IR_RESUMEIF_MASK
+#define MCF_USB_OTG_ENDPT_HOST_WO_HUB  _U1EP0_LSPD_MASK
+#define MCF_USB_OTG_TOKEN_TOKEN_PID(x)  ((x)<<_U1TOK_PID0_POSITION)
+#define MCF_USB_OTG_TOKEN_TOKEN_ENDPT(x)  ((x)<<_U1TOK_EP0_POSITION)
+#define MCF_USB_OTG_INT_STAT_ERROR  _U1IE_UERRIE_MASK
+
 /*
 #define KVA_TO_PA(v)  ((v) & 0x1fffffff)
 #define PA_TO_KVA0(pa)  ((pa) | 0x80000000)  // cachable
@@ -75,7 +93,7 @@
 #define MYBDT(endpoint, tx, odd)  (bdts+(endpoint)*4+(tx)*2+(odd))
 
 #if PIC32
-#define BDT_RAM_SIZE  128
+#define BDT_RAM_SIZE  256
 #else
 extern uint32 __BDT_RAM[], __BDT_RAM_END[];
 #define BDT_RAM_SIZE  ((int)__BDT_RAM_END - (int)__BDT_RAM)
@@ -88,7 +106,7 @@ static struct bdt {
 
 // N.B. only bdt endpoint 0 is used for host mode!
 
-#if PICTOCRYPT
+#if PICTOCRYPT || STICKOSPLUS
 #define ENDPOINTS  6
 #else
 #define ENDPOINTS  3
@@ -158,7 +176,7 @@ parse_configuration(const byte *configuration, int size)
 
 // *** host ***
 
-#if ! STICKOS
+#if ! STICKOS || STICKOSPLUS
 // initialize a setup data0 buffer
 void
 usb_setup(int in, int type, int recip, byte request, short value, short index, short length, struct setup *setup)
@@ -167,9 +185,9 @@ usb_setup(int in, int type, int recip, byte request, short value, short index, s
 
     setup->requesttype = (byte)((in<<7)|(type << 5)|recip);
     setup->request = request;
-    setup->value = BYTESWAP(value);
-    setup->index = BYTESWAP(index);
-    setup->length = BYTESWAP(length);
+    setup->value = TF_LITTLE(value);
+    setup->index = TF_LITTLE(index);
+    setup->length = TF_LITTLE(length);
 }
 
 // perform a usb host/device transaction
@@ -213,11 +231,11 @@ transaction(int endpoint, int token, void *buffer, int length)
 
         // N.B. only bdt endpoint 0 is used for host mode!
         bdt = MYBDT(0, tx, odd);
-        bdt->buffer = (byte *)BYTESWAP(KVA_TO_PA((int)buffer));
-        flags = BYTESWAP(bdt->flags);
+        bdt->buffer = (byte *)TF_LITTLE(KVA_TO_PA((int)buffer));
+        flags = TF_LITTLE(bdt->flags);
         assert(! (flags & BD_FLAGS_OWN));
         assert(length <= endpoints[endpoint].packetsize);
-        bdt->flags = BYTESWAP(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|toggle);
+        bdt->flags = TF_LITTLE(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|toggle);
 
         assert(! (MCF_USB_OTG_CTL & MCF_USB_OTG_CTL_TXSUSPEND_TOKENBUSY));
         //MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_STALL|MCF_USB_OTG_INT_STAT_TOK_DNE|MCF_USB_OTG_INT_STAT_USB_RST;
@@ -234,7 +252,7 @@ transaction(int endpoint, int token, void *buffer, int length)
         }
 
         stat = MCF_USB_OTG_STAT;
-        flags = BYTESWAP(bdt->flags);
+        flags = TF_LITTLE(bdt->flags);
 
         bc = BD_FLAGS_BC_DEC(flags);
         pid = BD_FLAGS_TOK_PID_DEC(flags);
@@ -424,6 +442,10 @@ usb_host_detach()
 
     // enable usb pull downs
     MCF_USB_OTG_OTG_CTRL = MCF_USB_OTG_OTG_CTRL_DM_LOW|MCF_USB_OTG_OTG_CTRL_DP_LOW|MCF_USB_OTG_OTG_CTRL_OTG_EN;
+#if STARTER
+    // usb power on
+    MCF_USB_OTG_OTG_CTRL |= _U1OTGCON_VBUSON_MASK;
+#endif
 
     memset(bdts, 0, BDT_RAM_SIZE);
     memset(endpoints, 0, sizeof(endpoints));
@@ -528,11 +550,11 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
 
     // initialize the bdt entry
     bdt = MYBDT(endpoint, tx, odd);
-    bdt->buffer = (byte *)BYTESWAP(KVA_TO_PA((int)buffer));
-    flags = BYTESWAP(bdt->flags);
+    bdt->buffer = (byte *)TF_LITTLE(KVA_TO_PA((int)buffer));
+    flags = TF_LITTLE(bdt->flags);
     assert(! (flags & BD_FLAGS_OWN));
     assert(length <= endpoints[endpoint].packetsize);
-    bdt->flags = BYTESWAP(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|endpoints[endpoint].toggle[tx]/*|BD_FLAGS_DTS|*/);
+    bdt->flags = TF_LITTLE(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|endpoints[endpoint].toggle[tx]/*|BD_FLAGS_DTS|*/);
 
     // enable the packet transfer
 #if PIC32
@@ -578,7 +600,7 @@ __ISR(45, ipl6) // REVISIT -- ipl?
 #endif
 usb_isr(void)
 {
-#if ! STICKOS
+#if ! STICKOS || STICKOSPLUS
     int e;
 #endif
     int rv;
@@ -599,7 +621,7 @@ usb_isr(void)
     
     // *** host ***
     
-#if ! STICKOS
+#if ! STICKOS || STICKOSPLUS
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_ATTACH) {
         int size;
         struct setup setup;
@@ -717,6 +739,9 @@ usb_isr(void)
             other_attached = 1;
         }
         
+        // enable the detach interrupt
+        MCF_USB_OTG_INT_ENB |= MCF_USB_OTG_INT_ENB_USB_RST_EN;
+
         led_unknown_progress();
     }
 #endif
@@ -751,7 +776,7 @@ usb_isr(void)
 
         bdt = MYBDT(endpoint, tx, odd);
 
-        flags = BYTESWAP(bdt->flags);
+        flags = TF_LITTLE(bdt->flags);
         assert(! (flags & BD_FLAGS_OWN));
 
         bc = BD_FLAGS_BC_DEC(flags);
@@ -765,13 +790,13 @@ usb_isr(void)
             assert(bc == 8);
             assert(! tx);
 
-            setup = (struct setup *)BYTESWAP((int)PA_TO_KVA1((int)bdt->buffer));
+            setup = (struct setup *)TF_LITTLE((int)PA_TO_KVA1((int)bdt->buffer));
             assert((void *)setup == (void *)setup_buffer);
 
             // unsuspend the usb packet engine
             MCF_USB_OTG_CTL &= ~MCF_USB_OTG_CTL_TXSUSPEND_TOKENBUSY;
 
-            length = BYTESWAP(setup->length);
+            length = TF_LITTLE(setup->length);
 
             endpoints[endpoint].data_pid = TOKEN_OUT;
             endpoints[endpoint].data_length = 0;
@@ -779,7 +804,7 @@ usb_isr(void)
 
             // is this a standard command...
             if (! (setup->requesttype & 0x60)) {
-                value = BYTESWAP(setup->value);
+                value = TF_LITTLE(setup->value);
                 if (setup->request == REQUEST_GET_DESCRIPTOR) {
                     endpoints[endpoint].data_pid = TOKEN_IN;
 
@@ -821,7 +846,7 @@ usb_isr(void)
                         assert(! length);
                         // if we're recovering from an error...
                         if (setup->requesttype == 0x02 && ! value) {
-                            endpoint2 = BYTESWAP(setup->index) & 0x0f;
+                            endpoint2 = TF_LITTLE(setup->index) & 0x0f;
                             assert(endpoint2);
                             // clear the data toggle
                             endpoints[endpoint2].toggle[0] = 0;
@@ -876,7 +901,7 @@ usb_isr(void)
             assert(endpoints[endpoint].data_length <= sizeof(endpoints[endpoint].data_buffer));
         } else if (! endpoint) {
             assert(pid == TOKEN_IN || pid == TOKEN_OUT);
-            data = (byte *)BYTESWAP((int)PA_TO_KVA1((int)bdt->buffer));
+            data = (byte *)TF_LITTLE((int)PA_TO_KVA1((int)bdt->buffer));
 
             // if this is part of the data transfer...
             if (pid == endpoints[endpoint].data_pid) {
@@ -940,7 +965,7 @@ usb_isr(void)
             }
         } else {
             assert(pid == TOKEN_IN || pid == TOKEN_OUT);
-            data = (byte *)BYTESWAP((int)PA_TO_KVA1((int)bdt->buffer));
+            data = (byte *)TF_LITTLE((int)PA_TO_KVA1((int)bdt->buffer));
 
             // we just received or sent data from or to the host
             assert(bulk_transfer_cbfn);
@@ -952,22 +977,26 @@ usb_isr(void)
 
     // if we just got reset by the host...
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_USB_RST) {
-        assert(! usb_host_mode);
+        if (usb_host_mode) {
+#if STICKOSPLUS
+            usb_host_detach();
+#endif
+        } else {
+            ftdi_active = 0;
+            ftdi_attached = 0;
     
-        ftdi_active = 0;
-        ftdi_attached = 0;
-
-        usb_device_default();
-
-        assert(reset_cbfn);
-        reset_cbfn();
-
-        // setup always uses data0; following transactions start with data1
-        endpoints[0].toggle[0] = 0;
-        endpoints[0].toggle[1] = BD_FLAGS_DATA;
-
-        // prepare to receive setup token
-        usb_device_enqueue(0, 0, setup_buffer, sizeof(setup_buffer));
+            usb_device_default();
+    
+            assert(reset_cbfn);
+            reset_cbfn();
+    
+            // setup always uses data0; following transactions start with data1
+            endpoints[0].toggle[0] = 0;
+            endpoints[0].toggle[1] = BD_FLAGS_DATA;
+    
+            // prepare to receive setup token
+            usb_device_enqueue(0, 0, setup_buffer, sizeof(setup_buffer));
+        }
 
         led_unknown_progress();
 
@@ -1062,8 +1091,9 @@ usb_initialize(void)
 #elif PIC32
     // power on
     U1PWRCbits.USBPWR = 1;
-    IEC1bits.USBIE = 1;
 
+    // enable int
+    IEC1bits.USBIE = 1;
     INTEnable(INT_USB, 1);
     INTSetPriority(INT_USB, 6);
 #endif
@@ -1089,12 +1119,12 @@ usb_initialize(void)
     if (usb_host_mode) {
 #if DEMO
         // usb power on
-        MCF_GPIO_PUAPAR = 0;
-        MCF_GPIO_DDRUA = 0xf;
+        MCF_GPIO_PUAPAR &= ~0xc0;
+        MCF_GPIO_DDRUA = 0x08;
         MCF_GPIO_CLRUA = (uint8)~0x08;
 #endif
 
-#if ! STICKOS
+#if ! STICKOS || STICKOSPLUS
         // enable usb to interrupt on attach
         usb_host_detach();
 #else

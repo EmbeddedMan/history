@@ -357,7 +357,7 @@ command_run(char *text_in)
 
         case command_upgrade:
             // upgrade skeleton!
-            flash_upgrade();
+            flash_upgrade(0);
             break;
 
         case command_uptime:
@@ -456,7 +456,6 @@ main_run(void)
                     delay(1000);
                 }
             } while (rv == sizeof(inq));
-            usb_host_detach();
         }
         
         // if some other usb device is attached...
@@ -477,7 +476,6 @@ main_run(void)
                     delay(1000);
                 }
             } while (rv > 0);
-            usb_host_detach();
         }
 
         // if our usb host is attached...
@@ -518,13 +516,14 @@ main_nodeid()
 void
 main_initialize()
 {
+    // register device mode callbacks
+    terminal_register(main_command_cbfn, main_ctrlc_cbfn);
+    
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
     // if we're in device mode...
     if (! usb_host_mode) {
-        // register device mode callbacks
-        terminal_register(main_command_cbfn, main_ctrlc_cbfn);
-    #if MCF52221 || MCF51JM128
         ftdi_register(main_reset_cbfn);
-    #endif
     }
+#endif
 }
 

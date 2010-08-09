@@ -20,6 +20,10 @@ ifeq (BADGE_BOARD,$(findstring BADGE_BOARD,$(CPU)))
 SOURCES += bootload.c jm.c
 endif
 
+ifeq (52259,$(findstring 52259,$(CPU)))
+SOURCES += block.c fat32.c
+endif
+
 ifeq (52233,$(findstring 52233,$(CPU)))
 LCFS=52233.lcf
 else ifeq (52221,$(findstring 52221,$(CPU)))

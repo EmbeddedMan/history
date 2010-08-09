@@ -136,7 +136,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
             }
 
             if (c == 'b' || c == 'd' || c == 'u' || c == 'o' || c == 'x' || c == 'X') {
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
                 if (longb) {
                     value = va_arg(ap, int32);
                 } else {
@@ -284,10 +284,68 @@ printf(const char *format, ...)
     return n;
 }
 
+#if STICKOSPLUS
+static bool open;
+static VOLINFO vi;
+static FILEINFO wfi;
+
+static
+bool
+open_log_file(void)
+{
+    uint32 pstart;
+
+    // open the filesystem
+    memset(big_buffer, -1, SECTOR_SIZE);  // remove
+    pstart = DFS_GetPtnStart(0, big_buffer, 0, NULL, NULL, NULL);
+    if (pstart == DFS_ERRMISC) {
+        return false;
+    }
+
+    memset(big_buffer, -1, SECTOR_SIZE);  // remove
+    if (DFS_GetVolInfo(0, big_buffer, pstart, &vi)) {
+        return false;
+    }
+    
+    if (! vi.secperclus || (vi.secperclus & (vi.secperclus-1))) {
+        return false;
+    }
+    
+    // unlink the log file
+    (void)DFS_UnlinkFile(&vi, (unsigned char *)"stickos.log", big_buffer);
+    
+    // open the log file
+    if (DFS_OpenFile(&vi, (unsigned char *)"stickos.log", DFS_WRITE, big_buffer, &wfi)) {
+        return false;
+    }
+    
+    return true;        
+}
+
+static
+bool
+append_log_file(char *buffer)
+{    
+    uint32 actual;
+
+    // append the line
+    if (DFS_WriteFile(&wfi, big_buffer, (byte *)buffer, &actual, strlen(buffer))) {
+        return false;
+    }
+        
+    if (actual != strlen(buffer)) {
+        return false;
+    }
+
+    return true;
+}
+#endif
+
 int
 vprintf(const char *format, va_list ap)
 {
     int n;
+    static uint32 last_scsi_attached_count;
     
     assert(gpl() == 0);
 
@@ -296,19 +354,31 @@ vprintf(const char *format, va_list ap)
     
 #if STICK_GUEST
     write(1, bbuffer, MIN(n, sizeof(bbuffer)-1));
+    return n;
 #else
-#if BADGE_BOARD && ! SKELETON
+#if BADGE_BOARD && STICKOS
     if (run_printf && run2_scroll) {
         jm_scroll(bbuffer, MIN(n, sizeof(bbuffer)-1));
-    } else {
-#endif
-        terminal_print((byte *)bbuffer, MIN(n, sizeof(bbuffer)-1));
-#if BADGE_BOARD && ! SKELETON
+        return n;
     }
 #endif
+
+#if STICKOSPLUS && STICKOS
+    if (run_printf && scsi_attached) {
+        if (scsi_attached_count != last_scsi_attached_count) {
+            open = open_log_file();
+            last_scsi_attached_count = scsi_attached_count;
+        }
+        
+        if (open) {
+            open = append_log_file(bbuffer);
+        }
+    }
 #endif
 
+    terminal_print((byte *)bbuffer, MIN(n, sizeof(bbuffer)-1));
     return n;
+#endif
 }
 
 int

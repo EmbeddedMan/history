@@ -5,14 +5,18 @@ extern bool var_trace;
 // variables at end of flash page
 enum flash_var {
     FLASH_AUTORUN,
+    FLASH_USBHOST,
     FLASH_ANALOG,
+    FLASH_SERVO,
     FLASH_NODEID,
+    FLASH_ASSIGNMENTS_BEGIN,  // pin assignments begin here
+    FLASH_ASSIGNMENTS_END = FLASH_ASSIGNMENTS_BEGIN+pin_assignment_max-1,
     FLASH_NEXT,
     // private variables here
     FLASH_LAST = FLASH_PAGE_SIZE/sizeof(uint32)/2
 };
 
-#define FLASH_OFFSET(var)  (BASIC_SMALL_PAGE_SIZE-sizeof(uint32)-(FLASH_LAST-var)*sizeof(uint32))
+#define FLASH_OFFSET(var)  (BASIC_SMALL_PAGE_SIZE-sizeof(uint32)-(FLASH_LAST-(var))*sizeof(uint32))
 
 
 int var_open_scope(void);

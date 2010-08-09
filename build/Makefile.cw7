@@ -46,7 +46,7 @@ CCFLAGS = -g \
           $(foreach a,$(SYSDIRS),-I"$(INSTALL)/$(a)")
 
 ifeq (RELEASE,$(findstring RELEASE,$(MODE)))
-CCFLAGS += -O2 -opt speed -coloring -peephole -noa6
+CCFLAGS += -O4 -opt space -coloring -peephole -noa6
 endif
 
 # linker flags

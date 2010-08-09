@@ -24,7 +24,7 @@ flash_write_words(uint32 *addr, uint32 *data, uint32 nwords)
 }
 
 void
-flash_upgrade(void)
+flash_upgrade(uint32 fsys_frequency)
 {
 }
 

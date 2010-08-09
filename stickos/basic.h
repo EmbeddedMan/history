@@ -83,12 +83,12 @@ enum timer_unit_type {
 extern struct timer_unit {
     char *name;
     int scale;  // negative -> less than tick; positive -> tick or greater
-} timer_units[/*timer_unit_max*/];
+} const timer_units[/*timer_unit_max*/];
 
 #define BASIC_BYTECODE_SIZE  (4*BASIC_LINE_SIZE)
 
 #if ! STICK_GUEST
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #define START_DYNAMIC  (FLASH_START+FLASH_BYTES - (2*BASIC_LARGE_PAGE_SIZE+4*BASIC_SMALL_PAGE_SIZE))
 #define FLASH_CODE1_PAGE     (byte *)(START_DYNAMIC)
 #define FLASH_CODE2_PAGE     (byte *)(START_DYNAMIC+BASIC_LARGE_PAGE_SIZE)

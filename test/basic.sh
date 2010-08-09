@@ -435,7 +435,11 @@ echo test do/until
 30 print a
 40 let a=a+1
 50 until a==10
+60 for a = 1 to 10
+70 next
+80 print a
 list
+run
 run
 20
 list
@@ -633,6 +637,44 @@ autorun on
 autorun
 autorun off
 autorun
+EOF
+
+echo test pins
+"$BASIC" -q <<EOF
+pins
+pins aaa
+pins heartbeat
+pins heartbeat aaa
+pins heartbeat dtin2
+pins safemode* none
+pins heartbeat dtin1 aaa
+pins safemode* dtin0 aaa
+pins heartbeat
+pins safemode*
+pins
+EOF
+
+echo test servo
+"$BASIC" -q <<EOF
+servo
+servo 30
+servo
+servo 3000
+servo 40 aaa
+servo
+10 dim x as pin dtin0 for servo output
+list
+run
+EOF
+
+echo test usb host
+"$BASIC" -q <<EOF
+usbhost
+usbhost on
+usbhost
+usbhost qqq
+usbhost off aaa
+usbhost
 EOF
 
 echo test variable scopes

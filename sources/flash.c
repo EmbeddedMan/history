@@ -118,8 +118,8 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     }
 #endif
 }
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
-#if MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #else
 #define near
@@ -133,7 +133,7 @@ flash_command_ram(uint8 cmd, uint32 *addr, uint32 data)
     // write the flash thru the frontdoor address
 #if MC9S08QE128
     *(byte *)addr = data;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     *(uint16 *)addr = data;
 #else
     *addr = data;
@@ -237,7 +237,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     }
 
     (void)splx(x);
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     int x;
     uint16 *addr;
     uint16 *data;
@@ -287,7 +287,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     }
 #endif
 }
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 
@@ -606,7 +606,7 @@ flash_upgrade_ram_begin(bool compatible)
     };
     asm_halt();
 #endif
-#elif MC9S08QE128 || MC9S12DT256
+#elif MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     asm_halt();
 #elif PIC32
     uint32 *addr;
@@ -766,7 +766,7 @@ flash_upgrade_ram_end(void)
 // area, and then installs it by calling a RAM copy of
 // flash_upgrade_ram_begin().
 void
-flash_upgrade()
+flash_upgrade(uint32 fsys_frequency)
 {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128
 #if ! BADGE_BOARD && ! DEMO_KIT
@@ -787,13 +787,20 @@ flash_upgrade()
     bool compatible;
     flash_upgrade_ram_begin_f fn;
 
-    if ((int)end_of_static > FLASH_BYTES/2) {
-        printf("code exceeds half of flash\n");
-        return;
-    }
+    if (fsys_frequency) {
+#if ! PICTOCRYPT
+        // we are relaying S19 to QSPI to EzPort
+        clone_init(fsys_frequency);
+#endif
+    } else {
+        if ((int)end_of_static > FLASH_BYTES/2) {
+            printf("code exceeds half of flash\n");
+            return;
+        }
 
-    // erase the staging area
-    flash_erase_pages((uint32 *)(FLASH_BYTES/2), FLASH_BYTES/2/FLASH_PAGE_SIZE);
+        // erase the staging area
+        flash_erase_pages((uint32 *)(FLASH_BYTES/2), FLASH_BYTES/2/FLASH_PAGE_SIZE);
+    }
 
     printf("paste S19 upgrade file now...\n");
     terminal_echo = false;
@@ -890,17 +897,26 @@ flash_upgrade()
                     break;
                 }
 
-                if ((int)addr < FLASH_BYTES/2) {
-                    if (*(uint32 *)(FLASH_BYTES/2+addr) == -1) {
-                        // program the words
-                        flash_write_words((uint32 *)(FLASH_BYTES/2+addr), &data, 1);
-                    } else if (! error) {
-                        printf("\nduplicate address 0x%x\n", addr);
+                if (fsys_frequency) {
+#if ! PICTOCRYPT
+                    // we are relaying S19 to QSPI to EzPort
+                    if (! clone_program(addr, &data, sizeof(data))) {
                         error = true;
                     }
-                } else if (! error) {
-                    printf("\nbad address 0x%x\n", addr);
-                    error = true;
+#endif
+                } else {
+                    if ((int)addr < FLASH_BYTES/2) {
+                        if (*(uint32 *)(FLASH_BYTES/2+addr) == -1) {
+                            // program the words
+                            flash_write_words((uint32 *)(FLASH_BYTES/2+addr), &data, 1);
+                        } else if (! error) {
+                            printf("\nduplicate address 0x%x\n", addr);
+                            error = true;
+                        }
+                    } else if (! error) {
+                        printf("\nbad address 0x%x\n", addr);
+                        error = true;
+                    }
                 }
 
                 addr += 4;
@@ -967,16 +983,30 @@ flash_upgrade()
     // we're committed to upgrade!
     printf("\npaste done!\n");
     
+    if (fsys_frequency) {
+#if ! PICTOCRYPT
+        clone_reset();
+#endif
+    
+        if (main_command) {
+            main_command = NULL;
+            terminal_command_ack(false);
+        }
+
+        terminal_echo = true;
+        return;
+    }
+    
     compatible = ! memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE);
         
     printf("programming flash for %s upgrade...\n", compatible?"compatible":"incompatible");
     printf("wait for heartbeat LED to blink!\n");
     delay(100);
 
-    ASSERT((int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN <= sizeof(big_buffer)-4);
-    
     // if this is a compatible upgrade...
     if (compatible) {
+        ASSERT((int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN <= sizeof(big_buffer)-4);
+        
         // we have to zero one more byte!
         zero = 0;
         flash_write_words((uint32 *)FLASH_BYTES - 1, &zero, 1);
@@ -999,13 +1029,14 @@ flash_upgrade()
 
     // N.B. this is an incompatible upgrade; if we crash before we are through,
     // we might be in trouble.
+    ASSERT((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer)-4);
     
     // disable interrupts
     x = splx(7);
     
-    // copy our new flash upgrade routine to RAM
+    // copy our old flash upgrade routine to RAM
     fn = (flash_upgrade_ram_begin_f)(((uint32)big_buffer+3)&~3);
-    memcpy(fn, (void *)(FLASH_BYTES/2+VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN), (int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN);
+    memcpy(fn, (void *)flash_upgrade_ram_begin, (int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin);
 
     // and run it!
     fn(false);
@@ -1017,7 +1048,7 @@ flash_upgrade()
     printf("upgrade failed\n");
     return;
 #endif
-#elif MC9S08QE128 || MC9S12DT256
+#elif MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #elif PIC32
     int i;
     int n;
@@ -1275,9 +1306,9 @@ flash_upgrade()
 void
 flash_initialize(void)
 {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     assert((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer));
-#if MC9S12DT256
+#if MC9S12DT256 || MC9S12DP512
     if (oscillator_frequency > 12800000) {
         MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((oscillator_frequency/8-1)/200000);
     } else {

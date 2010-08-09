@@ -15,9 +15,11 @@ extern bool zb_present;
 typedef void (*zb_recv_cbfn)(int nodeid, int length, byte *buffer);
 
 #if ! STICK_GUEST
+#if ! PIC32
 INTERRUPT
 void
 zb_isr(void);
+#endif
 
 #if MCF51JM128 || MCF51QE128
 interrupt
@@ -35,8 +37,10 @@ zb_poll(void);
 void
 zb_drop(bool drop);
 
+#if DEBUG
 void
 zb_diag(bool reset, bool init);
+#endif
 
 void
 zb_register(uint8 class, zb_recv_cbfn cbfn);

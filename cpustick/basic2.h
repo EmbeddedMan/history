@@ -18,19 +18,19 @@ enum flash_var2 {
     FLASH_LAST_LAST
 };
 
-extern char *help_about;
+extern char * const help_about;
 
 #if BADGE_BOARD
-extern char *help_about_short;
+extern char * const help_about_short;
 #endif
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG HELP_CODE
 #endif
 
 void basic2_help(IN char *text_in);
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 

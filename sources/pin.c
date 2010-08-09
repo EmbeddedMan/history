@@ -5,28 +5,94 @@
 
 #define SHRINK  0
 
-char *pin_type_names[] = {
+#if FLASHER
+#define serial_disable()
+#define pin_get_digital_debounced(a, b)  0
+#endif
+
+int servo_hz = 45;
+
+#define SERVO_MAX (100000/servo_hz)
+#if MC9S08QE128 || MCF51QE128 || MCF51JM128 || PIC32
+#if PIC32
+#define SERVO_PRESCALE  64
+#else
+#define SERVO_PRESCALE  16
+#endif
+#define SERVO_MOD  (bus_frequency/SERVO_PRESCALE/servo_hz)
+#else
+#define SERVO_PRESCALE  8
+#endif
+
+const char * const pin_assignment_names[] = {
+    "heartbeat",
+    "safemode*",
+    "clone_rst*",
+    "zigbee_rst*",
+    "zigbee_attn*",
+    "zigbee_rxtxen",
+};
+
+byte pin_assignments[pin_assignment_max] = {
+    // set our default pin assignments
+#if MC9S08QE128 || MCF51QE128
+    PIN_PTC2, PIN_PTA2, PIN_UNASSIGNED, PIN_PTC0, PIN_PTC1, PIN_PTF1
+#elif MC9S12DT256 || MC9S12DP512
+    PIN_PB7, PIN_PP0, PIN_UNASSIGNED, PIN_PT0, PIN_PT1, PIN_PB6
+#elif MCF51JM128
+    PIN_PTF0, PIN_PTG0, PIN_UNASSIGNED, PIN_PTE2, PIN_PTE3, PIN_PTB5
+#elif MCF5211 || MCF52221 || MCF52233 || (MCF52259 && DEMO)
+    PIN_DTIN3,
+#if MCF5211
+      PIN_IRQ4,
+#elif MCF52221 || MCF52233
+      PIN_IRQ1,
+#elif MCF52259
+      PIN_IRQ5,
+#endif
+#if MCF52221 || MCF52259
+        PIN_SCL,
+#else
+        PIN_UNASSIGNED,
+#endif
+#if MCF5211 || MCF52233
+          PIN_GPT0, PIN_GPT1, PIN_AN5
+#else
+          PIN_AN2, PIN_AN3, PIN_AN5
+#endif
+#elif MCF52259
+    PIN_FEC_CRS, PIN_FEC_COL, PIN_QSPI_CS2, PIN_FEC_RXER, PIN_UNASSIGNED, PIN_FEC_TXCLK
+#elif PIC32
+    PIN_RE0, PIN_RE6, PIN_UNASSIGNED, PIN_RG6, PIN_RG9, PIN_RG7
+#else
+#error
+#endif
+};
+
+const char * const pin_type_names[] = {
     "digital input",
     "digital output",
     "analog input",
     "analog output",
     "uart input",
     "uart output",
-    "frequency output"
+    "frequency output",
+    "servo output"
 };
 
-byte pin_qual_mask[] = {
+byte const pin_qual_mask[] = {
     1<<pin_qual_inverted | 1<<pin_qual_debounced,  // digital input
     1<<pin_qual_inverted | 1<<pin_qual_open_drain,  // digital output
     1<<pin_qual_inverted | 1<<pin_qual_debounced,  // analog input
     1<<pin_qual_inverted,  // analog output
     0,  // uart input
     0,  // uart output
-    0  // frequency output
+    0,  // frequency output
+    1<<pin_qual_inverted  // servo output
 };
 
 // Keep in-sync with pin_qual.  Each element in this array corresponds to a bit in pin_qual.
-char *pin_qual_names[] = {
+const char * const pin_qual_names[] = {
     "debounced",
     "inverted",
     "open_drain"
@@ -38,15 +104,34 @@ uint16 pin_analog = 3300;
 
 const struct pin pins[] = {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-    "dtin0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "dtin1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "dtin2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "dtin3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
+    "dtin0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "dtin1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "dtin2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "dtin3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
     "qspi_dout", DIO,
     "qspi_din", DIO,
     "qspi_clk", DIO,
     "qspi_cs0", DIO,
 #if MCF52259
+    "qspi_cs1", 0,
+    "qspi_cs2", DIO,
+    "qspi_cs3", DIO,
+    "fec_col", DIO,
+    "fec_crs", DIO,
+    "fec_rxclk", DIO,
+    "fec_rxd0", DIO,
+    "fec_rxd1", DIO,
+    "fec_rxd2", DIO,
+    "fec_rxd3", DIO,
+    "fec_rxdv", DIO,
+    "fec_rxer", DIO,
+    "fec_txclk", DIO,
+    "fec_txd0", DIO,
+    "fec_txd1", DIO,
+    "fec_txd2", DIO,
+    "fec_txd3", DIO,
+    "fec_txen", DIO,
+    "fec_txer", DIO,
     "utxd2", DIO|1<<pin_type_uart_output,
     "urxd2", DIO|1<<pin_type_uart_input,
     "urts2*", DIO,
@@ -94,10 +179,10 @@ const struct pin pins[] = {
     "irq11*", DIO,
 #endif
 #if MCF52233 || MCF52259 || MCF5211
-    "gpt0", DIO|1<<pin_type_analog_output,
-    "gpt1", DIO|1<<pin_type_analog_output,
-    "gpt2", DIO|1<<pin_type_analog_output,
-    "gpt3", DIO|1<<pin_type_analog_output,
+    "gpt0", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "gpt1", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "gpt2", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "gpt3", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
 #endif
     "scl", DIO,
     "sda", DIO,
@@ -133,18 +218,18 @@ const struct pin pins[] = {
     "ptd7", DIO,
     "pte0", DIO|1<<pin_type_uart_output,
     "pte1", DIO|1<<pin_type_uart_input,
-    "pte2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "pte3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
+    "pte2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "pte3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
     "pte4", DIO,
     "pte5", DIO,
     "pte6", DIO,
     "pte7", DIO,
-    "ptf0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptf1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptf2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptf3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptf4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptf5", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
+    "ptf0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptf1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptf2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptf3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptf4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptf5", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
     "ptf6", DIO,
     "ptf7", DIO,
     "ptg0", DIO,
@@ -152,28 +237,28 @@ const struct pin pins[] = {
     "ptg2", DIO,
     "ptg3", DIO,
 #elif MCF51QE128 || MC9S08QE128
-    "pta0", DIO|1<<pin_type_analog_input|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "pta1", DIO|1<<pin_type_analog_input|1<<pin_type_analog_output|1<<pin_type_frequency_output,
+    "pta0", DIO|1<<pin_type_analog_input|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "pta1", DIO|1<<pin_type_analog_input|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
     "pta2", DIO|1<<pin_type_analog_input,
     "pta3", DIO|1<<pin_type_analog_input,
     "pta4", DIO,
     "pta5", DIO,
-    "pta6", DIO|1<<pin_type_analog_input|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "pta7", DIO|1<<pin_type_analog_input|1<<pin_type_analog_output|1<<pin_type_frequency_output,
+    "pta6", DIO|1<<pin_type_analog_input|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "pta7", DIO|1<<pin_type_analog_input|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
     "ptb0", DIO|1<<pin_type_analog_input|1<<pin_type_uart_input,
     "ptb1", DIO|1<<pin_type_analog_input|1<<pin_type_uart_output,
     "ptb2", DIO|1<<pin_type_analog_input,
     "ptb3", DIO|1<<pin_type_analog_input,
-    "ptb4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptb5", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
+    "ptb4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptb5", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
     "ptb6", DIO,
     "ptb7", DIO,
-    "ptc0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptc1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptc2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptc3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptc4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
-    "ptc5", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,
+    "ptc0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptc1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptc2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptc3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptc4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
+    "ptc5", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,
     "ptc6", DIO|1<<pin_type_uart_input,
     "ptc7", DIO|1<<pin_type_uart_output,
     "ptd0", DIO,
@@ -204,7 +289,7 @@ const struct pin pins[] = {
     "ptg1", DIO,
     "ptg2", DIO|1<<pin_type_analog_input,
     "ptg3", DIO|1<<pin_type_analog_input,
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     "pad00", 1<<pin_type_digital_input|1<<pin_type_analog_input,
     "pad01", 1<<pin_type_digital_input|1<<pin_type_analog_input,
     "pad02", 1<<pin_type_digital_input|1<<pin_type_analog_input,
@@ -213,6 +298,14 @@ const struct pin pins[] = {
     "pad05", 1<<pin_type_digital_input|1<<pin_type_analog_input,
     "pad06", 1<<pin_type_digital_input|1<<pin_type_analog_input,
     "pad07", 1<<pin_type_digital_input|1<<pin_type_analog_input,
+    "pad08", 1<<pin_type_digital_input|1<<pin_type_analog_input,
+    "pad09", 1<<pin_type_digital_input|1<<pin_type_analog_input,
+    "pad10", 1<<pin_type_digital_input|1<<pin_type_analog_input,
+    "pad11", 1<<pin_type_digital_input|1<<pin_type_analog_input,
+    "pad12", 1<<pin_type_digital_input|1<<pin_type_analog_input,
+    "pad13", 1<<pin_type_digital_input|1<<pin_type_analog_input,
+    "pad14", 1<<pin_type_digital_input|1<<pin_type_analog_input,
+    "pad15", 1<<pin_type_digital_input|1<<pin_type_analog_input,
     "pa0", DIO,
     "pa1", DIO,
     "pa2", DIO,
@@ -237,14 +330,30 @@ const struct pin pins[] = {
     "pe5", DIO,
     "pe6", DIO,
     "pe7", DIO,
-    "pj0", 0,
-    "pj1", 0,
+    "ph0", DIO,
+    "ph1", DIO,
+    "ph2", DIO,
+    "ph3", DIO,
+    "ph4", DIO,
+    "ph5", DIO,
+    "ph6", DIO,
+    "ph7", DIO,
+    "pj0", DIO,
+    "pj1", DIO,
     "pj2", 0,
     "pj3", 0,
     "pj4", 0,
     "pj5", 0,
     "pj6", DIO,
     "pj7", DIO,
+    "pk0", DIO,
+    "pk1", DIO,
+    "pk2", DIO,
+    "pk3", DIO,
+    "pk4", DIO,
+    "pk5", DIO,
+    "pk6", DIO,
+    "pk7", DIO,
     "pm0", DIO,
     "pm1", DIO,
     "pm2", DIO,
@@ -253,18 +362,22 @@ const struct pin pins[] = {
     "pm5", DIO,
     "pm6", DIO,
     "pm7", DIO,
-    "pp0", DIO|1<<pin_type_analog_output,
-    "pp1", DIO|1<<pin_type_analog_output,
-    "pp2", DIO|1<<pin_type_analog_output,
-    "pp3", DIO|1<<pin_type_analog_output,
-    "pp4", DIO|1<<pin_type_analog_output,
-    "pp5", DIO|1<<pin_type_analog_output,
-    "pp6", DIO|1<<pin_type_analog_output,
-    "pp7", DIO|1<<pin_type_analog_output,
+    "pp0", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "pp1", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "pp2", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "pp3", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "pp4", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "pp5", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "pp6", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "pp7", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
     "ps0", DIO|1<<pin_type_uart_input,
     "ps1", DIO|1<<pin_type_uart_output,
     "ps2", DIO|1<<pin_type_uart_input,
     "ps3", DIO|1<<pin_type_uart_output,
+    "ps4", DIO,
+    "ps5", DIO,
+    "ps6", DIO,
+    "ps7", DIO,
     "pt0", DIO|1<<pin_type_frequency_output,
     "pt1", DIO|1<<pin_type_frequency_output,
     "pt2", DIO|1<<pin_type_frequency_output,
@@ -321,11 +434,11 @@ const struct pin pins[] = {
     "rc12", 0,
     "rc13", DIO,  // rc13...
     "rc14", DIO,
-    "rd0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,  // oc1
-    "rd1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,  // oc2
-    "rd2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,  // oc3
-    "rd3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,  // oc4
-    "rd4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output,  // oc5
+    "rd0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc1
+    "rd1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc2
+    "rd2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc3
+    "rd3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc4
+    "rd4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc5
     "rd5", DIO,
     "rd6", DIO,
     "rd7", DIO,
@@ -379,12 +492,13 @@ const struct pin pins[] = {
 #else
 #error
 #endif
+    "none", 0,
 };
 
 bool uart_armed[UART_INTS];
 
-const char *uart_names[MAX_UARTS] = {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MC9S12DT256
+const char * const uart_names[MAX_UARTS] = {
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MC9S12DT256 || MC9S12DP512
     "0",
     "1",
 #if MCF52259
@@ -397,20 +511,20 @@ const char *uart_names[MAX_UARTS] = {
 };
 
 #if MCF51JM128 || PIC32
-static bool freq[2];  // 1 -> timer used for freq gen; 0 -> timer used for pwm; -1 -> timer avail
+static byte freq[2];  // 0, pin_type_analog_output, pin_type_servo_output, pin_type_frequency_output
 #elif MCF51QE128 || MC9S08QE128
-static bool freq[3];  // 1 -> timer used for freq gen; 0 -> timer used for pwm; -1 -> timer avail
-#elif MC9S12DT256
-static bool freq[1];  // 1 -> timer used for freq gen; -1 -> timer avail
+static byte freq[3];  // 0, pin_type_analog_output, pin_type_servo_output, pin_type_frequency_output
+#elif MC9S12DT256 || MC9S12DP512
+static byte freq[1];  // 0 or pin_type_frequency_output
 #endif
 
-#if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #define FREQ_PRESCALE  16
 #elif PIC32
 #define FREQ_PRESCALE  64
 #endif
 
-#if ! STICK_GUEST
+#if ! STICK_GUEST && ! FLASHER
 
 // Debounce history for digital inputs.
 
@@ -423,6 +537,11 @@ enum debounce_ports {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     port_tc,
     port_qs,
+#if MCF52259
+    port_ti,
+    port_tj,
+    port_uc,
+#endif
     port_ub,
     port_ua,
     port_an,
@@ -442,8 +561,9 @@ enum debounce_ports {
     port_e,
     port_f,
     port_g,
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     port_ad0,
+    port_ad1,
     port_a,
     port_b,
     port_e,
@@ -467,7 +587,7 @@ enum debounce_ports {
 };
 
 // This structure records recent samples from digital pins.
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 static uint8 pin_digital_debounce[pin_digital_debounce_history_depth][port_max];
 #elif PIC32
 static uint16 pin_digital_debounce[pin_digital_debounce_history_depth][port_max];
@@ -498,7 +618,7 @@ pin_get_digital_debounced(int port_offset, int pin_offset)
     return value > pin_digital_debounce_history_depth/2;
 }
 
-#endif // ! STICK_GUEST
+#endif // ! STICK_GUEST && ! FLASHER
 
 
 static void
@@ -508,9 +628,11 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     int assign;
 #endif
-#if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
-#if ! MC9S12DT256
+#if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#if ! MC9S12DT256 && ! MC9S12DP512
     int n;
+    int mod;
+    int mask;
 #endif
     uint32 adc;
 #endif
@@ -535,6 +657,10 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 assign = 0;
             } else if (pin_type == pin_type_analog_output) {
                 assign = 3;
+                MCF_PWM_PWMCLK &= ~(1 << (offset*2));  // prescaled clock
+            } else if (pin_type == pin_type_servo_output) {
+                assign = 3;
+                MCF_PWM_PWMCLK |= 1 << (offset*2);  // prescaled and scaled clock
             } else {
                 assert(pin_type == pin_type_frequency_output);
                 assign = 2;
@@ -550,9 +676,13 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_QSPI_DIN:
         case PIN_QSPI_CLK:
         case PIN_QSPI_CS0:
+#if MCF52259
+        case PIN_QSPI_CS2:
+        case PIN_QSPI_CS3:
+#endif
             offset = pin_number - PIN_QSPI_DOUT;
-            assert(offset < 4);
-            MCF_GPIO_PQSPAR = 0;
+            assert(offset < 8);
+            MCF_GPIO_PQSPAR &= ~(3<<2*offset);
             if (pin_type == pin_type_digital_output) {
                 MCF_GPIO_DDRQS |= 1 << offset;
             } else {
@@ -561,6 +691,40 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             }
             break;
 #if MCF52259
+        case PIN_FEC_COL:
+        case PIN_FEC_CRS:
+        case PIN_FEC_RXCLK:
+        case PIN_FEC_RXD0:
+        case PIN_FEC_RXD1:
+        case PIN_FEC_RXD2:
+        case PIN_FEC_RXD3:
+        case PIN_FEC_RXDV:
+            offset = pin_number - PIN_FEC_COL;
+            assert(offset < 8);
+            if (pin_type == pin_type_digital_output) {
+                MCF_GPIO_DDRTI |= 1 << offset;
+            } else {
+                assert(pin_type == pin_type_digital_input);
+                MCF_GPIO_DDRTI &= ~(1 << offset);
+            }
+            break;
+        case PIN_FEC_RXER:
+        case PIN_FEC_TXCLK:
+        case PIN_FEC_TXD0:
+        case PIN_FEC_TXD1:
+        case PIN_FEC_TXD2:
+        case PIN_FEC_TXD3:
+        case PIN_FEC_TXEN:
+        case PIN_FEC_TXER:
+            offset = pin_number - PIN_FEC_RXER;
+            assert(offset < 8);
+            if (pin_type == pin_type_digital_output) {
+                MCF_GPIO_DDRTJ |= 1 << offset;
+            } else {
+                assert(pin_type == pin_type_digital_input);
+                MCF_GPIO_DDRTJ &= ~(1 << offset);
+            }
+            break;
         case PIN_UTXD2:
         case PIN_URXD2:
         case PIN_RTS2:
@@ -689,9 +853,13 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             assert(offset < 4);
             if (pin_type == pin_type_digital_output || pin_type == pin_type_digital_input) {
                 assign = 0;
-            } else {
-                assert(pin_type == pin_type_analog_output);
+            } else if (pin_type == pin_type_analog_output) {
                 assign = 3;
+                MCF_PWM_PWMCLK &= ~(1 << (offset*2));  // prescaled clock
+            } else {
+                assert(pin_type == pin_type_servo_output);
+                assign = 3;
+                MCF_PWM_PWMCLK |= 1 << (offset*2);  // prescaled and scaled clock
             }
             MCF_GPIO_PTAPAR = (MCF_GPIO_PTAPAR &~ (3<<(offset*2))) | (assign<<(offset*2));
             if (pin_type == pin_type_digital_output) {
@@ -846,17 +1014,19 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 assert(offset == 0);
                 SCI1C2X |= SCI1C2_TE_MASK;
                 serial_disable();
-            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset >= 2 && offset < 4);
                 n = 0;
-                if (freq[n] != (byte)-1 && (pin_type == pin_type_frequency_output || freq[n] != 0)) {
+                assert(n < LENGTHOF(freq));
+                
+                if (freq[n] && (pin_type == pin_type_frequency_output || freq[n] != pin_type)) {
                     printf("conflicting timer usage\n");
 #if STICKOS
                     stop();
 #endif
                 } else {
                     if (pin_type == pin_type_frequency_output) {
-                        assert(freq[n] == (byte)-1);
+                        assert(! freq[n]);
 
                         // set timer prescales to 16
                         if (n) {
@@ -873,13 +1043,26 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                             TPM1C1SC = TPM1C1SC_MS1A_MASK;
                         }
                     } else {
-                        if (freq[n] == (byte)-1) {
-                            // set pwm prescales to 1
-                            TPM1SC = TPM1SC_CLKSA_MASK;
+                        if (! freq[n]) {
+                            if (pin_type == pin_type_analog_output) {
+                                // set pwm prescales to 1
+                                mask = 0;
+                                mod = pin_analog;
+                            } else {
+                                assert(pin_type == pin_type_servo_output);
+                                
+                                // set pwm prescales to 16
+                                assert(SERVO_PRESCALE == 16);
+                                mask = TPM1SC_PS2_MASK;
+                                mod = SERVO_MOD;
+                            }
+                            
+                            // set pwm prescales
+                            TPM1SC = TPM1SC_CLKSA_MASK|mask;
                             
                             // program the counter for pwm generation (shared counter)
-                            TPM1MODH = pin_analog>>8;
-                            TPM1MODL = pin_analog&0xff;
+                            TPM1MODH = mod>>8;
+                            TPM1MODL = mod&0xff;
                             TPM1CNTL = 0;
                         }
                         
@@ -891,7 +1074,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                         }
                     }
                     
-                    freq[n] = (pin_type == pin_type_frequency_output);
+                    freq[n] = pin_type;
                 }
             } else {
                 // program our pin's digital mode
@@ -925,17 +1108,18 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_PTF7:
             offset = pin_number - PIN_PTF0;
             assert(offset < 8);
-            if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset < 6);
                 n = offset > 3;
-                if (freq[n] != (byte)-1 && (pin_type == pin_type_frequency_output || freq[n] != 0)) {
+                assert(n < LENGTHOF(freq));
+                if (freq[n] && (pin_type == pin_type_frequency_output || freq[n] != pin_type)) {
                     printf("conflicting timer usage\n");
 #if STICKOS
                     stop();
 #endif
                 } else {
                     if (pin_type == pin_type_frequency_output) {
-                        assert(freq[n] == (byte)-1);
+                        assert(! freq[n]);
 
                         // set timer prescales to 16
                         if (n) {
@@ -959,25 +1143,39 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                             TPM2C1SC = TPM2C1SC_MS1A_MASK;
                         }
                     } else {
-                        if (freq[n] == (byte)-1) {
-                            // set pwm prescales to 1
-                            if (n) {
-                                TPM2SC = TPM1SC_CLKSA_MASK;
+                        if (! freq[n]) {
+                            if (pin_type == pin_type_analog_output) {
+                                // set pwm prescales to 1
+                                mask = 0;
+                                mod = pin_analog;
                             } else {
-                                TPM1SC = TPM1SC_CLKSA_MASK;
+                                assert(pin_type == pin_type_servo_output);
+                                
+                                // set pwm prescales to 16
+                                assert(SERVO_PRESCALE == 16);
+                                mask = TPM1SC_PS2_MASK;
+                                mod = SERVO_MOD;
+                            }
+
+                            // set pwm prescales
+                            if (n) {
+                                TPM2SC = TPM1SC_CLKSA_MASK|mask;
+                            } else {
+                                TPM1SC = TPM1SC_CLKSA_MASK|mask;
                             }
                             
                             // program the counter for pwm generation (shared counter)
                             if (n) {
-                                TPM2MODH = pin_analog>>8;
-                                TPM2MODL = pin_analog&0xff;
+                                TPM2MODH = mod>>8;
+                                TPM2MODL = mod&0xff;
                                 TPM2CNTL = 0;
                             } else {
-                                TPM1MODH = pin_analog>>8;
-                                TPM1MODL = pin_analog&0xff;
+                                TPM1MODH = mod>>8;
+                                TPM1MODL = mod&0xff;
                                 TPM1CNTL = 0;
                             }
                         }
+                        
                         // program our channel's pwm mode
                         if (offset == 0) {
                             TPM1C2SC = TPM1C2SC_MS2B_MASK|TPM1C2SC_ELS2B_MASK;
@@ -994,7 +1192,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                         }
                     }
                     
-                    freq[n] = (pin_type == pin_type_frequency_output);
+                    freq[n] = pin_type;
                 }
             } else {
                 // program our pin's digital mode
@@ -1073,18 +1271,18 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                     APCTL2 &= ~(1<<(adc-8));
                 }
                 
-                if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+                if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                     assert(offset < 2 || offset >= 6);
                     n = offset&1;
-                    assert(n == 0 || n == 1);
-                    if (freq[n] != (byte)-1 && (pin_type == pin_type_frequency_output || freq[n] != 0)) {
+                    assert(n < LENGTHOF(freq));
+                    if (freq[n] && (pin_type == pin_type_frequency_output || freq[n] != pin_type)) {
                         printf("conflicting timer usage\n");
 #if STICKOS
                         stop();
 #endif
                     } else {
                         if (pin_type == pin_type_frequency_output) {
-                            assert(freq[n] == (byte)-1);
+                            assert(! freq[n]);
 
                             // set timer prescales to 16
                             if (n) {
@@ -1105,25 +1303,39 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                                 TPM2C2SC = TPM2C2SC_MS2A_MASK;
                             }
                         } else {
-                            if (freq[n] == (byte)-1) {
-                                // set pwm prescales to 1
-                                if (n) {
-                                    TPM2SC = TPM2SC_CLKSA_MASK;
+                            if (! freq[n]) {
+                                if (pin_type == pin_type_analog_output) {
+                                    // set pwm prescales to 1
+                                    mask = 0;
+                                    mod = pin_analog;
                                 } else {
-                                    TPM1SC = TPM1SC_CLKSA_MASK;
+                                    assert(pin_type == pin_type_servo_output);
+                                    
+                                    // set pwm prescales to 16
+                                    assert(SERVO_PRESCALE == 16);
+                                    mask = TPM1SC_PS2_MASK;
+                                    mod = SERVO_MOD;
+                                }
+                            
+                                // set pwm prescales
+                                if (n) {
+                                    TPM2SC = TPM2SC_CLKSA_MASK|mask;
+                                } else {
+                                    TPM1SC = TPM1SC_CLKSA_MASK|mask;
                                 }
                                 
                                 // program the counter for pwm generation (shared counter)
                                 if (n) {
-                                    TPM2MODH = pin_analog>>8;
-                                    TPM2MODL = pin_analog&0xff;
+                                    TPM2MODH = mod>>8;
+                                    TPM2MODL = mod&0xff;
                                     TPM2CNTL = 0;
                                 } else {
-                                    TPM1MODH = pin_analog>>8;
-                                    TPM1MODL = pin_analog&0xff;
+                                    TPM1MODH = mod>>8;
+                                    TPM1MODL = mod&0xff;
                                     TPM1CNTL = 0;
                                 }
                             }
+                            
                             // program our channel's pwm mode
                             if (offset == 0) {
                                 TPM1C0SC = TPM1C0SC_MS0B_MASK|TPM1C0SC_ELS0B_MASK;
@@ -1137,7 +1349,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                             }
                         }
                         
-                        freq[n] = (pin_type == pin_type_frequency_output);
+                        freq[n] = pin_type;
                     }
                 } else {
                     // program our pin's digital mode
@@ -1197,18 +1409,18 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                         SCI1C2X &= ~SCI1C2_TE_MASK;
                     }
                     
-                    if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+                    if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                         assert(offset >= 4 && offset < 6);
                         n = offset == 4;
-                        assert(n == 0 || n == 1);
-                        if (freq[n] != (byte)-1 && (pin_type == pin_type_frequency_output || freq[n] != 0)) {
+                        assert(n < LENGTHOF(freq));
+                        if (freq[n] && (pin_type == pin_type_frequency_output || freq[n] != pin_type)) {
                             printf("conflicting timer usage\n");
 #if STICKOS
                             stop();
 #endif
                         } else {
                             if (pin_type == pin_type_frequency_output) {
-                                assert(freq[n] == (byte)-1);
+                                assert(! freq[n]);
 
                                 // set timer prescales to 16
                                 if (n) {
@@ -1225,25 +1437,39 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                                     TPM2C1SC = TPM2C1SC_MS1A_MASK;
                                 }
                             } else {
-                                if (freq[n] == (byte)-1) {
-                                    // set pwm prescales to 1
-                                    if (n) {
-                                        TPM2SC = TPM1SC_CLKSA_MASK;
+                                if (! freq[n]) {
+                                    if (pin_type == pin_type_analog_output) {
+                                        // set pwm prescales to 1
+                                        mask = 0;
+                                        mod = pin_analog;
                                     } else {
-                                        TPM1SC = TPM1SC_CLKSA_MASK;
+                                        assert(pin_type == pin_type_servo_output);
+                                        
+                                        // set pwm prescales to 16
+                                        assert(SERVO_PRESCALE == 16);
+                                        mask = TPM1SC_PS2_MASK;
+                                        mod = SERVO_MOD;
+                                    }
+                                
+                                    // set pwm prescales
+                                    if (n) {
+                                        TPM2SC = TPM1SC_CLKSA_MASK|mask;
+                                    } else {
+                                        TPM1SC = TPM1SC_CLKSA_MASK|mask;
                                     }
                                     
                                     // program the counter for pwm generation (shared counter)
                                     if (n) {
-                                        TPM2MODH = pin_analog>>8;
-                                        TPM2MODL = pin_analog&0xff;
+                                        TPM2MODH = mod>>8;
+                                        TPM2MODL = mod&0xff;
                                         TPM2CNTL = 0;
                                     } else {
-                                        TPM1MODH = pin_analog>>8;
-                                        TPM1MODL = pin_analog&0xff;
+                                        TPM1MODH = mod>>8;
+                                        TPM1MODL = mod&0xff;
                                         TPM1CNTL = 0;
                                     }
                                 }
+                                
                                 // program our channel's pwm mode
                                 if (offset == 5) {
                                     TPM1C1SC = TPM1C1SC_MS1B_MASK|TPM1C1SC_ELS1B_MASK;
@@ -1253,7 +1479,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                                 }
                             }
                             
-                            freq[n] = (pin_type == pin_type_frequency_output);
+                            freq[n] = pin_type;
                         }
                     } else {
                         // program our pin's digital mode
@@ -1298,17 +1524,18 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                     SCI2C2X &= ~SCI2C2_TE_MASK;
                 }
 
-                if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+                if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                     assert(offset < 6);
                     n = 2;
-                    if (freq[n] != (byte)-1 && (pin_type == pin_type_frequency_output || freq[n] != 0)) {
+                    assert(n < LENGTHOF(freq));
+                    if (freq[n] && (pin_type == pin_type_frequency_output || freq[n] != pin_type)) {
                         printf("conflicting timer usage\n");
 #if STICKOS
                         stop();
 #endif
                     } else {
                         if (pin_type == pin_type_frequency_output) {
-                            assert(freq[n] == (byte)-1);
+                            assert(! freq[n]);
 
                             // set timer prescales to 16
                             TPM3SC = TPM3SC_CLKSA_MASK|TPM3SC_PS2_MASK;
@@ -1329,15 +1556,29 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                                 TPM3C5SC = TPM3C5SC_MS5A_MASK;
                             }
                         } else {
-                            if (freq[n] == (byte)-1) {
-                                // set pwm prescales to 1
-                                TPM3SC = TPM3SC_CLKSA_MASK;
+                            if (! freq[n]) {
+                                if (pin_type == pin_type_analog_output) {
+                                    // set pwm prescales to 1
+                                    mask = 0;
+                                    mod = pin_analog;
+                                } else {
+                                    assert(pin_type == pin_type_servo_output);
+                                    
+                                    // set pwm prescales to 16
+                                    assert(SERVO_PRESCALE == 16);
+                                    mask = TPM1SC_PS2_MASK;
+                                    mod = SERVO_MOD;
+                                }
+                                
+                                // set pwm prescales
+                                TPM3SC = TPM3SC_CLKSA_MASK|mask;
                                 
                                 // program the counter for pwm generation (shared counter)
-                                TPM3MODH = pin_analog>>8;
-                                TPM3MODL = pin_analog&0xff;
+                                TPM3MODH = mod>>8;
+                                TPM3MODL = mod&0xff;
                                 TPM3CNTL = 0;
                             }
+                            
                             // program our channel's pwm mode
                             if (offset == 0) {
                                 TPM3C0SC = TPM3C0SC_MS0B_MASK|TPM3C0SC_ELS0B_MASK;
@@ -1355,7 +1596,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                             }
                         }
                         
-                        freq[n] = (pin_type == pin_type_frequency_output);
+                        freq[n] = pin_type;
                     }
                 } else {
                     // program our pin's digital mode
@@ -1491,8 +1732,8 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             assert(0);
             break;
     }
-#elif MC9S12DT256
-    // configure the MC9S12DT256 pin for the requested function
+#elif MC9S12DT256 || MC9S12DP512
+    // configure the MC9S12DT256/MC9S12DP512 pin for the requested function
     switch (pin_number) {
         case PIN_PAD00:
         case PIN_PAD01:
@@ -1510,6 +1751,24 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             } else {
                 assert(pin_type == pin_type_digital_input);
                 ATD0DIEN |= 1<<offset;
+            }
+            break;
+        case PIN_PAD08:
+        case PIN_PAD09:
+        case PIN_PAD10:
+        case PIN_PAD11:
+        case PIN_PAD12:
+        case PIN_PAD13:
+        case PIN_PAD14:
+        case PIN_PAD15:
+            offset = pin_number - PIN_PAD08;
+            assert(offset < 8);
+            adc = 8+offset;
+            if (pin_type == pin_type_analog_input) {
+                ATD1DIEN &= ~(1<<offset);
+            } else {
+                assert(pin_type == pin_type_digital_input);
+                ATD1DIEN |= 1<<offset;
             }
             break;
         case PIN_PA0:
@@ -1563,6 +1822,23 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 DDRE &= ~(1<<offset);
             }
             break;
+        case PIN_PH0:
+        case PIN_PH1:
+        case PIN_PH2:
+        case PIN_PH3:
+        case PIN_PH4:
+        case PIN_PH5:
+        case PIN_PH6:
+        case PIN_PH7:
+            offset = pin_number - PIN_PH0;
+            assert(offset < 8);
+            if (pin_type == pin_type_digital_output) {
+                DDRH |= 1<<offset;
+            } else {
+                assert(pin_type == pin_type_digital_input);
+                DDRH &= ~(1<<offset);
+            }
+            break;
         case PIN_PJ0:
         case PIN_PJ1:
         case PIN_PJ2:
@@ -1578,6 +1854,23 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             } else {
                 assert(pin_type == pin_type_digital_input);
                 DDRJ &= ~(1<<offset);
+            }
+            break;
+        case PIN_PK0:
+        case PIN_PK1:
+        case PIN_PK2:
+        case PIN_PK3:
+        case PIN_PK4:
+        case PIN_PK5:
+        case PIN_PK6:
+        case PIN_PK7:
+            offset = pin_number - PIN_PK0;
+            assert(offset < 8);
+            if (pin_type == pin_type_digital_output) {
+                DDRK |= 1<<offset;
+            } else {
+                assert(pin_type == pin_type_digital_input);
+                DDRK &= ~(1<<offset);
             }
             break;
         case PIN_PM0:
@@ -1609,6 +1902,10 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             assert(offset < 8);
             if (pin_type == pin_type_analog_output) {
                 PWME |= 1<<offset;
+                PWMCLK &= ~(1 << offset);  // prescaled clock
+            } else if (pin_type == pin_type_servo_output) {
+                PWME |= 1<<offset;
+                PWMCLK |= 1 << offset;  // prescaled and scaled clock
             } else {
                 PWME &= ~(1<<offset);
                 if (pin_type == pin_type_digital_output) {
@@ -1623,8 +1920,12 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_PS1:
         case PIN_PS2:
         case PIN_PS3:
+        case PIN_PS4:
+        case PIN_PS5:
+        case PIN_PS6:
+        case PIN_PS7:
             offset = pin_number - PIN_PS0;
-            assert(offset < 4);
+            assert(offset < 8);
             if (pin_type == pin_type_uart_input) {
                 if (offset == 0) {
                     SCI1C2X |= SCI1C2_RE_MASK;
@@ -1648,8 +1949,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                     SCI1C2X &= ~SCI1C2_TE_MASK;
                 } else if (offset == 2) {
                     SCI2C2X &= ~SCI1C2_RE_MASK;
-                } else {
-                    assert(offset == 3);
+                } else if (offset == 3) {
                     SCI2C2X &= ~SCI1C2_TE_MASK;
                 }
                 if (pin_type == pin_type_digital_output) {
@@ -1671,7 +1971,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             offset = pin_number - PIN_PT0;
             assert(offset < 8);
             if (pin_type == pin_type_frequency_output) {
-                if (freq[0] != (byte)-1) {
+                if (freq[0]) {
                     printf("conflicting timer usage\n");
 #if STICKOS
                     stop();
@@ -1682,7 +1982,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                     } else {
                         TCTL1 = (TCTL1 & ~(3<<((offset-4)*2))) | (1<<((offset-4)*2));
                     }
-                    freq[0] = 1;
+                    freq[0] = pin_type_frequency_output;
                     // disable timer
                     TSCR1 = 0x00;
                 }
@@ -1820,11 +2120,36 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                     CNPUECLR = (offset>=13?19+offset-13:13+offset-4);
                 }
             }
-            if (pin_type == pin_type_analog_output) {
-                // NULL
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output) {
+                if (freq[0] && freq[0] != pin_type) {
+                    printf("conflicting timer usage\n");
+#if STICKOS
+                    stop();
+#endif
+                } else {
+                    if (! freq[0]) {
+                        if (pin_type == pin_type_analog_output) {
+                            // configure timer 2 for analog pwm generation
+                            // set pwm prescale to 1
+                            T2CON = 0;
+                            TMR2 = 0;
+                            PR2 = pin_analog-1;
+                            T2CON = _T2CON_ON_MASK;
+                        } else {
+                            // configure timer 2 for servo pwm generation
+                            // set pwm prescale to 64
+                            T2CON = 0;
+                            TMR2 = 0;
+                            PR2 = SERVO_MOD-1;
+                            assert(SERVO_PRESCALE == 64);
+                            T2CON = _T2CON_ON_MASK|(6 << _T2CON_TCKPS_POSITION);
+                        }
+                        freq[0] = pin_type;
+                    }
+                }
             } else if (pin_type == pin_type_frequency_output) {
-                if (freq[1] == (byte)-1) {
-                    freq[1] = 1;
+                if (! freq[1]) {
+                    freq[1] = pin_type_frequency_output;
                     // NULL
                 } else {
                     printf("conflicting timer usage\n");
@@ -1964,6 +2289,9 @@ pin_declare(IN int pin_number, IN int pin_type, IN int pin_qual)
 static byte ulasttx[MAX_UARTS];
 static byte umask[MAX_UARTS];
 
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 // this function sets a pin variable!
 void
 pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
@@ -1975,12 +2303,23 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
     int value2;
     uint32 offset;
     
+    if (pin_number == PIN_UNASSIGNED) {
+        return;
+    }
+    
     if (pin_type == pin_type_analog_output) {
         // trim the analog level
         if (value < 0) {
             value = 0;
         } else if (value > pin_analog) {
             value = pin_analog;
+        }
+    } else if (pin_type == pin_type_servo_output) {
+        // trim the servo level
+        if (value < 0) {
+            value = 0;
+        } else if (value > SERVO_MAX) {
+            value = SERVO_MAX;
         }
     } else if (pin_type == pin_type_frequency_output) {
         // trim the frequency
@@ -2022,6 +2361,10 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             value2 = value;
             value = pin_analog-value;
             ASSERT(value+value2 == pin_analog);  // catch CW bug
+        } else if (pin_type == pin_type_servo_output) {
+            value2 = value;
+            value = SERVO_MAX-value;
+            ASSERT(value+value2 == SERVO_MAX);  // catch CW bug
         }
     }
 
@@ -2044,6 +2387,9 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             if (pin_type == pin_type_analog_output) {
                 // program MCF_PWM_PWMDTY with values 0 (3.3v) to 255 (0v)
                 MCF_PWM_PWMDTY(offset*2) = 255 - value*255/pin_analog;
+            } else if (pin_type == pin_type_servo_output) {
+                // program MCF_PWM_PWMDTY with values 0 (SERVO_MAX) to 255 (0)
+                MCF_PWM_PWMDTY(offset*2) = 255 - value*255/SERVO_MAX;
             } else if (pin_type == pin_type_frequency_output) {
                 // program MCF_DTIM_DTRR with bus_frequency (1 Hz) to 1 (bus_frequency Hz)
                 MCF_DTIM_DTRR(offset) = value;
@@ -2065,8 +2411,12 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_QSPI_DIN:
         case PIN_QSPI_CLK:
         case PIN_QSPI_CS0:
+#if MCF52259
+        case PIN_QSPI_CS2:
+        case PIN_QSPI_CS3:
+#endif
             offset = pin_number - PIN_QSPI_DOUT;
-            assert(offset < 4);
+            assert(offset < 8);
             assert(pin_type == pin_type_digital_output);
             if (value) {
                 MCF_GPIO_SETQS = 1 << offset;
@@ -2075,6 +2425,40 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             }
             break;
 #if MCF52259
+        case PIN_FEC_COL:
+        case PIN_FEC_CRS:
+        case PIN_FEC_RXCLK:
+        case PIN_FEC_RXD0:
+        case PIN_FEC_RXD1:
+        case PIN_FEC_RXD2:
+        case PIN_FEC_RXD3:
+        case PIN_FEC_RXDV:
+            offset = pin_number - PIN_FEC_COL;
+            assert(offset < 8);
+            assert(pin_type == pin_type_digital_output);
+            if (value) {
+                MCF_GPIO_SETTI = 1 << offset;
+            } else {
+                MCF_GPIO_CLRTI = ~(1 << offset);
+            }
+            break;
+        case PIN_FEC_RXER:
+        case PIN_FEC_TXCLK:
+        case PIN_FEC_TXD0:
+        case PIN_FEC_TXD1:
+        case PIN_FEC_TXD2:
+        case PIN_FEC_TXD3:
+        case PIN_FEC_TXEN:
+        case PIN_FEC_TXER:
+            offset = pin_number - PIN_FEC_RXER;
+            assert(offset < 8);
+            assert(pin_type == pin_type_digital_output);
+            if (value) {
+                MCF_GPIO_SETTJ = 1 << offset;
+            } else {
+                MCF_GPIO_CLRTJ = ~(1 << offset);
+            }
+            break;
         case PIN_UTXD2:
         case PIN_URXD2:
         case PIN_RTS2:
@@ -2185,6 +2569,9 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             if (pin_type == pin_type_analog_output) {
                 // program MCF_PWM_PWMDTY with values 0 (3.3v) to 255 (0v)
                 MCF_PWM_PWMDTY(offset*2+1) = 255 - value*255/pin_analog;
+            } else if (pin_type == pin_type_servo_output) {
+                // program MCF_PWM_PWMDTY with values 0 (SERVO_MAX) to 255 (0)
+                MCF_PWM_PWMDTY(offset*2+1) = 255 - value*255/SERVO_MAX;
             } else {
                 assert(pin_type == pin_type_digital_output);
                 if (value) {
@@ -2293,7 +2680,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_PTE7:
             offset = pin_number - PIN_PTE0;
             assert(offset < 8);
-            if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset >= 2 && offset < 4);
                 if (pin_type == pin_type_frequency_output) {
                     // program the counter for frequency generation (private counter)
@@ -2317,6 +2704,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                             TPM1C1SC_ELS1x = 1;
                         }
                     }
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MOD/SERVO_MAX;
                 }
                 
                 // set the channel frequency or analog level
@@ -2349,7 +2738,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_PTF7:
             offset = pin_number - PIN_PTF0;
             assert(offset < 8);
-            if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset < 6);
                 if (pin_type == pin_type_frequency_output) {
                     // program the counter for frequency generation (private counter)
@@ -2395,6 +2784,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                             TPM2C1SC_ELS1x = 1;
                         }
                     }
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MOD/SERVO_MAX;
                 }
                 
                 // set the channel frequency or analog level
@@ -2456,7 +2847,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_PTA7:  // tmp2ch2
             offset = pin_number - PIN_PTA0;
             assert(offset < 8);
-            if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset < 2 || offset >= 6);
                 n = offset&1;
                 assert(n == 0 || n == 1);
@@ -2498,6 +2889,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                             TPM2C2SC_ELS2x = 1;
                         }
                     }
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MOD/SERVO_MAX;
                 }
                 
                 // set the channel frequency or analog level
@@ -2537,7 +2930,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             if (pin_type == pin_type_uart_output) {
                 assert(offset == 1);
                 pin_uart_tx(0, value);
-            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset >= 4 || offset < 6);
                 n = offset == 4;
                 assert(n == 0 || n == 1);
@@ -2571,6 +2964,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                             TPM2C1SC_ELS1x = 1;
                         }
                     }
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MOD/SERVO_MAX;
                 }
                 
                 // set the channel frequency or analog level
@@ -2604,7 +2999,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             if (pin_type == pin_type_uart_output) {
                 assert(offset == 7);
                 pin_uart_tx(1, value);
-            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset < 6);
                 n = 2;
                 if (pin_type == pin_type_frequency_output) {
@@ -2647,6 +3042,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                             TPM3C5SC_ELS5x = 1;
                         }
                     }
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MOD/SERVO_MAX;
                 }
                 
                 // set the channel frequency or analog level
@@ -2747,8 +3144,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             assert(0);
             break;
     }
-#elif MC9S12DT256
-    // set the MC9S12DT256 pin to value
+#elif MC9S12DT256 || MC9S12DP512
+    // set the MC9S12DT256/MC9S12DP512 pin to value
     switch (pin_number) {
         case PIN_PAD00:
         case PIN_PAD01:
@@ -2758,6 +3155,16 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_PAD05:
         case PIN_PAD06:
         case PIN_PAD07:
+            assert(0);
+            break;
+        case PIN_PAD08:
+        case PIN_PAD09:
+        case PIN_PAD10:
+        case PIN_PAD11:
+        case PIN_PAD12:
+        case PIN_PAD13:
+        case PIN_PAD14:
+        case PIN_PAD15:
             assert(0);
             break;
         case PIN_PA0:
@@ -2811,6 +3218,23 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                 PORTE &= ~(1<<offset);
             }
             break;
+        case PIN_PH0:
+        case PIN_PH1:
+        case PIN_PH2:
+        case PIN_PH3:
+        case PIN_PH4:
+        case PIN_PH5:
+        case PIN_PH6:
+        case PIN_PH7:
+            offset = pin_number - PIN_PH0;
+            assert(offset < 8);
+            assert(pin_type == pin_type_digital_output);
+            if (value) {
+                PTH |= 1<<offset;
+            } else {
+                PTH &= ~(1<<offset);
+            }
+            break;
         case PIN_PJ0:
         case PIN_PJ1:
         case PIN_PJ2:
@@ -2826,6 +3250,23 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                 PTJ |= 1<<offset;
             } else {
                 PTJ &= ~(1<<offset);
+            }
+            break;
+        case PIN_PK0:
+        case PIN_PK1:
+        case PIN_PK2:
+        case PIN_PK3:
+        case PIN_PK4:
+        case PIN_PK5:
+        case PIN_PK6:
+        case PIN_PK7:
+            offset = pin_number - PIN_PK0;
+            assert(offset < 8);
+            assert(pin_type == pin_type_digital_output);
+            if (value) {
+                PORTK |= 1<<offset;
+            } else {
+                PORTK &= ~(1<<offset);
             }
             break;
         case PIN_PM0:
@@ -2855,9 +3296,15 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_PP7:
             offset = pin_number - PIN_PP0;
             assert(offset < 8);
-            if (pin_type == pin_type_analog_output) {
-                // program PWMDTY with values 0 (3.3v) to 255 (0v)
-                value = 255 - value*255/pin_analog;
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output) {
+                if (pin_type == pin_type_analog_output) {
+                    // program PWMDTY with values 0 (3.3v) to 255 (0v)
+                    value = 255 - value*255/pin_analog;
+                } else {
+                    assert(pin_type == pin_type_servo_output);
+                    // program MCF_PWM_PWMDTY with values 0 (SERVO_MAX) to 255 (0)
+                    value = 255 - value*255/SERVO_MAX;
+                }
                 switch (offset) {
                     case 0:
                         PWMDTY0 = value;
@@ -2900,8 +3347,12 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_PS1:
         case PIN_PS2:
         case PIN_PS3:
+        case PIN_PS4:
+        case PIN_PS5:
+        case PIN_PS6:
+        case PIN_PS7:
             offset = pin_number - PIN_PS0;
-            assert(offset < 4);
+            assert(offset < 8);
             if (pin_type == pin_type_uart_output) {
                 if (pin_number == PIN_PS1) {
                     pin_uart_tx(0, value);
@@ -3060,7 +3511,10 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_RD15:
             offset = pin_number - PIN_RD0;
             assert(offset < 16);
-            if (pin_type == pin_type_analog_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output) {
+                if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MOD/SERVO_MAX;
+                }
                 if (offset == 0) {
                     OC1CONCLR = _OC1CON_ON_MASK;
                     OC1R = 0;
@@ -3227,19 +3681,26 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         pin_declare_internal(pin_number, pin_type_digital_output, pin_qual, true);
     }
 }
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#pragma CODE_SEG DEFAULT
+#endif
 
 // this function gets a pin variable!
 int32
 pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
 {
 #if ! STICK_GUEST && ! SHRINK
-#if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     uint32 adc;
 #endif
     int32 value;
     uint32 offset;
     
     value = 0;
+
+    if (pin_number == PIN_UNASSIGNED) {
+        return value;
+    }
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // get the value of the MCF52221/MCF52233/MCF52259/MCF5211 pin
@@ -3252,6 +3713,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             assert(offset < 4);
             if (pin_type == pin_type_analog_output) {
                 value = (255-MCF_PWM_PWMDTY(offset*2))*pin_analog/255;
+            } else if (pin_type == pin_type_servo_output) {
+                value = (255-MCF_PWM_PWMDTY(offset*2))*SERVO_MAX/255;
             } else if (pin_type == pin_type_frequency_output) {
                 if (MCF_DTIM_DTRR(offset) == -1) {
                     value = 0;
@@ -3270,8 +3733,12 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_QSPI_DIN:
         case PIN_QSPI_CLK:
         case PIN_QSPI_CS0:
+#if MCF52259
+        case PIN_QSPI_CS2:
+        case PIN_QSPI_CS3:
+#endif
             offset = pin_number - PIN_QSPI_DOUT;
-            assert(offset < 4);
+            assert(offset < 8);
             if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
                 value = pin_get_digital_debounced(port_qs, offset);
@@ -3281,6 +3748,42 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             }
             break;
 #if MCF52259
+        case PIN_FEC_COL:
+        case PIN_FEC_CRS:
+        case PIN_FEC_RXCLK:
+        case PIN_FEC_RXD0:
+        case PIN_FEC_RXD1:
+        case PIN_FEC_RXD2:
+        case PIN_FEC_RXD3:
+        case PIN_FEC_RXDV:
+            offset = pin_number - PIN_FEC_COL;
+            assert(offset < 8);
+            if (pin_qual & 1<<pin_qual_debounced) {
+                assert(pin_type == pin_type_digital_input);
+                value = pin_get_digital_debounced(port_ti, offset);
+            } else {
+                assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
+                value = !!(MCF_GPIO_SETTI & (1 << offset));
+            }
+            break;
+        case PIN_FEC_RXER:
+        case PIN_FEC_TXCLK:
+        case PIN_FEC_TXD0:
+        case PIN_FEC_TXD1:
+        case PIN_FEC_TXD2:
+        case PIN_FEC_TXD3:
+        case PIN_FEC_TXEN:
+        case PIN_FEC_TXER:
+            offset = pin_number - PIN_FEC_RXER;
+            assert(offset < 8);
+            if (pin_qual & 1<<pin_qual_debounced) {
+                assert(pin_type == pin_type_digital_input);
+                value = pin_get_digital_debounced(port_tj, offset);
+            } else {
+                assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
+                value = !!(MCF_GPIO_SETTJ & (1 << offset));
+            }
+            break;
         case PIN_UTXD2:
         case PIN_URXD2:
         case PIN_RTS2:
@@ -3294,7 +3797,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_uart_tx_empty(2)?0:ulasttx[2];
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
-                value = pin_get_digital_debounced(port_ub, offset);
+                value = pin_get_digital_debounced(port_uc, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
                 value = !!(MCF_GPIO_SETUC & (1 << offset));
@@ -3398,6 +3901,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             assert(offset < 4);            
             if (pin_type == pin_type_analog_output) {
                 value = (255-MCF_PWM_PWMDTY(offset*2+1))*pin_analog/255;
+            } else if (pin_type == pin_type_servo_output) {
+                value = (255-MCF_PWM_PWMDTY(offset*2+1))*SERVO_MAX/255;
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
                 value = pin_get_digital_debounced(port_ta, offset);
@@ -3520,7 +4025,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_PTE7:
             offset = pin_number - PIN_PTE0;
             assert(offset < 8);
-            if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset >= 2 && offset < 4);
                 // read the pwm/frequency
                 if (offset == 2) {
@@ -3534,6 +4039,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                         value = 0x10000;
                     }
                     value = bus_frequency/FREQ_PRESCALE/(value+1)/2;
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MAX/SERVO_MOD;
                 }
             } else if (pin_type == pin_type_uart_input) {
                 assert(offset == 1);
@@ -3559,7 +4066,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_PTF7:
             offset = pin_number - PIN_PTF0;
             assert(offset < 8);
-            if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset < 6);
                 // read the pwm/frequency
                 if (offset == 0) {
@@ -3581,6 +4088,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                         value = 0x10000;
                     }
                     value = bus_frequency/FREQ_PRESCALE/(value+1)/2;
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MAX/SERVO_MOD;
                 }
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
@@ -3625,7 +4134,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 adc = (offset<4)?(offset):(8+offset-6);
                 assert(adc < 4 || adc >= 8 && adc < 10);
                 value = adc_get_value(adc, pin_qual);
-            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset < 2 || offset >= 6);
                 // read the pwm/frequency
                 if (offset == 0) {
@@ -3644,6 +4153,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                         value = 0x10000;
                     }
                     value = bus_frequency/FREQ_PRESCALE/(value+1)/2;
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MAX/SERVO_MOD;
                 }
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
@@ -3674,7 +4185,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             } else if (pin_type == pin_type_uart_output) {
                 assert(offset == 1);
                 value = pin_uart_tx_empty(0)?0:ulasttx[0];
-            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset >= 4 || offset < 6);
                 // read the pwm/frequency
                 if (offset == 4) {
@@ -3689,6 +4200,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                         value = 0x10000;
                     }
                     value = bus_frequency/FREQ_PRESCALE/(value+1)/2;
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MAX/SERVO_MOD;
                 }
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
@@ -3714,7 +4227,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             } else if (pin_type == pin_type_uart_output) {
                 assert(offset == 7);
                 value = pin_uart_tx_empty(1)?0:ulasttx[1];
-            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            } else if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset < 6);
                 // read the pwm/frequency
                 if (offset == 0) {
@@ -3737,6 +4250,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                         value = 0x10000;
                     }
                     value = bus_frequency/FREQ_PRESCALE/(value+1)/2;
+                } else if (pin_type == pin_type_servo_output) {
+                    value = value*SERVO_MAX/SERVO_MOD;
                 }
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
@@ -3828,8 +4343,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             assert(0);
             break;
     }
-#elif MC9S12DT256
-    // get the value of the MC9S12DT256 pin
+#elif MC9S12DT256 || MC9S12DP512
+    // get the value of the MC9S12DT256/MC9S12DP512 pin
     switch (pin_number) {
         case PIN_PAD00:
         case PIN_PAD01:
@@ -3850,6 +4365,27 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             } else {
                 assert(pin_type == pin_type_digital_input);
                 value = !!(PORTAD0 & (1<<offset));
+            }
+            break;
+        case PIN_PAD08:
+        case PIN_PAD09:
+        case PIN_PAD10:
+        case PIN_PAD11:
+        case PIN_PAD12:
+        case PIN_PAD13:
+        case PIN_PAD14:
+        case PIN_PAD15:
+            offset = pin_number - PIN_PAD08;
+            assert(offset < 8);
+            if (pin_type == pin_type_analog_input) {
+                adc = 8+offset;
+                value = adc_get_value(adc, pin_qual);
+            } else if (pin_qual & 1<<pin_qual_debounced) {
+                assert(pin_type == pin_type_digital_input);
+                value = pin_get_digital_debounced(port_ad1, offset);
+            } else {
+                assert(pin_type == pin_type_digital_input);
+                value = !!(PORTAD1 & (1<<offset));
             }
             break;
         case PIN_PA0:
@@ -3952,7 +4488,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_PP7:
             offset = pin_number - PIN_PP0;
             assert(offset < 8);
-            if (pin_type == pin_type_analog_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output) {
                 switch (offset) {
                     case 0:
                         value = PWMDTY0;
@@ -3982,7 +4518,12 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                         assert(0);
                         break;
                 }
-                value = (255-value)*pin_analog/255;
+                if (pin_type == pin_type_analog_output) {
+                    value = (255-value)*pin_analog/255;
+                } else {
+                    assert(pin_type == pin_type_servo_output);
+                    value = (255-value)*SERVO_MAX/255;
+                }
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
                 value = pin_get_digital_debounced(port_p, offset);
@@ -3995,8 +4536,12 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_PS1:
         case PIN_PS2:
         case PIN_PS3:
+        case PIN_PS4:
+        case PIN_PS5:
+        case PIN_PS6:
+        case PIN_PS7:
             offset = pin_number - PIN_PS0;
-            assert(offset < 4);
+            assert(offset < 8);
             if (pin_type == pin_type_uart_input) {
                 if (offset == 0) {
                     value = pin_uart_rx(0);
@@ -4136,7 +4681,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_RD15:
             offset = pin_number - PIN_RD0;
             assert(offset < 16);
-            if (pin_type == pin_type_analog_output || pin_type == pin_type_frequency_output) {
+            if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 if (offset == 0) {
                     value = OC1RS;
                 } else if (offset == 1) {
@@ -4154,6 +4699,11 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                         value = 0x10000;
                     }
                     value = bus_frequency/FREQ_PRESCALE/(value+1)/2;
+                } else if (pin_type == pin_type_servo_output) {
+                    if (! value) {
+                        value = 0x10000;
+                    }
+                    value = value*SERVO_MAX/SERVO_MOD;
                 }
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
@@ -4248,6 +4798,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             value = ! value;
         } else if (pin_type == pin_type_analog_input || pin_type == pin_type_analog_output) {
             value = pin_analog-value;
+        } else if (pin_type == pin_type_servo_output) {
+            value = SERVO_MAX-value;
         }
     }
 
@@ -4284,7 +4836,7 @@ pin_uart_configure(int uart, int baud, int data, byte parity, bool loopback)
     MCF_UART_UBG2(uart) = (uint8)(divisor%0x100);
 
     MCF_UART_UCR(uart) = MCF_UART_UCR_TX_ENABLED|MCF_UART_UCR_RX_ENABLED;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // configure the uart for the requested protocol and speed
     if (! uart) {
         SCI1C1X = (loopback?SCI1C1_LOOPS_MASK:0)|((data==8&&parity!=2)?SCI1C1_M_MASK:0)|((parity!=2)?SCI1C1_PE_MASK:0)|(parity==1?SCI1C1_PT_MASK:0);
@@ -4346,7 +4898,7 @@ pin_uart_tx_ready(int uart)
     if (MCF_UART_USR(uart) & MCF_UART_USR_TXRDY) {
         return true;
     }
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // if the uart transmitter is ready...
     usr = uart?SCI2S1X:SCI1S1X;
     if (usr & SCI1S1_TDRE_MASK) {
@@ -4379,7 +4931,7 @@ pin_uart_tx_empty(int uart)
     if (usr & MCF_UART_USR_TXEMP) {
         return true;
     }
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // if the uart transmitter is empty...
     usr = uart?SCI2S1X:SCI1S1X;
     if (usr & SCI1S1_TC_MASK) {
@@ -4412,7 +4964,7 @@ pin_uart_rx_ready(int uart)
     if (usr & MCF_UART_USR_RXRDY) {
         return true;
     }
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // if the uart transmitter is empty...
     usr = uart?SCI2S1X:SCI1S1X;
     if (usr & SCI1S1_RDRF_MASK) {
@@ -4447,7 +4999,7 @@ pin_uart_tx(int uart, byte value)
 #if ! STICK_GUEST
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     MCF_UART_UTB(uart) = value;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     if (uart) {
         SCI2DX = value;
     } else {
@@ -4479,7 +5031,7 @@ pin_uart_rx(int uart)
 #if ! STICK_GUEST
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
         value = MCF_UART_URB(uart);
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
         if (uart) {
             value = SCI2DX;
         } else {
@@ -4510,20 +5062,22 @@ pin_uart_rx(int uart)
 void
 pin_clear(void)
 {
+    // N.B. we use 0 to mean no frequency type
+    assert(! pin_type_digital_input);
+    
 #if ! STICK_GUEST
 #if MCF51JM128 || MCF51QE128 || MC9S08QE128
     // we have to manage shared timer resources across pins
-    memset(freq, -1, sizeof(freq));
-#elif MC9S12DT256
+    memset(freq, pin_type_digital_input, sizeof(freq));
+#elif MC9S12DT256 || MC9S12DP512
     // we have to manage a single shared frequency output timer
-    freq[0] = (byte)-1;
+    memset(freq, pin_type_digital_input, sizeof(freq));
 #elif PIC32
     // we have to manage shared timer resources across pins
     // REVISIT -- for now, we force timer 2 to pwm mode, disallowing two
     // different frequency output pins; we can do better in the long run
     // by dynamically allocating both timer 2 and 3 as needed.
-    freq[0] = (byte)0;  // pwm on timer 2
-    freq[1] = (byte)-1;  // frequency on timer 3
+    memset(freq, pin_type_digital_input, sizeof(freq));
 #endif
 #endif
 }
@@ -4532,11 +5086,16 @@ pin_clear(void)
 void
 pin_timer_poll(void)
 {
-#if ! STICK_GUEST
+#if ! STICK_GUEST && ! FLASHER
     // for each port...
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     pin_digital_debounce[pin_digital_debounce_cycle][port_tc] = MCF_GPIO_SETTC;
     pin_digital_debounce[pin_digital_debounce_cycle][port_qs] = MCF_GPIO_SETQS;
+#if MCF52259
+    pin_digital_debounce[pin_digital_debounce_cycle][port_ti] = MCF_GPIO_SETTI;
+    pin_digital_debounce[pin_digital_debounce_cycle][port_tj] = MCF_GPIO_SETTJ;
+    pin_digital_debounce[pin_digital_debounce_cycle][port_uc] = MCF_GPIO_SETUC;
+#endif
     pin_digital_debounce[pin_digital_debounce_cycle][port_ub] = MCF_GPIO_SETUB;
     pin_digital_debounce[pin_digital_debounce_cycle][port_ua] = MCF_GPIO_SETUA;
     pin_digital_debounce[pin_digital_debounce_cycle][port_an] = MCF_GPIO_SETAN;
@@ -4556,8 +5115,9 @@ pin_timer_poll(void)
     pin_digital_debounce[pin_digital_debounce_cycle][port_e] = PTED;
     pin_digital_debounce[pin_digital_debounce_cycle][port_f] = PTFD;
     pin_digital_debounce[pin_digital_debounce_cycle][port_g] = PTGD;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     pin_digital_debounce[pin_digital_debounce_cycle][port_ad0] = PORTAD0;
+    pin_digital_debounce[pin_digital_debounce_cycle][port_ad1] = PORTAD1;
     pin_digital_debounce[pin_digital_debounce_cycle][port_a] = PORTA;
     pin_digital_debounce[pin_digital_debounce_cycle][port_b] = PORTB;
     pin_digital_debounce[pin_digital_debounce_cycle][port_e] = PORTE;
@@ -4579,12 +5139,36 @@ pin_timer_poll(void)
     if (++pin_digital_debounce_cycle >= pin_digital_debounce_history_depth) {
         pin_digital_debounce_cycle = 0;
     }
-#endif // ! STICK_GUEST
+#endif // ! STICK_GUEST && ! FLASHER
+}
+
+void
+pin_assign(int assign, int pin)
+{
+    assert(assign < pin_assignment_max);
+    assert(pin < PIN_LAST);
+    
+    pin_assignments[assign] = pin;
+
+    if (pin < PIN_UNASSIGNED) {
+        if (assign == pin_assignment_safemode) {
+            pin_declare(pin, pin_type_digital_input, 0);
+        } else {
+            pin_declare(pin, pin_type_digital_output, 0);
+        }
+    }
 }
 
 extern void
 pin_initialize(void)
 {
+#if ! STICK_GUEST
+    int i;
+    int32 hz;
+    int32 pin;
+    int32 analog;
+#endif
+    
     assert(pin_type_last < (sizeof(uint16)*8));
     assert(pin_qual_last < (sizeof(byte)*8));
     assert(LENGTHOF(pins) == PIN_LAST);
@@ -4592,12 +5176,27 @@ pin_initialize(void)
     memset(umask, -1, sizeof(umask));
 
 #if ! STICK_GUEST
+    // load up our servo frequency
+#if STICKOS
+    hz = var_get_flash(FLASH_SERVO);
+#else
+    hz = -1;
+#endif
+    if (hz != (uint32)-1 && hz >= 30 && hz < 400) {
+        servo_hz = hz;
+    }
+
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // enable all pwm channels
     MCF_PWM_PWME = 0xff;
     
-    // set pwm prescales to 4
-    MCF_PWM_PWMPRCLK = MCF_PWM_PWMPRCLK_PCKA(2)|MCF_PWM_PWMPRCLK_PCKB(2);
+    // set pwm prescales to 8 for analog output, or 8*n for servo output
+    assert(SERVO_PRESCALE == 8);
+    MCF_PWM_PWMPRCLK = MCF_PWM_PWMPRCLK_PCKA(3)|MCF_PWM_PWMPRCLK_PCKB(3);
+    // set pwm scales for 45Hz for servo output
+    assert(bus_frequency/SERVO_PRESCALE/2/256/servo_hz < 256);
+    MCF_PWM_PWMSCLA = bus_frequency/SERVO_PRESCALE/2/256/servo_hz;
+    MCF_PWM_PWMSCLB = bus_frequency/SERVO_PRESCALE/2/256/servo_hz;    
     
     // set periods to 0xff
     MCF_PWM_PWMPER0 = 0xff;
@@ -4626,7 +5225,7 @@ pin_initialize(void)
     PTEPE = 0xff;
     PTFPE = 0xff;
     PTGPE = 0xff;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     // we have to manage shared timer resources across pins
     pin_clear();
     
@@ -4638,8 +5237,13 @@ pin_initialize(void)
     PERS = 0xff;
     PERT = 0xff;
     
-    // set pwm prescales to 4
-    PWMPRCLK = PWMPRCLK_PCKA1|PWMPRCLK_PCKB1;
+    // set pwm prescales to 8 for analog output, or 8*n for servo output
+    assert(SERVO_PRESCALE == 8);
+    PWMPRCLK = PWMPRCLK_PCKA1_MASK|PWMPRCLK_PCKA0_MASK|PWMPRCLK_PCKB1_MASK|PWMPRCLK_PCKB0_MASK;
+    // set pwm scales for 45Hz for servo output
+    assert(bus_frequency/SERVO_PRESCALE/2/256/servo_hz < 256);
+    PWMSCLA = bus_frequency/SERVO_PRESCALE/2/256/servo_hz;
+    PWMSCLB = bus_frequency/SERVO_PRESCALE/2/256/servo_hz;
     
     // set periods to 0xff
     PWMPER0 = 0xff;
@@ -4663,14 +5267,35 @@ pin_initialize(void)
 
     // enable all pullups
     CNPUE = 0x3fffff;
-
-    // configure timer 2 for pwm generation
-    // set pwm prescale to 1
-    TMR2 = 0;
-    PR2 = pin_analog-1;
-    T2CON = _T2CON_ON_MASK;
 #else
 #error
 #endif
+
+    // load up our pin assignments
+    for (i = 0; i < pin_assignment_max; i++) {
+#if STICKOS
+        pin = var_get_flash(FLASH_ASSIGNMENTS_BEGIN+i);
+#else
+        pin = -1;
+#endif
+        if (pin != (uint32)-1 && pin >= 0 && pin < PIN_LAST) {
+            pin_assignments[i] = pin;
+        }
+        pin_assign(i, pin_assignments[i]);
+    }
+    
+    // if autorun disable is asserted on boot, skip autorun
+    disable_autorun = ! pin_get(pin_assignments[pin_assignment_safemode], pin_type_digital_input, 0);
+
+    // set our analog level
+#if STICKOS
+    analog = var_get_flash(FLASH_ANALOG);
+#else
+    analog = -1;
+#endif
+    if (analog != (uint32)-1 && analog >= 1000 && analog <= 5000) {
+        pin_analog = analog;
+    }
 #endif
 }
+

@@ -1,5 +1,7 @@
 // *** pin.h **********************************************************
 
+extern int servo_hz;
+
 #if MCF52259
 #define MAX_UARTS  3
 #else
@@ -10,6 +12,23 @@
 
 #define UART_INT(uart, output)  ((uart)*2+output)
 
+// assigned pins
+
+enum pin_assignment {
+    pin_assignment_heartbeat,
+    pin_assignment_safemode,
+    pin_assignment_clone_rst,
+    pin_assignment_zigbee_rst,
+    pin_assignment_zigbee_attn,
+    pin_assignment_zigbee_rxtxen,
+    pin_assignment_max
+};
+
+extern const char * const pin_assignment_names[];
+
+extern byte pin_assignments[pin_assignment_max];
+    
+
 // up to 16 bits
 enum pin_type {
     pin_type_digital_input,
@@ -19,10 +38,11 @@ enum pin_type {
     pin_type_uart_input,
     pin_type_uart_output,
     pin_type_frequency_output,
+    pin_type_servo_output,
     pin_type_last
 };
 
-extern char *pin_type_names[];
+extern const char * const pin_type_names[];
 
 // up to 8 bits.  keep in-sync with pin_qual_names.
 enum pin_qual {
@@ -32,9 +52,9 @@ enum pin_qual {
     pin_qual_last
 };
 
-extern byte pin_qual_mask[];
+extern const byte pin_qual_mask[];
 
-extern char *pin_qual_names[];
+extern const char * const pin_qual_names[];
 
 // N.B. pins marked with *** may affect zigbee or other system operation
 enum pin_number {
@@ -48,6 +68,25 @@ enum pin_number {
     PIN_QSPI_CLK,  // *** zigbee/clone
     PIN_QSPI_CS0,  // *** zigbee/clone
 #if MCF52259
+    PIN_QSPI_CS1,
+    PIN_QSPI_CS2,
+    PIN_QSPI_CS3,
+    PIN_FEC_COL,
+    PIN_FEC_CRS,
+    PIN_FEC_RXCLK,
+    PIN_FEC_RXD0,
+    PIN_FEC_RXD1,
+    PIN_FEC_RXD2,
+    PIN_FEC_RXD3,
+    PIN_FEC_RXDV,
+    PIN_FEC_RXER,
+    PIN_FEC_TXCLK,
+    PIN_FEC_TXD0,
+    PIN_FEC_TXD1,
+    PIN_FEC_TXD2,
+    PIN_FEC_TXD3,
+    PIN_FEC_TXEN,
+    PIN_FEC_TXER,
     PIN_UTXD2,
     PIN_URXD2,
     PIN_RTS2,
@@ -194,7 +233,7 @@ enum pin_number {
     PIN_PTG1,
     PIN_PTG2,
     PIN_PTG3,
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     PIN_PAD00,
     PIN_PAD01,  // *** zigbee
     PIN_PAD02,
@@ -203,6 +242,14 @@ enum pin_number {
     PIN_PAD05,
     PIN_PAD06,
     PIN_PAD07,
+    PIN_PAD08,
+    PIN_PAD09,
+    PIN_PAD10,
+    PIN_PAD11,
+    PIN_PAD12,
+    PIN_PAD13,
+    PIN_PAD14,
+    PIN_PAD15,
     PIN_PA0,
     PIN_PA1,
     PIN_PA2,
@@ -227,6 +274,14 @@ enum pin_number {
     PIN_PE5,
     PIN_PE6,
     PIN_PE7,
+    PIN_PH0,
+    PIN_PH1,
+    PIN_PH2,
+    PIN_PH3,
+    PIN_PH4,
+    PIN_PH5,
+    PIN_PH6,
+    PIN_PH7,
     PIN_PJ0,
     PIN_PJ1,
     PIN_PJ2,
@@ -235,6 +290,14 @@ enum pin_number {
     PIN_PJ5,
     PIN_PJ6,
     PIN_PJ7,
+    PIN_PK0,
+    PIN_PK1,
+    PIN_PK2,
+    PIN_PK3,
+    PIN_PK4,
+    PIN_PK5,
+    PIN_PK6,
+    PIN_PK7,
     PIN_PM0,
     PIN_PM1,
     PIN_PM2,  // *** zigbee
@@ -255,6 +318,10 @@ enum pin_number {
     PIN_PS1,
     PIN_PS2,
     PIN_PS3,
+    PIN_PS4,
+    PIN_PS5,
+    PIN_PS6,
+    PIN_PS7,
     PIN_PT0,  // *** zigbee
     PIN_PT1,  // *** zigbee
     PIN_PT2,
@@ -369,6 +436,7 @@ enum pin_number {
 #else
 #error
 #endif
+    PIN_UNASSIGNED,
     PIN_LAST
 };
 
@@ -379,7 +447,7 @@ const extern struct pin {
     uint16 pin_type_mask;
 } pins[];  // indexed by pin_number
 
-extern const char *uart_names[MAX_UARTS];
+extern const char * const uart_names[MAX_UARTS];
 
 extern bool uart_armed[UART_INTS];
 
@@ -388,9 +456,15 @@ extern bool uart_armed[UART_INTS];
 void
 pin_declare(IN int pin_number, IN int pin_type, IN int pin_qual);
 
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 // this function sets a pin variable!
 void
 pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value);
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#pragma CODE_SEG DEFAULT
+#endif
 
 // this function gets a pin variable!
 int32
@@ -422,5 +496,9 @@ pin_clear(void);
 void
 pin_timer_poll(void);
 
+void
+pin_assign(int assign, int pin);
+
 extern void
 pin_initialize(void);
+

@@ -3,7 +3,7 @@
 // this file to hook up __declspec(interrupt) functions to hardware
 // interrupts.
 
-#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 #include "main.h"
 
 // *** page1 ***

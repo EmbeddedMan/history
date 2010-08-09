@@ -10,6 +10,7 @@
 
 #include "main.h"
 
+#if STICKOSPLUS || PICTOCRYPT
 #define OPTIMIZE  1
 
 #if ! _WIN32
@@ -1377,3 +1378,5 @@ uint32_t DFS_WriteFile(PFILEINFO fileinfo, uint8_t *scratch, uint8_t *buffer, ui
 	}
 	return result;
 }
+#endif
+

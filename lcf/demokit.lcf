@@ -3,16 +3,15 @@
 # Memory ranges	
 
 MEMORY {
-   page0       (RX)  : ORIGIN = 0x20000000, LENGTH = 0x00000800
-   page1       (RX)  : ORIGIN = 0x20000800, LENGTH = 0x00000800
-   code        (RX)  : ORIGIN = 0x20001000, LENGTH = 0x00002400
-   userram     (RWX) : ORIGIN = 0x20003400, LENGTH = 0x00000c00
+   code        (RX)  : ORIGIN = 0x00004010, LENGTH = 0x0003BFF0
+   vectorram   (RWX) : ORIGIN = 0x20000000, LENGTH = 0x00000400
+   bdtram      (RWX) : ORIGIN = 0x20000400, LENGTH = 0x00000500
+   userram     (RWX) : ORIGIN = 0x20000500, LENGTH = 0x00007b00
 }
 
 SECTIONS {
-
 # Heap and Stack sizes definition
-	___stack_size     = 0x0600;
+	___stack_size     = 0x0a00;
 
 # MCF52221 Derivative Memory map definitions from linker command files:
 # __IPSBAR, __RAMBAR, __RAMBAR_SIZE, __FLASHBAR, __FLASHBAR_SIZE linker
@@ -23,29 +22,20 @@ SECTIONS {
 
 # 16 Kbytes Internal SRAM
    ___RAMBAR         = 0x20000000;
-   ___RAMBAR_SIZE    = 0x00004000;
+   ___RAMBAR_SIZE    = 0x00008000;
 
 # 128 KByte Internal Flash Memory
    ___FLASHBAR       = 0x00000000;
-   ___FLASHBAR_SIZE  = 0x00020000;
+   ___FLASHBAR_SIZE  = 0x00040000;
 
+   # N.B. this is here so it doesn't change and cause an incompatible upgrade
    ___SP_AFTER_RESET = ___RAMBAR + ___RAMBAR_SIZE - 4;
    
   .userram	  : {} > userram		
   .code	    : {} > code		
+  .vectorram	: {} > vectorram			
+  .bdtram	: {} > bdtram			
 	
-	.page0 :
-	{
-		*(.page0)
-		. = ALIGN (0x4); 
-	} > page0
-
-	.page1 :
-	{
-		*(.page1)
-		. = ALIGN (0x4); 
-	} > page1
-
 	.text :
 	{
 		*(.text)
@@ -58,8 +48,9 @@ SECTIONS {
 
 	.data : AT(___ROM_AT) 
 	{  
+	    # N.B. this is here so it doesn't change and cause an incompatible upgrade
 		__SDA_BASE = .;
-		
+
 		___DATA_RAM = .;
 		. = ALIGN(0x4);
 		___sinit__ = .;
@@ -111,6 +102,9 @@ SECTIONS {
 	___heap_size = (___HEAP_END - ___HEAP_START - 4) & 0x0FFFFF00;
 	___STACK_SIZE = ___SP_INIT - ___SP_END;
 	  	
+	___BDT_RAM		= ADDR(.bdtram);
+	___BDT_RAM_END  = ADDR(.userram);
+	
 	__SP_INIT		= ___SP_INIT;
 
 }

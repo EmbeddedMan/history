@@ -48,6 +48,9 @@
 #elif MC9S12DT256
 #include "MC9S12DT256.h"
 #include "compat.h"
+#elif MC9S12DP512
+#include "MC9S12DP512.h"
+#include "compat.h"
 #elif PIC32
 #include <plib.h>
 typedef unsigned char uint8;
@@ -93,7 +96,7 @@ enum {
 #include "startup.h"
 #include "vectors.h"
 
-#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 extern unsigned char far _SP_INIT[], _SDA_BASE[];
 extern unsigned char far __SP_AFTER_RESET[];
 extern unsigned char far ___RAMBAR[], ___RAMBAR_SIZE[];
@@ -114,7 +117,7 @@ byte big_buffer[8192];
 byte big_buffer[1024];
 #endif
 
-#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 #if BADGE_BOARD || DEMO_KIT
 #define DECLSPEC_PAGE0_CODE
 #define DECLSPEC_PAGE0_DATA

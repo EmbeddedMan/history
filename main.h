@@ -39,6 +39,9 @@
 #elif MC9S12DT256
 #include "MC9S12DT256.h"
 #include "compat.h"
+#elif MC9S12DP512
+#include "MC9S12DP512.h"
+#include "compat.h"
 #elif PIC32
 #include <plib.h>
 typedef unsigned char uint8;
@@ -53,7 +56,7 @@ typedef unsigned int uint32;
 #endif
 #endif
 
-#if MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 typedef long intptr;
 typedef unsigned long uintptr;
 typedef uint16 size_t;
@@ -92,7 +95,7 @@ typedef uint32 size_t;
 #define INTERRUPT
 #define asm_halt()  asm("bgnd");
 #define DECLSPEC_PAGE1
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
 #define INTERRUPT
 #define asm_halt()  asm("bgnd");
 #define DECLSPEC_PAGE1
@@ -167,7 +170,6 @@ extern char *gets(char *);
 
 #define inline
 #undef MAX_PATH
-#define W32BYTESWAP(x) ((x)&0xff)<<24|((x)&0xff00)<<8|((x)&0xff0000)>>8|((x)&0xff000000)>>24;
 
 #endif  // ! STICK_GUEST
 
@@ -260,8 +262,18 @@ enum {
 #include "parse2.h"
 #include "run2.h"
 
+#if STICKOSPLUS
+#include "block.h"
+#include "fat32.h"
+#endif
+
 #elif SKELETON
 #include "skeleton.h"
+
+#if STICKOSPLUS
+#include "block.h"
+#include "fat32.h"
+#endif
 
 #elif FLASHER
 #include "flasher.h"

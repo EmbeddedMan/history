@@ -630,6 +630,9 @@ test do/until
   30   print a
   40   let a = a+1
   50 until a==10
+  60 for a = 1 to 10
+  70 next 
+  80 print a
 end
 0
 1
@@ -641,16 +644,34 @@ end
 7
 8
 9
+10
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
   10 dim a
   30 print a
   40 let a = a+1
 missing block begins?
   50 until a==10
+  60 for a = 1 to 10
+  70 next 
+  80 print a
 end
   10 dim a
   20 do 
   30   print a
   40   let a = a+1
+  60   for a = 1 to 10
+  70   next 
+  80   print a
 missing block ends?
 end
 test help
@@ -670,16 +691,17 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
-clone [run]                   -- clone flash to slave CPUStick [and run]
+clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
 delete [<line>][-][<line>]    -- delete program lines or <subname>
+download <slave Hz>           -- download for relay to QSPI to EzPort
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
@@ -690,7 +712,7 @@ new                           -- erase code ram and flash memories
 profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
-reset                         -- reset the CPUStick!
+reset                         -- reset the MCU!
 run [<line>]                  -- run program
 save [<name>]                 -- save code ram to flash memory
 undo                          -- undo code changes since last save
@@ -699,14 +721,24 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-analog [<millivolts>]         -- set analog voltage scale
-autorun [on|off]              -- autorun (on reset) mode
-echo [on|off]                 -- terminal echo mode
-indent [on|off]               -- listing indent mode
-prompt [on|off]               -- terminal prompt mode
-sleep [on|off]                -- debugger sleep mode
-step [on|off]                 -- debugger single-step mode
-trace [on|off]                -- debugger trace mode
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun (on reset) mode
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+
+pin assignments:
+  heartbeat     safemode*
+  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+
+for more information:
+  help pins
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -802,7 +834,7 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables:
-  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
@@ -825,6 +857,7 @@ pin names:
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
 dtin? = potential analog output (PWM) pins (mV)
+dtin? = potential servo output (PWM) pins (cms)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
@@ -859,25 +892,23 @@ clone cable:
   scl        rsti*
   vss        vss
   vdd        vdd
-nodeid (<nodeid>|none)        -- set/display zigbee nodeid
-
-connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigbee
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU            MC1320X
-  -------------  -----------
-  qspi_clk       spiclk
-  qspi_din       miso
-  qspi_dout      mosi
-  qspi_cs0       ce*
-  irq4*          irq*
-  scl            rst*
-  sda            rxtxen
-  vss            vss
-  vdd            vdd
+  MCU                 MC1320X
+  -------------       -----------
+  qspi_clk            spiclk
+  qspi_din            miso
+  qspi_dout           mosi
+  qspi_cs0            ce*
+  irq4*               irq*
+  pins zigbee_rst*    rst*
+  pins zigbee_rxtxen  rxtxen
+  vss                 vss
+  vdd                 vdd
 test dims
 error -            ^
   10 dim a as pin dtin0 for digital output
@@ -1090,6 +1121,40 @@ off
 on
 on
 off
+test pins
+heartbeat dtin3
+safemode* irq1*
+clone_rst* scl
+zigbee_rst* an2
+zigbee_attn* an3
+zigbee_rxtxen an5
+       ^ - error
+dtin3
+error -          ^
+error -                ^
+error -                ^
+dtin2
+none
+heartbeat dtin2
+safemode* none
+clone_rst* scl
+zigbee_rst* an2
+zigbee_attn* an3
+zigbee_rxtxen an5
+test servo
+45
+45
+error -     ^
+error -    ^
+45
+  10 dim x as pin dtin0 for servo output
+end
+test usb host
+off
+on
+error -   ^
+error -       ^
+on
 test variable scopes
   10 dim a
   20 let a = 1
@@ -2313,15 +2378,15 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 cloning...
 filesystem
 out of storage
@@ -2694,10 +2759,10 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 list
        ^ - error
        ^ - error

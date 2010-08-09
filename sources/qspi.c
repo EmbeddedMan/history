@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-#define QSPI_BAUD_FAST  600000  // zigbee
+#define QSPI_BAUD_FAST  800000  // zigbee
 #define QSPI_BAUD_SLOW  200000  // default
 
 static bool csiv;
@@ -66,7 +66,7 @@ qspi_transfer(byte *buffer, int length)
     MCF_QSPI_QWR = csiv?MCF_QSPI_QWR_CSIV:0;
     
     splx(x);
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #if MCF51JM128
     // cs active
     if (csiv) {
@@ -81,7 +81,7 @@ qspi_transfer(byte *buffer, int length)
     } else {
         PTBD |= PTBDD_PTBDD5_MASK;
     }
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     // cs active
     if (csiv) {
         PTM &= ~0x08;
@@ -127,8 +127,8 @@ qspi_transfer(byte *buffer, int length)
     } else {
         PTBD &= ~PTBDD_PTBDD5_MASK;
     }
-#elif MC9S12DT256
-    // cs active
+#elif MC9S12DT256 || MC9S12DP512
+    // cs inactive
     if (csiv) {
         PTM |= 0x08;
     } else {
@@ -137,6 +137,39 @@ qspi_transfer(byte *buffer, int length)
 #else
 #error
 #endif
+#elif PIC32
+    // cs active
+    if (csiv) {
+        LATGCLR = 1<<8;
+    } else {
+        LATGSET = 1<<8;
+    }
+    
+    while (length) {
+        assert(! (SPI1STATbits.SPIBUSY));
+        assert(! (SPI1STATbits.SPIRBF));
+        assert(SPI1STATbits.SPITBE);
+        SPI1BUF = *buffer;
+        
+        while (! SPI1STATbits.SPIRBF) {
+            // NULL
+        }
+        
+        assert(! (SPI1STATbits.SPIBUSY));
+        assert(SPI1STATbits.SPIRBF);
+        assert(SPI1STATbits.SPITBE);
+        *buffer = SPI1BUF;
+        
+        buffer++;
+        length--;
+    }
+
+    // cs inactive
+    if (csiv) {
+        LATGSET = 1<<8;
+    } else {
+        LATGCLR = 1<<8;
+    }
 #endif
 }
 
@@ -158,14 +191,18 @@ qspi_inactive(bool csiv_in)
     } else {
         PTBD &= ~PTBDD_PTBDD5_MASK;
     }
-#elif MC9S12DT256
-    // cs active
+#elif MC9S12DT256 || MC9S12DP512
     if (csiv) {
         PTM |= 0x08;
     } else {
         PTM &= ~0x08;
     }
 #elif PIC32
+    if (csiv) {
+        LATGSET = 1<<8;
+    } else {
+        LATGCLR = 1<<8;
+    }
 #else
 #error
 #endif
@@ -175,14 +212,14 @@ extern void
 qspi_baud_fast(void)
 {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-    // initialize qspi master at 600k baud
+    // initialize qspi master at 800k baud
     assert(bus_frequency/QSPI_BAUD_FAST < 256);
     MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/bus_frequency/QSPI_BAUD_FAST;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     int log2;
     int divisor;
     
-    // initialize qspi master at 200k baud
+    // initialize qspi master at 800k baud
     log2 = 0;
     divisor = bus_frequency/QSPI_BAUD_FAST/2;
     while (divisor > 8) {
@@ -192,6 +229,14 @@ qspi_baud_fast(void)
     assert(log2 < 8 && (divisor-1) < 8);
     SPI1BRX_SPR = log2;
     SPI1BRX_SPPR = divisor-1;
+#elif PIC32
+    // initialize qspi master at 800k baud
+    SPI1CON = 0;
+
+    assert(bus_frequency/QSPI_BAUD_FAST/2 - 1 < 512);
+    SPI1BRG = bus_frequency/QSPI_BAUD_FAST/2 - 1;
+    
+    SPI1CON = _SPI1CON_ON_MASK|_SPI2CON_CKE_MASK|_SPI2CON_MSTEN_MASK;
 #endif
 }
 
@@ -205,7 +250,7 @@ qspi_initialize(void)
     // initialize qspi master at 200k baud
     assert(bus_frequency/QSPI_BAUD_SLOW < 256);
     MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/bus_frequency/QSPI_BAUD_SLOW;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     int log2;
     int divisor;
     
@@ -215,7 +260,7 @@ qspi_initialize(void)
 #elif MCF51QE128 || MC9S08QE128
     // B5 is gpio output
     PTBDD |= PTBDD_PTBDD5_MASK;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     // M3 is gpio output
     DDRM |= 0x08;
     
@@ -228,7 +273,7 @@ qspi_initialize(void)
     SPI1C1X = SPI1C1_SPE_MASK|SPI1C1_MSTR_MASK;
     SPI1C2X = 0;
     
-    // initialize qspi master at 150k baud
+    // initialize qspi master at 200k baud
     log2 = 0;
     divisor = bus_frequency/QSPI_BAUD_SLOW/2;
     while (divisor > 8) {
@@ -238,6 +283,16 @@ qspi_initialize(void)
     assert(log2 < 8 && (divisor-1) < 8);
     SPI1BRX_SPR = log2;
     SPI1BRX_SPPR = divisor-1;
+#elif PIC32
+    // G8 is gpio putpit
+    TRISGCLR |= 1<<8;
+
+    SPI1CON = 0;
+
+    assert(bus_frequency/QSPI_BAUD_SLOW/2 - 1 < 512);
+    SPI1BRG = bus_frequency/QSPI_BAUD_SLOW/2 - 1;
+    
+    SPI1CON = _SPI1CON_ON_MASK|_SPI2CON_CKE_MASK|_SPI2CON_MSTEN_MASK;
 #endif
 
     // initialize qspi to active low chip select

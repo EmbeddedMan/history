@@ -36,7 +36,7 @@ void
 adc_timer_poll(bool debouncing)
 {
 #if ! STICK_GUEST
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MC9S12DT256 || PIC32
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MC9S12DT256 || MC9S12DP512 || PIC32
     int i;
 #endif
 #endif
@@ -85,9 +85,9 @@ adc_timer_poll(bool debouncing)
         debouncing = false;
     }
     ADCSC1 = adcn;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     // if all channels are ready...
-    if (ATD0STAT0_SCF) {
+    if (ATD0STAT0_SCF && ATD1STAT0_SCF) {
         // read all channel results into adc_result[]
         adc_result[0] = ATD0DR0<<2;
         adc_result[1] = ATD0DR1<<2;
@@ -97,6 +97,14 @@ adc_timer_poll(bool debouncing)
         adc_result[5] = ATD0DR5<<2;
         adc_result[6] = ATD0DR6<<2;
         adc_result[7] = ATD0DR7<<2;
+        adc_result[8] = ATD1DR0<<2;
+        adc_result[9] = ATD1DR1<<2;
+        adc_result[10] = ATD1DR2<<2;
+        adc_result[11] = ATD1DR3<<2;
+        adc_result[12] = ATD1DR4<<2;
+        adc_result[13] = ATD1DR5<<2;
+        adc_result[14] = ATD1DR6<<2;
+        adc_result[15] = ATD1DR7<<2;
         
         if (debouncing) {
             for (i = 0; i < adc_num_channel; i++) {
@@ -111,6 +119,7 @@ adc_timer_poll(bool debouncing)
     // re-start the adc
     /* ATD0CTL5: DJM=1,DSGN=0,SCAN=0,MULT=1,??=0,CC=0,CB=0,CA=0 */
     ATD0CTL5 = 144;                      /* Start conversions */
+    ATD1CTL5 = 144;                      /* Start conversions */
 #elif PIC32
     for (i = 0; i < adc_num_channel; i++) {
         // store the result*4 to be compatible with MCF52221/MCF52233
@@ -185,8 +194,10 @@ adc_initialize(void)
     MCF_ADC_ADSDIS = 0x00;
     MCF_ADC_POWER = MCF_ADC_POWER_PUDELAY(13);  // enable adc
 
+#if ! STICKOS
     // AN is primary
     MCF_GPIO_PANPAR = 0xff;
+#endif
 
     delay(10);
 
@@ -197,14 +208,17 @@ adc_initialize(void)
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128
     // initialize adc to read one channel at a time
     ADCCFG = ADCCFG_ADLPC_MASK|ADCCFG_ADIV_MASK|ADCCFG_ADLSMP_MASK|ADCCFG_MODE0_MASK|ADCCFG_ADICLK0_MASK;
-#elif MC9S12DT256
+#elif MC9S12DT256 || MC9S12DP512
     // initialize adc to read all channels
     /* ATD0CTL4: SRES8=0,SMP1=1,SMP0=1,PRS4=0,PRS3=1,PRS2=0,PRS1=1,PRS0=1 */
     ATD0CTL4 = 107;                      /* Set resolution, sample time and prescaler */
+    ATD1CTL4 = 107;                      /* Set resolution, sample time and prescaler */
     /* ATD0CTL3: ??=0,S8C=1,S4C=0,S2C=0,S1C=0,FIFO=0,FRZ1=0,FRZ0=0 */
     ATD0CTL3 = 64;                       /* Set ATD control register 3 */
+    ATD1CTL3 = 64;                       /* Set ATD control register 3 */
     /* ATD0CTL2: ADPU=1,AFFC=1,AWAI=0,ETRIGLE=0,ETRIGP=0,ETRIGE=0,ASCIE=0,ASCIF=0 */
     ATD0CTL2 = 192;                      /* Set ATD control register 2 */
+    ATD1CTL2 = 192;                      /* Set ATD control register 2 */
 #elif PIC32
     // initialize adc to read all channels
     AD1CON1 = _AD1CON1_SSRC_MASK|_AD1CON1_ASAM_MASK;

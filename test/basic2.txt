@@ -1,10 +1,10 @@
 
 ### platform MCF52221 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 for more information:
   help about
   help commands
@@ -21,16 +21,17 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
-clone [run]                   -- clone flash to slave CPUStick [and run]
+clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
 delete [<line>][-][<line>]    -- delete program lines or <subname>
+download <slave Hz>           -- download for relay to QSPI to EzPort
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
@@ -41,7 +42,7 @@ new                           -- erase code ram and flash memories
 profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
-reset                         -- reset the CPUStick!
+reset                         -- reset the MCU!
 run [<line>]                  -- run program
 save [<name>]                 -- save code ram to flash memory
 undo                          -- undo code changes since last save
@@ -50,14 +51,24 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-analog [<millivolts>]         -- set analog voltage scale
-autorun [on|off]              -- autorun (on reset) mode
-echo [on|off]                 -- terminal echo mode
-indent [on|off]               -- listing indent mode
-prompt [on|off]               -- terminal prompt mode
-sleep [on|off]                -- debugger sleep mode
-step [on|off]                 -- debugger single-step mode
-trace [on|off]                -- debugger trace mode
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun (on reset) mode
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+
+pin assignments:
+  heartbeat     safemode*
+  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+
+for more information:
+  help pins
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -153,7 +164,7 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables:
-  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
@@ -176,6 +187,7 @@ pin names:
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
 dtin? = potential analog output (PWM) pins (mV)
+dtin? = potential servo output (PWM) pins (cms)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
@@ -210,30 +222,28 @@ clone cable:
   scl        rsti*
   vss        vss
   vdd        vdd
-nodeid (<nodeid>|none)        -- set/display zigbee nodeid
-
-connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigbee
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU            MC1320X
-  -------------  -----------
-  qspi_clk       spiclk
-  qspi_din       miso
-  qspi_dout      mosi
-  qspi_cs0       ce*
-  irq4*          irq*
-  scl            rst*
-  sda            rxtxen
-  vss            vss
-  vdd            vdd
+  MCU                 MC1320X
+  -------------       -----------
+  qspi_clk            spiclk
+  qspi_din            miso
+  qspi_dout           mosi
+  qspi_cs0            ce*
+  irq4*               irq*
+  pins zigbee_rst*    rst*
+  pins zigbee_rxtxen  rxtxen
+  vss                 vss
+  vdd                 vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -245,27 +255,27 @@ bugs: support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF52221 v1.50!
+Welcome to StickOS for Freescale MCF52221 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 
 ### platform MCF52233 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52233 v1.50!
+Welcome to StickOS for Freescale MCF52233 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 for more information:
   help about
   help commands
@@ -281,16 +291,17 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52233 v1.50!
+Welcome to StickOS for Freescale MCF52233 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
-clone [run]                   -- clone flash to slave CPUStick [and run]
+clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
 delete [<line>][-][<line>]    -- delete program lines or <subname>
+download <slave Hz>           -- download for relay to QSPI to EzPort
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
@@ -301,7 +312,7 @@ new                           -- erase code ram and flash memories
 profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
-reset                         -- reset the CPUStick!
+reset                         -- reset the MCU!
 run [<line>]                  -- run program
 save [<name>]                 -- save code ram to flash memory
 undo                          -- undo code changes since last save
@@ -310,15 +321,25 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-analog [<millivolts>]         -- set analog voltage scale
-autorun [on|off]              -- autorun (on reset) mode
-echo [on|off]                 -- terminal echo mode
-indent [on|off]               -- listing indent mode
-ipaddress [dhcp|<ipaddress>]  -- set/display ip address
-prompt [on|off]               -- terminal prompt mode
-sleep [on|off]                -- debugger sleep mode
-step [on|off]                 -- debugger single-step mode
-trace [on|off]                -- debugger trace mode
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun (on reset) mode
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+ipaddress [dhcp|<ipaddress>]      -- set/display ip address
+nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+
+pin assignments:
+  heartbeat     safemode*
+  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+
+for more information:
+  help pins
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -414,7 +435,7 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables:
-  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
@@ -439,6 +460,7 @@ pin names:
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
 dtin?, gpt? = potential analog output (PWM) pins (mV)
+dtin?, gpt? = potential servo output (PWM) pins (cms)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
@@ -453,30 +475,28 @@ clone cable:
   scl        rsti*
   vss        vss
   vdd        vdd
-nodeid (<nodeid>|none)        -- set/display zigbee nodeid
-
-connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigbee
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU            MC1320X
-  -------------  -----------
-  qspi_clk       spiclk
-  qspi_din       miso
-  qspi_dout      mosi
-  qspi_cs0       ce*
-  irq4*          irq*
-  scl            rst*
-  sda            rxtxen
-  vss            vss
-  vdd            vdd
+  MCU                 MC1320X
+  -------------       -----------
+  qspi_clk            spiclk
+  qspi_din            miso
+  qspi_dout           mosi
+  qspi_cs0            ce*
+  irq4*               irq*
+  pins zigbee_rst*    rst*
+  pins zigbee_rxtxen  rxtxen
+  vss                 vss
+  vdd                 vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52233 v1.50!
+Welcome to StickOS for Freescale MCF52233 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -488,25 +508,25 @@ bugs: support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52233 v1.50!
+Welcome to StickOS for Freescale MCF52233 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 dhcp
 1.2.3.4
 dhcp
 ... testing reset
-Welcome to StickOS for Freescale MCF52233 v1.50!
+Welcome to StickOS for Freescale MCF52233 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 
 ### platform MCF52259 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52252 v1.50!
+Welcome to StickOS for Freescale MCF52252 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 for more information:
   help about
   help commands
@@ -517,21 +537,23 @@ for more information:
   help expressions
   help variables
   help pins
+  help board
   help clone
   help zigbee
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52252 v1.50!
+Welcome to StickOS for Freescale MCF52252 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
-clone [run]                   -- clone flash to slave CPUStick [and run]
+clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
 delete [<line>][-][<line>]    -- delete program lines or <subname>
+download <slave Hz>           -- download for relay to QSPI to EzPort
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
@@ -542,7 +564,7 @@ new                           -- erase code ram and flash memories
 profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
-reset                         -- reset the CPUStick!
+reset                         -- reset the MCU!
 run [<line>]                  -- run program
 save [<name>]                 -- save code ram to flash memory
 undo                          -- undo code changes since last save
@@ -551,14 +573,25 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-analog [<millivolts>]         -- set analog voltage scale
-autorun [on|off]              -- autorun (on reset) mode
-echo [on|off]                 -- terminal echo mode
-indent [on|off]               -- listing indent mode
-prompt [on|off]               -- terminal prompt mode
-sleep [on|off]                -- debugger sleep mode
-step [on|off]                 -- debugger single-step mode
-trace [on|off]                -- debugger trace mode
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun (on reset) mode
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+usbhost [on|off]                  -- set/display USB host mode (on reset)
+
+pin assignments:
+  heartbeat     safemode*
+  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+
+for more information:
+  help pins
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -654,7 +687,7 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables:
-  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
@@ -679,10 +712,33 @@ pin names:
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
 dtin?, gpt? = potential analog output (PWM) pins (mV)
+dtin?, gpt? = potential servo output (PWM) pins (cms)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
-       ^ - error
+1  2  3  4  5  6  7  8  9  10 11 12    1  2  3  4  5  6  7  8  9  10 11 12
+
+g  +  q  q  q  q  r  r  q  q  r  v     u  u  u  u  g  g  g  g  i  i  i  i
+n  3  s  s  s  s  c  s  s  s  s  b     t  r  r  c  p  p  p  p  r  r  r  r
+d  V  p  p  p  p  o  t  p  p  t  u     x  x  t  t  t  t  t  t  q  q  q  q
+      i  i  i  i  n  i  i  i  o  s     d  d  s  s  0  1  2  3  1  3  5  7
+      _  _  _  _  *  n  _  _  u        2  2  2  2              *  *  *  *
+      c  d  d  c     *  c  c  t              *  *                        
+      l  o  i  s        s  s  *                                          
+      k  u  n  0        2  3                                             
+         t                                                               
+
+antenna                            MCU                                USB
+
+
+      u  u        u  u                                                   
+u  u  r  c  u  u  r  c  d  d  d  d                                       
+t  r  t  t  t  r  t  t  t  t  t  t                                       
+x  x  s  s  x  x  s  s  i  i  i  i     g  +  s  s  a  a  a  a  a  a  a  a
+d  d  0  0  d  d  1  1  n  n  n  n     n  3  c  d  n  n  n  n  n  n  n  n
+0  0  *  *  1  1  *  *  0  1  2  3     d  V  l  a  0  1  2  3  4  5  6  7
+
+1  2  3  4  5  6  7  8  9  10 11 12    1  2  3  4  5  6  7  8  9  10 11 12
 clone cable:
   master     slave
   ---------  ----------------
@@ -693,30 +749,28 @@ clone cable:
   scl        rsti*
   vss        vss
   vdd        vdd
-nodeid (<nodeid>|none)        -- set/display zigbee nodeid
-
-connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigbee
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU            MC1320X
-  -------------  -----------
-  qspi_clk       spiclk
-  qspi_din       miso
-  qspi_dout      mosi
-  qspi_cs0       ce*
-  irq1*          irq*
-  scl            rst*
-  sda            rxtxen
-  vss            vss
-  vdd            vdd
+  MCU                 MC1320X
+  -------------       -----------
+  qspi_clk            spiclk
+  qspi_din            miso
+  qspi_dout           mosi
+  qspi_cs0            ce*
+  irq1*               irq*
+  pins zigbee_rst*    rst*
+  pins zigbee_rxtxen  rxtxen
+  vss                 vss
+  vdd                 vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52252 v1.50!
+Welcome to StickOS for Freescale MCF52252 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -728,27 +782,27 @@ bugs: support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52252 v1.50!
+Welcome to StickOS for Freescale MCF52252 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF52252 v1.50!
+Welcome to StickOS for Freescale MCF52252 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 
 ### platform MCF5211 ###
 ... testing help
-Welcome to StickOS for Freescale MCF5211 v1.50!
+Welcome to StickOS for Freescale MCF5211 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 for more information:
   help about
   help commands
@@ -763,16 +817,17 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF5211 v1.50!
+Welcome to StickOS for Freescale MCF5211 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
-clone [run]                   -- clone flash to slave CPUStick [and run]
+clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
 delete [<line>][-][<line>]    -- delete program lines or <subname>
+download <slave Hz>           -- download for relay to QSPI to EzPort
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
@@ -783,7 +838,7 @@ new                           -- erase code ram and flash memories
 profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
-reset                         -- reset the CPUStick!
+reset                         -- reset the MCU!
 run [<line>]                  -- run program
 save [<name>]                 -- save code ram to flash memory
 undo                          -- undo code changes since last save
@@ -792,14 +847,24 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-analog [<millivolts>]         -- set analog voltage scale
-autorun [on|off]              -- autorun (on reset) mode
-echo [on|off]                 -- terminal echo mode
-indent [on|off]               -- listing indent mode
-prompt [on|off]               -- terminal prompt mode
-sleep [on|off]                -- debugger sleep mode
-step [on|off]                 -- debugger single-step mode
-trace [on|off]                -- debugger trace mode
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun (on reset) mode
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+
+pin assignments:
+  heartbeat     safemode*
+  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+
+for more information:
+  help pins
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -895,7 +960,7 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables:
-  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
@@ -919,35 +984,34 @@ pin names:
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
 dtin?, gpt? = potential analog output (PWM) pins (mV)
+dtin?, gpt? = potential servo output (PWM) pins (cms)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
-nodeid (<nodeid>|none)        -- set/display zigbee nodeid
-
-connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigbee
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU            MC1320X
-  -------------  -----------
-  qspi_clk       spiclk
-  qspi_din       miso
-  qspi_dout      mosi
-  qspi_cs0       ce*
-  irq4*          irq*
-  scl            rst*
-  sda            rxtxen
-  vss            vss
-  vdd            vdd
+  MCU                 MC1320X
+  -------------       -----------
+  qspi_clk            spiclk
+  qspi_din            miso
+  qspi_dout           mosi
+  qspi_cs0            ce*
+  irq4*               irq*
+  pins zigbee_rst*    rst*
+  pins zigbee_rxtxen  rxtxen
+  vss                 vss
+  vdd                 vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF5211 v1.50!
+Welcome to StickOS for Freescale MCF5211 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -959,27 +1023,27 @@ bugs: support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF5211 v1.50!
+Welcome to StickOS for Freescale MCF5211 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF5211 v1.50!
+Welcome to StickOS for Freescale MCF5211 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 
 ### platform MCF51JM128 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 for more information:
   help about
   help commands
@@ -994,15 +1058,16 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
 delete [<line>][-][<line>]    -- delete program lines or <subname>
+download <slave Hz>           -- download for relay to QSPI to EzPort
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
@@ -1013,7 +1078,7 @@ new                           -- erase code ram and flash memories
 profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
-reset                         -- reset the CPUStick!
+reset                         -- reset the MCU!
 run [<line>]                  -- run program
 save [<name>]                 -- save code ram to flash memory
 undo                          -- undo code changes since last save
@@ -1022,14 +1087,24 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-analog [<millivolts>]         -- set analog voltage scale
-autorun [on|off]              -- autorun (on reset) mode
-echo [on|off]                 -- terminal echo mode
-indent [on|off]               -- listing indent mode
-prompt [on|off]               -- terminal prompt mode
-sleep [on|off]                -- debugger sleep mode
-step [on|off]                 -- debugger single-step mode
-trace [on|off]                -- debugger trace mode
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun (on reset) mode
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+
+pin assignments:
+  heartbeat     safemode*
+  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+
+for more information:
+  help pins
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -1125,7 +1200,7 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables:
-  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
@@ -1148,35 +1223,34 @@ pin names:
 all pins support general purpose digital input/output
 ptb?, ptd[0134] = potential analog input pins (mV)
 pte[23], ptf[0-5] = potential analog output (PWM) pins (mV)
+pte[23], ptf[0-5] = potential servo output (PWM) pins (cms)
 pte[23], ptf[0-5] = potential frequency output pins (Hz)
 pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)
 pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
-nodeid (<nodeid>|none)        -- set/display zigbee nodeid
-
-connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigbee
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU            MC1320X
-  -------------  -----------
-  spsck1 (pte6)  spiclk
-  miso1 (pte4)   miso
-  mosi1 (pte5)   mosi
-  ss1* (pte7)    ce*
-  irq*           irq*
-  pte2           rst*
-  ptb5           rxtxen
-  vss            vss
-  vdd            vdd
+  MCU                 MC1320X
+  -------------       -----------
+  spsck1 (pte6)       spiclk
+  miso1 (pte4)        miso
+  mosi1 (pte5)        mosi
+  ss1* (pte7)         ce*
+  irq*                irq*
+  pins zigbee_rst*    rst*
+  pins zigbee_rxtxen  rxtxen
+  vss                 vss
+  vdd                 vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -1188,27 +1262,27 @@ bugs: support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 
 ### platform MCF51QE128 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51QE128 v1.50!
+Welcome to StickOS for Freescale MCF51QE128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 for more information:
   help about
   help commands
@@ -1223,15 +1297,16 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51QE128 v1.50!
+Welcome to StickOS for Freescale MCF51QE128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
 delete [<line>][-][<line>]    -- delete program lines or <subname>
+download <slave Hz>           -- download for relay to QSPI to EzPort
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
@@ -1242,7 +1317,7 @@ new                           -- erase code ram and flash memories
 profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
-reset                         -- reset the CPUStick!
+reset                         -- reset the MCU!
 run [<line>]                  -- run program
 save [<name>]                 -- save code ram to flash memory
 undo                          -- undo code changes since last save
@@ -1251,14 +1326,24 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-analog [<millivolts>]         -- set analog voltage scale
-autorun [on|off]              -- autorun (on reset) mode
-echo [on|off]                 -- terminal echo mode
-indent [on|off]               -- listing indent mode
-prompt [on|off]               -- terminal prompt mode
-sleep [on|off]                -- debugger sleep mode
-step [on|off]                 -- debugger single-step mode
-trace [on|off]                -- debugger trace mode
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun (on reset) mode
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+
+pin assignments:
+  heartbeat     safemode*
+  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+
+for more information:
+  help pins
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -1354,7 +1439,7 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables:
-  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
@@ -1377,35 +1462,34 @@ pin names:
 all pins support general purpose digital input/output
 pta[0-367], ptb[0-3], ptf[0-7], ptg[23] = potential analog input pins (mV)
 pta[0167], ptb[45], ptc[0-5] = potential analog output (PWM) pins (mV)
+pta[0167], ptb[45], ptc[0-5] = potential servo output (PWM) pins (cms)
 pta[0167], ptb[45], ptc[0-5] = potential frequency output pins (Hz)
 ptb0 (u1), ptc6 (u2) = potential uart input pins (received byte)
 ptb1 (u1), ptc7 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
-nodeid (<nodeid>|none)        -- set/display zigbee nodeid
-
-connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigbee
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU            MC1320X
-  -------------  -----------
-  spsck1 (ptb2)  spiclk
-  miso1 (ptb4)   miso
-  mosi1 (ptb3)   mosi
-  ss1* (ptb5)    ce*
-  irq*           irq*
-  ptc0           rst*
-  ptf1           rxtxen
-  vss            vss
-  vdd            vdd
+  MCU                 MC1320X
+  -------------       -----------
+  spsck1 (ptb2)       spiclk
+  miso1 (ptb4)        miso
+  mosi1 (ptb3)        mosi
+  ss1* (ptb5)         ce*
+  irq*                irq*
+  pins zigbee_rst*    rst*
+  pins zigbee_rxtxen  rxtxen
+  vss                 vss
+  vdd                 vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51QE128 v1.50!
+Welcome to StickOS for Freescale MCF51QE128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -1417,27 +1501,27 @@ bugs: support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51QE128 v1.50!
+Welcome to StickOS for Freescale MCF51QE128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51QE128 v1.50!
+Welcome to StickOS for Freescale MCF51QE128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 
 ### platform BADGE_BOARD ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 for more information:
   help about
   help commands
@@ -1452,15 +1536,16 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
 delete [<line>][-][<line>]    -- delete program lines or <subname>
+download <slave Hz>           -- download for relay to QSPI to EzPort
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
@@ -1471,7 +1556,7 @@ new                           -- erase code ram and flash memories
 profile [<line>][-][<line>]   -- like list, but display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
-reset                         -- reset the CPUStick!
+reset                         -- reset the MCU!
 run [<line>]                  -- run program
 save [<name>]                 -- save code ram to flash memory
 undo                          -- undo code changes since last save
@@ -1479,14 +1564,24 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-analog [<millivolts>]         -- set analog voltage scale
-autorun [on|off]              -- autorun (on reset) mode
-echo [on|off]                 -- terminal echo mode
-indent [on|off]               -- listing indent mode
-prompt [on|off]               -- terminal prompt mode
-sleep [on|off]                -- debugger sleep mode
-step [on|off]                 -- debugger single-step mode
-trace [on|off]                -- debugger trace mode
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun (on reset) mode
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+
+pin assignments:
+  heartbeat     safemode*
+  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+
+for more information:
+  help pins
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
@@ -1584,7 +1679,7 @@ flash parameter variables:
   dim <varflash>[[n]] as flash
 
 pin alias variables:
-  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
@@ -1607,35 +1702,34 @@ pin names:
 all pins support general purpose digital input/output
 ptb?, ptd[0134] = potential analog input pins (mV)
 pte[23], ptf[0-5] = potential analog output (PWM) pins (mV)
+pte[23], ptf[0-5] = potential servo output (PWM) pins (cms)
 pte[23], ptf[0-5] = potential frequency output pins (Hz)
 pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)
 pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
-nodeid (<nodeid>|none)        -- set/display zigbee nodeid
-
-connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigbee
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU            MC1320X
-  -------------  -----------
-  spsck1 (pte6)  spiclk
-  miso1 (pte4)   miso
-  mosi1 (pte5)   mosi
-  ss1* (pte7)    ce*
-  irq*           irq*
-  pte2           rst*
-  ptb5           rxtxen
-  vss            vss
-  vdd            vdd
+  MCU                 MC1320X
+  -------------       -----------
+  spsck1 (pte6)       spiclk
+  miso1 (pte4)        miso
+  mosi1 (pte5)        mosi
+  ss1* (pte7)         ce*
+  irq*                irq*
+  pins zigbee_rst*    rst*
+  pins zigbee_rxtxen  rxtxen
+  vss                 vss
+  vdd                 vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
 error -     ^
 error -               ^
 error -      ^
@@ -1648,17 +1742,17 @@ error -         ^
 end
 hello
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Welcome to StickOS for Freescale MCF51JM128 v1.60!
 Copyright (c) 2008; all rights reserved.
-info: http://www.cpustick.com
-bugs: support@cpustick.com
+http://www.cpustick.com
+support@cpustick.com
