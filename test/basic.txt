@@ -656,7 +656,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]                 -- clear ram [and flash] variables
@@ -2293,11 +2293,11 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
@@ -2652,7 +2652,7 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 list

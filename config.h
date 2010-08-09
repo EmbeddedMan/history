@@ -1,4 +1,4 @@
-#define VERSION  "1.22"
+#define VERSION  "1.30"
 
 #if ! MCF51JM128
 #define DEMO  1  // 1 enables DEMO board USB power and dtin3 LED

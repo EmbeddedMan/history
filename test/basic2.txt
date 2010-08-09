@@ -1,7 +1,7 @@
 
 ### platform 52221 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 for more information:
@@ -20,7 +20,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]                 -- clear ram [and flash] variables
@@ -225,7 +225,7 @@ zigbee cable:
   vss        vss
   vdd        vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
     ^ - error
@@ -239,7 +239,7 @@ http://www.cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
   ^ - error
@@ -248,13 +248,13 @@ http://www.cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF52221 v1.22!
+Welcome to StickOS for Freescale MCF52221 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 
 ### platform 52233 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52233 v1.22!
+Welcome to StickOS for Freescale MCF52233 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 for more information:
@@ -272,7 +272,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52233 v1.22!
+Welcome to StickOS for Freescale MCF52233 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]                 -- clear ram [and flash] variables
@@ -450,7 +450,7 @@ zigbee cable:
   vss        vss
   vdd        vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52233 v1.22!
+Welcome to StickOS for Freescale MCF52233 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
     ^ - error
@@ -464,20 +464,20 @@ http://www.cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52233 v1.22!
+Welcome to StickOS for Freescale MCF52233 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 dhcp
 1.2.3.4
 dhcp
 ... testing reset
-Welcome to StickOS for Freescale MCF52233 v1.22!
+Welcome to StickOS for Freescale MCF52233 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 
 ### platform 51jm128 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 for more information:
@@ -494,7 +494,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]                 -- clear ram [and flash] variables
@@ -668,7 +668,7 @@ zigbee cable:
   vss        vss
   vdd        vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
     ^ - error
@@ -682,7 +682,7 @@ http://www.cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
   ^ - error
@@ -691,14 +691,14 @@ http://www.cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
   ^ - error
 
 ### platform badge ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 for more information:
@@ -715,7 +715,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]                 -- clear ram [and flash] variables
@@ -890,7 +890,7 @@ zigbee cable:
   vss        vss
   vdd        vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 error -     ^
@@ -905,7 +905,7 @@ error -         ^
 end
 hello
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
   ^ - error
@@ -914,7 +914,7 @@ http://www.cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.22!
+Welcome to StickOS for Freescale MCF51JM128 v1.30!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
   ^ - error
