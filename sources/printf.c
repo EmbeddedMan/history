@@ -10,8 +10,6 @@ extern bool debugger_attached;
 bool printf_scroll;
 #endif
 
-#define isdigit(c)  ((c) >= '0' && (c) <= '9')
-
 #define MAXDIGITS  32
 
 static const char digits[] = "0123456789abcdef";
@@ -20,18 +18,18 @@ static const char spaces[] = "                                ";
 
 static
 int
-convert(unsigned value, unsigned radix, char *buffer)
+convert(uintptr value, unsigned radix, char *buffer)
 {
     int i;
     int n;
-    unsigned scale;
-    unsigned lastscale;
+    uintptr scale;
+    uintptr lastscale;
     int digit;
 
     i = 0;
 
     if (radix == -10) {
-        if ((int)value < 0) {
+        if ((intptr)value < 0) {
             buffer[i++] = '-';
             value = 0-value;
         }
@@ -72,8 +70,8 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
 {
     int i;
     int j;
-    int n;
     char c;
+    char *q;
     bool nl;
     int zero;
     int width;
@@ -132,31 +130,34 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
                 c = *++p;
             }
 
-            n = va_arg(ap, int);
             switch (c) {
                 case 'b':
-                    j = convert(n, 2, temp);
+                    j = convert(va_arg(ap, int), 2, temp);
                     break;
                 case 'c':
-                    temp[0] = (char)n;
+                    temp[0] = (char)va_arg(ap, int);
                     temp[1] = '\0';
                     j = 1;
                     break;
                 case 'd':
-                    j = convert(n, -10, temp);
+                    j = convert(va_arg(ap, int), -10, temp);
                     break;
                 case 'u':
-                    j = convert(n, 10, temp);
+                    j = convert(va_arg(ap, int), 10, temp);
                     break;
                 case 'o':
-                    j = convert(n, 8, temp);
+                    j = convert(va_arg(ap, int), 8, temp);
                     break;
                 case 's':
-                    j = MIN((int)strlen((char *)n), prec);
+                    q = va_arg(ap, char *);
+                    j = MIN((int)strlen(q), prec);
                     break;
                 case 'x':
                 case 'X':
-                    j = convert(n, 16, temp);
+                    j = convert(va_arg(ap, int) & 0xffffffff, 16, temp);
+                    break;
+                case 'p':
+                    j = convert((uintptr)va_arg(ap, void *), 16, temp);
                     break;
                 default:
                     assert(0);
@@ -174,7 +175,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
 
             if (c == 's') {
                 if (i < length) {
-                    strncpy(buffer+i, (char *)n, MIN(j, length-i));
+                    strncpy(buffer+i, q, MIN(j, length-i));
                 }
             } else {
                 if (i < length) {
@@ -183,7 +184,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
             }
             i += j;
         } else {
-#if ! _WIN32
+#if ! STICK_GUEST
             if (c == '\n') {
                 if (i < length) {
                     buffer[i] = '\r';
@@ -202,7 +203,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
         buffer[i] = '\0';
     } else {
         if (nl) {
-#if ! _WIN32
+#if ! STICK_GUEST
             if (length > 2) {
                 buffer[length-3] = '\r';
             }
@@ -247,7 +248,7 @@ sprintf(char *buffer, const char *format, ...)
     return n;
 }
 
-#if ! _WIN32
+#if ! STICK_GUEST
 static char bbuffer[BASIC_LINE_SIZE+2];  // 2 for \r\n
 #else
 static char bbuffer[BASIC_LINE_SIZE+1];  // 1 for \n
@@ -276,7 +277,7 @@ vprintf(const char *format, va_list ap)
     n = vsnprintf(bbuffer, sizeof(bbuffer), format, ap);
     assert(! bbuffer[sizeof(bbuffer)-1]);
     
-#if _WIN32
+#if STICK_GUEST
     write(1, bbuffer, MIN(n, sizeof(bbuffer)-1));
 #else
 #if BADGE_BOARD && ! SKELETON
@@ -303,4 +304,59 @@ vsprintf(char *outbuf, const char *format, va_list ap)
 
     return n;
 }
+
+#if IN_MEMORY_TRACE
+
+enum { trace_size = 200 };
+
+struct {
+    int  cursor;
+    char buffer[trace_size];
+} trace_buffer;
+
+void
+trace(const char *fmt, ...)
+{
+    char buf[32];
+    va_list ap;
+    int s;
+
+    // create a '\0' terminated message in the buf local.
+    va_start(ap, fmt);
+    s = vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+
+#if TRACE_TO_SERIAL
+    // send message to serial port.
+    serial_send(buf, s);
+    serial_send("\r\n", 2);
+#endif
+
+    // if trace_buffer has room for the message...
+    if ((trace_buffer.cursor + s + 1) < trace_size) {
+        // append the message into trace buffer.
+        memcpy(&trace_buffer.buffer[trace_buffer.cursor], buf, s+1);
+        trace_buffer.cursor += s;
+        trace_buffer.buffer[trace_buffer.cursor++] = ' ';
+    }
+}
+
+void
+trace_print(void)
+{
+    if (trace_buffer.cursor <= 0) {
+        return;
+    }
+
+    printf("%s\n", trace_buffer.buffer);
+}
+
+void
+trace_reset(void)
+{
+    trace_buffer.cursor = 0;
+    memset(trace_buffer.buffer, 0, trace_size);
+}
+
+#endif // IN_MEMORY_TRACE
 

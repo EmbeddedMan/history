@@ -17,6 +17,11 @@ project.mcp (for CW7.1):
                       and device drivers (source code)
 * Skeleton Badge   -- skeleton code to run on a Badge Board, with USB host
                       and device drivers (source code)
+                      
+pic32.mcw (for MPLAB8.1):
+
+* pic32.mcp        -- skeleton code to run on a PIC32MX4, with USB host
+                      and device drivers (source code)
                     
 Note that the remaining targets are private, with no source code provided.
 The Niche Lite TCP/IP stack is provided in binary form to make the skeleton
@@ -25,11 +30,11 @@ you can use other features other than just accepting a raw connection for
 the command-line.
 
 The skeleton code provides a rudimentary command-line interface for the
-MCU.  For the MCF52221, this is provided by a USB device driver and an
-upper level FTDI device class driver that connects to a USB Virtual COM
-Port on the host PC.  For the MCF52233, this is provided by the Niche
-Lite TCP/IP stack that accepts a raw connection from a socket on the host
-PC on port 1234.
+MCU.  For the MCF52221, MCF51JM128, and PIC32MX4, this is provided by a
+USB device driver and an upper level FTDI device class driver that connects
+to a USB Virtual COM Port on the host PC.  For the MCF52233, this is
+provided by the Niche Lite TCP/IP stack that accepts a raw connection from
+a socket on the host PC on port 1234.
 
 The skeleton code also provides the following features, identical to those
 found in StickOS BASIC, allowing easy porting of BASIC programs to C:

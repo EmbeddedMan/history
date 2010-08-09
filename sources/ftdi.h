@@ -3,7 +3,7 @@
 typedef void (*ftdi_reset_cbfn)(void);
 
 void
-ftdi_print(byte *line, int length);
+ftdi_print(const byte *line, int length);
 
 void
 ftdi_command_ack(void);

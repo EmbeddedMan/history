@@ -6,10 +6,10 @@ extern int terminal_rxid;  // we send received characters to this node to be rec
 extern int terminal_txid;  // we send printed characters to this node to be printed
 
 void
-terminal_print(byte *buffer, int length);
+terminal_print(const byte *buffer, int length);
 
 bool
-terminal_receive(byte *buffer, int length);
+terminal_receive(const byte *buffer, int length);
 
 void
 terminal_wait(void);

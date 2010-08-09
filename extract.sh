@@ -1,3 +1,5 @@
+#! /bin/sh
+
 # checklist for building skeleton
 #
 # 1. remove project dependencies on Niche Lite and StickOS
@@ -11,7 +13,7 @@
 extract()
 {
   find . -name \*.c -o -name main.h |
-    grep -vEi "nichelite|stickos|pict-o-crypt" |
+    grep -vEi "nichelite|pict-o-crypt" |
     xargs cat |
     grep "\<MCF_" |
     sed 's!\<MCF_!|MCF_!g' | tr '|' "\012" |
@@ -32,6 +34,7 @@ typedef signed long int int32;
 typedef volatile uint8 vuint8;
 typedef volatile uint16 vuint16;
 typedef volatile uint32 vuint32;
+#if ! GCC
 #pragma define_section system ".system" far_absolute RW
 extern __declspec(system) uint8 __IPSBAR[];
 extern __declspec(system) uint8 __RAMBAR[];
@@ -43,6 +46,7 @@ extern __declspec(system) uint8 __FLASHBAR_SIZE[];
 #define RAMBAR_SIZE  (uint32)__RAMBAR_SIZE
 #define FLASHBAR_ADDRESS  (uint32)__FLASHBAR
 #define FLASHBAR_SIZE  (uint32)__FLASHBAR_SIZE
+#endif
 EOF
 
 echo "#if MCF52221"

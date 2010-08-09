@@ -1,0 +1,146 @@
+/* Sample Linker Command File for CodeWarrior for ColdFire */
+
+ENTRY(_startup)
+
+/* Memory ranges */
+
+MEMORY {
+   page0_data  (R)   : ORIGIN = 0x00000000, LENGTH = 0x00000418
+   page0_code  (RX)  : ORIGIN = 0x00000418, LENGTH = 0x000003e8
+   page1       (RX)  : ORIGIN = 0x00000800, LENGTH = 0x00000800
+   code        (RX)  : ORIGIN = 0x00001000, LENGTH = 0x0001f000
+   bdtram      (RWX) : ORIGIN = 0x20000000, LENGTH = 0x00000080
+   userram     (RWX) : ORIGIN = 0x20000080, LENGTH = 0x00003f80
+}
+
+SECTIONS {
+
+/* Heap and Stack sizes definition */
+    __stack_size     = 0x0800;
+
+/* 
+ * MCF52221 Derivative Memory map definitions from linker command files:
+ * __IPSBAR, __RAMBAR, __RAMBAR_SIZE, __FLASHBAR, __FLASHBAR_SIZE linker
+ * symbols must be defined in the linker command file.
+ */
+
+/* Memory Mapped Registers (IPSBAR= 0x40000000) */
+   __IPSBAR         = 0x40000000;
+
+/* 16 Kbytes Internal SRAM */
+   __RAMBAR         = 0x20000000;
+   __RAMBAR_SIZE    = 0x00004000;
+
+/* 128 KByte Internal Flash Memory */
+   __FLASHBAR       = 0x00000000;
+   __FLASHBAR_SIZE  = 0x00020000;
+
+   /* N.B. this is here so it doesn't change and cause an incompatible upgrade */
+   __SP_AFTER_RESET = __RAMBAR + __RAMBAR_SIZE - 4;
+   
+  .userram      : {} > userram        
+  .code        : {} > code        
+  .bdtram    : {} > bdtram            
+    
+    .page0_data :
+    {
+        *(.page0_data .page0_data.*)
+        KEEP(*(.page0_data .page0_data.*))
+        . = ALIGN (0x4); 
+    } > page0_data
+    
+    .page0_code :
+    {
+        *(.page0_code .page0_code.*)
+        . = ALIGN (0x4); 
+    } > page0_code
+
+    .page1 :
+    {
+        *(.page1)
+        KEEP (*(.page1))
+        . = ALIGN (0x4); 
+    } > page1
+
+    .text :
+    {
+        *(.text .text.*)
+        /*
+         * Prevent optimizer from removing init() function.  It doesn't
+         * look referenced. 
+         */
+        KEEP (*(.text.init))
+
+        /* Ensure that flash_upgrade_ram_begin() preceeds flash_upgrade_ram_end() */
+        *(.text_flash_upgrade_ram_begin .text_flash_upgrade_ram_begin.*)
+        *(.text_flash_upgrade_ram_end .text_flash_upgrade_ram_end.*)
+
+        . = ALIGN (0x4);
+        *(.rodata .rodata.*)
+        . = ALIGN (0x4);        
+        __ROM_AT = .;
+        __DATA_ROM = .;
+    } > code
+
+    .data : AT(__ROM_AT) 
+    {  
+        /* N.B. this is here so it doesn't change and cause an incompatible upgrade */
+        _SDA_BASE = .;
+
+        __DATA_RAM = .;
+        . = ALIGN(0x4);
+        __sinit__ = .;
+        
+        __START_DATA = .;
+        *(.data)
+        . = ALIGN (0x4);
+        __END_DATA = .;
+
+        __START_SDATA = .;
+        *(.sdata)
+        . = ALIGN (0x4);
+        __END_SDATA = .;
+
+        __DATA_END = .;
+        . = ALIGN (0x4);
+    } > userram
+
+    .bss :
+    {
+        __BSS_START = .;
+        __START_SBSS = .;
+        *(.sbss)
+        . = ALIGN (0x4);
+        *(SCOMMON)
+        __END_SBSS = .;
+
+        __START_BSS = .;
+        *(.bss)
+        . = ALIGN (0x4);
+        *(COMMON)
+        __END_BSS = .;
+        __BSS_END = .;
+
+        . = ALIGN(0x4);
+
+        __SP_END        = .;
+        .               = . + __stack_size;
+        _SP_INIT        = .;
+        .               = . + 4;
+        __HEAP_START    = .;
+        __HEAP_END        = __RAMBAR + __RAMBAR_SIZE;
+
+        . = ALIGN (0x4);
+    } > userram
+
+    __heap_addr = __HEAP_START;
+    __heap_size = (__HEAP_END - __HEAP_START - 4) & 0x0FFFFF00;
+    __STACK_SIZE = _SP_INIT - __SP_END;
+          
+    __BDT_RAM        = ADDR(.bdtram);
+    __BDT_RAM_END    = ADDR(.userram);
+    
+    _SP_INIT        = _SP_INIT;
+
+    VECTOR_OLD_INIT = 0x808;  /* duplicated in vectors.h */
+}

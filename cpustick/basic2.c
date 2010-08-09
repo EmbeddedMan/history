@@ -10,25 +10,16 @@ enum cmdcode {
 #if MCF52233
     command_ipaddress,  // [dhcp|<ipaddress>]
 #endif
-#if MCF52221 || MCF52233
-    command_reset,
-#endif
     command_dummy
 };
 
 static
-const struct commands {
-    char *command;
-    enum cmdcode code;
-} commands[] = {
-    "demo", command_demo,
-    "help", command_help,
+const char *commands[] = {
+    "demo",
+    "help",
 #if MCF52233
-    "ipaddress", command_ipaddress,
+    "ipaddress",
 #endif    
-#if MCF52221 || MCF52233
-    "reset", command_reset,
-#endif
 };
 
 
@@ -46,6 +37,8 @@ char *help_about =
 "Welcome to StickOS for Freescale MCF52221 v" VERSION "!\n"
 #elif MCF51JM128
 "Welcome to StickOS for Freescale MCF51JM128 v" VERSION "!\n"
+#elif PIC32
+"Welcome to StickOS for Microchip PIC32MX4 v" VERSION "!\n"
 #else
 #error
 #endif
@@ -73,7 +66,7 @@ static char *help_general =
 #if MCF52221
 "  help board\n"
 #endif
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
 "  help clone\n"
 #endif
 "  help zigbee\n"
@@ -84,7 +77,7 @@ static char *help_general =
 
 static char *help_commands =
 "clear [flash]                 -- clear ram [and flash] variables\n"
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
 "clone [run]                   -- clone flash to slave CPUStick [and run]\n"
 #endif
 "cls                           -- clear terminal screen\n"
@@ -100,9 +93,7 @@ static char *help_commands =
 "profile [<line>][-][<line>]   -- like list, but display profile info\n"
 "purge <name>                  -- purge saved program\n"
 "renumber [<line>]             -- renumber program lines (and save)\n"
-#if ! MCF51JM128
 "reset                         -- reset the CPUStick!\n"
-#endif
 "run [<line>]                  -- run program\n"
 "save [<name>]                 -- save code ram to flash memory\n"
 "undo                          -- undo code changes since last save\n"
@@ -147,7 +138,7 @@ static char *help_statements =
 "read <variable> [, ...]                -- read read-only data into variables\n"
 "rem <remark>                           -- remark\n"
 "restore [<label>]                      -- restore read-only data pointer\n"
-"sleep <expression>                     -- delay program execution (ms)\n"
+"sleep <expression> (s|ms|us)           -- delay program execution\n"
 "stop                                   -- insert breakpoint in code\n"
 "\n"
 "for more information:\n"
@@ -175,9 +166,9 @@ static char *help_blocks =
 "  [(break|continue) [n]]\n"
 "until <expression>\n"
 "\n"
-"gosub <subname>\n"
+"gosub <subname> [<expression>, ...]\n"
 "\n"
-"sub <subname>\n"
+"sub <subname> [<param>, ...]\n"
 "  [return]\n"
 "endsub\n"
 ;
@@ -187,7 +178,7 @@ static char *help_devices =
 "  configure qspi for <n> csiv\n"
 "\n"
 "timers:\n"
-"  configure timer <n> for <n> ms\n"
+"  configure timer <n> for <n> (s|ms|us)\n"
 "  on timer <n> do <statement>                -- on timer execute statement\n"
 "  off timer <n>                              -- disable timer interrupt\n"
 "  mask timer <n>                             -- mask/hold timer interrupt\n"
@@ -230,6 +221,7 @@ static char *help_expressions =
 static char *help_variables =
 "all variables must be dimensioned!\n"
 "variables dimensioned in a sub are local to that sub\n"
+"simple variables are passed to sub params by reference\n"
 "array variable indices start at 0; v[0] is the same as v\n"
 "\n"
 "ram variables:\n"
@@ -241,10 +233,11 @@ static char *help_variables =
 "\n"
 "pin alias variables:\n"
 "  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \\\n"
-"                                      (input|output) [inverted]\n"
+"                                      (input|output) \\\n"
+"                                      [debounced] [inverted] [open_drain]\n"
 "\n"
-"system variables (read-only):\n"
-"  nodeid    seconds   ticks\n"
+"system variables:\n"
+"  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)\n"
 "\n"
 "for more information:\n"
 "  help pins\n"
@@ -252,7 +245,7 @@ static char *help_variables =
 
 static char *help_pins =
 "pin names:\n"
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
 "    0        1        2        3        4     5     6     7\n"
 "  -------- -------- -------- --------- ----- ----- ----- ------+\n"
 "  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN\n"
@@ -272,7 +265,7 @@ static char *help_pins =
 "dtin? = potential frequency output pins (Hz)\n"
 "urxd? = potential uart input pins (received byte)\n"
 "utxd? = potential uart output pins (transmit byte)\n"
-#else  // ! MCF51JM128
+#elif MCF51JM128
 "    0       1       2       3       4       5       6       7\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
 "  pta0    pta1    pta2    pta3    pta4    pta5                    | PORT A\n"
@@ -289,6 +282,32 @@ static char *help_pins =
 "pte[23], ptf[0-5] = potential frequency output pins (Hz)\n"
 "pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)\n"
 "pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)\n"
+#elif PIC32
+"  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15\n"
+"  ------- ------- ------- ------- ------- ------- ------- --------+\n"
+"  ra0     ra1     ra2     ra3     ra4     ra5     ra6     ra7     | PORT A\n"
+"                                                  ra14    ra15    |      A+8\n"
+"  an0     an1     an2     an3     an4     an5     an6     an7     | PORT B\n"
+"  an8     an9     an10    an11    an12    an13    an14    an15    |      B+8\n"
+"          rc1     rc2     rc3     rc4                             | PORT C\n"
+"                                          rc13    rc14            |      C+8\n"
+"  rd0     rd1     rd2     rd3     rd4     rd5     rd6     rd7     | PORT D\n"
+"  rd8     rd9     rd10    rd11    rd12    rd13    rd14    rd15    |      D+8\n"
+"  re0     re1     re2     re3     re4     re5     re6     re7     | PORT E\n"
+"  re8     re9                                                     |      E+8\n"
+"  rf0     rf1     rf2     rf3     rf4     rf5                     | PORT F\n"
+"  rf8                             rf12    rf13                    |      F+8\n"
+"  rg0     rg1                                     sck2    sdi2    | PORT G\n"
+"  sdo2    ssi2                    rg12    rg13    rg14            |      G+8\n"
+"\n"
+"all pins support general purpose digital input/output\n"
+"an? = potential analog input pins (mV)\n"
+"rd[0-4] = potential analog output (PWM actually) pins (mV)\n"
+"rd[0-4] = potential frequency output pins (Hz)\n"
+"rf2 (u1), rf4 (u2) = potential uart input pins (received byte)\n"
+"rf3 (u1), rf5 (u2) = potential uart output pins (transmit byte)\n"
+#else
+#error
 #endif
 ;
 
@@ -318,7 +337,7 @@ static char *help_board =
 ;
 #endif
 
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
 static char *help_clone =
 "clone cable:\n"
 "  master     slave\n"
@@ -342,27 +361,38 @@ static char *help_zigbee =
 "  dim <varremote>[[n]] as remote on nodeid <nodeid>\n"
 "\n"
 "zigbee cable:\n"
-"  MCU        MC1320X\n"
-"  ---------  -------\n"
-#if ! MCF51JM128
-"  qspi_clk   spiclk\n"
-"  qspi_din   miso\n"
-"  qspi_dout  mosi\n"
-"  qspi_cs0   ce*\n"
-"  irq4*      irq*\n"
-"  scl        rst*\n"
-"  sda        rxtxen\n"
-#else  // ! MCF51JM128
-"  spsck1     spiclk\n"
-"  miso       miso\n"
-"  mosi       mosi\n"
-"  ss*        ce*\n"
-"  irq*       irq*\n"
-"  pte2       rst*\n"
-"  adp5       rxtxen\n"
+"  MCU            MC1320X\n"
+"  -------------  -----------\n"
+#if MCF52221 || MCF52233
+"  qspi_clk       spiclk\n"
+"  qspi_din       miso\n"
+"  qspi_dout      mosi\n"
+"  qspi_cs0       ce*\n"
+"  irq4*          irq*\n"
+"  scl            rst*\n"
+"  sda            rxtxen\n"
+#elif MCF51JM128
+"  spsck1 (pte6)  spiclk\n"
+"  miso1 (pte4)   miso\n"
+"  mosi1 (pte5)   mosi\n"
+"  ss1* (pte7)    ce*\n"
+"  irq*           irq*\n"
+"  pte2           rst*\n"
+"  ptb5           rxtxen\n"
+#elif PIC32
+// REVISIT -- implement zigbee on MRF24J40
+"  sck2 (rg6)     spiclk\n"
+"  sdi2 (rg7)     miso\n"
+"  sdo2 (rg8)     mosi\n"
+"  ssi2 (rg9)     ce*\n"
+"  xxx            irq*\n"
+"  xxx            rst*\n"
+"  xxx            rxtxen\n"
+#else
+#error
 #endif
-"  vss        vss\n"
-"  vdd        vdd\n"
+"  vss            vss\n"
+"  vdd            vdd\n"
 ;
 
 void
@@ -386,7 +416,7 @@ basic2_help(IN char *text_in)
         text = p+1;
     }
 
-#if ! _WIN32
+#if ! STICK_GUEST
     if (text_in == help_about) {
         printf("(checksum 0x%x)\n", flash_checksum);
 #if 0
@@ -402,17 +432,21 @@ basic2_help(IN char *text_in)
 static const char * const demo0[] = {
   "rem ### blinky ###",
   "dim i",
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
   "dim led as pin dtin2 for digital output",
-#else
+#elif MCF51JM128
   "dim led as pin ptf1 for digital output inverted",
+#elif PIC32
+  "dim led as pin rd2 for digital output inverted",
+#else
+#error
 #endif
   "while 1 do",
   "  for i = 1 to 16",
   "    let led = !led",
-  "    sleep 50",
+  "    sleep 50 ms",
   "  next",
-  "  sleep 800",
+  "  sleep 800 ms",
   "endwhile",
   "end"
 };
@@ -421,7 +455,7 @@ static const char *const demo1[] = {
   "rem ### uart isr ###",
   "dim data",
   "data 1, 1, 2, 3, 5, 8, 13, 21, 0",
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
   "configure uart 0 for 300 baud 8 data no parity loopback",
   "dim tx as pin utxd0 for uart output",
   "dim rx as pin urxd0 for uart input",
@@ -429,12 +463,19 @@ static const char *const demo1[] = {
   "on uart 0 output do gosub transmit",
 #else
   "configure uart 2 for 300 baud 8 data no parity loopback",
+#if MCF51JM128
   "dim tx as pin ptc3 for uart output",
   "dim rx as pin ptc5 for uart input",
+#elif PIC32
+  "dim tx as pin rf5 for uart output",
+  "dim rx as pin rf4 for uart input",
+#else
+#error
+#endif
   "on uart 2 input do gosub receive",
   "on uart 2 output do gosub transmit",
 #endif
-  "sleep 1000",
+  "sleep 1000 ms",
   "end",
   "sub receive",
   "  print \"received\", rx",
@@ -452,14 +493,21 @@ static const char *const demo1[] = {
 
 static const char *const demo2[] = {
   "rem ### uart pio ###",
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
   "configure uart 1 for 9600 baud 7 data even parity loopback",
   "dim tx as pin utxd1 for uart output",
   "dim rx as pin urxd1 for uart input",
 #else
   "configure uart 1 for 9600 baud 7 data even parity loopback",
+#if MCF51JM128
   "dim tx as pin pte0 for uart output",
   "dim rx as pin pte1 for uart input",
+#elif PIC32
+  "dim tx as pin rf8 for uart output",
+  "dim rx as pin rf2 for uart input",
+#else
+#error
+#endif
 #endif
   "let tx = 3",
 #if MCF51JM128
@@ -479,7 +527,7 @@ static const char *const demo2[] = {
 static const char *const demo3[] = {
   "rem ### toaster ###",
   "dim target, secs",
-#if ! MCF51JM128
+#if MCF52221 || MCF52233 || PIC32
   "dim thermocouple as pin an0 for analog input",
   "dim relay as pin an1 for digital output",
 #else
@@ -489,9 +537,9 @@ static const char *const demo3[] = {
   "data 5124, 6, 7460, 9, 8940, 3, -1, -1",
   "configure timer 0 for 1000 ms",
   "on timer 0 do gosub adjust",
-  "rem ----------",
+  "rem ---------------",
   "while target!=-1 do",
-  "  sleep secs*1000",
+  "  sleep secs s",
   "  read target, secs",
   "endwhile",
   "let relay = 0",
@@ -530,8 +578,8 @@ basic2_run(char *text_in)
     parse_trim(&text);
 
     for (cmd = 0; cmd < LENGTHOF(commands); cmd++) {
-        len = strlen(commands[cmd].command);
-        if (! strncmp(text, commands[cmd].command, len)) {
+        len = strlen(commands[cmd]);
+        if (! strncmp(text, commands[cmd], len)) {
             break;
         }
     }
@@ -613,6 +661,8 @@ basic2_run(char *text_in)
 #if MCF52221
             } else if (parse_word(&text, "board")) {
                 basic2_help(help_board);
+#endif
+#if MCF52221 || MCF52233
             } else if (parse_word(&text, "clone")) {
                 basic2_help(help_clone);
 #endif
@@ -652,19 +702,6 @@ basic2_run(char *text_in)
                     printf("%u.%u.%u.%u\n", (unsigned)i>>24, (i>>16)&0xff, (i>>8)&0xff, i&0xff);
                 }
             }
-            break;
-#endif
-
-#if ! MCF51JM128
-        case command_reset:
-            if (*text) {
-                goto XXX_ERROR_XXX;
-            }
-
-#if ! _WIN32
-            MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-            asm { halt }
-#endif
             break;
 #endif
 

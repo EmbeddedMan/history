@@ -5,12 +5,14 @@
 
 static volatile int sleep_seconds;
 
+#if ! STICK_GUEST
+
 // called on sleep entry and exit (sw1 depressed)
 INTERRUPT
 void
 sleep_isr(void)
 {
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
     (void)splx(-SPL_IRQ1);
     
     delay(100);  // debounce
@@ -27,10 +29,12 @@ sleep_isr(void)
 #endif
 }
 
+#endif // ! STICK_GUEST
+
 void
 sleep_delay(int secs)
 {
-    // potentially put us to sleep on a subseqauent sleep_poll()
+    // potentially put us to sleep on a subsequent sleep_poll()
     sleep_seconds = seconds+secs;
 }
 
@@ -49,7 +53,8 @@ static short pnqpar, pqspar;
 void
 sleep_poll(void)
 {
-#if ! MCF51JM128
+#if ! STICK_GUEST
+#if MCF52221 || MCF52233
     bool wake_mode;
     bool sleep_mode;
     
@@ -116,7 +121,7 @@ sleep_poll(void)
 
         // prepare for stop mode
         MCF_PMM_LPCR = MCF_PMM_LPCR_LPMD_STOP|0x18/*all clocks off*/;
-#if (MCF52221 || MCF51JM128) && ! FLASHER
+#if PICTOCRYPT
         if (usb_host_mode && other_attached) {
             // prepare for doze mode to keep USB SOF's alive for other devices
             MCF_PMM_LPCR = MCF_PMM_LPCR_LPMD_DOZE|0x18/*all clocks off*/;
@@ -128,14 +133,10 @@ sleep_poll(void)
 
         if (! gpl()) {
             // stop!
-            asm {
-                stop #0x2000
-            };
+            asm_stop_2000();
         } else {
             // stop!
-            asm {
-                stop #0x2700
-            };
+            asm_stop_2700();
         }
         
         wake_mode = true;
@@ -147,7 +148,7 @@ sleep_poll(void)
         // if we need to autoreset...
         if (var_get_flash(FLASH_AUTORESET) == 1) {
             MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-            asm { halt }
+            asm_halt();
         }
 #endif
 
@@ -180,13 +181,15 @@ sleep_poll(void)
         adc_initialize();
     }
 #endif
+#endif // ! STICK_GUEST
 }
 
 // this function initializes the sleep module.
 void
 sleep_initialize(void)
 {
-#if ! MCF51JM128
+#if ! STICK_GUEST
+#if MCF52221 || MCF52233
     // NQ is primary (irq1)
     irq1_enable = true;
     MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(1*2))) | (1<<(1*2));  // irq1 is primary
@@ -200,5 +203,6 @@ sleep_initialize(void)
     //MCF_INTC0_IMRH &= ~0;
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK1;  // irq1
 #endif
+#endif // ! STICK_GUEST
 }
 

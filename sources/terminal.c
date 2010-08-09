@@ -46,10 +46,16 @@ static char forward[TERMINAL_INPUT_LINE_SIZE*2];
 
 static bool ack = true;
 
-static asm __declspec(register_abi)
+static
+#if ! GCC && ! PIC32
+asm __declspec(register_abi)
+#endif
 unsigned char
 TRKAccessFile(long command, unsigned long file_handle, int *length_ptr, char *buffer_ptr)
 {
+#if GCC || PIC32
+    asm_halt(); // Unimplemented on GCC.
+#else
     move.l    D3,-(a7)
     andi.l    #0x000000ff,D0
     move.l    A1,D3
@@ -59,10 +65,11 @@ TRKAccessFile(long command, unsigned long file_handle, int *length_ptr, char *bu
     move.l    D1,(A1)
     move.l    (A7)+,D3
     rts
+#endif
 }
 
 void
-terminal_print(byte *buffer, int length)
+terminal_print(const byte *buffer, int length)
 {
     int id;
     
@@ -78,8 +85,11 @@ terminal_print(byte *buffer, int length)
         zb_send(id, zb_class_print, length, buffer);
 #endif
     }
-    
-#if MCF52221 || MCF51JM128
+
+#if SERIAL_TERMINAL
+    serial_send(buffer, length);
+#endif
+#if MCF52221 || MCF51JM128 || PIC32
 #if ! FLASHER
     if (ftdi_attached) {
         ftdi_print(buffer, length);
@@ -127,7 +137,17 @@ struct keycode {
     "\033[4~", KEY_END,
     "\010", KEY_BS,
     "\177", KEY_BS_DEL,  // ambiguous
-    "\033[3~", KEY_DEL
+    "\033[3~", KEY_DEL,
+
+    // Everything prior to this line is indexed by "enum keys" values.
+    // Aliases for keys must follow this line.  
+    
+    "\006", KEY_RIGHT, // ctrl-f
+    "\002", KEY_LEFT, // ctrl-b
+    "\020", KEY_UP, // ctrl-p
+    "\016", KEY_DOWN, // ctrl-n
+    "\001", KEY_HOME, // ctrl-a
+    "\005", KEY_END // ctrl-e
 };
 
 #define KEYS_RIGHT  "\033[%dC"
@@ -147,11 +167,11 @@ accumulate(char c)
     int orig;
     int again;
   
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF51JM128 || PIC32
     assert(gpl() >= MIN(SPL_USB, SPL_IRQ4));
 #endif
 
-    if (c == '\003') {
+    if (c == '\003' || c == '\025') { // Clear line on ctrl-c or ctrl-u.
         if (cursor) {
             sprintf(echo+strlen(echo), KEYS_LEFT, cursor);
             assert(strlen(echo) < sizeof(echo));
@@ -184,14 +204,14 @@ accumulate(char c)
                 switch (keycodes[i].code) {
                     case KEY_RIGHT:
                         if (cursor < strlen(command)) {
-                            strcat(echo, keycodes[i].keys);
+                            strcat(echo, keycodes[KEY_RIGHT].keys);
                             assert(strlen(echo) < sizeof(echo));
                             cursor++;
                         }
                         break;
                     case KEY_LEFT:
                         if (cursor) {
-                            strcat(echo, keycodes[i].keys);
+                            strcat(echo, keycodes[KEY_LEFT].keys);
                             assert(strlen(echo) < sizeof(echo));
                             cursor--;
                         }
@@ -318,7 +338,7 @@ accumulate(char c)
 // N.B. if this routine returns false, ftdi will drop the ball and we'll
 // call ftdi_command_ack() later to pick it up again.
 static bool
-terminal_receive_internal(byte *buffer, int length)
+terminal_receive_internal(const byte *buffer, int length)
 {
     int j;
     int x;
@@ -391,7 +411,7 @@ terminal_receive_internal(byte *buffer, int length)
 
 
 bool
-terminal_receive(byte *buffer, int length)
+terminal_receive(const byte *buffer, int length)
 {
     if (length) {
         // reply to local node
@@ -460,7 +480,7 @@ terminal_command_ack(bool edit)
         }
     }
 
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF51JM128 || PIC32
     if (terminal_txid == -1) {
         ftdi_command_ack();
     }
@@ -512,7 +532,7 @@ terminal_poll(void)
     int x;
     char copy[TERMINAL_INPUT_LINE_SIZE*2];
     
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF51JM128 || PIC32
     assert(gpl() == 0);
 #endif
 
@@ -542,7 +562,7 @@ terminal_poll(void)
         }
         
         if (strchr((char *)copy, '\r')) {
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF51JM128 || PIC32
             if (terminal_txid == -1) {
                 ftdi_command_ack();
             }
@@ -582,7 +602,6 @@ class_receive(int nodeid, int length, byte *buffer)
 static void
 class_print(int nodeid, int length, byte *buffer)
 {
-#pragma unused(nodeid)
     int x;
     
     x = splx(MAX(SPL_USB, SPL_IRQ4));

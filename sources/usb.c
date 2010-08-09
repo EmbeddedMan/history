@@ -1,9 +1,48 @@
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF51JM128 || PIC32
 // *** usb.c **********************************************************
 // this file implements a generic usb device driver; the FTDI transport
 // sits on top of this module to implement a specific usb device.
 
 #include "main.h"
+
+#if PIC32
+// REVISIT -- move to relocated compat.h
+#define MCF_USB_OTG_CTL  U1CON
+#define MCF_USB_OTG_CTL_USB_EN_SOF_EN  _U1CON_SOFEN_MASK
+#define MCF_USB_OTG_OTG_CTRL  U1OTGCON
+#define MCF_USB_OTG_OTG_CTRL_DP_HIGH  _U1OTGCON_DPPULUP_MASK
+#define MCF_USB_OTG_OTG_CTRL_OTG_EN  _U1OTGCON_OTGEN_MASK
+#define MCF_USB_OTG_INT_STAT  U1IR
+#define MCF_USB_OTG_INT_ENB  U1IE
+#define MCF_USB_OTG_INT_ENB_USB_RST_EN  _U1IE_URSTIE_MASK
+#define MCF_USB_OTG_ADDR  U1ADDR
+#define MCF_USB_OTG_CTL_ODD_RST  _U1CON_PPBRST_MASK
+#define MCF_USB_OTG_INT_ENB_SLEEP_EN  _U1IE_IDLEIE_MASK
+#define MCF_USB_OTG_INT_ENB_TOK_DNE_EN  _U1IE_TRNIE_MASK
+#define MCF_USB_OTG_ENDPT_EP_HSHK  _U1EP0_EPHSHK_MASK
+#define MCF_USB_OTG_ENDPT_EP_TX_EN  _U1EP0_EPTXEN_MASK
+#define MCF_USB_OTG_ENDPT_EP_RX_EN  _U1EP0_EPRXEN_MASK
+#define MCF_USB_OTG_INT_STAT_TOK_DNE  _U1IR_TRNIF_MASK
+#define MCF_USB_OTG_STAT  U1STAT
+#define MCF_USB_OTG_STAT_TX  _U1STAT_DIR_MASK
+#define MCF_USB_OTG_STAT_ODD  _U1STAT_PPBI_MASK
+#define MCF_USB_OTG_CTL_TXSUSPEND_TOKENBUSY  _U1CON_TOKBUSY_MASK
+#define MCF_USB_OTG_INT_STAT_USB_RST  _U1IR_URSTIF_MASK
+#define MCF_USB_OTG_INT_STAT_SLEEP  _U1IR_IDLEIF_MASK
+#define MCF_USB_OTG_SOF_THLD  U1SOF
+#define MCF_USB_OTG_BDT_PAGE_01  U1BDTP1
+#define MCF_USB_OTG_BDT_PAGE_02  U1BDTP2
+#define MCF_USB_OTG_BDT_PAGE_03  U1BDTP3
+/*
+#define KVA_TO_PA(v)  ((v) & 0x1fffffff)
+#define PA_TO_KVA0(pa)  ((pa) | 0x80000000)  // cachable
+#define PA_TO_KVA1(pa)  ((pa) | 0xa0000000)
+*/
+#else
+#define KVA_TO_PA(v)  (v)
+#define PA_TO_KVA0(pa)  (pa)  // cachable
+#define PA_TO_KVA1(pa)  (pa)
+#endif
 
 #define HWRETRIES  1
 #define SWRETRIES  3
@@ -35,8 +74,12 @@
 
 #define MYBDT(endpoint, tx, odd)  (bdts+(endpoint)*4+(tx)*2+(odd))
 
-extern uint32 __BDT_RAM[];
-#define BDT_RAM_SIZE  0x80
+#if PIC32
+#define BDT_RAM_SIZE  128
+#else
+extern uint32 __BDT_RAM[], __BDT_RAM_END[];
+#define BDT_RAM_SIZE  ((int)__BDT_RAM_END - (int)__BDT_RAM)
+#endif
 
 static struct bdt {
     int flags;
@@ -44,6 +87,12 @@ static struct bdt {
 } *bdts;  // 512 byte aligned in buffer
 
 // N.B. only bdt endpoint 0 is used for host mode!
+
+#if PICTOCRYPT
+#define ENDPOINTS  6
+#else
+#define ENDPOINTS  3
+#endif
 
 struct endpoint {
     byte toggle[2];  // rx [0] and tx [1] next packet data0 (0) or data1 (BD_FLAGS_DATA)
@@ -55,13 +104,13 @@ struct endpoint {
     int data_offset;  // current offset in data stream
     int data_length;  // max offset in data stream
     byte data_buffer[64];  // data to or from host
-} endpoints[6];
+} endpoints[ENDPOINTS];
 
 byte bulk_in_ep;
 byte bulk_out_ep;
 byte int_ep;
 
-bool usb_in_isr;
+volatile bool usb_in_isr;
 
 bool scsi_attached;  // set when usb mass storage device is attached
 uint32 scsi_attached_count;
@@ -159,7 +208,7 @@ transaction(int endpoint, int token, void *buffer, int length)
 
         // N.B. only bdt endpoint 0 is used for host mode!
         bdt = MYBDT(0, tx, odd);
-        bdt->buffer = (byte *)BYTESWAP((int)buffer);
+        bdt->buffer = (byte *)BYTESWAP(KVA_TO_PA((int)buffer));
         flags = BYTESWAP(bdt->flags);
         assert(! (flags & BD_FLAGS_OWN));
         assert(length <= endpoints[endpoint].packetsize);
@@ -461,6 +510,7 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
     struct bdt *bdt;
 
     assert(! usb_host_mode);
+    assert(endpoint < LENGTHOF(endpoints));
 
     // transfer up to one packet at a time
     assert(device_descriptor[7]);
@@ -472,14 +522,34 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
 
     // initialize the bdt entry
     bdt = MYBDT(endpoint, tx, odd);
-    bdt->buffer = (byte *)BYTESWAP((int)buffer);
+    bdt->buffer = (byte *)BYTESWAP(KVA_TO_PA((int)buffer));
     flags = BYTESWAP(bdt->flags);
     assert(! (flags & BD_FLAGS_OWN));
     assert(length <= endpoints[endpoint].packetsize);
     bdt->flags = BYTESWAP(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|endpoints[endpoint].toggle[tx]/*|BD_FLAGS_DTS|*/);
 
     // enable the packet transfer
+#if PIC32
+    switch (endpoint) {
+        case 0:
+            U1EP0 = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+            break;
+        case 1:
+            U1EP1 = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+            break;
+        case 2:
+            U1EP2 = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+            break;
+        case 3:
+            U1EP3 = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+            break;
+        default:
+            ASSERT(0);
+            break;
+    }
+#else
     MCF_USB_OTG_ENDPT(endpoint) = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+#endif
 
     // revisit -- this should be on ack!!!
     // toggle the data toggle flag
@@ -497,6 +567,9 @@ static byte configuration[CONFIGURATION_DESCRIPTOR_SIZE];
 // called by usb on device attach
 INTERRUPT
 void
+#if PIC32
+__ISR(45, ipl6) // REVISIT -- ipl?
+#endif
 usb_isr(void)
 {
 #if ! STICKOS
@@ -509,9 +582,13 @@ usb_isr(void)
     }
     
     assert(! usb_in_isr);
-    usb_in_isr = true;
+    assert((usb_in_isr = true) ? true : true);
     
-    (void)splx(-SPL_USB);
+#if PIC32
+    IFS1CLR = 0x02000000; // USBIF
+#else
+     (void)splx(-SPL_USB);
+#endif
     
     // *** host ***
     
@@ -681,7 +758,7 @@ usb_isr(void)
             assert(bc == 8);
             assert(! tx);
 
-            setup = (struct setup *)BYTESWAP((int)bdt->buffer);
+            setup = (struct setup *)BYTESWAP((int)PA_TO_KVA1((int)bdt->buffer));
             assert((void *)setup == (void *)setup_buffer);
 
             // unsuspend the usb packet engine
@@ -792,7 +869,7 @@ usb_isr(void)
             assert(endpoints[endpoint].data_length <= sizeof(endpoints[endpoint].data_buffer));
         } else if (! endpoint) {
             assert(pid == TOKEN_IN || pid == TOKEN_OUT);
-            data = (byte *)BYTESWAP((int)bdt->buffer);
+            data = (byte *)BYTESWAP((int)PA_TO_KVA1((int)bdt->buffer));
 
             // if this is part of the data transfer...
             if (pid == endpoints[endpoint].data_pid) {
@@ -839,7 +916,7 @@ usb_isr(void)
                 }
             // otherwise; we just transferred status
             } else {
-                assert(! data);
+                assert(data == PA_TO_KVA1(0));
 
                 // update our address after status
                 if (next_address) {
@@ -856,7 +933,7 @@ usb_isr(void)
             }
         } else {
             assert(pid == TOKEN_IN || pid == TOKEN_OUT);
-            data = (byte *)BYTESWAP((int)bdt->buffer);
+            data = (byte *)BYTESWAP((int)PA_TO_KVA1((int)bdt->buffer));
 
             // we just received or sent data from or to the host
             assert(bulk_transfer_cbfn);
@@ -902,7 +979,7 @@ usb_isr(void)
     
 XXX_SKIP_XXX:
     assert(usb_in_isr);
-    usb_in_isr = false;
+    assert((usb_in_isr = false) ? true : true);
 }
 
 // this function is called by upper level code to register callback
@@ -949,22 +1026,37 @@ usb_string_descriptor(const byte *descriptor, int length)
 void
 usb_initialize(void)
 {
-    bdts = (struct bdt *)__BDT_RAM;
-    assert(BDT_RAM_SIZE >= 4*4*sizeof(struct bdt));
+#if PIC32
+    static __attribute__ ((aligned(512))) byte bdt_ram[BDT_RAM_SIZE];
 
-#if ! MCF51JM128
+    bdts = (struct bdt *)bdt_ram;
+#else
+    bdts = (struct bdt *)__BDT_RAM;
+#endif
+
+    assert(BDT_RAM_SIZE >= LENGTHOF(endpoints)*4*sizeof(struct bdt));
+
+#if MCF52221 || MCF52233
     // enable usb interrupt
     MCF_INTC0_ICR53 = MCF_INTC_ICR_IL(SPL_USB)|MCF_INTC_ICR_IP(SPL_USB);
     MCF_INTC0_IMRH &= ~MCF_INTC_IMRH_INT_MASK53;  // usb
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
-#else
+#elif MCF51JM128
     /* Reset USB module first. */
     USBTRC0_USBRESET = 1;
     while (USBTRC0_USBRESET ) {
         // NULL
     }
+#elif PIC32
+    // power on
+    U1PWRCbits.USBPWR = 1;
+    IEC1bits.USBIE = 1;
+
+    INTEnable(INT_USB, 1);
+    INTSetPriority(INT_USB, 6);
 #endif
 
+#if MCF52221 || MCF52233 || MCF51JM128
     // initialize usb timing
     if (oscillator_frequency == 48000000) {
         MCF_USB_OTG_USB_CTRL = MCF_USB_OTG_USB_CTRL_CLK_SRC(1);
@@ -972,13 +1064,14 @@ usb_initialize(void)
         assert(cpu_frequency == 48000000);
         MCF_USB_OTG_USB_CTRL = MCF_USB_OTG_USB_CTRL_CLK_SRC(3);
     }
+#endif
     MCF_USB_OTG_SOF_THLD = 74;
 
     // initialize usb bdt
     assert(! ((unsigned int)bdts & 0x1ff));
-    MCF_USB_OTG_BDT_PAGE_01 = (uint8)((unsigned int)bdts >> 8);
-    MCF_USB_OTG_BDT_PAGE_02 = (uint8)((unsigned int)bdts >> 16);
-    MCF_USB_OTG_BDT_PAGE_03 = (uint8)((unsigned int)bdts >> 24);
+    MCF_USB_OTG_BDT_PAGE_01 = (uint8)(KVA_TO_PA((unsigned int)bdts) >> 8);
+    MCF_USB_OTG_BDT_PAGE_02 = (uint8)(KVA_TO_PA((unsigned int)bdts) >> 16);
+    MCF_USB_OTG_BDT_PAGE_03 = (uint8)(KVA_TO_PA((unsigned int)bdts) >> 24);
 
     // if we are in host mode...
     if (usb_host_mode) {

@@ -6,7 +6,7 @@
 
 #include "main.h"
 
-#if _WIN32
+#if STICK_GUEST
 byte FLASH_CODE1_PAGE[BASIC_LARGE_PAGE_SIZE];
 byte FLASH_CODE2_PAGE[BASIC_LARGE_PAGE_SIZE];
 byte FLASH_STORE_PAGES[BASIC_STORES][BASIC_LARGE_PAGE_SIZE];
@@ -21,14 +21,26 @@ byte RAM_VARIABLE_PAGE[BASIC_SMALL_PAGE_SIZE];
 byte *start_of_dynamic;
 byte *end_of_dynamic;
 
+struct timer_unit timer_units[] = {
+    "us", -1000/ticks_per_msec,
+    "ms", ticks_per_msec,
+    "s", ticks_per_msec*1000,
+};
+
+// PC/Cell framework!!!
+
 // phase #1
 // why mcf52xxx dtim freq not off by 2x?
 // figure out usb "pop" on first badge run -- is that the badge issue?
 
-
 // phase #2
 // features:
+//  pic32: disable pullups on analog input
+//  pic32: add autorun disable switch (rd6?)
+//  if data area of flash looks bogus on boot, we should clear it all!
+//  allow broadcast/remote nodeid setting (with switch), like pagers
 //  need way for upgrade to preserve nodeid (and ipaddress, and maybe just flash param page?)
+//  allow zigbee remote variable to be read as well as written
 //  auto line number (for paste)
 //  have nodeid and clusterid, and broadcast 0x4242 and clusterid as magic number
 //  save zigbee channel in nvparam!
@@ -38,11 +50,9 @@ byte *end_of_dynamic;
 //  short circuit && and || operators
 //  add character constants 'c', '\n'; do we want a way to print in character form?
 //  add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
-//  add sub parameter mappings? sub return values?
 //  add strings
 //  multiple (main) threads?  "input" statement?
 //  "on usb [connect|disconnect]" statement for slave mode!
-//  allow "digital input debounce" for pin type!  also "digital|analog input|output invert"!
 //  ?: operator!
 //  add support for comments at the end of lines '?  //?
 //  switch statement (on xxx goto...?)
@@ -55,7 +65,6 @@ byte *end_of_dynamic;
 //  can we skip statement execution more fully when run_condition is false?
 // user guide:
 // bugs:
-//  re-dim pin should allow pin_type change (and reconfigure)?  or verify it has not!
 //  sleep switch power draw is too high!
 //  need mechanism to reconfigure pins irq1* and irq7*, other than reset!
 //  need a second catalog page for safe updates!
@@ -93,6 +102,7 @@ enum cmdcode {
     command_prompt,  // [on|off]
     command_purge, // <name>
     command_renumber,
+    command_reset,
     command_run,  // [nnn]
     command_save,  // [<name>]
     command_sleep, // [on|off]
@@ -127,6 +137,7 @@ const char *commands[] = {
     "prompt",
     "purge",
     "renumber",
+    "reset",
     "run",
     "save",
     "sleep",
@@ -181,6 +192,7 @@ basic_run(char *text_in)
     int number1;
     int number2;
     bool *boolp;
+    struct line *line;
     int syntax_error;
     byte bytecode[BASIC_BYTECODE_SIZE];
 
@@ -204,6 +216,11 @@ basic_run(char *text_in)
         text += len;
         parse_trim(&text);
     }
+
+#if STICK_GUEST
+    // let timer ticks arrive; align ticks on run
+    timer_ticks(cmd == command_run);
+#endif
 
     number1 = 0;
     number2 = 0;
@@ -245,7 +262,7 @@ basic_run(char *text_in)
                     goto XXX_ERROR_XXX;
                 }
                 var_set_flash(FLASH_NODEID, number1);
-#if ! _WIN32
+#if ! STICK_GUEST
                 zb_nodeid = number1;
 #endif
             } else {
@@ -294,7 +311,7 @@ basic_run(char *text_in)
         case command_connect:
             if (! zb_present) {
                 printf("zigbee not present\n");
-#if ! _WIN32
+#if ! STICK_GUEST
             } else if (zb_nodeid == -1) {
                 printf("zigbee nodeid not set\n");
 #endif
@@ -306,9 +323,9 @@ basic_run(char *text_in)
                     goto XXX_ERROR_XXX;
                 }
                 
-                printf("press Ctrl-D to disconnect\n");
+                printf("press Ctrl-D to disconnect...\n");
 
-#if ! _WIN32
+#if ! STICK_GUEST
                 assert(main_command);
                 main_command = NULL;
                 terminal_command_ack(false);
@@ -319,6 +336,8 @@ basic_run(char *text_in)
                     basic_poll();
                 }
 #endif
+
+                printf("...disconnected\n");
             }
             break;
 
@@ -331,7 +350,7 @@ basic_run(char *text_in)
                 }
             }
 
-#if ! _WIN32
+#if ! STICK_GUEST
             terminal_command_discard(true);
             if (main_command) {
                 main_command = NULL;
@@ -341,7 +360,7 @@ basic_run(char *text_in)
 
             run(cmd == command_cont, number1);
 
-#if ! _WIN32
+#if ! STICK_GUEST
             terminal_command_discard(false);
 #endif
             break;
@@ -358,10 +377,11 @@ basic_run(char *text_in)
                     boo |= basic_const(&text, &number2);
                 }
                 if (! boo) {
-                    number1 = code_line(code_sub, (byte *)text);
-                    if (! number1) {
+                    line = code_line(code_sub, (byte *)text);
+                    if (line == NULL) {
                         goto XXX_ERROR_XXX;
                     }
+                    number1 = line->line_number;
                     text += strlen(text);
                     number2 = 0x7fffffff;  // endsub
                 }
@@ -434,6 +454,35 @@ basic_run(char *text_in)
             }
 
             code_save(number1);
+            break;
+
+        case command_reset:
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+
+#if ! STICK_GUEST
+            (void)splx(7);
+#if MCF52221 || MCF52233
+            MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
+#elif MCF51JM128
+            asm {
+                move.l  #0x00000000,d0
+                movec   d0,CPUCR
+                trap    #0
+            };
+#elif PIC32
+            SYSKEY = 0;
+            SYSKEY = 0xAA996655;
+            SYSKEY = 0x556699AA;
+            RSWRSTSET = _RSWRST_SWRST_MASK;
+            while (RSWRST, true) {
+                // NULL
+            }
+#else
+#endif
+            ASSERT(0);
+#endif
             break;
 
         case command_echo:
@@ -511,7 +560,7 @@ basic_run(char *text_in)
             if (*text) {
                 goto XXX_ERROR_XXX;
             }
-#if ! _WIN32
+#if ! STICK_GUEST
             zb_diag(reset, init);
 #endif
             break;
@@ -553,7 +602,7 @@ XXX_ERROR_XXX:
     terminal_command_error(text-text_in);
 }
 
-#if ! _WIN32
+#if ! STICK_GUEST
 void
 basic_poll(void)
 {
@@ -566,14 +615,12 @@ basic_poll(void)
 void
 basic_initialize(void)
 {
-#if ! _WIN32
-    extern unsigned char far __DATA_RAM[], __DATA_ROM[], __DATA_END[];
-
+#if ! STICK_GUEST
     start_of_dynamic = FLASH_CODE1_PAGE;
-    assert(end_of_static < start_of_dynamic);
+    ASSERT(end_of_static < start_of_dynamic);
 
     end_of_dynamic = FLASH_PARAM2_PAGE+BASIC_SMALL_PAGE_SIZE;
-    assert(end_of_dynamic <= (byte *)FLASH_BYTES);
+    ASSERT(end_of_dynamic <= (byte *)(FLASH_START+FLASH_BYTES));
 #endif
 
     code_initialize();

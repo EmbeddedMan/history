@@ -8,12 +8,8 @@ bool run2_scroll;
 
 // this function executes a private bytecode statement.
 bool  // end
-run2_bytecode_code(byte code, byte *bytecode, int length)
+run2_bytecode_code(byte code, const byte *bytecode, int length)
 {
-#if ! _WIN32
-#pragma unused(bytecode, length)
-#endif
-
 #if BADGE_BOARD
     int r;
     int c;
@@ -29,9 +25,11 @@ run2_bytecode_code(byte code, byte *bytecode, int length)
     switch (code) {
 #if BADGE_BOARD
         case code_scroll:
+#if ! GCC
             cw7bug++;  // CW7 BUG
+#endif
             
-#if ! _WIN32
+#if ! STICK_GUEST
             while (! jm_scroll_ready()) {
                 // see if the sleep switch was pressed
                 basic_poll();
@@ -46,15 +44,15 @@ run2_bytecode_code(byte code, byte *bytecode, int length)
 
         case code_set:
         case code_clear:
-            index += run_evaluate(bytecode+index, length-index, &r);
+            index += run_evaluate(bytecode+index, length-index, NULL, &r);
             
             assert(bytecode[index] == code_comma);
             index++;
             
-            index += run_evaluate(bytecode+index, length-index, &c);
+            index += run_evaluate(bytecode+index, length-index, NULL, &c);
             
             if (run_condition) {
-#if ! _WIN32
+#if ! STICK_GUEST
                 if (code == code_set) {
                     jm_set(r, c);
                 } else {

@@ -156,7 +156,7 @@ parse_words(IN OUT char **text_in, IN char *words)
 }
 
 char *
-parse_find_keyword(IN OUT char *text, IN char* word)
+parse_find_keyword(IN OUT char *text, IN char *word)
 {
     int n;
     bool w;
@@ -175,14 +175,22 @@ parse_find_keyword(IN OUT char *text, IN char* word)
     return NULL;
 }
 
+static
 bool
-parse_find_tail(IN OUT char **text, IN char* tail)
+parse_find_tail(IN OUT char *text, IN char *tail)
 {
     char *p;
+    char *q;
 
-    // find delimited keyword in text
-    p = parse_find_keyword(*text, tail);
-    if (! p) {
+    // find final delimited keyword in text
+    p = text-1;
+    do {
+        q = parse_find_keyword(p+1, tail);
+        if (q) {
+            p = q;
+        }
+    } while (q);
+    if (p == text-1) {
         return false;
     }
 
@@ -198,7 +206,6 @@ parse_find_tail(IN OUT char **text, IN char* tail)
 }
 
 // revisit -- merge this with basic.c/parse.c???
-
 bool
 parse_const(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
@@ -232,7 +239,7 @@ parse_const(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
         }
     }
 
-    *(int *)(bytecode+*length) = value;
+    write32(bytecode+*length, value);
     *length += sizeof(int);
 
     parse_trim(text);
@@ -296,9 +303,15 @@ parse_match_quote(char *p)
 
 // *** bytecode compiler ***
 
+static bool
+parse_is_legal_var_name_char(const char *text) 
+{
+    return isalpha(*text) || isdigit(*text) || *text == '_';
+}
+
 // this function parses (compiles) a variable to bytecode.
 bool
-parse_var(IN bool lvalue, IN int obase, IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
+parse_var(IN bool lvalue, IN int obase, IN bool allow_array_index, IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
     int i;
     char *p;
@@ -312,13 +325,17 @@ parse_var(IN bool lvalue, IN int obase, IN OUT char **text, IN OUT int *length, 
 
     // extract the variable name and advance *text past name
     i = 0;
-    while (isalpha(**text) || isdigit(**text) || **text == '_') {
+    while (parse_is_legal_var_name_char(*text)) {
         name[i++] = *(*text)++;
     }
     name[i] = '\0';
 
     // if the variable is an array element...
     if (**text == '[') {
+        if (! allow_array_index) {
+            return false;
+        }
+        
         if (lvalue) {
             // for lvalues we generate the code first, followed by the index expression length
             bytecode[(*length)++] = code_load_and_push_var_indexed;
@@ -455,7 +472,7 @@ parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT by
             }
 
             // generate the bytecode and parse the variable
-            if (! parse_var(false, otop, text, length, bytecode)) {
+            if (! parse_var(false, otop, true, text, length, bytecode)) {
                 return false;
             }
             number = false;
@@ -584,7 +601,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     goto XXX_ERROR_XXX;
                 }
                 assert(length >= sizeof(int));
-                if (*(int *)(bytecode+length-sizeof(int)) < 0 || *(int *)(bytecode+length-sizeof(int)) >= MAX_TIMERS) {
+                if (read32(bytecode+length-sizeof(int)) < 0 || read32(bytecode+length-sizeof(int)) >= MAX_TIMERS) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -627,7 +644,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 if (! parse_expression(0, &text, &len, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
-                *(int *)(bytecode+length) = len-(length+sizeof(int));
+                write32(bytecode+length, len-(length+sizeof(int)));
                 length = len;
                 text += strlen(text);
                 if (d) {
@@ -648,7 +665,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 if (! parse_line(text, &len, bytecode+length+sizeof(int), syntax_error)) {
                     goto XXX_ERROR_XXX;
                 }
-                *(int *)(bytecode+length) = len;
+                write32(bytecode+length, len);
                 length += sizeof(int);
                 length += len;
                 text += strlen(text);
@@ -665,7 +682,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     goto XXX_ERROR_XXX;
                 }
                 assert(length >= sizeof(int));
-                if (*(int *)(bytecode+length-sizeof(int)) < 0 || *(int *)(bytecode+length-sizeof(int)) >= MAX_TIMERS) {
+                if (read32(bytecode+length-sizeof(int)) < 0 || read32(bytecode+length-sizeof(int)) >= MAX_TIMERS) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -677,7 +694,15 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 if (! parse_const(&text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
-                if (! parse_word(&text, "ms")) {
+
+                // parse the timer interval unit specifier
+                for (i = 0; i < timer_unit_max; i++) {
+                    if (parse_word(&text, timer_units[i].name)) {
+                        bytecode[length++] = i;
+                        break;
+                    }
+                }
+                if (i == timer_unit_max) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -715,7 +740,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     goto XXX_ERROR_XXX;
                 }
                 assert(length >= sizeof(int));
-                if (*(int *)(bytecode+length-sizeof(int)) < 5 || *(int *)(bytecode+length-sizeof(int)) > 8) {
+                if (read32(bytecode+length-sizeof(int)) < 5 || read32(bytecode+length-sizeof(int)) > 8) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -782,7 +807,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 }
 
                 // parse the variable
-                if (! parse_var(true, 0, &text, &length, bytecode)) {
+                if (! parse_var(true, 0, true, &text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
             }
@@ -816,7 +841,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 // if the user requested negative...
                 if (neg) {
                     // make it so
-                    *(int *)(bytecode+length-sizeof(int)) = -*(int *)(bytecode+length-sizeof(int));
+                    write32(bytecode+length-sizeof(int), 0-read32(bytecode+length-sizeof(int)));
                 }
             }
             break;
@@ -835,7 +860,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 }
 
                 // parse the variable
-                if (! parse_var(true, 0, &text, &length, bytecode)) {
+                if (! parse_var(true, 0, true, &text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -936,7 +961,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 }
 
                 // parse the variable
-                if (! parse_var(true, 0, &text, &length, bytecode)) {
+                if (! parse_var(true, 0, true, &text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -995,6 +1020,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     assert(text == p);
                     text++;
 
+                    parse_trim(&text);
                 // otherwise, the next item is an expression...
                 } else {
                     bytecode[length++] = code_expression;
@@ -1021,7 +1047,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 }
 
                 // parse the variable
-                if (! parse_var(true, 0, &text, &length, bytecode)) {
+                if (! parse_var(true, 0, true, &text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
             }
@@ -1033,13 +1059,13 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
         case code_until:
             if (code == code_if || code == code_elseif) {
                 // make sure we have a "then"
-                if (! parse_find_tail(&text, "then")) {
+                if (! parse_find_tail(text, "then")) {
                     text += strlen(text);
                     goto XXX_ERROR_XXX;
                 }
             } else if (code == code_while) {
                 // make sure we have a "do"
-                if (! parse_find_tail(&text, "do")) {
+                if (! parse_find_tail(text, "do")) {
                     text += strlen(text);
                     goto XXX_ERROR_XXX;
                 }
@@ -1067,19 +1093,19 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     goto XXX_ERROR_XXX;
                 }
                 assert(length >= sizeof(int));
-                if (! *(int *)(bytecode+length-sizeof(int))) {
+                if (! read32(bytecode+length-sizeof(int))) {
                     goto XXX_ERROR_XXX;
                 }
             } else {
                 // break/continue 1 level
-                *(int *)(bytecode+length) = 1;
+                write32(bytecode+length, 1);
                 length += sizeof(int);
             }
             break;
 
         case code_for:
             // parse the for loop variable
-            if (! parse_var(true, 0, &text, &length, bytecode)) {
+            if (! parse_var(true, 0, true, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
             }
 
@@ -1148,10 +1174,41 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 goto XXX_ERROR_XXX;
             }
             // generate the label/subname to bytecode
-            while (*text) {
+            while (*text && parse_is_legal_var_name_char(text)) {
                 bytecode[length++] = *text++;
             }
-            bytecode[length++] = *text;
+            bytecode[length++] = '\0';
+
+            // if there's more text after the sub name...
+            if (*text) {
+                parse_trim(&text);
+                len = 0;
+
+                if ((code != code_sub) && (code != code_gosub)) {
+                    goto XXX_ERROR_XXX;
+                }
+                
+                while (*text) {
+                    if (len) {
+                        if (! parse_char(&text, ',')) {
+                            goto XXX_ERROR_XXX;
+                        }
+                        bytecode[length++] = code_comma;
+                    }
+                    len = 1;
+                    if (code == code_sub) {
+                        // parse the next parameter name
+                        if (! parse_var(true, 0, false /* ! allow_array_index */, &text, &length, bytecode)) {
+                            goto XXX_ERROR_XXX;
+                        }
+                    } else if (code == code_gosub) {
+                        // parse the next parameter to pass
+                        if (! parse_expression(0, &text, &length, bytecode)) {
+                            goto XXX_ERROR_XXX;
+                        }
+                    }
+                }
+            }
             break;
 
         case code_return:
@@ -1160,6 +1217,18 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
             break;
 
         case code_sleep:
+            // parse and push the trailing timer interval unit specifier
+            for (i = 0; i < timer_unit_max; i++) {
+                if (parse_find_tail(text, timer_units[i].name)) {
+                    bytecode[length++] = i;
+                    break;
+                }
+            }
+            if (i == timer_unit_max) {
+                text += strlen(text);
+                goto XXX_ERROR_XXX;
+            }
+            
             // parse the sleep time expression
             if (! parse_expression(0, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
@@ -1252,7 +1321,7 @@ unparse_var_lvalue(byte *bytecode_in, char **out)
         bytecode++;
 
         // get the index expression length; the variable name follows the index expression
-        blen = *(int *)bytecode;
+        blen = read32(bytecode);
         bytecode += sizeof(int);
 
         // decompile the variable name and index expression
@@ -1307,7 +1376,7 @@ unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
         switch (code) {
             case code_load_and_push_immediate:
             case code_load_and_push_immediate_hex:
-                value = *(int *)bytecode;
+                value = read32(bytecode);
                 bytecode += sizeof(int);
                 precedence[ttop] = 100;
                 // decompile the constant
@@ -1418,6 +1487,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
     byte parity;
     byte loopback;
     int interval;
+    enum timer_unit_type timer_unit;
     int csiv;
     byte device;
     byte code2;
@@ -1446,7 +1516,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 out += sprintf(out, "timer ");
 
                 // and the timer number
-                timer = *(int *)bytecode;
+                timer = read32(bytecode);
                 assert(timer >= 0 && timer < MAX_TIMERS);
                 bytecode += sizeof(int);
                 out += sprintf(out, "%d", timer);
@@ -1466,7 +1536,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
             } else if (device == device_watch) {
 
                 // this is an expression
-                len = *(int *)bytecode;
+                len = read32(bytecode);
                 bytecode += sizeof(int);
 
                 bytecode += unparse_expression(0, bytecode, len, &out);
@@ -1481,7 +1551,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
             if (code == code_on) {
                 out += sprintf(out, " do ");
 
-                len = *(int *)bytecode;
+                len = read32(bytecode);
                 bytecode += sizeof(int);
 
                 // decompile the interrupt handler statement
@@ -1498,15 +1568,19 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 out += sprintf(out, "timer ");
 
                 // and the timer number
-                timer = *(int *)bytecode;
+                timer = read32(bytecode);
                 assert(timer >= 0 && timer < MAX_TIMERS);
                 bytecode += sizeof(int);
                 out += sprintf(out, "%d ", timer);
 
                 // and the timer interval
-                interval = *(int *)bytecode;
+                interval = read32(bytecode);
                 bytecode += sizeof(int);
-                out += sprintf(out, "for %d ms", interval);
+                out += sprintf(out, "for %d ", interval);
+
+                // and the timer interval unit specifier
+                timer_unit = (enum timer_unit_type)*(bytecode++);
+                out += sprintf(out, "%s", timer_units[timer_unit].name);
 
             } else if (device == device_uart) {
                 // decompile the uart
@@ -1518,9 +1592,9 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 out += sprintf(out, "%s ", uart_names[uart]);
 
                 // find the uart protocol and optional loopback specifier
-                baud = *(int *)bytecode;
+                baud = read32(bytecode);
                 bytecode += sizeof(int);
-                data = *(int *)bytecode;
+                data = read32(bytecode);
                 bytecode += sizeof(int);
                 parity = *bytecode++;
                 loopback = *bytecode++;
@@ -1532,7 +1606,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 out += sprintf(out, "qspi ");
 
                 // and the chip select initial value
-                csiv = *(int *)bytecode;
+                csiv = read32(bytecode);
                 bytecode += sizeof(int);
                 out += sprintf(out, "for %d csiv", csiv);
 
@@ -1571,7 +1645,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
 
                 // decompile the constant
                 code2 = *bytecode++;
-                value = *(int *)bytecode;
+                value = read32(bytecode);
                 bytecode += sizeof(int);
                 if (code2 == code_load_and_push_immediate_hex) {
                     out += sprintf(out, "0x%x", value);
@@ -1583,7 +1657,9 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
             break;
 
         case code_dim:
+#if ! GCC
             cw7bug++;
+#endif
             // while there are more variables...
             while (bytecode < bytecode_in+length) {
                 if (bytecode > bytecode_in+1) {
@@ -1642,7 +1718,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                         } else {
                             assert(code2 == code_nodeid);
 
-                            nodeid = *(int *)bytecode;
+                            nodeid = read32(bytecode);
                             bytecode += sizeof(int);
                             
                             out += sprintf(out, "remote on nodeid %u", nodeid);
@@ -1747,7 +1823,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
 
         case code_break:
         case code_continue:
-            n = *(int *)bytecode;
+            n = read32(bytecode);
             bytecode += sizeof(int);
             // if the break/continue level is not 1...
             if (n != 1) {
@@ -1794,10 +1870,26 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
         case code_restore:
         case code_gosub:
         case code_sub:
-            // decompile the subname
+            // decompile the label/sub name
             len = sprintf(out, "%s", bytecode);
             out += len;
             bytecode += len+1;
+            n = 0;
+
+            if ((code == code_sub) || (code == code_gosub)) {
+                // decompile the parameter names separating parameter names with a comma
+                while (bytecode < bytecode_in+length) {
+                    if (n) {
+                        assert(*bytecode == code_comma);
+                        bytecode++;
+                        *(out++) = ',';
+                    }
+                    *(out++) = ' ';
+                    n = 1;
+                    
+                    bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+                }
+            }
             break;
 
         case code_return:
@@ -1806,8 +1898,13 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
             break;
 
         case code_sleep:
-            // decompile the sleep time expression
+            // decompile the sleep time units
+            timer_unit = (enum timer_unit_type)*(bytecode++);
+
+            // and the sleep time expression
             bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+
+            out += sprintf(out, " %s", timer_units[timer_unit].name);
             break;
 
         case code_stop:

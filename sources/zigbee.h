@@ -14,7 +14,7 @@ extern bool zb_present;
 
 typedef void (*zb_recv_cbfn)(int nodeid, int length, byte *buffer);
 
-#if ! _WIN32
+#if ! STICK_GUEST
 INTERRUPT
 void
 zb_isr(void);
@@ -27,7 +27,7 @@ zb_pre_isr(void);
 #endif
 
 bool
-zb_send(int nodeid, uint8 class, int length, byte *buffer);
+zb_send(int nodeid, uint8 class, int length, const byte *buffer);
 
 void
 zb_poll(void);

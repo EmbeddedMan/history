@@ -1,0 +1,15 @@
+TARGET=nichelite
+TARGETTYPE=LIBRARY
+
+SOURCES=nichelite.c mii.c \
+        allports.c timeouts.c \
+        ifec.c iutil.c osporttk.c \
+        m_arp.c m_icmp.c m_ip.c m_ipnet.c m_udp.c \
+        dhcsetup.c IN_UTILS.c MEMIO.c NETMAIN.c TASK.c TCPCKSUM.c \
+        tcp_timr.c TCPAPI.c TCPIN.c TCPOUT.c TCPUTIL.c \
+        DHCPCLNT.c dhcputil.c PKTALLOC.c q.c udp_open.c
+
+ASMS=cksum.s tk_util.s 
+
+include $(ROOTDIR)/build/Makefile.def
+

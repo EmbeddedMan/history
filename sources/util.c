@@ -3,23 +3,76 @@
 
 #include "main.h"
 
+#if PIC32
+void
+write32(byte *addr, uint32 data)
+{
+    *(byte *)(addr+0) = data & 0xff;
+    *(byte *)(addr+1) = (data>>8) & 0xff;
+    *(byte *)(addr+2) = (data>>16) & 0xff;
+    *(byte *)(addr+3) = (data>>24) & 0xff;
+}
+
+uint32
+read32(const byte *addr)
+{
+    return *(const byte *)(addr+3) << 24 |
+           *(const byte *)(addr+2) << 16 |
+           *(const byte *)(addr+1) << 8 |
+           *(const byte *)(addr+0);
+}
+
+void
+write16(byte *addr, uint16 data)
+{
+    *(byte *)(addr+0) = data & 0xff;
+    *(byte *)(addr+1) = (data>>8) & 0xff;
+}
+
+uint16
+read16(const byte *addr)
+{
+    return *(const byte *)(addr+1) << 8 |
+           *(const byte *)(addr+0);
+}
+#endif
+
 // N.B. the usb controller bdt data structures are defined to be little
 // endian and the coldfire core is big endian, so we have to byteswap.
 
-#if ! _WIN32
+#if ! STICK_GUEST
 uint32
 byteswap(uint32 x, uint32 size)
 {
+#if PIC32
+    return x;
+#else
     // byteswap all bytes of x within size
     switch (size) {
         case 4:
+#if GCC
+            __asm__("byterev.l  %0\n"
+                    : /* outputs */ "=r" (x)
+                    : /* inputs */ "r" (x));
+#else
             asm {
                 move.l     x,D0
                 byterev.l  D0
                 move.l     D0,x
             }
+#endif
             break;
         case 2:
+#if GCC
+            __asm__("move.l     %0, %%d0\n"
+                    "byterev.l  %%d0\n"
+                    "move.w     #0, %%d0\n"
+                    "swap       %%d0\n"
+                    "move.l     %%d0, %0\n"
+                    : /* outputs */ "=r" (x)
+                    : /* inputs */ "r" (x)
+                    : /* clobber */ "d0");
+#else
             asm {
                 move.l     x,D0
                 byterev.l  D0
@@ -27,6 +80,7 @@ byteswap(uint32 x, uint32 size)
                 swap       D0
                 move.l     D0,x
             }
+#endif
             break;
         case 1:
             break;
@@ -35,23 +89,26 @@ byteswap(uint32 x, uint32 size)
             break;
     }
     return x;
+#endif
 }
+#endif // ! STICK_GUEST
 
 // return the current interrupt mask level
 int
 gpl(void)
 {
-    short csr;
     int oldlevel;
-    
-    // get the sr
-    asm {
-        move.w     sr,d0
-        move.w     d0,csr
-    }
 
-    oldlevel = (csr >> 8) & 7;
+#if PIC32
+    oldlevel = (_CP0_GET_STATUS() >> 10) & 7;
+#else
+    short csr;
+
+    // get the sr
+    csr = get_sr();
     
+    oldlevel = (csr >> 8) & 7;
+#endif
     return oldlevel;
 }
 
@@ -59,14 +116,34 @@ gpl(void)
 int
 splx(int level)
 {
+#if PIC32
+    int csr;
+    int oldlevel;
+    
+    // get the sr
+    csr = _CP0_GET_STATUS();
+
+    oldlevel = (csr >> 10) & 7;
+    if (level <= 0) {
+        // we're going down
+        level = -level;
+    } else {
+        // we're going up
+        level = MAX(level, oldlevel);
+    }
+    assert(level >= 0 && level <= 7);
+    csr = (csr & 0xffffe3ff) | (level << 10);
+
+    // update the sr
+    _CP0_SET_STATUS(csr);
+
+    return -oldlevel;
+#else
     short csr;
     int oldlevel;
     
     // get the sr
-    asm {
-        move.w     sr,d0
-        move.w     d0,csr
-    }
+    csr = get_sr();
 
     oldlevel = (csr >> 8) & 7;
     if (level <= 0) {
@@ -80,12 +157,10 @@ splx(int level)
     csr = (csr & 0xf8ff) | (level << 8);
 
     // update the sr
-    asm {
-        move.w     csr,d0
-        move.w     d0,sr
-    }
+    set_sr(csr);
 
     return -oldlevel;
+#endif
 }
 
 static volatile int g;
@@ -105,16 +180,25 @@ blip(void)
 void
 delay(int ms)
 {
-    int t;
+#if STICK_GUEST
+    // we sleep quicker for unit tests
+    ms = isatty(0)?(ms):(ms)/10;
+#if _WIN32
+    Sleep(ms);
+#else
+    usleep(ms * 1000);
+#endif
+#else // ! STICK_GUEST
+    int m;
     int x;
     int blips;
         
     // if interrupts are initialized...
     if (gpl() < SPL_PIT0) {
         // wait for the pit0 to count off the ticks
-        t = ticks;
+        m = msecs;
         blips = 0;
-        while (ticks-t < ms+1) {
+        while (msecs-m < ms+1) {
             blip();
             blips++;
         }
@@ -130,16 +214,8 @@ delay(int ms)
             }
         }
     }
+#endif // ! STICK_GUEST
 }
-#else
-extern int isatty(int);
-
-void
-delay(int ms)
-{
-    Sleep(isatty(0)?(ms):(ms)/10);
-}
-#endif
 
 int
 gethex(char *p)
@@ -188,28 +264,31 @@ tailtrim(char *text)
     *p = '\0';
 }
 
-#if ! _WIN32
 void *
-memcpy(void *d,  const void *s, unsigned long n)
+memcpy(void *d,  const void *s, size_t n)
 {
-    void *dd;
     
-    dd = d;
-    if (((int)d&3)+((int)s&3)+((int)n&3) == 0) {
+    if (((uintptr)d&3)+((uintptr)s&3)+(n&3) == 0) {
+        uint32 *dtemp = d;
+        const uint32 *stemp = s;
+        
         n >>= 2;
         while (n--) {
-            *(((int *)d)++) = *(((int *)s)++);
+            *(dtemp++) = *(stemp++);
         }
     } else {
+        uint8 *dtemp = d;
+        const uint8 *stemp = s;
+        
         while (n--) {
-            *(((char *)d)++) = *(((char *)s)++);
+            *(dtemp++) = *(stemp++);
         }
     }
-    return dd;
+    return d;
 }
 
 void *
-memmove(void *d,  const void *s, unsigned long n)
+memmove(void *d,  const void *s, size_t n)
 {
     void *dd;
     
@@ -225,39 +304,238 @@ memmove(void *d,  const void *s, unsigned long n)
 }
 
 void *
-memset(void *p,  int d, unsigned long n)
+memset(void *p,  int d, size_t n)
 {
     int dd;
-    void *pp;
     
-    pp = p;
-    if (((int)p&3)+((int)n&3) == 0) {
+    if (((uintptr)p&3)+(n&3) == 0) {
+        uint32 *ptemp = p;
+    
         n >>= 2;
         d = d & 0xff;
         dd = d<<24|d<<16|d<<8|d;
         while (n--) {
-            *(((int *)p)++) = dd;
+            *(ptemp++) = dd;
         }
     } else {
+        uint8 *ptemp = p;
+        
         while (n--) {
-            *(((char *)p)++) = d;
+            *(ptemp++) = d;
         }
     }
-    return pp;
+    return p;
 }
 
 int
-memcmp(const void *d,  const void *s, unsigned long n)
+memcmp(const void *d,  const void *s, size_t n)
 {
     char c;
+    const uint8 *dtemp = d;
+    const uint8 *stemp = s;
     
     while (n--) {
-        c = *(((char *)d)++) - *(((char *)s)++);
+        c = *(dtemp++) - *(stemp++);
         if (c) {
             return c;
         }
     }
     return 0;
+}
+
+size_t
+strlen(const char *s)
+{
+    const char *stemp = s;
+    
+    while (*stemp) {
+        stemp++;
+    }
+    return stemp - s;
+}
+
+char *
+strcat(char *dest, const char *src)
+{
+    char *orig_dest = dest;
+    
+    while (*dest) {
+        dest++;
+    }
+    do {
+        *(dest++) = *src;
+    } while (*(src++));
+    
+    return orig_dest;
+}
+
+char *
+strncat(char *dest, const char *src, size_t n)
+{
+    char *orig_dest = dest;
+    
+    while (*dest) {
+        dest++;
+    }
+    while ((n-- > 0) && *src) {
+        *(dest++) = *(src++);
+    }
+    *dest = '\0';
+    
+    return orig_dest;
+}
+
+char *
+strcpy(char *dest, const char *src)
+{
+    char *orig_dest = dest;
+    
+    do {
+        *(dest++) = *src;
+    } while (*(src++));
+    
+    return orig_dest;
+}
+
+char *
+strncpy(char *dest, const char *src, size_t n)
+{
+    char *orig_dest = dest;
+    
+    while (n--) {
+        *(dest++) = *src;
+        if (! *(src++)) {
+            break;
+        }
+    }
+    
+    return orig_dest;
+}
+
+int
+strcmp(const char *s1, const char *s2)
+{
+    for (; *s1 == *s2; s1++, s2++) {
+        if (! *s1) {
+            return 0;
+        }
+    }
+
+    if (*s1 < *s2) {
+        return -1;
+    } else {
+        return 1;
+    }
+}
+
+int
+strncmp(const char *s1, const char *s2, size_t n)
+{
+    for (; (n > 0) && (*s1 == *s2); n--, s1++, s2++) {
+        if (! *s1) {
+            return 0;
+        }
+    }
+
+    if (n <= 0) {
+        return 0;
+    }
+
+    if (*s1 < *s2) {
+        return -1;
+    } else {
+        return 1;
+    }
+}
+
+char *
+strchr(const char *s, int c)
+{
+    for (; *s; s++) {
+        if (*s == c) {
+            return (char *)s;
+        }
+    }
+    return NULL;
+}
+
+int
+isdigit(int c)
+{
+    return (c >= '0') && (c <= '9');
+}
+
+int
+isspace(int c)
+{
+    return (c == ' ') || (c == '\f') || (c == '\n') || (c == '\r') || (c == '\t') || (c == '\v');
+}
+
+int
+isupper(int c)
+{
+    return (c >= 'A') && (c <= 'Z');
+}
+
+int
+islower(int c)
+{
+    return (c >= 'a') && (c <= 'z');
+}
+
+int
+isalpha(int c)
+{
+    return isupper(c) || islower(c);
+}
+
+int
+isalnum(int c)
+{
+    return isalpha(c) || isdigit(c);
+}
+
+int
+isprint(int c)
+{
+    return (c >= ' ') && (c <= '~');
+}
+
+#if STICK_GUEST
+static uint16 sr;
+#endif
+
+#if ! PIC32
+uint16
+get_sr(void)
+{
+    uint16 csr;
+#if STICK_GUEST
+    csr = sr;
+#elif GCC
+    __asm__("move.w  %/sr, %0\n" : /* outputs */ "=r" (csr));
+#else
+    asm {
+        move.w     sr,d0
+        move.w     d0,csr
+    }
+#endif
+    return csr;
+}
+
+void
+set_sr(uint16 csr)
+{
+#if STICK_GUEST
+    sr = csr;
+#elif GCC
+    __asm__("move.w  %0, %/sr\n" :: /* inputs */ "r" (csr));
+#else
+    asm {
+        move.w     csr,d0
+        move.w     d0,sr
+    }
+#endif
 }
 #endif
 

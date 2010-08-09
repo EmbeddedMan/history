@@ -194,7 +194,6 @@ end
   60 print (3+5)*6
   70 print 3+5*6, 2, 1
   80 print 3+5*6
-  90 dim a
  100 dim b, c, d, e
  110 let q = 4+7*(1+1)
  120 let qq = 44+77*(11+11)
@@ -216,7 +215,6 @@ STOP at line 110!
   60 print (3+5)*6
   70 print 3+5*6, 2, 1
   80 print 3+5*6
-  90 dim a
  100 dim b, c, d, e
  110 let q = 4+7*(1+1)
  120 let qq = 44+77*(11+11)
@@ -249,6 +247,22 @@ test some variable types
 end
 0xff 0xffff 0xffffffff
 0x33 0x22 0x10011
+test re-dim errors
+   1 dim a as byte
+   2 dim a as byte
+end
+var 'a' already defined at this scope
+STOP at line 2!
+   1 dim a as short
+   2 dim a as short
+end
+var 'a' already defined at this scope
+STOP at line 2!
+   1 dim a
+   2 dim a
+end
+var 'a' already defined at this scope
+STOP at line 2!
 test some assertions
 assertion failed
 STOP at line 20!
@@ -332,9 +346,9 @@ profile tests
       0ms   40 while 1 do
       0ms   50   for i = 1 to 16
       0ms   60     let led = !led
-      0ms   70     sleep 50
+      0ms   70     sleep 50 ms
       0ms   80   next 
-      0ms   90   sleep 800
+      0ms   90   sleep 800 ms
       0ms   95   break 
       0ms  100 endwhile 
       0ms  110 end 
@@ -343,11 +357,11 @@ end
       0ms   20 dim i
       0ms   30 dim led as pin dtin2 for digital output
       0ms   40 while 1 do
-      0ms   50   for i = 1 to 16
-      0ms   60     let led = !led
-      0ms   70     sleep 50
+      4ms   50   for i = 1 to 16
+      3ms   60     let led = !led
+    804ms   70     sleep 50 ms
       0ms   80   next 
-      0ms   90   sleep 800
+    801ms   90   sleep 800 ms
       0ms   95   break 
       0ms  100 endwhile 
       0ms  110 end 
@@ -358,9 +372,9 @@ end
       0ms   40 while 1 do
             50   for i = 1 to 16
             60     let led = !led
-      0ms   70     sleep 50
+      0ms   70     sleep 50 ms
             80   next 
-            90   sleep 800
+            90   sleep 800 ms
             95   break 
       0ms  100 endwhile 
            110 end 
@@ -369,12 +383,12 @@ end
       0ms   10 rem ### blinky ###
             20 dim i
             30 dim led as pin dtin2 for digital output
-      0ms   40 while 1 do
+      7ms   40 while 1 do
             50   for i = 1 to 16
             60     let led = !led
-      0ms   70     sleep 50
+   1605ms   70     sleep 50 ms
             80   next 
-            90   sleep 800
+            90   sleep 800 ms
             95   break 
       0ms  100 endwhile 
            110 end 
@@ -656,7 +670,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.30!
+Welcome to StickOS for Freescale MCF52221 v1.42!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]                 -- clear ram [and flash] variables
@@ -704,7 +718,7 @@ qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
-sleep <expression>                     -- delay program execution (ms)
+sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
 
 for more information:
@@ -729,16 +743,16 @@ do
   [(break|continue) [n]]
 until <expression>
 
-gosub <subname>
+gosub <subname> [<expression>, ...]
 
-sub <subname>
+sub <subname> [<param>, ...]
   [return]
 endsub
 qspi:
   configure qspi for <n> csiv
 
 timers:
-  configure timer <n> for <n> ms
+  configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
   off timer <n>                              -- disable timer interrupt
   mask timer <n>                             -- mask/hold timer interrupt
@@ -775,6 +789,7 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference
 array variable indices start at 0; v[0] is the same as v
 
 ram variables:
@@ -786,10 +801,11 @@ flash parameter variables:
 
 pin alias variables:
   dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
-                                      (input|output) [inverted]
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
 
-system variables (read-only):
-  nodeid    seconds   ticks
+system variables:
+  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
 
 for more information:
   help pins
@@ -849,17 +865,17 @@ remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
 zigbee cable:
-  MCU        MC1320X
-  ---------  -------
-  qspi_clk   spiclk
-  qspi_din   miso
-  qspi_dout  mosi
-  qspi_cs0   ce*
-  irq4*      irq*
-  scl        rst*
-  sda        rxtxen
-  vss        vss
-  vdd        vdd
+  MCU            MC1320X
+  -------------  -----------
+  qspi_clk       spiclk
+  qspi_din       miso
+  qspi_dout      mosi
+  qspi_cs0       ce*
+  irq4*          irq*
+  scl            rst*
+  sda            rxtxen
+  vss            vss
+  vdd            vdd
 test dims
 error -            ^
   10 dim a as pin dtin0 for digital output
@@ -868,16 +884,23 @@ error -            ^
   31 dim x as pin dtin2 for digital output inverted
   32 dim y as pin dtin3 for digital input inverted
   33 dim z as pin an1 for analog input inverted
-  40 dim d as flash
-  41 dim m as remote on nodeid 7
-  42 dim n[4] as remote on nodeid 8
+  34 dim h as pin utxd1 for digital output open_drain
+  35 dim d1 as pin utxd1 for digital output inverted open_drain
+  36 dim d2 as pin scl for digital input debounced inverted
+  37 dim d3 as pin urts1* for digital input debounced
+  38 dim d4 as pin an1 for analog input debounced
+  40 dim d5 as pin an3 for analog input debounced inverted
+  41 dim d6 as pin urxd1 for digital output inverted open_drain
+  42 dim d as flash
+  43 dim m as remote on nodeid 7
+  44 dim n[4] as remote on nodeid 8
   50 dim e
   55 let e = 5
   70 dim g
-  80 print a, b, c, d, e, f, g, m, n[3]
+  80 print a, b, c, d, e, f, g, m, n[3], d1, d2, d3, d4, d5, d6
 end
 0 0 0 0 5 var 'f' undefined
-0 0 0 0
+0 0 0 0 0 0 0 0 0 0
 STOP at line 80!
 test flash memory
   10 dim a as flash
@@ -993,7 +1016,7 @@ test long variable names
 end
 0 0 0
 1 2 3
-var 'muchmuchmuchmuchlonger2' dimension mismatch
+var 'muchmuchmuchmuchlonger2' already defined at this scope
 STOP at line 110!
 0 0 3
 1 2 3
@@ -1209,7 +1232,7 @@ test while continues
   10 dim i
   20 while i<15 do
   30   let i = i+1
-  40   sleep 100
+  40   sleep 100 ms
   50   if i%5==0 then
   60     continue 
   70   endif 
@@ -1232,7 +1255,7 @@ end
   11 dim j
   20 while i<15 do
   30   let i = i+1
-  40   sleep 100
+  40   sleep 100 ms
   45   for j = 1 to 3
   46     print "   ", j
   50     if j==2&&i%5==0 then
@@ -1429,9 +1452,9 @@ test large flash program
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 do gosub adjust
-1070 rem ----------
+1070 rem ---------------
 1080 while target!=-1 do
-1090   sleep secs*1000
+1090   sleep secs s
 1100   read target, secs
 1110 endwhile 
 1120 let relay = 0
@@ -1450,9 +1473,9 @@ test large flash program
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 do gosub adjust
-2070 rem ----------
+2070 rem ---------------
 2080 while target!=-1 do
-2090   sleep secs*1000
+2090   sleep secs s
 2100   read target, secs
 2110 endwhile 
 2120 let relay = 0
@@ -1471,9 +1494,9 @@ test large flash program
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 do gosub adjust
-3070 rem ----------
+3070 rem ---------------
 3080 while target!=-1 do
-3090   sleep secs*1000
+3090   sleep secs s
 3100   read target, secs
 3110 endwhile 
 3120 let relay = 0
@@ -1487,7 +1510,7 @@ test large flash program
 3200 endsub 
 end
   0% ram code bytes used
- 16% flash code bytes used
+ 13% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -1498,9 +1521,9 @@ end
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 do gosub adjust
-1070 rem ----------
+1070 rem ---------------
 1080 while target!=-1 do
-1090   sleep secs*1000
+1090   sleep secs s
 1100   read target, secs
 1110 endwhile 
 1120 let relay = 0
@@ -1519,9 +1542,9 @@ end
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 do gosub adjust
-2070 rem ----------
+2070 rem ---------------
 2080 while target!=-1 do
-2090   sleep secs*1000
+2090   sleep secs s
 2100   read target, secs
 2110 endwhile 
 2120 let relay = 0
@@ -1540,9 +1563,9 @@ end
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 do gosub adjust
-3070 rem ----------
+3070 rem ---------------
 3080 while target!=-1 do
-3090   sleep secs*1000
+3090   sleep secs s
 3100   read target, secs
 3110 endwhile 
 3120 let relay = 0
@@ -1556,7 +1579,7 @@ end
 3200 endsub 
 end
  83% ram code bytes used (unsaved changes!)
- 16% flash code bytes used
+ 13% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -1567,9 +1590,9 @@ end
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 do gosub adjust
-1070 rem ----------
+1070 rem ---------------
 1080 while target!=-1 do
-1090   sleep secs*1000
+1090   sleep secs s
 1100   read target, secs
 1110 endwhile 
 1120 let relay = 0
@@ -1588,9 +1611,9 @@ end
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 do gosub adjust
-2070 rem ----------
+2070 rem ---------------
 2080 while target!=-1 do
-2090   sleep secs*1000
+2090   sleep secs s
 2100   read target, secs
 2110 endwhile 
 2120 let relay = 0
@@ -1609,9 +1632,9 @@ end
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 do gosub adjust
-3070 rem ----------
+3070 rem ---------------
 3080 while target!=-1 do
-3090   sleep secs*1000
+3090   sleep secs s
 3100   read target, secs
 3110 endwhile 
 3120 let relay = 0
@@ -1630,9 +1653,9 @@ end
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 do gosub adjust
-4070 rem ----------
+4070 rem ---------------
 4080 while target!=-1 do
-4090   sleep secs*1000
+4090   sleep secs s
 4100   read target, secs
 4110 endwhile 
 4120 let relay = 0
@@ -1651,9 +1674,9 @@ end
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 do gosub adjust
-5070 rem ----------
+5070 rem ---------------
 5080 while target!=-1 do
-5090   sleep secs*1000
+5090   sleep secs s
 5100   read target, secs
 5110 endwhile 
 5120 let relay = 0
@@ -1672,9 +1695,9 @@ end
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 do gosub adjust
-6070 rem ----------
+6070 rem ---------------
 6080 while target!=-1 do
-6090   sleep secs*1000
+6090   sleep secs s
 6100   read target, secs
 6110 endwhile 
 6120 let relay = 0
@@ -1688,7 +1711,7 @@ end
 6200 endsub 
 end
   0% ram code bytes used
- 33% flash code bytes used
+ 27% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -1699,9 +1722,9 @@ end
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 do gosub adjust
-1070 rem ----------
+1070 rem ---------------
 1080 while target!=-1 do
-1090   sleep secs*1000
+1090   sleep secs s
 1100   read target, secs
 1110 endwhile 
 1120 let relay = 0
@@ -1720,9 +1743,9 @@ end
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 do gosub adjust
-2070 rem ----------
+2070 rem ---------------
 2080 while target!=-1 do
-2090   sleep secs*1000
+2090   sleep secs s
 2100   read target, secs
 2110 endwhile 
 2120 let relay = 0
@@ -1741,9 +1764,9 @@ end
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 do gosub adjust
-3070 rem ----------
+3070 rem ---------------
 3080 while target!=-1 do
-3090   sleep secs*1000
+3090   sleep secs s
 3100   read target, secs
 3110 endwhile 
 3120 let relay = 0
@@ -1762,9 +1785,9 @@ end
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 do gosub adjust
-4070 rem ----------
+4070 rem ---------------
 4080 while target!=-1 do
-4090   sleep secs*1000
+4090   sleep secs s
 4100   read target, secs
 4110 endwhile 
 4120 let relay = 0
@@ -1783,9 +1806,9 @@ end
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 do gosub adjust
-5070 rem ----------
+5070 rem ---------------
 5080 while target!=-1 do
-5090   sleep secs*1000
+5090   sleep secs s
 5100   read target, secs
 5110 endwhile 
 5120 let relay = 0
@@ -1804,9 +1827,9 @@ end
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 do gosub adjust
-6070 rem ----------
+6070 rem ---------------
 6080 while target!=-1 do
-6090   sleep secs*1000
+6090   sleep secs s
 6100   read target, secs
 6110 endwhile 
 6120 let relay = 0
@@ -1820,7 +1843,7 @@ end
 6200 endsub 
 end
  83% ram code bytes used (unsaved changes!)
- 33% flash code bytes used
+ 27% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -1831,9 +1854,9 @@ end
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 do gosub adjust
-  80 rem ----------
+  80 rem ---------------
   90 while target!=-1 do
- 100   sleep secs*1000
+ 100   sleep secs s
  110   read target, secs
  120 endwhile 
  130 let relay = 0
@@ -1852,9 +1875,9 @@ end
  260 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  270 configure timer 0 for 1000 ms
  280 on timer 0 do gosub adjust
- 290 rem ----------
+ 290 rem ---------------
  300 while target!=-1 do
- 310   sleep secs*1000
+ 310   sleep secs s
  320   read target, secs
  330 endwhile 
  340 let relay = 0
@@ -1873,9 +1896,9 @@ end
  470 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  480 configure timer 0 for 1000 ms
  490 on timer 0 do gosub adjust
- 500 rem ----------
+ 500 rem ---------------
  510 while target!=-1 do
- 520   sleep secs*1000
+ 520   sleep secs s
  530   read target, secs
  540 endwhile 
  550 let relay = 0
@@ -1894,9 +1917,9 @@ end
  680 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  690 configure timer 0 for 1000 ms
  700 on timer 0 do gosub adjust
- 710 rem ----------
+ 710 rem ---------------
  720 while target!=-1 do
- 730   sleep secs*1000
+ 730   sleep secs s
  740   read target, secs
  750 endwhile 
  760 let relay = 0
@@ -1915,9 +1938,9 @@ end
  890 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  900 configure timer 0 for 1000 ms
  910 on timer 0 do gosub adjust
- 920 rem ----------
+ 920 rem ---------------
  930 while target!=-1 do
- 940   sleep secs*1000
+ 940   sleep secs s
  950   read target, secs
  960 endwhile 
  970 let relay = 0
@@ -1936,9 +1959,9 @@ end
 1100 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1110 configure timer 0 for 1000 ms
 1120 on timer 0 do gosub adjust
-1130 rem ----------
+1130 rem ---------------
 1140 while target!=-1 do
-1150   sleep secs*1000
+1150   sleep secs s
 1160   read target, secs
 1170 endwhile 
 1180 let relay = 0
@@ -1957,9 +1980,9 @@ end
 1310 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1320 configure timer 0 for 1000 ms
 1330 on timer 0 do gosub adjust
-1340 rem ----------
+1340 rem ---------------
 1350 while target!=-1 do
-1360   sleep secs*1000
+1360   sleep secs s
 1370   read target, secs
 1380 endwhile 
 1390 let relay = 0
@@ -1978,9 +2001,9 @@ end
 1520 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1530 configure timer 0 for 1000 ms
 1540 on timer 0 do gosub adjust
-1550 rem ----------
+1550 rem ---------------
 1560 while target!=-1 do
-1570   sleep secs*1000
+1570   sleep secs s
 1580   read target, secs
 1590 endwhile 
 1600 let relay = 0
@@ -1999,9 +2022,9 @@ end
 1730 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1740 configure timer 0 for 1000 ms
 1750 on timer 0 do gosub adjust
-1760 rem ----------
+1760 rem ---------------
 1770 while target!=-1 do
-1780   sleep secs*1000
+1780   sleep secs s
 1790   read target, secs
 1800 endwhile 
 1810 let relay = 0
@@ -2015,7 +2038,7 @@ end
 1890 endsub 
 end
   0% ram code bytes used
- 49% flash code bytes used
+ 41% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -2026,9 +2049,9 @@ end
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 do gosub adjust
-  80 rem ----------
+  80 rem ---------------
   90 while target!=-1 do
- 100   sleep secs*1000
+ 100   sleep secs s
  110   read target, secs
  120 endwhile 
  130 let relay = 0
@@ -2047,9 +2070,9 @@ end
  260 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  270 configure timer 0 for 1000 ms
  280 on timer 0 do gosub adjust
- 290 rem ----------
+ 290 rem ---------------
  300 while target!=-1 do
- 310   sleep secs*1000
+ 310   sleep secs s
  320   read target, secs
  330 endwhile 
  340 let relay = 0
@@ -2068,9 +2091,9 @@ end
  470 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  480 configure timer 0 for 1000 ms
  490 on timer 0 do gosub adjust
- 500 rem ----------
+ 500 rem ---------------
  510 while target!=-1 do
- 520   sleep secs*1000
+ 520   sleep secs s
  530   read target, secs
  540 endwhile 
  550 let relay = 0
@@ -2089,9 +2112,9 @@ end
  680 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  690 configure timer 0 for 1000 ms
  700 on timer 0 do gosub adjust
- 710 rem ----------
+ 710 rem ---------------
  720 while target!=-1 do
- 730   sleep secs*1000
+ 730   sleep secs s
  740   read target, secs
  750 endwhile 
  760 let relay = 0
@@ -2110,9 +2133,9 @@ end
  890 data 5124, 6, 7460, 9, 8940, 3, -1, -1
  900 configure timer 0 for 1000 ms
  910 on timer 0 do gosub adjust
- 920 rem ----------
+ 920 rem ---------------
  930 while target!=-1 do
- 940   sleep secs*1000
+ 940   sleep secs s
  950   read target, secs
  960 endwhile 
  970 let relay = 0
@@ -2131,9 +2154,9 @@ end
 1100 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1110 configure timer 0 for 1000 ms
 1120 on timer 0 do gosub adjust
-1130 rem ----------
+1130 rem ---------------
 1140 while target!=-1 do
-1150   sleep secs*1000
+1150   sleep secs s
 1160   read target, secs
 1170 endwhile 
 1180 let relay = 0
@@ -2152,9 +2175,9 @@ end
 1310 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1320 configure timer 0 for 1000 ms
 1330 on timer 0 do gosub adjust
-1340 rem ----------
+1340 rem ---------------
 1350 while target!=-1 do
-1360   sleep secs*1000
+1360   sleep secs s
 1370   read target, secs
 1380 endwhile 
 1390 let relay = 0
@@ -2173,9 +2196,9 @@ end
 1520 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1530 configure timer 0 for 1000 ms
 1540 on timer 0 do gosub adjust
-1550 rem ----------
+1550 rem ---------------
 1560 while target!=-1 do
-1570   sleep secs*1000
+1570   sleep secs s
 1580   read target, secs
 1590 endwhile 
 1600 let relay = 0
@@ -2194,9 +2217,9 @@ end
 1730 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1740 configure timer 0 for 1000 ms
 1750 on timer 0 do gosub adjust
-1760 rem ----------
+1760 rem ---------------
 1770 while target!=-1 do
-1780   sleep secs*1000
+1780   sleep secs s
 1790   read target, secs
 1800 endwhile 
 1810 let relay = 0
@@ -2218,8 +2241,9 @@ test configures
   10 configure uart 0 for 9600 baud 8 data even parity
   20 configure uart 1 for 115200 baud 7 data no parity
   30 configure uart 1 for 1200 baud 6 data odd parity loopback
-  40 configure timer 0 for 1000 ms
+  40 configure timer 0 for 1000 s
   50 configure timer 1 for 10 ms
+  55 configure timer 2 for 17 us
   60 configure qspi for 1 csiv
   70 qspi a, b, c, d
 end
@@ -2245,7 +2269,7 @@ test uart
   60 dim rx as pin urxd0 for uart input
   70 on uart 0 input do gosub receive
   80 on uart 0 output do gosub transmit
-  90 sleep 1000
+  90 sleep 1000 ms
  100 end 
  110 sub receive
  120   print "received", rx
@@ -2293,18 +2317,18 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.30!
+Welcome to StickOS for Freescale MCF52221 v1.42!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.30!
+Welcome to StickOS for Freescale MCF52221 v1.42!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
 filesystem
 out of storage
 out of storage
-prog3
+out of storage
 prog2
 prog1
   10 rem this is a program
@@ -2316,29 +2340,28 @@ end
   10 rem this is a program
   20 rem 22
 end
+program 'prog3' not found
   10 rem this is a program
-  20 rem 3
+  20 rem 22
 end
 program 'prog4' not found
   10 rem this is a program
-  20 rem 3
+  20 rem 22
 end
 program 'prog0' not found
-prog3
 prog2
 prog1
   10 rem this is a program
-  20 rem 3
+  20 rem 22
 end
-prog3
 prog2
   10 rem this is a program
-  20 rem 3
+  20 rem 22
 end
-prog3
   10 rem this is a program
-  20 rem 3
+  20 rem 22
 end
+program 'prog3' not found
 prog4
   10 rem this is a program
   20 rem 444
@@ -2417,7 +2440,7 @@ divide by 0
 divide by 0
 0
 assertion failed
-var 'a' dimension mismatch
+var 'a' already defined at this scope
 0
 var 'b' undefined
 0
@@ -2527,16 +2550,34 @@ error -         ^
         ^ - error
 error -          ^
 error -         ^
-var 'a' dimension mismatch
+var 'a' already defined at this scope
+pin 0
 error -        ^
 error -           ^
 error -            ^
 error -               ^
+analog 1
 error -                             ^
 error -                ^
 error -                ^
+analog 2
+error -                             ^
+error -                                       ^
+frequency
 error -                ^
 error -   ^
+digital io
+error -                              ^
+error -                                        ^
+error -                                       ^
+error -                                                 ^
+error -                                          ^
+unsupported pin qualifier
+error -                                                    ^
+error -                                                   ^
+unsupported pin qualifier
+error -                                                             ^
+remote
 error -           ^
 error -               ^
 error -                 ^
@@ -2612,6 +2653,12 @@ error -    ^
 error -               ^
 error -                 ^
 error -                 ^
+sleep
+error -       ^
+error -      ^
+error -          ^
+error -       ^
+error -       ^
 more
       ^ - error
       ^ - error
@@ -2652,7 +2699,7 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.30!
+Welcome to StickOS for Freescale MCF52221 v1.42!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 list
@@ -2742,8 +2789,8 @@ out of variable ram
 STOP at line 60!
 auto save
 auto save
- 11% ram code bytes used (unsaved changes!)
- 42% flash code bytes used
+ 66% ram code bytes used (unsaved changes!)
+ 35% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -2754,9 +2801,9 @@ auto save
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 do gosub adjust
-  80 rem ----------
+  80 rem ---------------
   90 while target!=-1 do
- 100   sleep secs*1000
+ 100   sleep secs s
  110   read target, secs
  120 endwhile 
  130 let relay = 0
@@ -2775,9 +2822,9 @@ auto save
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 do gosub adjust
-1070 rem ----------
+1070 rem ---------------
 1080 while target!=-1 do
-1090   sleep secs*1000
+1090   sleep secs s
 1100   read target, secs
 1110 endwhile 
 1120 let relay = 0
@@ -2796,9 +2843,9 @@ auto save
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 do gosub adjust
-2070 rem ----------
+2070 rem ---------------
 2080 while target!=-1 do
-2090   sleep secs*1000
+2090   sleep secs s
 2100   read target, secs
 2110 endwhile 
 2120 let relay = 0
@@ -2817,9 +2864,9 @@ auto save
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 do gosub adjust
-3070 rem ----------
+3070 rem ---------------
 3080 while target!=-1 do
-3090   sleep secs*1000
+3090   sleep secs s
 3100   read target, secs
 3110 endwhile 
 3120 let relay = 0
@@ -2838,9 +2885,9 @@ auto save
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 do gosub adjust
-4070 rem ----------
+4070 rem ---------------
 4080 while target!=-1 do
-4090   sleep secs*1000
+4090   sleep secs s
 4100   read target, secs
 4110 endwhile 
 4120 let relay = 0
@@ -2859,9 +2906,9 @@ auto save
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 do gosub adjust
-5070 rem ----------
+5070 rem ---------------
 5080 while target!=-1 do
-5090   sleep secs*1000
+5090   sleep secs s
 5100   read target, secs
 5110 endwhile 
 5120 let relay = 0
@@ -2880,9 +2927,9 @@ auto save
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 do gosub adjust
-6070 rem ----------
+6070 rem ---------------
 6080 while target!=-1 do
-6090   sleep secs*1000
+6090   sleep secs s
 6100   read target, secs
 6110 endwhile 
 6120 let relay = 0
@@ -2901,235 +2948,9 @@ auto save
 7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 7050 configure timer 0 for 1000 ms
 7060 on timer 0 do gosub adjust
-7070 rem ----------
+7070 rem ---------------
 7080 while target!=-1 do
-7090   sleep secs*1000
-7100   read target, secs
-7110 endwhile 
-7120 let relay = 0
-7130 end 
-7140 sub adjust
-7150   if thermocouple>=target then
-7160     let relay = 0
-7170   else 
-7180     let relay = 1
-7190   endif 
-7200 endsub 
-end
-  0% ram code bytes used
- 44% flash code bytes used
-  0% ram variable bytes used
-  0% flash parameter bytes used
-  0% variables used
-auto save
-auto save
-  0% ram code bytes used
- 99% flash code bytes used
-  0% ram variable bytes used
-  0% flash parameter bytes used
-  0% variables used
- 55% ram code bytes used (unsaved changes!)
- 99% flash code bytes used
-  0% ram variable bytes used
-  0% flash parameter bytes used
-  0% variables used
- 83% ram code bytes used (unsaved changes!)
- 99% flash code bytes used
-  0% ram variable bytes used
-  0% flash parameter bytes used
-  0% variables used
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-100% ram code bytes used (unsaved changes!)
- 99% flash code bytes used
-  0% ram variable bytes used
-  0% flash parameter bytes used
-  0% variables used
-  10 rem ### toaster ###
-  20 dim target, secs
-  30 dim thermocouple as pin an0 for analog input
-  40 dim relay as pin an1 for digital output
-  50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-  60 configure timer 0 for 1000 ms
-  70 on timer 0 do gosub adjust
-  80 rem ----------
-  90 while target!=-1 do
- 100   sleep secs*1000
- 110   read target, secs
- 120 endwhile 
- 130 let relay = 0
- 140 end 
- 150 sub adjust
- 160   if thermocouple>=target then
- 170     let relay = 0
- 180   else 
- 190     let relay = 1
- 200   endif 
- 210 endsub 
-1000 rem ### toaster ###
-1010 dim target, secs
-1020 dim thermocouple as pin an0 for analog input
-1030 dim relay as pin an1 for digital output
-1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-1050 configure timer 0 for 1000 ms
-1060 on timer 0 do gosub adjust
-1070 rem ----------
-1080 while target!=-1 do
-1090   sleep secs*1000
-1100   read target, secs
-1110 endwhile 
-1120 let relay = 0
-1130 end 
-1140 sub adjust
-1150   if thermocouple>=target then
-1160     let relay = 0
-1170   else 
-1180     let relay = 1
-1190   endif 
-1200 endsub 
-2000 rem ### toaster ###
-2010 dim target, secs
-2020 dim thermocouple as pin an0 for analog input
-2030 dim relay as pin an1 for digital output
-2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-2050 configure timer 0 for 1000 ms
-2060 on timer 0 do gosub adjust
-2070 rem ----------
-2080 while target!=-1 do
-2090   sleep secs*1000
-2100   read target, secs
-2110 endwhile 
-2120 let relay = 0
-2130 end 
-2140 sub adjust
-2150   if thermocouple>=target then
-2160     let relay = 0
-2170   else 
-2180     let relay = 1
-2190   endif 
-2200 endsub 
-3000 rem ### toaster ###
-3010 dim target, secs
-3020 dim thermocouple as pin an0 for analog input
-3030 dim relay as pin an1 for digital output
-3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-3050 configure timer 0 for 1000 ms
-3060 on timer 0 do gosub adjust
-3070 rem ----------
-3080 while target!=-1 do
-3090   sleep secs*1000
-3100   read target, secs
-3110 endwhile 
-3120 let relay = 0
-3130 end 
-3140 sub adjust
-3150   if thermocouple>=target then
-3160     let relay = 0
-3170   else 
-3180     let relay = 1
-3190   endif 
-3200 endsub 
-4000 rem ### toaster ###
-4010 dim target, secs
-4020 dim thermocouple as pin an0 for analog input
-4030 dim relay as pin an1 for digital output
-4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-4050 configure timer 0 for 1000 ms
-4060 on timer 0 do gosub adjust
-4070 rem ----------
-4080 while target!=-1 do
-4090   sleep secs*1000
-4100   read target, secs
-4110 endwhile 
-4120 let relay = 0
-4130 end 
-4140 sub adjust
-4150   if thermocouple>=target then
-4160     let relay = 0
-4170   else 
-4180     let relay = 1
-4190   endif 
-4200 endsub 
-5000 rem ### toaster ###
-5010 dim target, secs
-5020 dim thermocouple as pin an0 for analog input
-5030 dim relay as pin an1 for digital output
-5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-5050 configure timer 0 for 1000 ms
-5060 on timer 0 do gosub adjust
-5070 rem ----------
-5080 while target!=-1 do
-5090   sleep secs*1000
-5100   read target, secs
-5110 endwhile 
-5120 let relay = 0
-5130 end 
-5140 sub adjust
-5150   if thermocouple>=target then
-5160     let relay = 0
-5170   else 
-5180     let relay = 1
-5190   endif 
-5200 endsub 
-6000 rem ### toaster ###
-6010 dim target, secs
-6020 dim thermocouple as pin an0 for analog input
-6030 dim relay as pin an1 for digital output
-6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-6050 configure timer 0 for 1000 ms
-6060 on timer 0 do gosub adjust
-6070 rem ----------
-6080 while target!=-1 do
-6090   sleep secs*1000
-6100   read target, secs
-6110 endwhile 
-6120 let relay = 0
-6130 end 
-6140 sub adjust
-6150   if thermocouple>=target then
-6160     let relay = 0
-6170   else 
-6180     let relay = 1
-6190   endif 
-6200 endsub 
-7000 rem ### toaster ###
-7010 dim target, secs
-7020 dim thermocouple as pin an0 for analog input
-7030 dim relay as pin an1 for digital output
-7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
-7050 configure timer 0 for 1000 ms
-7060 on timer 0 do gosub adjust
-7070 rem ----------
-7080 while target!=-1 do
-7090   sleep secs*1000
+7090   sleep secs s
 7100   read target, secs
 7110 endwhile 
 7120 let relay = 0
@@ -3148,9 +2969,9 @@ out of code ram
 8040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 8050 configure timer 0 for 1000 ms
 8060 on timer 0 do gosub adjust
-8070 rem ----------
+8070 rem ---------------
 8080 while target!=-1 do
-8090   sleep secs*1000
+8090   sleep secs s
 8100   read target, secs
 8110 endwhile 
 8120 let relay = 0
@@ -3169,9 +2990,364 @@ out of code ram
 9040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 9050 configure timer 0 for 1000 ms
 9060 on timer 0 do gosub adjust
-9070 rem ----------
+9070 rem ---------------
 9080 while target!=-1 do
-9090   sleep secs*1000
+9090   sleep secs s
+9100   read target, secs
+9110 endwhile 
+9120 let relay = 0
+9130 end 
+9140 sub adjust
+9150   if thermocouple>=target then
+9160     let relay = 0
+9170   else 
+9180     let relay = 1
+9190   endif 
+9200 endsub 
+end
+  0% ram code bytes used
+ 46% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+auto save
+auto save
+auto save
+  5% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+ 33% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+out of code flash
+ 60% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+ 88% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+ 99% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+ 99% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+  10 rem ### toaster ###
+  20 dim target, secs
+  30 dim thermocouple as pin an0 for analog input
+  40 dim relay as pin an1 for digital output
+  50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+  60 configure timer 0 for 1000 ms
+  70 on timer 0 do gosub adjust
+  80 rem ---------------
+  90 while target!=-1 do
+ 100   sleep secs s
+ 110   read target, secs
+ 120 endwhile 
+ 130 let relay = 0
+ 140 end 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+ 200   endif 
+ 210 endsub 
+1000 rem ### toaster ###
+1010 dim target, secs
+1020 dim thermocouple as pin an0 for analog input
+1030 dim relay as pin an1 for digital output
+1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+1050 configure timer 0 for 1000 ms
+1060 on timer 0 do gosub adjust
+1070 rem ---------------
+1080 while target!=-1 do
+1090   sleep secs s
+1100   read target, secs
+1110 endwhile 
+1120 let relay = 0
+1130 end 
+1140 sub adjust
+1150   if thermocouple>=target then
+1160     let relay = 0
+1170   else 
+1180     let relay = 1
+1190   endif 
+1200 endsub 
+2000 rem ### toaster ###
+2010 dim target, secs
+2020 dim thermocouple as pin an0 for analog input
+2030 dim relay as pin an1 for digital output
+2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+2050 configure timer 0 for 1000 ms
+2060 on timer 0 do gosub adjust
+2070 rem ---------------
+2080 while target!=-1 do
+2090   sleep secs s
+2100   read target, secs
+2110 endwhile 
+2120 let relay = 0
+2130 end 
+2140 sub adjust
+2150   if thermocouple>=target then
+2160     let relay = 0
+2170   else 
+2180     let relay = 1
+2190   endif 
+2200 endsub 
+3000 rem ### toaster ###
+3010 dim target, secs
+3020 dim thermocouple as pin an0 for analog input
+3030 dim relay as pin an1 for digital output
+3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+3050 configure timer 0 for 1000 ms
+3060 on timer 0 do gosub adjust
+3070 rem ---------------
+3080 while target!=-1 do
+3090   sleep secs s
+3100   read target, secs
+3110 endwhile 
+3120 let relay = 0
+3130 end 
+3140 sub adjust
+3150   if thermocouple>=target then
+3160     let relay = 0
+3170   else 
+3180     let relay = 1
+3190   endif 
+3200 endsub 
+4000 rem ### toaster ###
+4010 dim target, secs
+4020 dim thermocouple as pin an0 for analog input
+4030 dim relay as pin an1 for digital output
+4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+4050 configure timer 0 for 1000 ms
+4060 on timer 0 do gosub adjust
+4070 rem ---------------
+4080 while target!=-1 do
+4090   sleep secs s
+4100   read target, secs
+4110 endwhile 
+4120 let relay = 0
+4130 end 
+4140 sub adjust
+4150   if thermocouple>=target then
+4160     let relay = 0
+4170   else 
+4180     let relay = 1
+4190   endif 
+4200 endsub 
+5000 rem ### toaster ###
+5010 dim target, secs
+5020 dim thermocouple as pin an0 for analog input
+5030 dim relay as pin an1 for digital output
+5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+5050 configure timer 0 for 1000 ms
+5060 on timer 0 do gosub adjust
+5070 rem ---------------
+5080 while target!=-1 do
+5090   sleep secs s
+5100   read target, secs
+5110 endwhile 
+5120 let relay = 0
+5130 end 
+5140 sub adjust
+5150   if thermocouple>=target then
+5160     let relay = 0
+5170   else 
+5180     let relay = 1
+5190   endif 
+5200 endsub 
+6000 rem ### toaster ###
+6010 dim target, secs
+6020 dim thermocouple as pin an0 for analog input
+6030 dim relay as pin an1 for digital output
+6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+6050 configure timer 0 for 1000 ms
+6060 on timer 0 do gosub adjust
+6070 rem ---------------
+6080 while target!=-1 do
+6090   sleep secs s
+6100   read target, secs
+6110 endwhile 
+6120 let relay = 0
+6130 end 
+6140 sub adjust
+6150   if thermocouple>=target then
+6160     let relay = 0
+6170   else 
+6180     let relay = 1
+6190   endif 
+6200 endsub 
+7000 rem ### toaster ###
+7010 dim target, secs
+7020 dim thermocouple as pin an0 for analog input
+7030 dim relay as pin an1 for digital output
+7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+7050 configure timer 0 for 1000 ms
+7060 on timer 0 do gosub adjust
+7070 rem ---------------
+7080 while target!=-1 do
+7090   sleep secs s
+7100   read target, secs
+7110 endwhile 
+7120 let relay = 0
+7130 end 
+7140 sub adjust
+7150   if thermocouple>=target then
+7160     let relay = 0
+7170   else 
+7180     let relay = 1
+7190   endif 
+7200 endsub 
+8000 rem ### toaster ###
+8010 dim target, secs
+8020 dim thermocouple as pin an0 for analog input
+8030 dim relay as pin an1 for digital output
+8040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+8050 configure timer 0 for 1000 ms
+8060 on timer 0 do gosub adjust
+8070 rem ---------------
+8080 while target!=-1 do
+8090   sleep secs s
+8100   read target, secs
+8110 endwhile 
+8120 let relay = 0
+8130 end 
+8140 sub adjust
+8150   if thermocouple>=target then
+8160     let relay = 0
+8170   else 
+8180     let relay = 1
+8190   endif 
+8200 endsub 
+9000 rem ### toaster ###
+9010 dim target, secs
+9020 dim thermocouple as pin an0 for analog input
+9030 dim relay as pin an1 for digital output
+9040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+9050 configure timer 0 for 1000 ms
+9060 on timer 0 do gosub adjust
+9070 rem ---------------
+9080 while target!=-1 do
+9090   sleep secs s
 9100   read target, secs
 9110 endwhile 
 9120 let relay = 0
@@ -3190,9 +3366,9 @@ out of code ram
 10040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 10050 configure timer 0 for 1000 ms
 10060 on timer 0 do gosub adjust
-10070 rem ----------
+10070 rem ---------------
 10080 while target!=-1 do
-10090   sleep secs*1000
+10090   sleep secs s
 10100   read target, secs
 10110 endwhile 
 10120 let relay = 0
@@ -3211,9 +3387,9 @@ out of code ram
 11040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 11050 configure timer 0 for 1000 ms
 11060 on timer 0 do gosub adjust
-11070 rem ----------
+11070 rem ---------------
 11080 while target!=-1 do
-11090   sleep secs*1000
+11090   sleep secs s
 11100   read target, secs
 11110 endwhile 
 11120 let relay = 0
@@ -3232,9 +3408,9 @@ out of code ram
 12040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 12050 configure timer 0 for 1000 ms
 12060 on timer 0 do gosub adjust
-12070 rem ----------
+12070 rem ---------------
 12080 while target!=-1 do
-12090   sleep secs*1000
+12090   sleep secs s
 12100   read target, secs
 12110 endwhile 
 12120 let relay = 0
@@ -3253,9 +3429,9 @@ out of code ram
 13040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 13050 configure timer 0 for 1000 ms
 13060 on timer 0 do gosub adjust
-13070 rem ----------
+13070 rem ---------------
 13080 while target!=-1 do
-13090   sleep secs*1000
+13090   sleep secs s
 13100   read target, secs
 13110 endwhile 
 13120 let relay = 0
@@ -3274,9 +3450,9 @@ out of code ram
 14040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 14050 configure timer 0 for 1000 ms
 14060 on timer 0 do gosub adjust
-14070 rem ----------
+14070 rem ---------------
 14080 while target!=-1 do
-14090   sleep secs*1000
+14090   sleep secs s
 14100   read target, secs
 14110 endwhile 
 14120 let relay = 0
@@ -3295,9 +3471,9 @@ out of code ram
 15040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 15050 configure timer 0 for 1000 ms
 15060 on timer 0 do gosub adjust
-15070 rem ----------
+15070 rem ---------------
 15080 while target!=-1 do
-15090   sleep secs*1000
+15090   sleep secs s
 15100   read target, secs
 15110 endwhile 
 15120 let relay = 0
@@ -3316,9 +3492,9 @@ out of code ram
 16040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 16050 configure timer 0 for 1000 ms
 16060 on timer 0 do gosub adjust
-16070 rem ----------
+16070 rem ---------------
 16080 while target!=-1 do
-16090   sleep secs*1000
+16090   sleep secs s
 16100   read target, secs
 16110 endwhile 
 16120 let relay = 0
@@ -3337,9 +3513,9 @@ out of code ram
 17040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 17050 configure timer 0 for 1000 ms
 17060 on timer 0 do gosub adjust
-17070 rem ----------
+17070 rem ---------------
 17080 while target!=-1 do
-17090   sleep secs*1000
+17090   sleep secs s
 17100   read target, secs
 17110 endwhile 
 17120 let relay = 0
@@ -3358,9 +3534,9 @@ out of code ram
 18040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 18050 configure timer 0 for 1000 ms
 18060 on timer 0 do gosub adjust
-18070 rem ----------
+18070 rem ---------------
 18080 while target!=-1 do
-18090   sleep secs*1000
+18090   sleep secs s
 18100   read target, secs
 18110 endwhile 
 18120 let relay = 0
@@ -3379,9 +3555,9 @@ out of code ram
 19040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 19050 configure timer 0 for 1000 ms
 19060 on timer 0 do gosub adjust
-19070 rem ----------
+19070 rem ---------------
 19080 while target!=-1 do
-19090   sleep secs*1000
+19090   sleep secs s
 19100   read target, secs
 19110 endwhile 
 19120 let relay = 0
@@ -3400,9 +3576,9 @@ out of code ram
 20040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 20050 configure timer 0 for 1000 ms
 20060 on timer 0 do gosub adjust
-20070 rem ----------
+20070 rem ---------------
 20080 while target!=-1 do
-20090   sleep secs*1000
+20090   sleep secs s
 20100   read target, secs
 20110 endwhile 
 20120 let relay = 0
@@ -3421,48 +3597,106 @@ out of code ram
 21040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 21050 configure timer 0 for 1000 ms
 21060 on timer 0 do gosub adjust
-21070 rem ----------
+21070 rem ---------------
 21080 while target!=-1 do
-21090   sleep secs*1000
+21090   sleep secs s
 21100   read target, secs
-missing block ends?
+21110 endwhile 
+21120 let relay = 0
+21130 end 
+21140 sub adjust
+21150   if thermocouple>=target then
+21160     let relay = 0
+21170   else 
+21180     let relay = 1
+21190   endif 
+21200 endsub 
+22000 rem ### toaster ###
+22010 dim target, secs
+22020 dim thermocouple as pin an0 for analog input
+22030 dim relay as pin an1 for digital output
+22040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+22050 configure timer 0 for 1000 ms
+22060 on timer 0 do gosub adjust
+22070 rem ---------------
+22080 while target!=-1 do
+22090   sleep secs s
+22100   read target, secs
+22110 endwhile 
+22120 let relay = 0
+22130 end 
+22140 sub adjust
+22150   if thermocouple>=target then
+22160     let relay = 0
+22170   else 
+22180     let relay = 1
+22190   endif 
+22200 endsub 
+23000 rem ### toaster ###
+23010 dim target, secs
+23020 dim thermocouple as pin an0 for analog input
+23030 dim relay as pin an1 for digital output
+23040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+23050 configure timer 0 for 1000 ms
+23060 on timer 0 do gosub adjust
+23070 rem ---------------
+23080 while target!=-1 do
+23090   sleep secs s
+23100   read target, secs
+23110 endwhile 
+23120 let relay = 0
+23130 end 
+23140 sub adjust
+23150   if thermocouple>=target then
+23160     let relay = 0
+23170   else 
+23180     let relay = 1
+23190   endif 
+23200 endsub 
+24000 rem ### toaster ###
+24010 dim target, secs
+24020 dim thermocouple as pin an0 for analog input
+24030 dim relay as pin an1 for digital output
+24040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+24050 configure timer 0 for 1000 ms
+24060 on timer 0 do gosub adjust
 end
 delete line 10
 auto save
 out of code flash
 out of code ram
-100% ram code bytes used (unsaved changes!)
- 99% flash code bytes used
-  0% ram variable bytes used
-  0% flash parameter bytes used
-  0% variables used
-delete line 21000
  99% ram code bytes used (unsaved changes!)
- 99% flash code bytes used
+ 95% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
-delete line 21000-
- 91% ram code bytes used (unsaved changes!)
- 99% flash code bytes used
+delete line 24000
+ 99% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
-delete line 19000-
- 69% ram code bytes used (unsaved changes!)
- 99% flash code bytes used
+delete line 24000-
+ 93% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+delete line 22000-
+ 71% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line -1000
- 86% ram code bytes used (unsaved changes!)
- 99% flash code bytes used
+ 88% ram code bytes used (unsaved changes!)
+ 95% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 save
   0% ram code bytes used
- 98% flash code bytes used
+ 96% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3472,9 +3706,9 @@ save
 1040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 1050 configure timer 0 for 1000 ms
 1060 on timer 0 do gosub adjust
-1070 rem ----------
+1070 rem ---------------
 1080 while target!=-1 do
-1090   sleep secs*1000
+1090   sleep secs s
 1100   read target, secs
 1110 endwhile 
 1120 let relay = 0
@@ -3493,9 +3727,9 @@ save
 2040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 2050 configure timer 0 for 1000 ms
 2060 on timer 0 do gosub adjust
-2070 rem ----------
+2070 rem ---------------
 2080 while target!=-1 do
-2090   sleep secs*1000
+2090   sleep secs s
 2100   read target, secs
 2110 endwhile 
 2120 let relay = 0
@@ -3514,9 +3748,9 @@ save
 3040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 3050 configure timer 0 for 1000 ms
 3060 on timer 0 do gosub adjust
-3070 rem ----------
+3070 rem ---------------
 3080 while target!=-1 do
-3090   sleep secs*1000
+3090   sleep secs s
 3100   read target, secs
 3110 endwhile 
 3120 let relay = 0
@@ -3535,9 +3769,9 @@ save
 4040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 4050 configure timer 0 for 1000 ms
 4060 on timer 0 do gosub adjust
-4070 rem ----------
+4070 rem ---------------
 4080 while target!=-1 do
-4090   sleep secs*1000
+4090   sleep secs s
 4100   read target, secs
 4110 endwhile 
 4120 let relay = 0
@@ -3556,9 +3790,9 @@ save
 5040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 5050 configure timer 0 for 1000 ms
 5060 on timer 0 do gosub adjust
-5070 rem ----------
+5070 rem ---------------
 5080 while target!=-1 do
-5090   sleep secs*1000
+5090   sleep secs s
 5100   read target, secs
 5110 endwhile 
 5120 let relay = 0
@@ -3577,9 +3811,9 @@ save
 6040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 6050 configure timer 0 for 1000 ms
 6060 on timer 0 do gosub adjust
-6070 rem ----------
+6070 rem ---------------
 6080 while target!=-1 do
-6090   sleep secs*1000
+6090   sleep secs s
 6100   read target, secs
 6110 endwhile 
 6120 let relay = 0
@@ -3598,9 +3832,9 @@ save
 7040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 7050 configure timer 0 for 1000 ms
 7060 on timer 0 do gosub adjust
-7070 rem ----------
+7070 rem ---------------
 7080 while target!=-1 do
-7090   sleep secs*1000
+7090   sleep secs s
 7100   read target, secs
 7110 endwhile 
 7120 let relay = 0
@@ -3619,9 +3853,9 @@ save
 8040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 8050 configure timer 0 for 1000 ms
 8060 on timer 0 do gosub adjust
-8070 rem ----------
+8070 rem ---------------
 8080 while target!=-1 do
-8090   sleep secs*1000
+8090   sleep secs s
 8100   read target, secs
 8110 endwhile 
 8120 let relay = 0
@@ -3640,9 +3874,9 @@ save
 9040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 9050 configure timer 0 for 1000 ms
 9060 on timer 0 do gosub adjust
-9070 rem ----------
+9070 rem ---------------
 9080 while target!=-1 do
-9090   sleep secs*1000
+9090   sleep secs s
 9100   read target, secs
 9110 endwhile 
 9120 let relay = 0
@@ -3661,9 +3895,9 @@ save
 10040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 10050 configure timer 0 for 1000 ms
 10060 on timer 0 do gosub adjust
-10070 rem ----------
+10070 rem ---------------
 10080 while target!=-1 do
-10090   sleep secs*1000
+10090   sleep secs s
 10100   read target, secs
 10110 endwhile 
 10120 let relay = 0
@@ -3682,9 +3916,9 @@ save
 11040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 11050 configure timer 0 for 1000 ms
 11060 on timer 0 do gosub adjust
-11070 rem ----------
+11070 rem ---------------
 11080 while target!=-1 do
-11090   sleep secs*1000
+11090   sleep secs s
 11100   read target, secs
 11110 endwhile 
 11120 let relay = 0
@@ -3703,9 +3937,9 @@ save
 12040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 12050 configure timer 0 for 1000 ms
 12060 on timer 0 do gosub adjust
-12070 rem ----------
+12070 rem ---------------
 12080 while target!=-1 do
-12090   sleep secs*1000
+12090   sleep secs s
 12100   read target, secs
 12110 endwhile 
 12120 let relay = 0
@@ -3724,9 +3958,9 @@ save
 13040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 13050 configure timer 0 for 1000 ms
 13060 on timer 0 do gosub adjust
-13070 rem ----------
+13070 rem ---------------
 13080 while target!=-1 do
-13090   sleep secs*1000
+13090   sleep secs s
 13100   read target, secs
 13110 endwhile 
 13120 let relay = 0
@@ -3745,9 +3979,9 @@ save
 14040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 14050 configure timer 0 for 1000 ms
 14060 on timer 0 do gosub adjust
-14070 rem ----------
+14070 rem ---------------
 14080 while target!=-1 do
-14090   sleep secs*1000
+14090   sleep secs s
 14100   read target, secs
 14110 endwhile 
 14120 let relay = 0
@@ -3766,9 +4000,9 @@ save
 15040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 15050 configure timer 0 for 1000 ms
 15060 on timer 0 do gosub adjust
-15070 rem ----------
+15070 rem ---------------
 15080 while target!=-1 do
-15090   sleep secs*1000
+15090   sleep secs s
 15100   read target, secs
 15110 endwhile 
 15120 let relay = 0
@@ -3787,9 +4021,9 @@ save
 16040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 16050 configure timer 0 for 1000 ms
 16060 on timer 0 do gosub adjust
-16070 rem ----------
+16070 rem ---------------
 16080 while target!=-1 do
-16090   sleep secs*1000
+16090   sleep secs s
 16100   read target, secs
 16110 endwhile 
 16120 let relay = 0
@@ -3808,9 +4042,9 @@ save
 17040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 17050 configure timer 0 for 1000 ms
 17060 on timer 0 do gosub adjust
-17070 rem ----------
+17070 rem ---------------
 17080 while target!=-1 do
-17090   sleep secs*1000
+17090   sleep secs s
 17100   read target, secs
 17110 endwhile 
 17120 let relay = 0
@@ -3829,9 +4063,9 @@ save
 18040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
 18050 configure timer 0 for 1000 ms
 18060 on timer 0 do gosub adjust
-18070 rem ----------
+18070 rem ---------------
 18080 while target!=-1 do
-18090   sleep secs*1000
+18090   sleep secs s
 18100   read target, secs
 18110 endwhile 
 18120 let relay = 0
@@ -3843,6 +4077,69 @@ save
 18180     let relay = 1
 18190   endif 
 18200 endsub 
+19000 rem ### toaster ###
+19010 dim target, secs
+19020 dim thermocouple as pin an0 for analog input
+19030 dim relay as pin an1 for digital output
+19040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+19050 configure timer 0 for 1000 ms
+19060 on timer 0 do gosub adjust
+19070 rem ---------------
+19080 while target!=-1 do
+19090   sleep secs s
+19100   read target, secs
+19110 endwhile 
+19120 let relay = 0
+19130 end 
+19140 sub adjust
+19150   if thermocouple>=target then
+19160     let relay = 0
+19170   else 
+19180     let relay = 1
+19190   endif 
+19200 endsub 
+20000 rem ### toaster ###
+20010 dim target, secs
+20020 dim thermocouple as pin an0 for analog input
+20030 dim relay as pin an1 for digital output
+20040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+20050 configure timer 0 for 1000 ms
+20060 on timer 0 do gosub adjust
+20070 rem ---------------
+20080 while target!=-1 do
+20090   sleep secs s
+20100   read target, secs
+20110 endwhile 
+20120 let relay = 0
+20130 end 
+20140 sub adjust
+20150   if thermocouple>=target then
+20160     let relay = 0
+20170   else 
+20180     let relay = 1
+20190   endif 
+20200 endsub 
+21000 rem ### toaster ###
+21010 dim target, secs
+21020 dim thermocouple as pin an0 for analog input
+21030 dim relay as pin an1 for digital output
+21040 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+21050 configure timer 0 for 1000 ms
+21060 on timer 0 do gosub adjust
+21070 rem ---------------
+21080 while target!=-1 do
+21090   sleep secs s
+21100   read target, secs
+21110 endwhile 
+21120 let relay = 0
+21130 end 
+21140 sub adjust
+21150   if thermocouple>=target then
+21160     let relay = 0
+21170   else 
+21180     let relay = 1
+21190   endif 
+21200 endsub 
 end
 bad blocks
 missing endwhile/next
@@ -3910,11 +4207,11 @@ end
 test interrupt masking
   10 configure timer 0 for 500 ms
   20 on timer 0 do print "tick"
-  30 sleep 750
+  30 sleep 750 ms
   40 mask timer 0
-  50 sleep 2000
+  50 sleep 2 s
   60 unmask timer 0
-  70 sleep 250
+  70 sleep 250 ms
   80 off timer 0
  100 configure uart 0 for 300 baud 8 data no parity loopback
  110 dim tx as pin utxd0 for uart output
@@ -3922,16 +4219,16 @@ test interrupt masking
  140 on uart 0 input do print "rx", rx
  145 on uart 0 output do print "txed"
  150 let tx = 3
- 160 sleep 500
+ 160 sleep 500 ms
  170 mask uart 0 input
  180 let tx = 4
- 190 sleep 500
+ 190 sleep 500 ms
  200 print "unmasking"
  210 unmask uart 0 input
- 220 sleep 500
+ 220 sleep 500 ms
  230 off uart 0 input
  240 let tx = 5
- 250 sleep 500
+ 250 sleep 500 ms
  260 print "poll", rx
 end
 tick
@@ -3944,10 +4241,13 @@ test timers
    2 on timer 0 do gosub seven
    9 configure timer 1 for 1000 ms
   10 on timer 1 do print 2
-  20 sleep 500
+  20 sleep 500 ms
   29 configure timer 2 for 2000 ms
   30 on timer 2 do print 4
-  40 sleep 5000
+  31 sleep 1 ms
+  32 configure timer 3 for 2000000 us
+  33 on timer 3 do print "t"
+  40 sleep 5000 ms
   50 end 
   90 sub seven
  100   print "seven"
@@ -3957,11 +4257,244 @@ end
 2
 2
 4
+t
 2
 seven
 2
 4
+t
 2
+test ticks/msec
+   1 dim m, t
+   2 let m = msecs, t = ticks
+  10 print "ticks/msec:", ticks_per_msec
+  20 configure timer 0 for 3000 ms
+  30 on timer 0 do print "3000 ms timer at", msecs-m, "ms", ticks-t, "t"
+  40 configure timer 1 for 1750000 us
+  50 on timer 1 do print "1750000 us timer at", msecs-m, "ms", ticks-t, "t"
+  90 sleep 10000 ms
+ 110 let ticks_per_msec = 1
+end
+ticks/msec: 4
+1750000 us timer at 1750 ms 7000 t
+3000 ms timer at 3000 ms 12000 t
+1750000 us timer at 3500 ms 14000 t
+1750000 us timer at 5250 ms 21000 t
+3000 ms timer at 6000 ms 24000 t
+1750000 us timer at 7000 ms 28000 t
+1750000 us timer at 8750 ms 35000 t
+3000 ms timer at 9000 ms 36000 t
+var 'ticks_per_msec' undefined
+STOP at line 110!
+test time units
+  10 sleep 1 s
+  20 sleep 2*2 ms
+  30 sleep 3000000 us
+  40 configure timer 1 for 1 s
+  50 configure timer 2 for 10 ms
+  60 configure timer 3 for 100 us
+end
+   1000ms   10 sleep 1 s
+      4ms   20 sleep 2*2 ms
+   3000ms   30 sleep 3000000 us
+end
+test sub parameters
+  10 print "sub params1"
+  20 dim i
+  30 assert i==0
+  40 gosub f i
+  50 assert i==1
+  60 print "passed"
+  70 end 
+  80 sub f x
+  90   let x = x+1
+ 100 endsub 
+end
+sub params1
+passed
+   5 print "sub params2"
+  10 dim a
+  20 let a = 7
+  30 assert a==7&&ticks_per_msec==4
+  40 gosub f a, 3, ticks_per_msec+0
+  50 assert a==8&&ticks_per_msec==4
+  60 let a = 12
+  70 gosub f a+0, 3, 4
+  80 assert a==12&&ticks_per_msec==4
+  90 gosub f a, a, a
+ 100 assert a==2
+ 110 print "passed"
+ 120 end 
+ 130 sub f x, y, z
+ 140   print "f1:", x+y, z
+ 150   let x = 8
+ 160   let y = 9
+ 170   let z = 2
+ 180   print "f2:", x+y, z
+ 190 endsub 
+end
+sub params2
+f1: 10 4
+f2: 17 2
+f1: 15 4
+f2: 17 2
+f1: 24 12
+f2: 4 2
+passed
+   5 print "sub params2.1"
+  10 dim a
+  20 gosub foo a, a
+  30 end 
+  50 sub foo a, a
+  60 endsub 
+end
+sub params2.1
+var 'a' already defined at this scope
+STOP at line 20!
+   5 print "sub params3"
+  20 assert ticks_per_msec==4
+  30 gosub f ticks_per_msec+0
+  40 assert ticks_per_msec==4
+  50 print "passed"
+  60 end 
+  90 sub f x
+ 100   let x = x*2
+ 110   print x, ticks_per_msec
+ 120 endsub 
+end
+sub params3
+8 4
+passed
+  10 print "sub params4"
+  20 dim a[2]
+  25 dim b[2]
+  30 let a[0] = 5, a[1] = 6
+  40 assert a[0]==5&&a[1]==6
+  50 gosub f a[0]+0, a[1]
+  60 assert a[0]==5&&a[1]==6
+  70 gosub f2 a
+  80 assert a[0]==6&&a[1]==7
+  85 gosub foo a, b
+  87 print a[0], b[1]
+  88 assert a[0]==0&&b[1]==6
+  90 print "passed"
+ 100 end 
+ 110 sub f x, y
+ 120   print "fa", x, y
+ 130   let x = x+1
+ 140   let y = y+1
+ 150   print "fb", x, y
+ 160 endsub 
+ 170 sub f2 z
+ 180   let z[0] = z[0]+1
+ 190   let z[1] = z[1]+1
+ 200 endsub 
+ 300 sub foo i, j
+ 310   if i>0 then
+ 320     let i = i-1
+ 330     let j[1] = j[1]+1
+ 340     gosub foo i, j
+ 350   endif 
+ 360 endsub 
+end
+sub params4
+fa 5 6
+fb 6 7
+0 6
+passed
+  10 print "sub params - call with too many params1"
+  20 gosub f
+  30 print "ok"
+  40 gosub f ticks_per_msec
+  50 end 
+  60 sub f
+  70 endsub 
+end
+sub params - call with too many params1
+ok
+too many gosub parameters
+STOP at line 40!
+  10 print "sub params - call with too many params2"
+  20 dim a
+  30 gosub f ticks_per_msec+0
+  40 print "ok"
+  50 gosub f ticks_per_msec+0, a
+  60 stop 
+  70 sub f x
+  80 endsub 
+end
+sub params - call with too many params2
+ok
+too many gosub parameters
+STOP at line 50!
+  10 print "sub pin params"
+  20 dim p as pin utxd0 for digital output
+  30 dim i
+  40 for i = 1 to 10
+  50   gosub flip p, i%i
+  60 next 
+  70 print "passed"
+  80 end 
+  90 sub flip o, v
+ 100   let o = v
+ 110 endsub 
+end
+sub pin params
+passed
+  10 print "sub param array by-ref"
+  20 dim x[3], b[2]
+  30 let x[0] = 1, x[1] = 2, x[2] = 3
+  31 let b[0] = 11, b[1] = 1
+  40 assert x[0]==1&&x[1]==2&&x[2]==3
+  50 gosub f x
+  60 assert x[0]==10&&x[1]==20&&x[2]==30
+  70 print "pass1"
+  75 gosub f b
+  80 stop 
+  90 sub f a
+  95   print a[0]
+ 100   let a[0] = 10
+ 110   let a[1] = 20
+ 120   let a[2] = 30
+ 130 endsub 
+end
+sub param array by-ref
+1
+pass1
+11
+var 'a' index 2 out of range
+STOP at line 120!
+  10 print "sub param nested type error"
+  20 dim a[2]
+  30 gosub f a
+  40 gosub f a[1]
+  50 end 
+  60 sub f x
+  70   print "f", x
+  80   gosub y x
+  90 endsub 
+ 100 sub y p
+ 110   print "y", p[1]
+ 120 endsub 
+end
+sub param nested type error
+f 0
+y 0
+f 0
+y var 'p' index 1 out of range
+0
+STOP at line 110!
+  10 print "sub param with same-name local"
+  20 dim a
+  30 gosub f a
+  40 stop 
+  50 sub f x
+  60   dim x[2]
+  70 endsub 
+end
+sub param with same-name local
+var 'x' already defined at this scope
+STOP at line 60!
 test demo
   10 rem ### blinky ###
   20 dim i
@@ -3969,9 +4502,9 @@ test demo
   40 while 1 do
   50   for i = 1 to 16
   60     let led = !led
-  70     sleep 50
+  70     sleep 50 ms
   80   next 
-  90   sleep 800
+  90   sleep 800 ms
  100 endwhile 
  110 end 
 end
@@ -3983,7 +4516,7 @@ end
   60 dim rx as pin urxd0 for uart input
   70 on uart 0 input do gosub receive
   80 on uart 0 output do gosub transmit
-  90 sleep 1000
+  90 sleep 1000 ms
  100 end 
  110 sub receive
  120   print "received", rx
@@ -4021,10 +4554,10 @@ end
   50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
   60 configure timer 0 for 1000 ms
   70 on timer 0 do gosub adjust
-  75 sleep 500
-  80 rem ----------
+  75 sleep 500 ms
+  80 rem ---------------
   90 while target!=-1 do
- 100   sleep secs*1000
+ 100   sleep secs s
  110   read target, secs
  120 endwhile 
  130 let relay = 0

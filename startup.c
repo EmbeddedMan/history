@@ -35,9 +35,24 @@
 #elif MCF51JM128
 #include "MCF51JM128.h"
 #include "compat.h"
+#elif PIC32
+#include <plib.h>
+typedef unsigned char uint8;
+typedef unsigned short uint16;
+typedef unsigned int uint32;
 #else
 #error
 #endif
+#endif
+
+#if GCC
+#define far
+#define __IPSBAR ((volatile uint8 *)0x40000000)
+extern uint8 __RAMBAR[];
+#define RAMBAR_ADDRESS ((uint32)__RAMBAR)
+#define asm_halt() __asm__("halt")
+#else
+#define asm_halt() asm { halt }
 #endif
 
 typedef unsigned char bool;
@@ -51,11 +66,11 @@ enum {
 };
 
 #if DEBUG
-#define assert(x)  if (! (x)) { asm { halt } }
+#define assert(x)  if (! (x)) { asm_halt(); }
 #else
 #define assert(x)
 #endif
-#define ASSERT(x)  if (! (x)) { asm { halt } }
+#define ASSERT(x)  if (! (x)) { asm_halt(); }
 
 #endif  // MAIN_INCLUDED
 
@@ -65,10 +80,12 @@ enum {
 #include "startup.h"
 #include "vectors.h"
 
+#if ! PIC32
 extern unsigned char far _SP_INIT[], _SDA_BASE[];
 extern unsigned char far __SP_AFTER_RESET[];
 extern unsigned char far ___RAMBAR[], ___RAMBAR_SIZE[];
 extern unsigned char far __DATA_RAM[], __DATA_ROM[], __DATA_END[];
+#endif
 
 byte *end_of_static;
 
@@ -77,24 +94,58 @@ uint32 oscillator_frequency;
 uint32 bus_frequency;
 
 bool debugger_attached;
+// N.B. big_buffer may not be aligned; it is up to the caller to align it if needed.
 #if PICTOCRYPT
 byte big_buffer[8192];
 #else
 byte big_buffer[1024];
 #endif
 
-#if ! BADGE_BOARD
-#pragma define_section page0 ".page0" far_absolute R
-#define DECLSPEC_PAGE0  __declspec(page0)
+#if ! PIC32
+#if BADGE_BOARD
+#define DECLSPEC_PAGE0_CODE
+#define DECLSPEC_PAGE0_DATA
+#elif GCC
+#define DECLSPEC_PAGE0_CODE __attribute__((section(".page0_code")))
+#define DECLSPEC_PAGE0_DATA __attribute__((section(".page0_data")))
+#define DECLSPEC_PAGE1 __attribute__((section(".page1")))
 #else
-#define DECLSPEC_PAGE0
+#pragma define_section page0 ".page0" far_absolute R
+#define DECLSPEC_PAGE0_CODE  __declspec(page0)
+#define DECLSPEC_PAGE0_DATA  __declspec(page0)
 #endif
+
 
 // *** page0 ***
 
-DECLSPEC_PAGE0
-asm void
-_startup(void);
+// make cw and gcc assemblers compatible
+#if GCC
+extern void _startup(void);
+
+#define BEGIN_NAKED(func)  void func ## _not(void) \
+                           { \
+                               asm ("\t.globl " #func ); \
+                               asm ("\t.type " #func ", @function"); \
+                               asm (#func ":");
+
+#define END_NAKED              asm("\thalt"); \
+                           }
+                           
+#define Q1(a)  asm("\t" #a "\n");
+#define Q2(a,b)  asm("\t" #a " " #b "\n");
+#define Q3(a,b,c)  asm("\t" #a " " #b "," #c "\n");
+#else  // GCC
+DECLSPEC_PAGE0_CODE
+asm void _startup(void);
+
+#define BEGIN_NAKED(func)  asm void func(void)
+
+#define END_NAKED
+
+#define Q1(a)  a
+#define Q2(a,b)  a b
+#define Q3(a,b,c)  a b,c
+#endif  // GCC
 
 #if ! BADGE_BOARD
 
@@ -106,8 +157,8 @@ _startup(void);
 
 // this is the hardware interrupt vector table, that re-dispatches to
 // the software interrupt vector table in page1 from vectors.c.
-DECLSPEC_PAGE0
-uint32 _vect[256] = {
+DECLSPEC_PAGE0_DATA
+const uint32 _vect[256] = {
     (uint32)__SP_AFTER_RESET, (uint32)_startup,
                         X+0x0810, X+0x0818, X+0x0820, X+0x0828, X+0x0830, X+0x0838,
     X+0x0840, X+0x0848, X+0x0850, X+0x0858, X+0x0860, X+0x0868, X+0x0870, X+0x0878,
@@ -144,8 +195,8 @@ uint32 _vect[256] = {
 };
     
 // this is the cfm config
-DECLSPEC_PAGE0
-unsigned long _cfm[] = {
+DECLSPEC_PAGE0_DATA
+const unsigned long _cfm[] = {
 #if ! MCF51JM128
     0,                              // (0x00000400) KEY_UPPER
     0,                              // (0x00000404) KEY_LOWER
@@ -170,107 +221,107 @@ void
 init(void);
 #endif  // ! BADGE_BOARD
 
-static
-DECLSPEC_PAGE0
+DECLSPEC_PAGE0_CODE
 void
 p0_c_startup(void);
 
 // this function performs assembly language initialization from
 // reset, and then calls C initialization, which calls main().
-DECLSPEC_PAGE0
-asm void
-_startup(void)
+DECLSPEC_PAGE0_CODE
+BEGIN_NAKED(_startup)
 {
     // disable interrupts
-    move.w   #0x2700,sr
+    Q3(move.w,  #0x2700,sr)
     
 #if ! MCF51JM128
     // initialize RAMBAR
-    move.l   #__RAMBAR+0x21,d0
-    movec    d0,RAMBAR
+    Q3(move.l,  #__RAMBAR+0x21,d0)
+    Q3(movec,   d0,RAMBAR)
 
     // initialize IPSBAR
-    move.l   #__IPSBAR,d0
-    andi.l   #0xC0000000,d0  // need to mask
-    add.l    #0x1,d0
-    move.l   d0,0x40000000
+    Q3(move.l,  #__IPSBAR,d0)
+    Q3(andi.l,  #0xC0000000,d0)  // need to mask
+    Q3(add.l,   #0x1,d0)
+    Q3(move.l,  d0,0x40000000)
 
     // initialize FLASHBAR
-    move.l   #__FLASHBAR,d0
-    andi.l   #0xFFF80000,d0  // need to mask
-    add.l    #0x61,d0
-    movec    d0,FLASHBAR
+    Q3(move.l,  #__FLASHBAR,d0)
+    Q3(andi.l,  #0xFFF80000,d0)  // need to mask
+    Q3(add.l,   #0x61,d0)
+    Q3(movec,   d0,FLASHBAR)
 #else
-    move.l #0xc0000000,d0
-    movec  d0,CPUCR
+    Q3(move.l,  #0xc0000000,d0)
+    Q3(movec,   d0,CPUCR)
 #endif
 
     // set up the fixed stack pointer
-    lea      __SP_AFTER_RESET,a7
+    Q3(lea,     __SP_AFTER_RESET,a7)
 
     // set up short data base A5
-    lea      _SDA_BASE,a5
+    Q3(lea,     _SDA_BASE,a5)
 
     // set up A6 dummy stackframe
-    movea.l  #0,a6
-    link     a6,#0
+    Q3(movea.l, #0,a6)
+    Q3(link,    a6,#0)
 
     // early C initialization, and compatible upgrade (page0)
-    jsr      p0_c_startup
+    Q2(jsr,     p0_c_startup)
 
     // set up the real stack pointer
-    lea      _SP_INIT,a7
+    Q3(lea,     _SP_INIT,a7)
 
 #if ! BADGE_BOARD
     // late C initialization, post-upgrade (init(), page1 indirect)
-    lea      VECTOR_OLD_INIT,a0
-    move.l   (a0),a0
-    jsr      (a0)
+    Q3(lea,     VECTOR_OLD_INIT,a0)
+    Q3(move.l,  (a0),a0)
+    Q2(jsr,     (a0))
 #else
-    jsr      init
+    Q2(jsr,      init)
 #endif
     
-    nop
-    halt
+    Q1(nop)
+    Q1(halt)
 }
+END_NAKED
 
 static
-DECLSPEC_PAGE0
+DECLSPEC_PAGE0_CODE
 void *
 p0_memcpy(void *d,  const void *s, uint32 n)
 {
-    void *dd;
+    uint8 *dd = d;
+    const uint8 *ss = s;
     
-    dd = d;
     while (n--) {
-        *(((char *)d)++) = *(((char *)s)++);
+        *(dd++) = *(ss++);
     }
-    return dd;
+    return d;
 }
 
 static
-DECLSPEC_PAGE0
+DECLSPEC_PAGE0_CODE
 void *
 p0_memset(void *p,  int d, uint32 n)
 {
-    void *pp;
+    uint8 *pp = p;
     
-    pp = p;
     while (n--) {
-        *(((char *)p)++) = d;
+        *(pp++) = d;
     }
-    return pp;
+    return p;
 }
 
 static
-DECLSPEC_PAGE0
+DECLSPEC_PAGE0_CODE
 int
 p0_memcmp(const void *d,  const void *s, uint32 n)
 {
     char c;
+    const uint8 *dd = d;
+    const uint8 *ss = s;
     
     while (n--) {
-        c = *(((char *)d)++) - *(((char *)s)++);
+        c = *(dd++) - *(ss++);
         if (c) {
             return c;
         }
@@ -279,12 +330,11 @@ p0_memcmp(const void *d,  const void *s, uint32 n)
 }
 
 // this function performs C initialization before main() runs.
-static
-DECLSPEC_PAGE0
+DECLSPEC_PAGE0_CODE
 void
 p0_c_startup(void)
 {
-#if ! FLASHER && ! MCF51JM128
+#if ! FLASHER
     flash_upgrade_ram_begin_f fn;
 #endif
     
@@ -310,6 +360,7 @@ p0_c_startup(void)
     SOPT2 &= ~SOPT2_USB_BIGEND_MASK;
 #endif
 
+#if MCF52221 || MCF52233
 #if MCF52221
     // if we don't have a crystal...
     if (MCF_CLOCK_SYNSR & MCF_CLOCK_SYNSR_OCOSC) {
@@ -346,53 +397,10 @@ p0_c_startup(void)
     cpu_frequency = 60000000;
     bus_frequency = cpu_frequency/2;
     oscillator_frequency = 25000000;
-#elif MCF51JM128
-    /* switch from FEI to FBE (FLL bypassed external) */ 
-    /* enable external clock source */
-    MCGC2 = MCGC2_HGO_MASK       /* oscillator in high gain mode */
-          | MCGC2_EREFS_MASK   /* because crystal is being used */
-          | MCGC2_RANGE_MASK   /* 12 MHz is in high freq range */
-          | MCGC2_ERCLKEN_MASK;     /* activate external reference clock */
-    while (MCGSC_OSCINIT == 0)
-    ;
-    /* select clock mode */
-    MCGC1 = (2<<6)         /* CLKS = 10 -> external reference clock. */
-          | (3<<3);      /* RDIV = 3 -> 12MHz/8=1.5 MHz */
-
-    /* wait for mode change to be done */
-    while (MCGSC_IREFST != 0)
-    ;
-    while (MCGSC_CLKST != 2)
-    ;
-
-    /* switch from FBE to PBE (PLL bypassed internal) mode */
-    MCGC3=MCGC3_PLLS_MASK
-        | (8<<0);     /* VDIV=6 -> multiply by 32 -> 1.5MHz * 32 = 48MHz */
-    while(MCGSC_PLLST != 1)
-    ;
-    while(MCGSC_LOCK != 1)
-    ;
-    /* finally switch from PBE to PEE (PLL enabled external mode) */
-    MCGC1 = (0<<6)         /* CLKS = 0 -> PLL or FLL output clock. */
-          | (3<<3);      /* RDIV = 3 -> 12MHz/8=1.5 MHz */
-    while(MCGSC_CLKST!=3)
-    ;
-
-    /* Now MCGOUT=48MHz, BUS_CLOCK=24MHz */  
-    cpu_frequency = 48000000;
-    bus_frequency = cpu_frequency/2;
-    oscillator_frequency = 12000000;
-
-    // we read KBI1SC's initial value to determine if the debugger is attached
-    // N.B. this value must be set by the debugger's cmd file!
-    if (KBI1SC == 0x01) {
-        debugger_attached = true;
-    }
 #else
 #error
 #endif
 
-#if ! MCF51JM128
     // wait for pll lock
     while (!(MCF_CLOCK_SYNSR & MCF_CLOCK_SYNSR_LOCK)) {
         // NULL
@@ -413,8 +421,55 @@ p0_c_startup(void)
         // turn off pstclk to reduce emi
         MCF_CLOCK_SYNCR |= MCF_CLOCK_SYNCR_DISCLK;
     }
+#elif MCF51JM128
+    /* switch from FEI to FBE (FLL bypassed external) */ 
+    /* enable external clock source */
+    MCGC2 = MCGC2_HGO_MASK       /* oscillator in high gain mode */
+          | MCGC2_EREFS_MASK   /* because crystal is being used */
+          | MCGC2_RANGE_MASK   /* 12 MHz is in high freq range */
+          | MCGC2_ERCLKEN_MASK;     /* activate external reference clock */
+    while (MCGSC_OSCINIT == 0)
+    ;
+    /* select clock mode */
+    MCGC1 = (2<<6)         /* CLKS = 10 -> external reference clock. */
+        | (3<<3);          /* RDIV = 3 -> 12MHz/8=1.5 MHz */
+
+    /* wait for mode change to be done */
+    while (MCGSC_IREFST != 0)
+    ;
+    while (MCGSC_CLKST != 2)
+    ;
+
+    /* switch from FBE to PBE (PLL bypassed internal) mode */
+    MCGC3=MCGC3_PLLS_MASK
+        | (8<<0);     /* VDIV=6 -> multiply by 32 -> 1.5MHz * 32 = 48MHz */
+    while(MCGSC_PLLST != 1)
+    ;
+    while(MCGSC_LOCK != 1)
+    ;
+    /* finally switch from PBE to PEE (PLL enabled external mode) */
+    MCGC1 = (0<<6)         /* CLKS = 0 -> PLL or FLL output clock. */
+          | (3<<3);        /* RDIV = 3 -> 12MHz/8=1.5 MHz */
+    while(MCGSC_CLKST!=3)
+    ;
+
+    /* Now MCGOUT=48MHz, BUS_CLOCK=24MHz */  
+    cpu_frequency = 48000000;
+    bus_frequency = cpu_frequency/2;
+    oscillator_frequency = 12000000;
+
+    // we read KBI1SC's initial value to determine if the debugger is attached
+    // N.B. this value must be set by the debugger's cmd file!
+    if (KBI1SC == 0x01) {
+        debugger_attached = true;
+    }
+#else
+#error
+#endif
 
 #if ! FLASHER
+    // ******** COMPATIBLE UPGRADE ********
+    
     // if we're in the middle of a compatible upgrade...
     if (! p0_memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE) && ! *((uint32 *)FLASH_BYTES - 1)) {
         // initialize the flash module
@@ -424,23 +479,27 @@ p0_c_startup(void)
             MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((bus_frequency-1)/200000);
         }
 
+#if MCF52221 || MCF52233
         MCF_CFM_CFMPROT = 0;
         MCF_CFM_CFMSACC = 0;
         MCF_CFM_CFMDACC = 0;
         MCF_CFM_CFMMCR = 0;
+#endif
+        
+        // N.B. this was verified earlier
+        //ASSERT((int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN <= sizeof(big_buffer)-4);
         
         // copy our new flash upgrade routine to RAM
-        assert((int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN <= sizeof(big_buffer));
-        p0_memcpy(big_buffer, (void *)(FLASH_BYTES/2+VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN), (int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN);
+        fn = (flash_upgrade_ram_begin_f)(((uint32)big_buffer+3)&~3);
+        p0_memcpy(fn, (void *)(FLASH_BYTES/2+VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN), (int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN);
 
         // and run it!
-        fn = (void *)big_buffer;
         fn(true);
 
         // we should not come back!
-        ASSERT(0);  // stop!
+        for (;;) { asm_halt(); }
     }
 #endif
-#endif
 }
+#endif
 

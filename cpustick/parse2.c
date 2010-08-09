@@ -108,9 +108,6 @@ XXX_ERROR_XXX:
 void
 unparse2_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
 {
-#if ! _WIN32
-#pragma unused(length)
-#endif
     int i;
     byte code;
     char *out;

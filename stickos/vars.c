@@ -18,17 +18,19 @@ static byte *alternate_flash_param_page;
 
 // *** pin variables ***
 
-struct {
+static struct system_var {
     char *name;
-    int *integer;
+    int *integer;  // if NULL, then variable is constant.
+    int constant;
+    void (*set_cbfn)(int value);  // if NULL, then the var is read-only.
 } systems[] = {
-#if ! _WIN32
-    "nodeid", &zb_nodeid,
-    "seconds", (int *)&seconds,
-    "ticks", (int *)&ticks,
-#else
-    "dummy", NULL
+#if ! STICK_GUEST
+    "nodeid", &zb_nodeid, 0, NULL,
 #endif
+    "msecs", (int *)&msecs, 0, NULL,
+    "seconds", (int *)&seconds, 0, NULL,
+    "ticks", (int *)&ticks, 0, NULL,
+    "ticks_per_msec", NULL, ticks_per_msec, NULL
 };
 
 bool var_trace;
@@ -46,12 +48,12 @@ struct var {
     short max_index;
     union {
         int page_offset;
-        byte *bytecode;
         struct {
             byte number;
             uint8 type;
             uint8 qual;
         } pin;
+        struct var *target_var; // type=code_var_reference
     } u;
     int nodeid;  // for remote variable sets
 } vars[MAX_VARS];
@@ -60,6 +62,8 @@ static int max_vars;  // allocated
 
 static int ram_offset;  // allocated in RAM_VARIABLE_PAGE
 static int param_offset;  // allocated in FLASH_PARAM_PAGE
+
+// *** system variable access routines ***
 
 // *** flash control and access ***
 
@@ -141,18 +145,32 @@ flash_promote_alternate(void)
 }
 
 // this function finds the specified variable in our variable table.
+//
+// *gosubs is set to the gosub level in which the variable or reference is found.  This may be different than the
+// gosub level of the returned variable if a reference was used to locate the returned variable.
 static
 struct var *
-var_find(IN char *name)
+var_find(IN const char *name, OUT int *gosubs)
 {
-    int i;
+    struct var *var;
 
     // for all declared variables...
-    for (i = max_vars-1; i >= 0; i--) {
-        assert(vars[i].type);
+    for (var = vars+(max_vars-1); var >= vars; var--) {
+        assert(var->type);
         // if the variable name matches...
-        if (vars[i].name[0] == name[0] && ! strncmp(vars[i].name, name, sizeof(vars[i].name)-1)) {
-            return vars+i;
+        // N.B. we use strncmp so the user can use a longer variable name and still match
+        if (var->name[0] == name[0] && ! strncmp(var->name, name, sizeof(var->name)-1)) {
+            // if var is a reference, return the referred to variable, making note of the gosub level and
+            // any element restriction the reference imposes.
+            *gosubs = var->gosubs;
+            if (var->type == code_var_reference) {
+                // assert that the referent is in an outer scope.
+                assert(var > var->u.target_var);
+
+                var = var->u.target_var;
+                assert(var->type != code_var_reference);
+            }
+            return var;
         }
     }
     return NULL;
@@ -172,24 +190,49 @@ var_open_scope(void)
 void
 var_close_scope(IN int scope)
 {
-    // reclaim ram space
+    int i;
+    
+    assert(scope >= 0);
+    
+    // reclaim ram space, if any was allocated by this scope.
     if (max_vars > scope) {
-        assert(vars[scope].type == code_ram || vars[scope].type == code_nodeid);
-        ram_offset = vars[scope].u.page_offset;
+        
+        // find the first (if any exist) non-reference variable in this scope by skipping any references.
+        for (i = scope; (i < max_vars) && (vars[i].type == code_var_reference); i++) {
+        }
+
+        // release any ram allocate by this scope's variables.
+        if (i < max_vars) {
+            assert(vars[i].type == code_ram || vars[i].type == code_nodeid);
+            ram_offset = vars[i].u.page_offset;
+            memset(RAM_VARIABLE_PAGE+ram_offset, 0, sizeof(RAM_VARIABLE_PAGE)-ram_offset);
+        }
+        
         max_vars = scope;
-        memset(RAM_VARIABLE_PAGE+ram_offset, 0, sizeof(RAM_VARIABLE_PAGE)-ram_offset);
     }
 }
 
-// this function declares a ram, flash, or pin variable!
-void
-var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid)
+static void
+var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid, IN struct var *target)
 {
     struct var *var;
+    int var_gosubs;
 
     assert(name);
     assert(type >= code_deleted && type < code_max);
 
+    if (type == code_var_reference) {
+        assert(pin_number == -1);
+        assert(pin_type == -1);
+        assert(pin_qual == -1);
+        assert(nodeid == -1);
+        
+        assert(gosubs > 0); // cannot currently create reference outside of a gosub
+
+        // otherwise, we're declaring a reference to a non-system variable
+        assert(target != NULL);
+    }
+    
     if (! run_condition) {
         return;
     }
@@ -206,22 +249,17 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
         return;
     }
 
-    var = var_find(name);
+    var = var_find(name, &var_gosubs);
     // if the var already exists...
     if (var) {
         // if the var exists at the same scope...
-        if (var->gosubs == gosubs) {
+        if (var_gosubs == gosubs) {
             // this is a repeat dimension
-            // if the type does not match...
-            if (var->type != type || var->size != size || var->max_index != max_index) {
-                printf("var '%s' dimension mismatch\n", name);
-                stop();
-                return;
-            }
-            // we're good to go
+            printf("var '%s' already defined at this scope\n", name);
+            stop();
             return;
         } else {
-            assert(gosubs > var->gosubs);
+            assert(gosubs > var_gosubs);
         }
     }
 
@@ -234,10 +272,12 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
 
     // declare the var
     strncpy(vars[max_vars].name, name, sizeof(vars[max_vars].name)-1);
+    assert(vars[max_vars].name[sizeof(vars[max_vars].name)-1] == '\0');
     vars[max_vars].gosubs = gosubs;
     vars[max_vars].type = type;
     assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(int));
     vars[max_vars].size = size;
+    assert(max_index > 0);
     vars[max_vars].max_index = max_index;
     vars[max_vars].nodeid = nodeid;
 
@@ -287,17 +327,47 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
             vars[max_vars].u.pin.type = pin_type;
             vars[max_vars].u.pin.qual = pin_qual;
 
-#if ! _WIN32
+#if ! STICK_GUEST
             pin_declare(pin_number, pin_type, pin_qual);
 #endif
             break;
 
+        case code_var_reference:
+            vars[max_vars].u.target_var = target;
+            break;
+            
         default:
             assert(0);
             break;
     }
 
     max_vars++;
+}
+
+// this function declares a ram, flash, or pin variable!
+void
+var_declare(IN const char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid)
+{
+    assert(type != code_var_reference);
+
+    var_declare_internal(name, gosubs, type, size, max_index, pin_number, pin_type, pin_qual, nodeid, NULL);
+}
+
+void
+var_declare_reference(const char *name, int gosubs, const char *target_name)
+{
+    struct var *target;
+    int target_gosubs;
+    
+    // see if the referent is a normal variable or another reference...
+    target = var_find(target_name, &target_gosubs);
+    if (! target) {
+        printf("unable to find referent '%s'\n", target_name);
+        stop();
+        return;
+    }
+
+    var_declare_internal(name, gosubs, code_var_reference, target->size, target->max_index, -1, -1, -1, -1, target);
 }
 
 typedef struct remote_set {
@@ -310,12 +380,10 @@ static remote_set_t set;
 
 static bool remote;
 
-#if ! _WIN32
+#if ! STICK_GUEST
 static void
 class_remote_set(int nodeid, int length, byte *buffer)
 {
-#pragma unused(nodeid)
-#pragma unused(length)
     // remember to set the variable as requested by the remote node
     assert(length == sizeof(set));
     set = *(remote_set_t *)buffer;
@@ -345,10 +413,14 @@ var_poll(void)
 
 // this function sets the value of a ram, flash, or pin variable!
 void
-var_set(IN char *name, IN int index, IN int value)
+var_set(IN const char *name, IN int index, IN int value)
 {
+#if 0  // unused for now
+    int i;
+#endif
     struct var *var;
-#if ! _WIN32
+    int var_gosubs;
+#if ! STICK_GUEST
     remote_set_t set;
 #endif
 
@@ -356,8 +428,24 @@ var_set(IN char *name, IN int index, IN int value)
         return;
     }
 
-    var = var_find(name);
+    var = var_find(name, &var_gosubs);
     if (! var) {
+#if 0  // unused for now
+        if (! index) {
+            // see if this could be a special system variable
+            for (i = 0; i < LENGTHOF(systems); i++) {
+                if (! strcmp(name, systems[i].name)) {
+                    if (systems[i].set_cbfn == NULL) {
+                        printf("var '%s' is read-only\n", name);
+                        stop();
+                    } else {
+                        systems[i].set_cbfn(value);
+                    }
+                    return;
+                }
+            }
+        }
+#endif
         printf("var '%s' undefined\n", name);
         stop();
     } else if (index >= var->max_index) {
@@ -370,7 +458,7 @@ var_set(IN char *name, IN int index, IN int value)
                     printf("zigbee not present\n");
                     stop();
                     break;
-#if ! _WIN32
+#if ! STICK_GUEST
                 } else if (zb_nodeid == -1) {
                     printf("zigbee nodeid not set\n");
                     stop();
@@ -378,11 +466,11 @@ var_set(IN char *name, IN int index, IN int value)
 #endif
                 }
                 
-#if ! _WIN32
+#if ! STICK_GUEST
                 // if we're not being set from a remote node...
                 if (! remote) {
                     // forward the variable set request to the remote node
-                    strcpy(set.name, name);
+                    strcpy(set.name, var->name);
                     set.index = index;
                     set.value = value;
                     if (! zb_send(var->nodeid, zb_class_remote_set, sizeof(set), (byte *)&set)) {
@@ -396,9 +484,9 @@ var_set(IN char *name, IN int index, IN int value)
                 // *** RAM control and access ***
                 // set the ram variable to value
                 if (var->size == sizeof(int)) {
-                    *(int *)(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(int)) = value;
+                    write32(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(int), value);
                 } else if (var->size == sizeof(short)) {
-                    *(short *)(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short)) = value;
+                    write16(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short), value);
                 } else {
                     assert(var->size == sizeof(byte));
                     *(byte *)(RAM_VARIABLE_PAGE+var->u.page_offset+index) = (byte)value;
@@ -452,7 +540,7 @@ var_set(IN char *name, IN int index, IN int value)
 
                 }
                 
-#if ! _WIN32
+#if ! STICK_GUEST
                 pin_set(var->u.pin.number, var->u.pin.type, var->u.pin.qual, value);
 #endif
                 break;
@@ -466,10 +554,11 @@ var_set(IN char *name, IN int index, IN int value)
 
 // this function gets the value of a ram, flash, or pin variable!
 int
-var_get(IN char *name, IN int index)
+var_get(IN const char *name, IN int index)
 {
     int i;
     int value;
+    int var_gosubs;
     struct var *var;
 
     if (! run_condition) {
@@ -478,13 +567,13 @@ var_get(IN char *name, IN int index)
 
     value = 0;
 
-    var = var_find(name);
+    var = var_find(name, &var_gosubs);
     if (! var) {
-        if (! var && ! index) {
+        if (! index) {
             // see if this could be a special system variable
             for (i = 0; i < LENGTHOF(systems); i++) {
                 if (! strcmp(name, systems[i].name)) {
-                    return *systems[i].integer;
+                    return systems[i].integer ? *systems[i].integer : systems[i].constant;
                 }
             }
         }
@@ -500,9 +589,9 @@ var_get(IN char *name, IN int index)
                 // *** RAM control and access ***
                 // get the value of the ram variable
                 if (var->size == sizeof(int)) {
-                    value = *(int *)(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(int));
+                    value = read32(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(int));
                 } else if (var->size == sizeof(short)) {
-                    value = *(unsigned short *)(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short));
+                    value = read16(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short));
                 } else {
                     assert(var->size == sizeof(byte));
                     value = *(byte *)(RAM_VARIABLE_PAGE+var->u.page_offset+index);
@@ -519,7 +608,7 @@ var_get(IN char *name, IN int index)
 
             case code_pin:
                 // *** external pin control and access ***
-#if ! _WIN32
+#if ! STICK_GUEST
                 value = pin_get(var->u.pin.number, var->u.pin.type, var->u.pin.qual);
 #endif
                 break;
@@ -535,14 +624,15 @@ var_get(IN char *name, IN int index)
 
 // this function gets the size of a ram, flash, or pin variable!
 int
-var_get_size(IN char *name)
+var_get_size(IN const char *name)
 {
     int size;
+    int var_gosubs;
     struct var *var;
     
     size = 1;
     
-    var = var_find(name);
+    var = var_find(name, &var_gosubs);
     if (! var) {
         printf("var '%s' undefined\n", name);
         stop();
@@ -607,7 +697,7 @@ var_mem(void)
 void
 var_initialize(void)
 {
-#if ! _WIN32
+#if ! STICK_GUEST
     zb_register(zb_class_remote_set, class_remote_set);
 #endif
 }

@@ -1,10 +1,19 @@
 #! /bin/sh
 # this test exercises platform similarities
 
+case `uname 2>/dev/null` in
+  Windows*)
+    build="windows"
+    ;;
+  Linux)
+    build="linux"
+    ;;
+esac
+
 if [ X${1:-} = X-r ]; then
-  BASIC="../stickos/52221 release/basic"
+  BASIC="../stickos/obj.${build}.MCF52221.RELEASE/stickos"
 else
-  BASIC="../stickos/52221 debug/basic"
+  BASIC="../stickos/obj.${build}.MCF52221.DEBUG/stickos"
 fi
 
 echo first we test parsing and running expressions
@@ -181,7 +190,6 @@ run
 60 print (3+5)*6
 70 print 3+(5*6) ,2, 1
 80 print ((3+5*6))
-90 dim a
 100 dim b, c,d ,e
 110 let q = 4+7*(1+1)
 120 let qq = 44+77*(11+11)
@@ -219,6 +227,24 @@ list
 run
 EOF
 
+echo test re-dim errors
+"$BASIC" -q <<EOF
+1dim a as byte
+2dim a as byte
+list
+run
+new
+1dim a as short
+2dim a as short
+list
+run
+new
+1dim a
+2dim a
+list
+run
+EOF
+
 echo test some assertions
 "$BASIC" -q <<EOF
 10 assert 1
@@ -228,7 +254,6 @@ echo test some assertions
 50 let a=3%2==1
 60 assert a
 70 assert 3%2==0
-80 dim a
 90 let a=3%2==0
 100 assert a
 run
@@ -444,14 +469,21 @@ echo test dims
 31 dim x as pin dtin2 for digital output inverted
 32 dim y as pin dtin3 for digital input inverted
 33 dim z as pin an1 for analog input inverted
-40 dim d as flash
-41 dim m as remote on nodeid 7
-42 dim n[4] as remote on nodeid 8
+34 dim h as pin utxd1 for digital output open_drain
+35 dim d1 as pin utxd1 for digital output inverted open_drain
+36 dim d2 as pin scl for digital input debounced inverted
+37 dim d3 as pin urts1* for digital input debounced 
+38 dim d4 as pin an1 for analog input debounced
+40 dim d5 as pin an3 for analog input debounced inverted
+41 dim d6 as pin urxd1 for digital output inverted open_drain
+42 dim d as flash
+43 dim m as remote on nodeid 7
+44 dim n[4] as remote on nodeid 8
 50 dim e
 55 let e=5
 60 dim f as byte flash
 70 dim g
-80 print a, b, c, d, e, f, g, m, n[3]
+80 print a, b, c, d, e, f, g, m, n[3], d1, d2, d3, d4, d5, d6
 list
 run
 EOF
@@ -699,7 +731,7 @@ echo test while continues
   10 dim i
   20 while i<15 do
   30   let i=i+1
-  40   sleep 100
+  40   sleep 100 ms
   50   if i%5==0 then
   60     continue
   70   endif
@@ -804,8 +836,9 @@ echo test configures
 10 configure uart 0 for 9600 baud 8 data even parity
 20 configure uart 1 for 115200 baud 7 data no parity
 30 configure uart 1 for 1200 baud 6 data odd parity loopback
-40 configure timer 0 for 1000 ms
+40 configure timer 0 for 1000 s
 50 configure timer 1 for 10 ms
+55 configure timer 2 for 17 us
 60 configure qspi for 1 csiv
 70 qspi a,b,c,d
 list
@@ -1112,16 +1145,32 @@ dim a as flash b
 dim a as byte flash
 dim a as byte
 dim a as flash
+print "pin 0"
 dim b as pin www
 dim b as pin an0
 dim b as pin an0 xxx
 dim b as pin an0 for
+print "analog 1"
 dim b as pin an0 for analog input xxx
 dim b as pin an0 for analog yyy xxx
 dim b as pin an0 for yyy input xxx
+print "analog 2"
 dim b as pin an0 for analog input
+dim b as pin an0 for analog input xxx
+dim b as pin an0 for analog input debounced xxx
+print "frequency"
 dim c as pin an0 for frequency input
 dim d as
+print "digital io"
+dim d as pin scl for digital input xxx
+dim d as pin scl for digital input debounced xxx
+dim d as pin scl for digital input inverted xxx
+dim d as pin scl for digital input debounced inverted xxx
+dim d as pin scl for digital output open_drain xxx
+dim d as pin scl for digital output debounced open_drain xxx
+dim d as pin scl for digital output inverted open_drain xxx
+dim d as pin scl for digital output debounced inverted open_drain xxx
+print "remote"
 dim ee as remote
 dim eee as remote on
 dim eeee as remote on x
@@ -1197,6 +1246,12 @@ for x, = 1 to 10
 for x = 1 to 10 step
 for x = 1 to 10 step 1,
 for x = 1 to 10 step 1a
+print "sleep"
+10 sleep xxx
+11 sleep 17
+13 sleep 18 xxx
+14 sleep 19 ms xxx
+15 sleep 20 us xxx
 print "more"
 nexti
 next0
@@ -1296,12 +1351,12 @@ print !!!!!!!!!!1
 print !!!!!!!!!!!0
 print !!!!!!!!!!!!0
 10 dim ticks
-20 configure timer 0 for 10 ms
+20 configure timer 0 for 200 ms
 30 on timer 0 do gosub tick
 40 gosub main
 50 end
 60 sub main
-70   sleep 20
+70   sleep 400 ms
 75   print "going"
 80   gosub main
 90 endsub
@@ -1311,14 +1366,14 @@ print !!!!!!!!!!!!0
 run
 new
 10 dim ticks
-20 configure timer 0 for 10 ms
+20 configure timer 0 for 200 ms
 30 on timer 0 do gosub tick
 40 gosub main
 50 end
 60 sub main
 65 if 1 then
 66 if 1 then
-70   sleep 20
+70   sleep 400 ms
 75   print "going"
 80   gosub main
 81 endif
@@ -1361,12 +1416,12 @@ demo3 4000
 demo3 5000
 demo3 6000
 demo3 7000
+demo3 8000
+demo3 9000
 memory
 save
 list
 memory
-demo3 8000
-demo3 9000
 demo3 10000
 demo3 11000
 demo3 12000
@@ -1375,27 +1430,33 @@ demo3 14000
 demo3 15000
 demo3 16000
 demo3 17000
-save
-memory
 demo3 18000
 demo3 19000
-memory
 demo3 20000
 memory
 demo3 21000
+memory
+demo3 22000
+save
+memory
+demo3 23000
+memory
+demo3 24000
+memory
+demo3 25000
 memory
 list
 print "delete line 10"
 10
 memory
-print "delete line 21000"
-21000
+print "delete line 24000"
+24000
 memory
-print "delete line 21000-"
-delete 21000-
+print "delete line 24000-"
+delete 24000-
 memory
-print "delete line 19000-"
-delete 19000-
+print "delete line 22000-"
+delete 22000-
 memory
 print "delete line -1000"
 delete -1000
@@ -1457,9 +1518,9 @@ echo test negative run conditions
 30 print "hello",1,"there"
 40 configure timer 1 for 1ms
 50 on timer 1 do gosub aaa
-60 sleep 100000000
+60 sleep 100000000 ms
 70 endif
-80 sleep 100
+80 sleep 100 ms
 90 configure timer 1 for 700ms
 100 on timer 1 do print "tick"
 110 if 0 then
@@ -1468,7 +1529,7 @@ echo test negative run conditions
 140 off timer 1
 145 configure timer 1 for 10ms
 150 endif
-160 sleep 1000
+160 sleep 1000 ms
 170 off timer 1
 175 dim i
 176 read i
@@ -1535,11 +1596,11 @@ echo test interrupt masking
 "$BASIC" -q <<EOF
 10 configure timer 0 for 500 ms
 20 on timer 0 do print "tick"
-30 sleep 750
+30 sleep 750 ms
 40 mask timer 0
-50 sleep 2000
+50 sleep 2 s
 60 unmask timer 0
-70 sleep 250
+70 sleep 250 ms
 80 off timer 0
  100 configure uart 0 for 300 baud 8 data no parity loopback
  110 dim tx as pin utxd0 for uart output
@@ -1547,16 +1608,16 @@ echo test interrupt masking
  140 on uart 0 input do print "rx", rx
  145 on uart 0 output do print "txed"
  150 let tx = 3
- 160 sleep 500
+ 160 sleep 500 ms
  170 mask uart 0 input
  180 let tx = 4
- 190 sleep 500
+ 190 sleep 500 ms
  200 print "unmasking"
  210 unmask uart 0 input
- 220 sleep 500
+ 220 sleep 500 ms
  230 off uart 0 input
  240 let tx = 5
- 250 sleep 500
+ 250 sleep 500 ms
  260 print "poll", rx
 list
 run
@@ -1568,15 +1629,223 @@ echo test timers
 2 on timer 0 do gosub seven
 9 configure timer 1 for 1000 ms
 10 on timer 1 do print 2
-20 sleep 500
+20 sleep 500 ms
 29 configure timer 2 for 2000 ms
 30 on timer 2 do print 4
-40 sleep 5000
+31 sleep 1 ms  
+32 configure timer 3 for 2000000 us
+33 on timer 3 do print "t"
+40 sleep 5000 ms
 50 end
 90 sub seven
 100 print "seven"
 110 return
 120 endsub
+list
+run
+EOF
+
+echo test ticks/msec
+"$BASIC" -q <<EOF
+1 dim m, t
+2 let m = msecs, t = ticks
+10 print "ticks/msec:", ticks_per_msec
+20 configure timer 0 for 3000 ms
+30 on timer 0 do print "3000 ms timer at",msecs-m,"ms",ticks-t,"t" 
+40 configure timer 1 for 1750000 us
+50 on timer 1 do print "1750000 us timer at",msecs-m,"ms",ticks-t,"t" 
+90 sleep 10000 ms
+110 let ticks_per_msec=1
+list
+run
+EOF
+
+echo test time units
+"$BASIC" -q <<EOF
+10 sleep 1 s
+20 sleep 2*2 ms
+30 sleep 3000000 us
+40 configure timer 1 for 1 s
+50 configure timer 2 for 10 ms
+60 configure timer 3 for 100 us
+save
+list
+delete 40-
+save
+run
+profile
+EOF
+
+echo test sub parameters
+"$BASIC" -q <<EOF
+ 10 print "sub params1"
+ 20 dim i
+ 30 assert i==0
+ 40 gosub f i
+ 50 assert i==1
+ 60 print "passed"
+ 70 end 
+ 80 sub f x
+ 90   let x = x+1
+100 endsub 
+list
+run
+new
+5 print "sub params2"
+10 dim a
+20 let a = 7
+30 assert a==7 && ticks_per_msec==4
+40 gosub f a, 3, ticks_per_msec+0
+50 assert a==8 && ticks_per_msec==4
+60 let a = 12
+70 gosub f a+0, 3, 4
+80 assert a==12 && ticks_per_msec==4
+90 gosub f a, a, a
+100 assert a==2
+110 print "passed"
+120 end
+130 sub f x, y, z
+140   print "f1:", x+y, z
+150   let x = 8
+160   let y = 9
+170   let z = 2
+180   print "f2:", x+y, z
+190 endsub
+list
+run
+new
+5 print "sub params2.1"
+10 dim a
+20 gosub foo a, a
+30 end
+50 sub foo a, a
+60 endsub
+list
+run
+new
+ 5 print "sub params3"
+ 20 assert ticks_per_msec==4
+ 30 gosub f ticks_per_msec+0
+ 40 assert ticks_per_msec==4
+ 50 print "passed"
+ 60 end 
+ 90 sub f x
+100   let x = x*2
+110   print x, ticks_per_msec
+120 endsub 
+list
+run
+new
+ 10 print "sub params4"
+ 20 dim a[2]
+ 25 dim b[2]
+ 30 let a[0] = 5, a[1] = 6
+ 40 assert a[0]==5&&a[1]==6
+ 50 gosub f a[0]+0, a[1]
+ 60 assert a[0]==5&&a[1]==6
+ 70 gosub f2 a
+ 80 assert a[0]==6&&a[1]==7
+ 85 gosub foo a, b
+ 87 print a[0], b[1]
+ 88 assert a[0]==0 && b[1]==6
+ 90 print "passed"
+ 100 end 
+ 110 sub f x, y
+ 120   print "fa", x, y
+ 130   let x = x+1
+ 140   let y = y+1
+ 150   print "fb", x, y
+ 160 endsub 
+ 170 sub f2 z
+ 180   let z[0] = z[0]+1
+ 190   let z[1] = z[1]+1
+ 200 endsub
+ 300 sub foo i, j
+ 310   if i > 0 then
+ 320     let i = i - 1
+ 330     let j[1] = j[1] + 1
+ 340     gosub foo i, j
+ 350   endif
+ 360 endsub
+list
+run
+new
+10 print "sub params - call with too many params1"
+20 gosub f
+30 print "ok"
+40 gosub f ticks_per_msec
+50 end 
+60 sub f
+70 endsub 
+list
+run
+new
+10 print "sub params - call with too many params2"
+20 dim a
+30 gosub f ticks_per_msec+0
+40 print "ok"
+50 gosub f ticks_per_msec+0, a
+60 stop 
+70 sub f x
+80 endsub 
+list
+run
+new
+ 10 print "sub pin params"
+ 20 dim p as pin utxd0 for digital output
+ 30 dim i
+ 40 for i = 1 to 10
+ 50   gosub flip p, i%i
+ 60 next 
+ 70 print "passed"
+ 80 end 
+ 90 sub flip o, v
+100   let o = v
+110 endsub 
+list
+run
+new
+ 10 print "sub param array by-ref"
+ 20 dim x[3], b[2]
+ 30 let x[0] = 1, x[1] = 2, x[2] = 3
+ 31 let b[0] = 11, b[1] = 1
+ 40 assert x[0]==1&&x[1]==2&&x[2]==3
+ 50 gosub f x
+ 60 assert x[0]==10&&x[1]==20&&x[2]==30
+ 70 print "pass1"
+ 75 gosub f b
+ 80 stop 
+ 90 sub f a
+ 95   print a[0]
+100   let a[0] = 10
+110   let a[1] = 20
+120   let a[2] = 30
+130 endsub 
+list
+run
+new
+  10 print "sub param nested type error"
+  20 dim a[2]
+  30 gosub f a
+  40 gosub f a[1]
+  50 end 
+  60 sub f x
+  70   print "f", x
+  80   gosub y x
+  90 endsub 
+ 100 sub y p
+ 110   print "y", p[1]
+ 120 endsub 
+list
+run
+new
+ 10 print "sub param with same-name local"
+ 20 dim a
+ 30 gosub f a
+ 40 stop
+ 50 sub f x
+ 60   dim x[2]
+ 70 endsub
 list
 run
 EOF
@@ -1593,7 +1862,7 @@ demo 2
 list
 run
 demo 3
-75 sleep 500
+75 sleep 500 ms
 list
 trace on
 run

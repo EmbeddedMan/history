@@ -19,10 +19,11 @@ int var_open_scope();
 void var_close_scope(int scope);
 
 // called at runtime to manipulate variables
-void var_declare(char *name, int gosubs, int type, int size, int max_index, int pin_number, int pin_type, int pin_qual, int nodeid);
-void var_set(char *name, int index, int value);
-int var_get(char *name, int index);
-int var_get_size(char *name);
+void var_declare(const char *name, int gosubs, int type, int size, int max_index, int pin_number, int pin_type, int pin_qual, int nodeid);
+void var_declare_reference(const char *name, int gosubs, const char *target_name);
+void var_set(const char *name, int index, int value);
+int var_get(const char *name, int index);
+int var_get_size(const char *name);
 
 void var_set_flash(int var, int value);
 int var_get_flash(int var);

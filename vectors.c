@@ -3,6 +3,7 @@
 // this file to hook up __declspec(interrupt) functions to hardware
 // interrupts.
 
+#if ! PIC32
 #include "main.h"
 
 // *** page1 ***
@@ -25,7 +26,7 @@ extern __declspec(interrupt) void fec_isr(void);
 
 #if ! MCF51JM128
 // this is the software interrupt vector table, in page1.
-__declspec(page1)
+DECLSPEC_PAGE1
 uint32 _swvect[512] = {
 #if ! FLASHER
     (uint32)flash_upgrade_ram_begin, (uint32)flash_upgrade_ram_end,
@@ -112,7 +113,11 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 74
     UINT32HALT, 0,                               // 75
     UINT32HALT, 0,                               // 76
+#if SERIAL_DRIVER
+    UINT32JMP, (uint32)serial_isr,               // 77 - uart0
+#else
     UINT32HALT, 0,                               // 77
+#endif
     UINT32HALT, 0,                               // 78
     UINT32HALT, 0,                               // 79
     UINT32HALT, 0,                               // 80
@@ -573,5 +578,6 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 254
     UINT32HALT, 0,                               // 255
 };
+#endif
 #endif
 

@@ -6,6 +6,10 @@
 #include "config.h"
 
 #if ! _WIN32
+#define NULL ((void*)0)
+#endif
+
+#if ! STICK_GUEST
 
 #if EXTRACT && ! MCF51JM128
 #include "extract.h"
@@ -17,6 +21,11 @@
 #elif MCF51JM128
 #include "MCF51JM128.h"
 #include "compat.h"
+#elif PIC32
+#include <plib.h>
+typedef unsigned char uint8;
+typedef unsigned short uint16;
+typedef unsigned int uint32;
 #else
 typedef unsigned char uint8;
 typedef unsigned short uint16;
@@ -24,35 +33,88 @@ typedef unsigned int uint32;
 #endif
 #endif
 
-#if ! MCF51JM128
-#define INTERRUPT  __declspec(interrupt)
-#else
+typedef int intptr;
+typedef unsigned int uintptr;
+typedef uint32 size_t;
+
+#if GCC
+#define INTERRUPT __attribute__((interrupt))
+#define far
+#define __IPSBAR ((volatile uint8 *)0x40000000)
+#define RAMBAR_ADDRESS ((uintptr)__RAMBAR)
+#define DECLSPEC_PAGE0_CODE __attribute__((section(".page0_code")))
+#define DECLSPEC_PAGE0_DATA __attribute__((section(".page0_data")))
+#define DECLSPEC_PAGE1 __attribute__((section(".page1")))
+#define FLASH_UPGRADE_RAM_BEGIN __attribute__((section(".text_flash_upgrade_ram_begin")))
+#define FLASH_UPGRADE_RAM_END __attribute__((section(".text_flash_upgrade_ram_end")))
+
+#define asm_halt() __asm__("halt")
+#define asm_stop_2000(x) __asm__("stop #0x2000")
+#define asm_stop_2700(x) __asm__("stop #0x2700")
+
+#elif MCF52221 || MCF52233 || MCF51JM128
+#if MCF51JM128
 #define INTERRUPT  interrupt
+#else
+#define INTERRUPT  __declspec(interrupt)
+#endif
+#define DECLSPEC_PAGE1 __declspec(page1)
+#define asm_halt() asm { halt }
+#define asm_stop_2000() asm { stop #0x2000 }
+#define asm_stop_2700() asm { stop #0x2700 }
+#elif PIC32
+#define INTERRUPT
+#define asm_halt()  asm("SDBBP");
+#define DECLSPEC_PAGE1
+#else
+#error
 #endif
 
-#else  // _WIN32
+#else  // STICK_GUEST
 
+#define INTERRUPT
+
+#if GCC
+#include <inttypes.h>
+#include <bits/wordsize.h>
+typedef uint8_t uint8;
+typedef uint16_t uint16;
+typedef uint32_t uint32;
+typedef uintptr_t uintptr;
+typedef intptr_t intptr;
+#if __WORDSIZE == 64
+typedef uint64_t size_t;
+#else
+typedef uint32 size_t;
+#endif
+#else // ! GCC
+#define _WIN32_WINNT 0x0500
 #include <windows.h>
-#include <assert.h>
-extern int write(int, void *, int);
-extern char *gets(char *);
-
+extern int isatty(int);
 #if ! NO_UINT_TYPEDEFS
 typedef unsigned char uint8;
 typedef unsigned short uint16;
 typedef unsigned int uint32;
-#define NO_UINT_TYPEDEFS  1
+typedef int intptr;
+typedef unsigned int uintptr;
 #endif
+#define NO_UINT_TYPEDEFS  1
+#endif // ! GCC
+#include <assert.h>
+#define ASSERT(x)  assert(x)
+
+extern void write(int, const void *, size_t);
+extern char *gets(char *);
 
 #define inline
 #undef MAX_PATH
 #define W32BYTESWAP(x) ((x)&0xff)<<24|((x)&0xff00)<<8|((x)&0xff0000)>>8|((x)&0xff000000)>>24;
 #define FLASH_PAGE_SIZE  2048
 
-#endif  // ! _WIN32
+#endif  // ! STICK_GUEST
 
 typedef unsigned char bool;
-#if ! MCF51JM128
+#if ! MCF51JM128 || GCC
 typedef unsigned char byte;
 #endif
 
@@ -70,10 +132,9 @@ enum {
 #define ROUNDUP(n, s)  (((n)+(s)-1)&~((s)-1))  // N.B. s must be power of 2!
 #define ROUNDDOWN(n, s)  ((n)&~((s)-1))  // N.B. s must be power of 2!
 #define LENGTHOF(a)  (sizeof(a)/sizeof(a[0]))
-#define OFFSETOF(t, f)  ((int)(&((t *)0)->f))
+#define OFFSETOF(t, f)  ((int)(intptr)(&((t *)0)->f))
+#define IS_POWER_OF_2(x) ((((x)-1)&(x))==0)
 
-#include <string.h>
-#include <ctype.h>
 #include <stdarg.h>
 
 #include "clone.h"
@@ -83,20 +144,21 @@ enum {
 #include "qspi.h"
 #include "zigbee.h"
 #include "terminal.h"
+#include "timer.h"
 #include "util.h"
+#include "adc.h"
+#include "led.h"
 
-#if ! _WIN32
+#if ! STICK_GUEST
 
 #include "startup.h"
 #include "init.h"
 #include "vectors.h"
 
-#include "adc.h"
-#include "led.h"
+#include "serial.h"
 #include "sleep.h"
-#include "timer.h"
 
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF51JM128 || PIC32
 #include "ftdi.h"
 #include "scsi.h"
 #include "usb.h"
@@ -117,7 +179,7 @@ enum {
 #include "jm.h"
 #endif
 
-#endif  // ! _WIN32
+#endif  // ! STICK_GUEST
 
 #if PICTOCRYPT
 #include "pict-o-crypt.h"
@@ -153,19 +215,19 @@ extern void os_yield(void);
 #define os_yield()  // NULL
 #endif
 
-#if ! _WIN32
+#if ! STICK_GUEST
 
 #if DEBUG
 #define assert(x)  if (! (x)) { led_line(__LINE__); }
+#define assert_ram(x)  if (! (x)) { asm_halt(); }
 #else
 #define assert(x)
+#define assert_ram(x)
 #endif
 #define ASSERT(x)  if (! (x)) { led_line(__LINE__); }
+#define ASSERT_RAM(x)  if (! (x)) { asm_halt(); }
 
-#else  // _WIN32
-
-#define ticks (int)(GetTickCount())
-#define seconds  (ticks/1000)
+#else  // STICK_GUEST
 
 #if PICTOCRYPT
 extern byte big_buffer[8192];
@@ -173,7 +235,15 @@ extern byte big_buffer[8192];
 extern byte big_buffer[1024];
 #endif
 
-#endif  // ! _WIN32
+#endif  // ! STICK_GUEST
+
+// If the platform doesn't provide FLASH_UPGRADE_RAM_{BEGIN,END} then provide default no-ops.
+#ifndef FLASH_UPGRADE_RAM_BEGIN
+#define FLASH_UPGRADE_RAM_BEGIN
+#endif
+#ifndef FLASH_UPGRADE_RAM_END
+#define FLASH_UPGRADE_RAM_END
+#endif
 
 #define BASIC_LINE_SIZE  79
 

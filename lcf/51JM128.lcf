@@ -116,6 +116,7 @@ SECTIONS {
 	___STACK_SIZE = ___SP_INIT - ___SP_END;
 	  	
 	___BDT_RAM		= ADDR(.bdtram);
+	___BDT_RAM_END  = ADDR(.userram);
 	
 	__SP_INIT		= ___SP_INIT;
 

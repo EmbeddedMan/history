@@ -70,10 +70,10 @@ static
 void
 led_set(enum led n, int on)
 {
-#pragma unused(n)
     assert (n >= 0 && n < led_max);
 
-#if ! MCF51JM128
+#if ! STICK_GUEST
+#if MCF52221 || MCF52233
 #if PICTOCRYPT
     // red LED workaround; tri-state when off!
     if (on) {
@@ -103,13 +103,30 @@ led_set(enum led n, int on)
         MCF_GPIO_SETNQ = (uint8)(1 << 7);
     }
 #endif
-#else  // ! MCF51JM128
+#elif MCF51JM128
     if (on) {
         PTFD &= ~0x01;
     } else {
         PTFD |= 0x01;
     }
+#elif PIC32
+#if STARTER
+    if (on) {
+        LATDSET = 1<<0;
+    } else {
+        LATDCLR = 1<<0;
+    }
 #endif
+
+    if (on) {
+        LATESET = 1<<0;
+    } else {
+        LATECLR = 1<<0;
+    }
+#else
+#error
+#endif
+#endif // ! STICK_GUEST
 }
 
 void
@@ -157,6 +174,8 @@ led_timer_poll()
     }
 }
 
+#if ! STICK_GUEST
+
 // this function displays a diagnostic code on a LED.
 void
 led_line(int line)
@@ -166,9 +185,7 @@ led_line(int line)
     int n;
     
     if (debugger_attached) {
-        asm {
-            halt
-        };
+        asm_halt();
     } else {
         splx(7);
         
@@ -211,9 +228,7 @@ led_hex(int hex)
     int n;
     
     if (debugger_attached) {
-        asm {
-            halt
-        };
+        asm_halt();
     } else {
         splx(7);
         
@@ -247,11 +262,14 @@ led_hex(int hex)
     }
 }
 
+#endif // ! STICK_GUEST
+
 // this function initializes the led module.
 void
 led_initialize(void)
 {
-#if ! MCF51JM128
+#if ! STICK_GUEST
+#if MCF52221 || MCF52233
     // TC is gpio output
     MCF_GPIO_PTCPAR = 0;
     MCF_GPIO_DDRTC = 0xf;
@@ -260,9 +278,17 @@ led_initialize(void)
 #else
     MCF_GPIO_SETTC = 0xf;  // all LEDs on to indicate reset!
 #endif
-#else  // ! MCF51JM128
+#elif MCF51JM128
     // f0 is gpio output
     PTFDD = 0x01;
+#elif PIC32
+#if STARTER
+    // rd0 is digital output
+    TRISDCLR = 1<<0;
 #endif
+    // re0 is digital output
+    TRISECLR = 1<<0;
+#endif
+#endif // ! STICK_GUEST
 }
 

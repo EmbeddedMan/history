@@ -24,11 +24,12 @@ enum bytecode {
       code_label,
       code_restore,
     code_dim,
-      code_comma,  // used for dim and print
+      code_comma,  // used for dim, print, and others.
       code_ram,  // page_offset in RAM_VARIABLE_PAGE (allocated internally)
       code_flash,  // page_offset in FLASH_PARAM_PAGE (allocated internally)
       code_pin,  // pin_number, pin_type
       code_nodeid,
+      code_var_reference, // for sub reference parameters
     code_let,
     code_print,
       code_string,
@@ -55,7 +56,7 @@ enum bytecode {
     code_sleep,
     code_stop,
     code_end,
-
+    
     // exressions
     code_load_and_push_immediate,  // integer
     code_load_and_push_immediate_hex,  // hex integer
@@ -72,21 +73,36 @@ enum bytecode {
     code_max
 };
 
+enum timer_unit_type {
+    timer_unit_usecs,
+    timer_unit_msecs,
+    timer_unit_secs,
+    timer_unit_max
+};
 
+extern struct timer_unit {
+    char *name;
+    int scale;  // negative -> less than tick; positive -> tick or greater
+} timer_units[/*timer_unit_max*/];
+
+#if PIC32
+#define BASIC_SMALL_PAGE_SIZE  4096  // REVISIT -- flash page size?
+#else
 #define BASIC_SMALL_PAGE_SIZE  2048
+#endif
 
 #if SHRINK
 #define BASIC_LARGE_PAGE_SIZE  (8*1024)
 #define BASIC_STORES  1
 #else
-#define BASIC_LARGE_PAGE_SIZE  (10*1024)
-#define BASIC_STORES  3
+#define BASIC_LARGE_PAGE_SIZE  (12*1024)
+#define BASIC_STORES  2
 #endif
 
 #define BASIC_BYTECODE_SIZE  (4*BASIC_LINE_SIZE)
 
-#if ! _WIN32
-#define START_DYNAMIC  (FLASH_BYTES - ((2+BASIC_STORES)*BASIC_LARGE_PAGE_SIZE+3*BASIC_SMALL_PAGE_SIZE))
+#if ! STICK_GUEST
+#define START_DYNAMIC  (FLASH_START+FLASH_BYTES - ((2+BASIC_STORES)*BASIC_LARGE_PAGE_SIZE+3*BASIC_SMALL_PAGE_SIZE))
 #define FLASH_CODE1_PAGE     (byte *)(START_DYNAMIC)
 #define FLASH_CODE2_PAGE     (byte *)(START_DYNAMIC+BASIC_LARGE_PAGE_SIZE)
 #define FLASH_STORE_PAGE(x)  (byte *)(START_DYNAMIC+((2+(x))*BASIC_LARGE_PAGE_SIZE))

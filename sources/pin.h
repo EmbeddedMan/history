@@ -19,9 +19,11 @@ enum pin_type {
 
 extern char *pin_type_names[];
 
-// up to 8 bits
+// up to 8 bits.  keep in-sync with pin_qual_names.
 enum pin_qual {
+    pin_qual_debounced,
     pin_qual_inverted,
+    pin_qual_open_drain,
     pin_qual_last
 };
 
@@ -31,7 +33,7 @@ extern char *pin_qual_names[];
 
 // N.B. pins marked with *** may affect zigbee or other system operation
 enum pin_number {
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
     PIN_DTIN0,
     PIN_DTIN1,
     PIN_DTIN2,
@@ -72,7 +74,7 @@ enum pin_number {
 #endif
     PIN_SCL,  // *** zigbee/clone
     PIN_SDA,  // *** zigbee
-#else // ! MCF51JM128
+#elif MCF51JM128
     PIN_PTA0 = 0,
     PIN_PTA1,
     PIN_PTA2,
@@ -122,6 +124,111 @@ enum pin_number {
     PIN_PTG1,
     PIN_PTG2,
     PIN_PTG3,
+#elif PIC32
+    PIN_RA0,
+    PIN_RA1,
+    PIN_RA2,
+    PIN_RA3,
+    PIN_RA4,
+    PIN_RA5,
+    PIN_RA6,
+    PIN_RA7,
+    PIN_RA8, // unused
+    PIN_RA9, // unused
+    PIN_RA10, // unused
+    PIN_RA11, // unused
+    PIN_RA12, // unused
+    PIN_RA13, // unused
+    PIN_RA14,
+    PIN_RA15,
+    PIN_AN0,  // rb0...
+    PIN_AN1,
+    PIN_AN2,
+    PIN_AN3,
+    PIN_AN4,
+    PIN_AN5,
+    PIN_AN6,
+    PIN_AN7,
+    PIN_AN8,
+    PIN_AN9,
+    PIN_AN10,
+    PIN_AN11,
+    PIN_AN12,
+    PIN_AN13,
+    PIN_AN14,
+    PIN_AN15,
+    PIN_RC0,  // unused
+    PIN_RC1,
+    PIN_RC2,
+    PIN_RC3,
+    PIN_RC4,
+    PIN_RC5,  // unused
+    PIN_RC6,  // unused
+    PIN_RC7,  // unused
+    PIN_RC8,  // unused
+    PIN_RC9,  // unused
+    PIN_RC10,  // unused
+    PIN_RC11,  // unused
+    PIN_RC12,  // unused
+    PIN_RC13,
+    PIN_RC14,
+    PIN_RD0,  // oc1
+    PIN_RD1,  // oc2
+    PIN_RD2,  // oc3
+    PIN_RD3,  // oc4
+    PIN_RD4,  // oc5
+    PIN_RD5,
+    PIN_RD6,
+    PIN_RD7,
+    PIN_RD8,
+    PIN_RD9,
+    PIN_RD10,
+    PIN_RD11,
+    PIN_RD12,
+    PIN_RD13,
+    PIN_RD14,
+    PIN_RD15,
+    PIN_RE0,
+    PIN_RE1,
+    PIN_RE2,
+    PIN_RE3,
+    PIN_RE4,
+    PIN_RE5,
+    PIN_RE6,
+    PIN_RE7,
+    PIN_RE8,
+    PIN_RE9,
+    PIN_RF0,
+    PIN_RF1,
+    PIN_RF2,
+    PIN_RF3,
+    PIN_RF4,
+    PIN_RF5,
+    PIN_RF6,  // unused
+    PIN_RF7,  // unused
+    PIN_RF8,
+    PIN_RF9,  // unused
+    PIN_RF10,  // unused
+    PIN_RF11,  // unused
+    PIN_RF12,
+    PIN_RF13,
+    PIN_RG0,
+    PIN_RG1,
+    PIN_RG2,  // unused
+    PIN_RG3,  // unused
+    PIN_RG4,  // unused
+    PIN_RG5,  // unused
+    PIN_RG6,
+    PIN_RG7,
+    PIN_RG8,
+    PIN_RG9,
+    PIN_RG10,  // unused
+    PIN_RG11,  // unused
+    PIN_RG12,
+    PIN_RG13,
+    PIN_RG14,
+#else
+#error
 #endif
     PIN_LAST
 };
@@ -156,6 +263,8 @@ pin_uart_pending(OUT int *rx_full, OUT int *tx_empty);
 void
 pin_clear(void);
 
+void
+pin_timer_poll(void);
+
 extern void
 pin_initialize(void);
-

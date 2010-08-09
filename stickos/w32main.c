@@ -1,25 +1,15 @@
+#if __unix__
+#include <signal.h>
+#else
 #include <windows.h>
+#endif
 #include "main.h"
-
-extern int isatty(int);
 
 bool zb_present = true;
 bool main_prompt = true;
 bool terminal_echo = true;
 
 byte big_buffer[1024];
-
-int
-gpl()
-{
-    return 0;
-}
-
-void
-delay(int ms)
-{
-    Sleep(isatty(0)?(ms):(ms)/10);
-}
 
 void
 flash_erase_pages(uint32 *addr, uint32 npages)
@@ -76,15 +66,23 @@ terminal_command_error(int offset)
 }
 
 static
+#if __unix__
+void
+#else
 BOOL
+#endif
 ctrlc(int event)
 {
+#if __unix__
+    stop();
+#else
     if (event) {
         return 0;
     } else {
         stop();
         return 1;
     }
+#endif
 }
 
 int
@@ -93,8 +91,12 @@ main(int argc, char **argv)
     int i;
     char text[2*LINE_INPUT_SIZE];
 
+#if __unix__
+    signal(SIGINT, ctrlc);
+#else
     SetErrorMode(0);
     SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrlc, true);
+#endif
 
     flash_erase_pages((uint32 *)FLASH_CODE1_PAGE, BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);
     flash_erase_pages((uint32 *)FLASH_CODE2_PAGE, BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);
@@ -105,6 +107,7 @@ main(int argc, char **argv)
     flash_erase_pages((uint32 *)FLASH_PARAM1_PAGE, BASIC_SMALL_PAGE_SIZE/FLASH_PAGE_SIZE);
     flash_erase_pages((uint32 *)FLASH_PARAM2_PAGE, BASIC_SMALL_PAGE_SIZE/FLASH_PAGE_SIZE);
 
+    timer_initialize();
     basic_initialize();
 
     if (argc == 1) {

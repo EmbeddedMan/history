@@ -12,6 +12,7 @@ bool code_indent = true;
 // the last word of each flash bank is the generation number
 #define LGENERATION(p)  *(int *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(int))
 
+#undef PAGE_SIZE
 #define PAGE_SIZE(p)  (((p) == FLASH_CODE1_PAGE || (p) == FLASH_CODE2_PAGE) ? BASIC_LARGE_PAGE_SIZE : BASIC_SMALL_PAGE_SIZE)
 
 // we always pick the newer flash bank
@@ -71,9 +72,6 @@ inline
 struct line *
 find_next_line_in_page(byte *page, struct line *line)
 {
-#if ! _WIN32
-#pragma unused(page)
-#endif
     struct line *next;
 
     // if we're about to go past the end...
@@ -272,10 +270,10 @@ XXX_DONE_XXX:
     return line;
 }
 
-// this function returns the line number where the specified sub_name
+// this function returns the line where the specified sub_name
 // exists.
-int
-code_line(enum bytecode code, byte *name)
+struct line *
+code_line(enum bytecode code, const byte *name)
 {
     int line_number;
     struct line *line;
@@ -286,11 +284,11 @@ code_line(enum bytecode code, byte *name)
     for (;;) {
         line = code_next_line(false, &line_number);
         if (line) {
-            if (line->bytecode[0] == code && ! strcmp((char *)line->bytecode+1, (char *)name)) {
-                return line->line_number;
+            if (line->bytecode[0] == code && ! strcmp((char *)line->bytecode+1, (const char *)name)) {
+                return line;
             }
         } else {
-            return 0;
+            return NULL;
         }
     }
 }
@@ -450,7 +448,7 @@ code_edit(int line_number_in)
 
     n = sprintf(text, "%d ", line_number);
     unparse_bytecode(line->bytecode, line->length, text+n);
-#if ! _WIN32
+#if ! STICK_GUEST
     terminal_edit(text);
     main_edit = true;
 #endif
@@ -816,7 +814,11 @@ code_timer_poll(void)
     // if we can profile...
     // N.B. this works if the code is all in the same page -- i.e., saved
     if (! ((struct line *)RAM_CODE_PAGE)->line_number && running) {
-        bucket = run_line_number >> profile_shift;
+        if (run_line_number == -1) {
+            bucket = 0;
+        } else {
+            bucket = run_line_number >> profile_shift;
+        }
         assert(bucket < PROFILE_BUCKETS);
         profile_buckets[bucket].hits++;
     }
@@ -865,7 +867,7 @@ code_initialize(void)
     assert(! (BASIC_SMALL_PAGE_SIZE%FLASH_PAGE_SIZE));
     assert(! (BASIC_LARGE_PAGE_SIZE%FLASH_PAGE_SIZE));
 
-#if ! _WIN32
+#if ! STICK_GUEST
     if (disable_autorun) {
         return;
     }

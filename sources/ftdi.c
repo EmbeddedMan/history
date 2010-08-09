@@ -1,4 +1,4 @@
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF51JM128 || PIC32
 // *** ftdi.c *********************************************************
 // this file implements the FTDI transport (on top of the usb driver
 // module).
@@ -113,7 +113,7 @@ static byte rx_out;
 // buffers and then prints the specified line to the FTDI transport
 // console.
 void
-ftdi_print(byte *buffer, int length)
+ftdi_print(const byte *buffer, int length)
 {
     int m;
     int x;

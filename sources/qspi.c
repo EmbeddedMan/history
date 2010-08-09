@@ -12,7 +12,7 @@ static bool csiv;
 void
 qspi_transfer(byte *buffer, int length)
 {
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
     int i;
     int x;
     int request;
@@ -66,7 +66,7 @@ qspi_transfer(byte *buffer, int length)
     MCF_QSPI_QWR = csiv?MCF_QSPI_QWR_CSIV:0;
     
     splx(x);
-#else
+#elif MCF51JM128
     // cs active
     if (csiv) {
         PTED &= ~PTEDD_PTEDD7_MASK;
@@ -108,9 +108,9 @@ extern void
 qspi_inactive(bool csiv_in)
 {
     csiv = csiv_in;
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
     MCF_QSPI_QWR = csiv?MCF_QSPI_QWR_CSIV:0;
-#else
+#elif MCF51JM128
     if (csiv) {
         PTED |= PTEDD_PTEDD7_MASK;
     } else {
@@ -122,11 +122,11 @@ qspi_inactive(bool csiv_in)
 extern void
 qspi_baud_fast(void)
 {
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
     // initialize qspi master at 500k baud
     assert(bus_frequency/QSPI_BAUD_FAST < 256);
     MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/bus_frequency/QSPI_BAUD_FAST;
-#else
+#elif MCF51JM128
     int log2;
     int divisor;
     
@@ -146,14 +146,14 @@ qspi_baud_fast(void)
 extern void
 qspi_initialize(void)
 {
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
     // QS is primary
     MCF_GPIO_PQSPAR = 0x1555;
 
     // initialize qspi master at 150k baud
     assert(bus_frequency/QSPI_BAUD_SLOW < 256);
     MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/bus_frequency/QSPI_BAUD_SLOW;
-#else
+#elif MCF51JM128
     int log2;
     int divisor;
     

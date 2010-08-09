@@ -184,7 +184,6 @@ void mcf5223x_ePHY_init(void)
 int
 dprintf(char *format, ...)
 {
-#pragma unused(format)
     return 0;
 }
 

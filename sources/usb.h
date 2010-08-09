@@ -30,7 +30,7 @@ struct setup {
     short length;
 };
 
-extern bool usb_in_isr;  // set when in isr
+extern volatile bool usb_in_isr;  // set when in isr
 
 extern bool scsi_attached;  // set when usb mass storage device is attached
 extern uint32 scsi_attached_count;
@@ -85,9 +85,11 @@ usb_string_descriptor(const byte *descriptor, int length);
 
 // *** init ***
 
+#if ! PIC32
 INTERRUPT
 void
 usb_isr(void);
+#endif
 
 void
 usb_initialize(void);

@@ -113,7 +113,7 @@ main_initialize(void)
     if (! usb_host_mode) {
         // register device mode callbacks
         terminal_register(main_command_cbfn, main_ctrlc_cbfn);
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF51JM128 || PIC32
         ftdi_register(main_reset_cbfn);
 #endif
     }

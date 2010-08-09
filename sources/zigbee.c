@@ -44,12 +44,12 @@ static uint8 rxseq[NSEQ];  // last seq received
 static int rxseqid[NSEQ];  // last nodeid received
 
 static bool rxack_bool[NSEQ];  // we need to ack a received seq
-static int rxack_ticks[NSEQ];  // we need to ack a received seq now
+static int rxack_msecs[NSEQ];  // we need to ack a received seq now
 
 static bool rxdrop;  // we need to drop zb_class_receive received packets
 
 static bool ready;
-static int active;
+static int active; // ms
 
 #define IDLE  0
 #define RX  2
@@ -77,7 +77,7 @@ zb_seq(int nodeid)
 static void
 zb_rxtxen(bool boo)
 {
-#if ! MCF51JM128
+#if MCF52221 || MCF52233
     if (boo) {
         MCF_GPIO_SETAN = (1<<5);
         MCF_GPIO_SETAS = (1<<1);
@@ -85,7 +85,7 @@ zb_rxtxen(bool boo)
         MCF_GPIO_CLRAN = ~(1<<5);
         MCF_GPIO_CLRAS = ~(1<<1);
     }
-#else
+#elif MCF51JM128
     if (boo) {
         PTBD |= 0x20;
     } else {
@@ -101,7 +101,7 @@ zb_delay(int send)
     
     for (;;) {
         // if we've recently sent or received a packet...
-        ms = ticks-active;
+        ms = msecs-active;
         if (ms >= 0 && ms < (send?THROTTLE_MS*(send/4+1):DELAY_MS)) {
             // delay the transition to tx
             delay((send?THROTTLE_MS*(send/4+1):DELAY_MS)-ms);
@@ -194,7 +194,7 @@ zb_packet_transmit(
     IN uint8 seq,
     IN uint8 ackseq,
     IN uint8 length_in,
-    IN byte *payload
+    IN const byte *payload
     )
 {
     int irq;
@@ -202,7 +202,7 @@ zb_packet_transmit(
     packet_t *packet;
     byte buf[2+sizeof(packet_t)];
     
-    assert(rxid != -1);
+    assert(rxid != (uint16)-1);
     assert(gpl() >= SPL_IRQ4);
     
     transmits++;
@@ -245,7 +245,7 @@ zb_packet_transmit(
         irq = zb_read(0x24);
     } while (! (irq & 0x40));
     
-    active = ticks;
+    active = msecs;
     
     zb_rxtxen(false);
 }
@@ -269,7 +269,7 @@ zb_packet_receive(
     
     receives++;
 
-    active = ticks;
+    active = msecs;
 
     zb_rxtxen(false);
     
@@ -301,7 +301,7 @@ zb_packet_receive(
     assert(packet->length <= length);
     assert(packet->length <= sizeof(packet->payload));
     
-    assert(packet->txid != -1);
+    assert(packet->txid != (uint16)-1);
     
     *txid = packet->txid;
     *class = packet->class;
@@ -345,7 +345,7 @@ zb_packet_deliver(
     }
     
     // schedule a delayed ack
-    rxack_ticks[n] = ticks+((class==zb_class_remote_set)?FAST_ACK_MS:ACK_MS);
+    rxack_msecs[n] = msecs+((class==zb_class_remote_set)?FAST_ACK_MS:ACK_MS);
     rxack_bool[n] = true;
     
     // if this is from a new node or a new boot...
@@ -400,7 +400,9 @@ zb_isr(void)
     assert(! zb_in_isr)
     zb_in_isr = true;
     
+#if ! PIC32  // REVISIT?
     (void)splx(-SPL_IRQ4);
+#endif
     
     zb_unready();
     
@@ -446,7 +448,7 @@ zb_send_internal(
     IN int nodeid,
     IN uint8 class_in,
     IN int length_in,
-    IN byte *buffer
+    IN const byte *buffer
     )
 {
     int n;
@@ -496,7 +498,7 @@ zb_send_internal(
         zb_packet_transmit(nodeid, class_in, txseq[n], rxseq[n], length_in, buffer);
         
         // wait for an ack
-        start = ticks;
+        start = msecs;
         for (;;) {
             // enable receiver
             zb_ready();
@@ -507,12 +509,12 @@ zb_send_internal(
                 if (! (irq & 0x80)) {
                     zb_poll();
                 }
-            } while (! (irq & 0x80) && ticks-start <= WAIT_MS);
+            } while (! (irq & 0x80) && msecs-start <= WAIT_MS);
             
             zb_unready();
 
             // if we've timed out...
-            if (ticks-start > WAIT_MS) {
+            if (msecs-start > WAIT_MS) {
                 // N.B. we might have retries left
                 break;
             }
@@ -562,7 +564,7 @@ zb_send(
     IN int nodeid,
     IN uint8 class,
     IN int length_in,
-    IN byte *buffer
+    IN const byte *buffer
     )
 {
     bool boo;
@@ -589,7 +591,7 @@ zb_poll(void)
     //assert(gpl() == 0);
 
     for (n = 0; n < NSEQ; n++) {
-        if (rxack_bool[n] && ticks-rxack_ticks[n] > 0) {
+        if (rxack_bool[n] && msecs-rxack_msecs[n] > 0) {
             zb_delay(0);
         
             x = splx(SPL_IRQ4);
@@ -724,6 +726,7 @@ zb_initialize(void)
     // b5 for rxtxen
     PTEDD |= 0x0c;
     PTBDD |= 0x20;
+#elif PIC32
 #else
 #error
 #endif
@@ -799,7 +802,7 @@ zb_initialize(void)
     MCF_INTC0_ICR04 = MCF_INTC_ICR_IL(SPL_IRQ4)|MCF_INTC_ICR_IP(SPL_IRQ4);
     //MCF_INTC0_IMRH &= ~0;
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK4;  // irq4
-#else
+#elif MCF51JM128
     // program irq (level 7) for falling edge trigger
     IRQSC = IRQSC_IRQPE_MASK|IRQSC_IRQIE_MASK;
 #endif

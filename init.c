@@ -5,8 +5,10 @@
 
 #include "main.h"
 
+#if ! PIC32
 extern unsigned char far __BSS_START[], __BSS_END[];
 extern unsigned char far __DATA_RAM[], __DATA_ROM[], __DATA_END[];
+#endif
 
 #if COMPAT
 uint32 incompat;
@@ -15,6 +17,7 @@ uint32 incompat;
 bool disable_autorun;
 uint16 flash_checksum;
 bool usb_host_mode;
+#if ! PIC32
 bool irq1_enable;
 bool irq4_enable;
 
@@ -87,4 +90,5 @@ init(void)
     // finally, call main()
     main();
 }
+#endif
 

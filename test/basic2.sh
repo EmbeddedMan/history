@@ -1,15 +1,24 @@
 #! /bin/sh
 # this test exercises platform differences
 
-for platform in 52221 52233 51jm128 badge; do
+for platform in MCF52221 MCF52233 MCF51JM128 BADGE_BOARD; do
 
 echo
 echo "### platform $platform ###"
 
+case `uname 2>/dev/null` in
+  Windows*)
+    build="windows"
+    ;;
+  Linux)
+    build="linux"
+    ;;
+esac
+
 if [ X${1:-} = X-r ]; then
-	BASIC="../stickos/$platform release/basic"
+	BASIC="../stickos/obj.${build}.${platform}.RELEASE/stickos"
 else
-	BASIC="../stickos/$platform debug/basic"
+	BASIC="../stickos/obj.${build}.${platform}.DEBUG/stickos"
 fi
 
 echo "... testing help"

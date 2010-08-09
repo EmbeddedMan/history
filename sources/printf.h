@@ -19,3 +19,15 @@ vprintf(const char *format, va_list ap);
 int
 vsprintf(char *outbuf, const char *format, va_list ap);
 
+#if IN_MEMORY_TRACE
+
+void
+trace(const char *fmt, ...);
+
+void
+trace_print(void);
+
+void
+trace_reset(void);
+
+#endif // IN_MEMORY_TRACE

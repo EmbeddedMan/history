@@ -9,7 +9,9 @@
 
 #include "main.h"
 
+#if ! GCC
 int cw7bug;
+#endif
 
 bool watch_armed;
 
@@ -40,14 +42,16 @@ static uint32 run_isr_enabled;  // bitmask
 static uint32 run_isr_pending;  // bitmask
 static uint32 run_isr_masked;  // bitmask
 
-static byte *run_isr_bytecode[MAX_INTS];
+static const byte *run_isr_bytecode[MAX_INTS];
 static int run_isr_length[MAX_INTS];
 
 static int watch_length;
-static byte *watch_bytecode;
+static const byte *watch_bytecode;
 
-static int timer_interval_ticks[MAX_TIMERS];
-static int timer_last_ticks[MAX_TIMERS];
+static struct {
+    int interval_ticks; // ticks/interrupt
+    int last_ticks;
+} timers[MAX_TIMERS];
 
 static bool run_stop;
 bool running;  // for profiler
@@ -69,7 +73,7 @@ struct open_scope {
     int line_number;
 
     // revisit -- this is a waste just for for!
-    char *for_variable_name;
+    const char *for_variable_name;
     int for_variable_index;
     int for_final_value;
     int for_step_value;
@@ -78,6 +82,8 @@ struct open_scope {
     bool condition_ever;
     bool condition_initial;
     bool condition_restore;
+    
+    int dummy;  // N.B. shrink code significantly by increasing struct size
 } scopes[MAX_SCOPES];
 
 static int cur_scopes;
@@ -169,7 +175,7 @@ read_data()
 
         // if we have data left in the line...
         if (line->length > (int)(1+data_line_offset*(sizeof(int)+1))) {
-            value = *(int *)(line->bytecode+1+data_line_offset*(sizeof(int)+1)+1);
+            value = read32(line->bytecode+1+data_line_offset*(sizeof(int)+1)+1);
             data_line_offset++;
             return value;
         }
@@ -179,21 +185,58 @@ read_data()
     }
 }
 
-// this function evaluates a bytecode expression.
+static bool
+run_evaluate_is_lvalue(const byte *bytecode, int length, const byte *bytecode_in)
+{
+    int var_len;
+
+    var_len = strlen((const char *)bytecode)+1;
+    
+    // if there's no more bytecode, then this is an lvalue
+    if (bytecode+var_len >= bytecode_in+length) {
+        return true;
+    }
+
+    // if the expression is about to end due to a code_comma, then this is an lvalue.
+    if (bytecode[var_len] == code_comma) {
+        return true;
+    }
+    
+    return false;
+}
+
+// this function evaluates a bytecode expression as an rvalue if
+// lvalue_var_name is NULL.
+//
+// If lvalue_var_name != NULL, then it attempts to evaluate bytecode
+// expression as a simple (non array index) lvalue.
+// - if an lvalue if found:
+//   - return the name of the var in *lvalue_var_name.
+// - in a non-lvalue is found:
+//   - set *lvalue_var_name=NULL
+//   - set *value to the expression value
 int
-run_evaluate(byte *bytecode_in, int length, OUT int *value)
+run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int *value)
 {
     int lhs;
     int rhs;
     byte code;
-    byte *bytecode;
+    const byte *bytecode;
 
     bytecode = bytecode_in;
+
+    // assume a non-lvalue.
+    if (lvalue_var_name != NULL) {
+        *lvalue_var_name = NULL;
+    }
 
     clear_stack();
     
     if (! run_condition) {
         push_stack(0);
+        // revisit - bug here: if the code_comma value appears in a
+        // integer constant, then this will not skip as much byte code as
+        // desired.
         while (bytecode < bytecode_in+length && *bytecode != code_comma) {
             bytecode++;
         }
@@ -228,12 +271,19 @@ run_evaluate(byte *bytecode_in, int length, OUT int *value)
             switch (code) {
                 case code_load_and_push_immediate:
                 case code_load_and_push_immediate_hex:
-                    push_stack(*(int *)bytecode);
+                    push_stack(read32(bytecode));
                     bytecode += sizeof(int);
                     break;
 
                 case code_load_and_push_var:  // variable name, '\0'
-                    push_stack(var_get((char *)bytecode, 0));
+                    if (lvalue_var_name && run_evaluate_is_lvalue(bytecode, length, bytecode_in)) {
+                        // lvalue found, return reference to var name.
+                        push_stack(-1); // var index - give pop_stack() at end of this routine something to consume.
+                        *lvalue_var_name = (const char *)bytecode;
+                    } else {
+                        // do not want lvalue, or non-lvalue found, evaluate.
+                        push_stack(var_get((char *)bytecode, 0));
+                    }
                     bytecode += strlen((char *)bytecode)+1;
                     break;
 
@@ -365,7 +415,7 @@ run_evaluate(byte *bytecode_in, int length, OUT int *value)
 // this function executes a bytecode statement, with an independent keyword
 // bytecode.
 bool  // end
-run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
+run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
 {
     int i;
     int n;
@@ -382,28 +432,35 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
     byte *p;
     int index;
     int oindex;
-    char *name;
+    int pass;
+    const char *name;
     int size;
     int timer;
     int interval;
+    enum timer_unit_type timer_unit;
     int csiv;
     int max_index;
     int var_type;
     int pin_number;
     int pin_type;
     int pin_qual;
-    int line_number;
+    struct line *line;
     bool hex;
     bool output;
     int isr_length;
-    byte *isr_bytecode;
+    const byte *isr_bytecode;
+    int sub_length;
+    const byte *sub_bytecode;
     int nodeid;
+    struct open_scope *scope;
     
     end = false;
 
     index = 0;
 
-    run_condition = scopes[cur_scopes].condition && scopes[cur_scopes].condition_initial;
+    scope = scopes+cur_scopes;
+    
+    run_condition = scope->condition && scope->condition_initial;
     run_condition |= immediate;
 
     switch (code) {
@@ -426,7 +483,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             if (device == device_timer) {
                 // *** timer control ***
                 // get the timer number
-                timer = *(int *)(bytecode + index);
+                timer = read32(bytecode + index);
                 index += sizeof(int);
                 assert(timer >= 0 && timer < MAX_TIMERS);
 
@@ -434,7 +491,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
 
                 // if we are enabling the interrupt...
                 if (code == code_on) {
-                    timer_last_ticks[timer] = ticks;
+                    timers[timer].last_ticks = ticks;
                 }
             } else if (device == device_uart) {
                 // *** uart control ***
@@ -452,7 +509,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                 inter = WATCH_INT;
 
                 // this is the expression to watch
-                watch_length = *(int *)(bytecode + index);
+                watch_length = read32(bytecode + index);
                 index += sizeof(int);
                 watch_bytecode = bytecode+index;
                 index += watch_length;
@@ -465,7 +522,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
 
             if (code == code_on) {
                 // this is the handler
-                isr_length = *(int *)(bytecode + index);
+                isr_length = read32(bytecode + index);
                 index += sizeof(int);
                 isr_bytecode = bytecode+index;
                 index += isr_length;
@@ -497,46 +554,54 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             if (device == device_timer) {
                 // *** timer control ***
                 // get the timer number and interval
-                timer = *(int *)(bytecode+index);
+                timer = read32(bytecode+index);
                 index += sizeof(int);
-                interval = *(int *)(bytecode+index);
+                interval = read32(bytecode+index);
                 index += sizeof(int);
+                timer_unit = (enum timer_unit_type)bytecode[index++];
 
                 if (run_condition) {
-                    timer_interval_ticks[timer] = interval;
-                }
+                    // scale the timer interval
+                    if (timer_units[timer_unit].scale < 0) {
+                        interval /= -timer_units[timer_unit].scale;
+                    } else {
+                        assert(timer_units[timer_unit].scale > 0);
+                        interval *= timer_units[timer_unit].scale;
+                    }
 
+                    // set the timer
+                    timers[timer].interval_ticks = interval;
+                }
             } else if (device == device_uart) {
                 // *** uart control ***
                 // get the uart number and protocol and optional loopback specifier
                 uart = *(bytecode+index);
                 index++;
                 assert(uart >= 0 && uart < MAX_UARTS);
-                baud = *(int *)(bytecode+index);
+                baud = read32(bytecode+index);
                 index += sizeof(int);
-                data = *(int *)(bytecode+index);
+                data = read32(bytecode+index);
                 index += sizeof(int);
                 parity = *(bytecode+index);
                 index++;
                 loopback = *(bytecode+index);
                 index++;
 
-#if ! _WIN32
+#if ! STICK_GUEST
                 if (run_condition) {
                     pin_uart_configure(uart, baud, data, parity, loopback);
                 }
 #endif
             } else if (device == device_qspi) {
                 // get the timer number and interval
-                csiv = *(int *)(bytecode+index);
+                csiv = read32(bytecode+index);
                 index += sizeof(int);
 
                 if (run_condition) {
-#if ! _WIN32
+#if ! STICK_GUEST
                     qspi_inactive(csiv);
 #endif
                 }
-                
             } else {
                 assert(0);
             }
@@ -545,7 +610,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
         case code_assert:
             // *** interactive debugger ***
             // evaluate the assertion expression
-            index += run_evaluate(bytecode+index, length-index, &value);
+            index += run_evaluate(bytecode+index, length-index, NULL, &value);
             if (run_condition && ! value) {
                 printf("assertion failed\n");
                 stop();
@@ -553,7 +618,9 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             break;
 
         case code_read:
+#if ! GCC
             cw7bug++;  // CW7 BUG
+#endif
             // while there are more variables to read to...
             do {
                 // skip commas
@@ -571,11 +638,11 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     assert(bytecode[index] == code_load_and_push_var_indexed);
                     index++;
 
-                    blen = *(int *)(bytecode+index);
+                    blen = read32(bytecode+index);
                     index += sizeof(int);
 
                     // evaluate the array index
-                    index += run_evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, NULL, &max_index);
                 }
 
                 // get the variable name
@@ -597,15 +664,15 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
         case code_restore:
             if (run_condition) {
                 if (bytecode[index]) {
-                    line_number = code_line(code_label, bytecode+index);
-                    if (! line_number) {
+                    line = code_line(code_label, bytecode+index);
+                    if (line == NULL) {
                         printf("missing label\n");
                         goto XXX_SKIP_XXX;
                     }
                 } else {
-                    line_number = 0;
+                    line = NULL;
                 }
-                data_line_number = line_number;
+                data_line_number = line ? line->line_number : 0;
                 data_line_offset = 0;
             }
 
@@ -613,7 +680,9 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             break;
 
         case code_dim:
+#if ! GCC
             cw7bug++;  // CW7 BUG
+#endif
             // while there are more variables to dimension...
             do {
                 // skip commas
@@ -631,11 +700,11 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     assert(bytecode[index] == code_load_and_push_var_indexed);
                     index++;
 
-                    blen = *(int *)(bytecode+index);
+                    blen = read32(bytecode+index);
                     index += sizeof(int);
 
                     // evaluate the array length
-                    index += run_evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, NULL, &max_index);
                 }
 
                 // get the variable name
@@ -665,7 +734,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     // this is a remote variable
                     assert(var_type == code_nodeid);
                     
-                    nodeid = *(int *)(bytecode+index);
+                    nodeid = read32(bytecode+index);
                     index += sizeof(int);
                     
                     var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, 0, nodeid);
@@ -674,7 +743,9 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             break;
 
         case code_let:
+#if ! GCC
             cw7bug++;  // CW7 BUG
+#endif
             // while there are more items to print...
             do {
                 // skip commas
@@ -693,11 +764,11 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     assert(bytecode[index] == code_load_and_push_var_indexed);
                     index++;
 
-                    blen = *(int *)(bytecode+index);
+                    blen = read32(bytecode+index);
                     index += sizeof(int);
 
                     // evaluate the array index
-                    index += run_evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, NULL, &max_index);
                 }
 
                 // get the variable name
@@ -705,7 +776,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                 index += strlen(name)+1;
 
                 // evaluate the assignment expression
-                index += run_evaluate(bytecode+index, length-index, &value);
+                index += run_evaluate(bytecode+index, length-index, NULL, &value);
 
                 // assign the variable with the assignment expression
                 var_set(name, max_index, value);
@@ -713,7 +784,9 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             break;
 
         case code_print:
+#if ! GCC
             cw7bug++;  // CW7 BUG
+#endif
             hex = false;
             // while there are more items to print...
             do {
@@ -749,7 +822,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     index++;
 
                     // evaluate the expression
-                    index += run_evaluate(bytecode+index, length-index, &value);
+                    index += run_evaluate(bytecode+index, length-index, NULL, &value);
                     if (run_condition) {
                         run_printf = true;
                         if (hex) {
@@ -761,6 +834,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     }
                 }
             } while (index < length && bytecode[index] == code_comma);
+
             if (run_condition) {
                 run_printf = true;
                 printf("\n");
@@ -772,109 +846,89 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             // we'll walk the variable list twice
             oindex = index;
             
-            // while there are more variables to qspi from...
-            p = big_buffer;
-            do {
-                // skip commas
-                if (bytecode[index] == code_comma) {
-                    index++;
-                }
+            // N.B. on the first pass we send variables out;
+            //      on the second pass we read them in
 
-                // if we're reading into a simple variable...
-                if (bytecode[index] == code_load_and_push_var) {
-                    // use array index 0
-                    index++;
-                    max_index = 0;
-                } else {
-                    // we're reading into an array element
-                    assert(bytecode[index] == code_load_and_push_var_indexed);
-                    index++;
-
-                    blen = *(int *)(bytecode+index);
-                    index += sizeof(int);
-
-                    // evaluate the array index
-                    index += run_evaluate(bytecode+index, blen, &max_index);
-                }
-
-                // get the variable name
-                name = (char *)bytecode+index;
-                index += strlen(name)+1;
-
-                // get the variable data and size
-                value = var_get(name, max_index);
-                size = var_get_size(name);
+            // while there are more variables to qspi from or to...
+            for (pass = 0; pass < 2; pass++) {
+                p = big_buffer;
                 
-                // pack it into the qspi buffer
-                if (size == sizeof(byte)) {
-                    *(byte *)p = value;
-                    p += sizeof(byte);
-                } else if (size == sizeof(short)) {
-                    *(short *)p = value;
-                    p += sizeof(short);
-                } else {
-                    assert(size == sizeof(int));
-                    *(int *)p = value;
-                    p += sizeof(int);
-                }
-            } while (index < length && bytecode[index] == code_comma);
-            
-            // perform the qspi transfer
-#if ! _WIN32
-            qspi_transfer(big_buffer, p-big_buffer);
+                do {
+                    // skip commas
+                    if (bytecode[index] == code_comma) {
+                        index++;
+                    }
+
+                    // if we're reading into a simple variable...
+                    if (bytecode[index] == code_load_and_push_var) {
+                        // use array index 0
+                        index++;
+                        max_index = 0;
+                    } else {
+                        // we're reading into an array element
+                        assert(bytecode[index] == code_load_and_push_var_indexed);
+                        index++;
+
+                        blen = read32(bytecode+index);
+                        index += sizeof(int);
+
+                        // evaluate the array index
+                        index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                    }
+
+                    // get the variable name
+                    name = (char *)bytecode+index;
+                    index += strlen(name)+1;
+
+                    // get the variable size
+                    size = var_get_size(name);
+                    
+                    if (! pass) {
+                        // get the variable data
+                        value = var_get(name, max_index);
+
+                        // pack it into the qspi buffer
+                        if (size == sizeof(byte)) {
+                            *(byte *)p = value;
+                            p += sizeof(byte);
+                        } else if (size == sizeof(short)) {
+                            write16(p, value);
+                            p += sizeof(short);
+                        } else {
+                            assert(size == sizeof(int));
+                            write32(p, value);
+                            p += sizeof(int);
+                        }
+                    } else {
+                        // unpack it from the qspi buffer
+                        if (size == sizeof(byte)) {
+                            value = *(byte *)p;
+                            p += sizeof(byte);
+                        } else if (size == sizeof(short)) {
+                            value = read16(p);
+                            p += sizeof(short);
+                        } else {
+                            assert(size == sizeof(int));
+                            value = read32(p);
+                            p += sizeof(int);
+                        }
+                        
+                        // set the variable
+                        var_set(name, max_index, value);
+                    }
+                } while (index < length && bytecode[index] == code_comma);
+
+                // if this is the first pass...
+                if (! pass) {
+                    // perform the qspi transfer
+#if ! STICK_GUEST
+                    qspi_transfer(big_buffer, p-big_buffer);
 #endif
 
-            // now update the variables
-            index = oindex;
-            
-            // while there are more variables to qspi to...
-            p = big_buffer;
-            do {
-                // skip commas
-                if (bytecode[index] == code_comma) {
-                    index++;
+                    // now update the variables for the next pass
+                    index = oindex;
                 }
-
-                // if we're reading into a simple variable...
-                if (bytecode[index] == code_load_and_push_var) {
-                    // use array index 0
-                    index++;
-                    max_index = 0;
-                } else {
-                    // we're reading into an array element
-                    assert(bytecode[index] == code_load_and_push_var_indexed);
-                    index++;
-
-                    blen = *(int *)(bytecode+index);
-                    index += sizeof(int);
-
-                    // evaluate the array index
-                    index += run_evaluate(bytecode+index, blen, &max_index);
-                }
-
-                // get the variable name
-                name = (char *)bytecode+index;
-                index += strlen(name)+1;
-
-                // get the variable size
-                size = var_get_size(name);
-                
-                // unpack it from the qspi buffer
-                if (size == sizeof(byte)) {
-                    value = *(byte *)p;
-                    p += sizeof(byte);
-                } else if (size == sizeof(short)) {
-                    value = *(short *)p;
-                    p += sizeof(short);
-                } else {
-                    assert(size == sizeof(int));
-                    value = *(int *)p;
-                    p += sizeof(int);
-                }
-                
-                // set the variable
-                var_set(name, max_index, value);
-            } while (index < length && bytecode[index] == code_comma);
+            }
             break;
 
         case code_if:
@@ -884,51 +938,52 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             }
             // open a new conditional scope
             cur_scopes++;
-            scopes[cur_scopes].line_number = run_line_number;
-            scopes[cur_scopes].type = open_if;
+            scope = scopes+cur_scopes;
+            scope->line_number = run_line_number;
+            scope->type = open_if;
 
             // evaluate the condition
-            index += run_evaluate(bytecode+index, length-index, &value);
+            index += run_evaluate(bytecode+index, length-index, NULL, &value);
 
             // incorporate the condition
-            scopes[cur_scopes].condition = !! value;
-            scopes[cur_scopes].condition_ever = !! value;
-            scopes[cur_scopes].condition_initial = run_condition;
-            scopes[cur_scopes].condition_restore = false;
+            scope->condition = !! value;
+            scope->condition_ever = !! value;
+            scope->condition_initial = run_condition;
+            scope->condition_restore = false;
             break;
 
         case code_elseif:
-            if (scopes[cur_scopes].type != open_if) {
+            if (scope->type != open_if) {
                 printf("mismatched elseif\n");
                 goto XXX_SKIP_XXX;
             }
 
             // reevaluate the condition
-            run_condition = scopes[cur_scopes].condition_initial;
-            index += run_evaluate(bytecode+index, length-index, &value);
+            run_condition = scope->condition_initial;
+            index += run_evaluate(bytecode+index, length-index, NULL, &value);
 
             // if the condition has ever been true...
-            if (scopes[cur_scopes].condition_ever) {
+            if (scope->condition_ever) {
                 // elseif's remain false, regardless of the new condition
-                scopes[cur_scopes].condition = false;
+                scope->condition = false;
             } else {
-                scopes[cur_scopes].condition = !! value;
-                scopes[cur_scopes].condition_ever |= !! value;
+                scope->condition = !! value;
+                scope->condition_ever |= !! value;
             }
             break;
 
         case code_else:
-            if (scopes[cur_scopes].type != open_if) {
+            if (scope->type != open_if) {
                 printf("mismatched else\n");
                 goto XXX_SKIP_XXX;
             }
 
             // flip the condition
-            scopes[cur_scopes].condition = ! scopes[cur_scopes].condition_ever;
+            scope->condition = ! scope->condition_ever;
             break;
 
         case code_endif:
-            if (scopes[cur_scopes].type != open_if) {
+            if (scope->type != open_if) {
                 printf("mismatched endif\n");
                 goto XXX_SKIP_XXX;
             }
@@ -936,6 +991,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             // close the conditional scope
             assert(cur_scopes);
             cur_scopes--;
+            scope = scopes+cur_scopes;
             break;
 
         case code_while:
@@ -947,8 +1003,9 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             }
             // open a new conditional scope
             cur_scopes++;
-            scopes[cur_scopes].line_number = run_line_number;
-            scopes[cur_scopes].type = open_while;
+            scope = scopes+cur_scopes;
+            scope->line_number = run_line_number;
+            scope->type = open_while;
 
             // if this is a for loop...
             if (code == code_for) {
@@ -963,11 +1020,11 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     assert(bytecode[index] == code_load_and_push_var_indexed);
                     index++;
 
-                    blen = *(int *)(bytecode+index);
+                    blen = read32(bytecode+index);
                     index += sizeof(int);
 
                     // evaluate the array index
-                    index += run_evaluate(bytecode+index, blen, &max_index);
+                    index += run_evaluate(bytecode+index, blen, NULL, &max_index);
                 }
 
                 // get the variable name
@@ -975,18 +1032,18 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                 index += strlen(name)+1;
 
                 // evaluate and set the initial value
-                index += run_evaluate(bytecode+index, length-index, &value);
+                index += run_evaluate(bytecode+index, length-index, NULL, &value);
                 var_set(name, max_index, value);
 
                 assert(name);
-                scopes[cur_scopes].for_variable_name = name;
-                scopes[cur_scopes].for_variable_index = max_index;
+                scope->for_variable_name = name;
+                scope->for_variable_index = max_index;
 
                 assert(bytecode[index] == code_comma);
                 index++;
 
                 // evaluate the final value
-                index += run_evaluate(bytecode+index, length-index, &scopes[cur_scopes].for_final_value);
+                index += run_evaluate(bytecode+index, length-index, NULL, &scope->for_final_value);
 
                 // if there is a step value...
                 if (index < length) {
@@ -994,25 +1051,25 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                     index++;
 
                     // evaluate the step value
-                    index += run_evaluate(bytecode+index, length-index, &scopes[cur_scopes].for_step_value);
+                    index += run_evaluate(bytecode+index, length-index, NULL, &scope->for_step_value);
                 } else {
-                    scopes[cur_scopes].for_step_value = 1;
+                    scope->for_step_value = 1;
                 }
 
                 // set the initial condition
-                if (scopes[cur_scopes].for_step_value >= 0) {
-                    value = value <= scopes[cur_scopes].for_final_value;
+                if (scope->for_step_value >= 0) {
+                    value = value <= scope->for_final_value;
                 } else {
-                    value = value >= scopes[cur_scopes].for_final_value;
+                    value = value >= scope->for_final_value;
                 }
             } else if (code == code_while) {
-                scopes[cur_scopes].for_variable_name = NULL;
-                scopes[cur_scopes].for_variable_index = 0;
-                scopes[cur_scopes].for_final_value = 0;
-                scopes[cur_scopes].for_step_value = 0;
+                scope->for_variable_name = NULL;
+                scope->for_variable_index = 0;
+                scope->for_final_value = 0;
+                scope->for_step_value = 0;
 
                 // evaluate the condition
-                index += run_evaluate(bytecode+index, length-index, &value);
+                index += run_evaluate(bytecode+index, length-index, NULL, &value);
             } else {
                 assert(code == code_do);
 
@@ -1020,16 +1077,16 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             }
 
             // incorporate the condition
-            scopes[cur_scopes].condition = !! value;
-            scopes[cur_scopes].condition_ever = !! value;
-            scopes[cur_scopes].condition_initial = run_condition;
-            scopes[cur_scopes].condition_restore = false;
+            scope->condition = !! value;
+            scope->condition_ever = !! value;
+            scope->condition_initial = run_condition;
+            scope->condition_restore = false;
             break;
 
         case code_break:
         case code_continue:
             // get the break/continue level
-            n = *(int *)(bytecode + index);
+            n = read32(bytecode + index);
             index += sizeof(int);
             assert(n);
 
@@ -1071,42 +1128,41 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
         case code_next:
         case code_endwhile:
         case code_until:
-            if (scopes[cur_scopes].type != open_while ||
-                (code == code_next && ! scopes[cur_scopes].for_variable_name) ||
-                ((code == code_endwhile || code == code_until) && scopes[cur_scopes].for_variable_name)) {
+            if (scope->type != open_while || (code == code_next && ! scope->for_variable_name) ||
+                ((code == code_endwhile || code == code_until) && scope->for_variable_name)) {
                 printf("mismatched endwhile/until/next\n");
                 goto XXX_SKIP_XXX;
             }
 
-            if (scopes[cur_scopes].condition_restore) {
-                scopes[cur_scopes].condition = true;
+            if (scope->condition_restore) {
+                scope->condition = true;
                 run_condition = true;
             }
 
             // if this is an until loop...
             if (code == code_until) {
                 // evaluate the condition
-                index += run_evaluate(bytecode+index, length-index, &value);
+                index += run_evaluate(bytecode+index, length-index, NULL, &value);
             }
 
             if (run_condition) {
                 // if this is a for loop...
                 if (code == code_next) {
-                    value = var_get(scopes[cur_scopes].for_variable_name, scopes[cur_scopes].for_variable_index);
-                    value += scopes[cur_scopes].for_step_value;
+                    value = var_get(scope->for_variable_name, scope->for_variable_index);
+                    value += scope->for_step_value;
 
                     // if the stepped value is still in range...
-                    if (scopes[cur_scopes].for_step_value >= 0) {
-                        if (value <= scopes[cur_scopes].for_final_value) {
+                    if (scope->for_step_value >= 0) {
+                        if (value <= scope->for_final_value) {
                             // set the variable to the stepped value
-                            var_set(scopes[cur_scopes].for_variable_name, scopes[cur_scopes].for_variable_index, value);
+                            var_set(scope->for_variable_name, scope->for_variable_index, value);
                         } else {
                             run_condition = false;
                         }
                     } else {
-                        if (value >= scopes[cur_scopes].for_final_value) {
+                        if (value >= scope->for_final_value) {
                             // set the variable to the stepped value
-                            var_set(scopes[cur_scopes].for_variable_name, scopes[cur_scopes].for_variable_index, value);
+                            var_set(scope->for_variable_name, scope->for_variable_index, value);
                         } else {
                             run_condition = false;
                         }
@@ -1114,20 +1170,22 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
 
                     // conditionally go back for more (skip the for line)!
                     if (run_condition) {
-                        run_line_number = scopes[cur_scopes].line_number;
+                        run_line_number = scope->line_number;
                         // N.B we re-open the scope here!
                         cur_scopes++;
+                        scope = scopes+cur_scopes;
                     }
                 } else if (code == code_endwhile) {
                     // go back for more (including the while line)!
-                    run_line_number = scopes[cur_scopes].line_number-1;
+                    run_line_number = scope->line_number-1;
                 } else {
                     // if the condition has not been achieved...
                     if (! value) {
                         // go back for more (skip the do line)!
-                        run_line_number = scopes[cur_scopes].line_number;
+                        run_line_number = scope->line_number;
                         // N.B we re-open the scope here!
                         cur_scopes++;
+                        scope = scopes+cur_scopes;
                     }
                 }
             }
@@ -1135,6 +1193,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
             // close the conditional scope
             assert(cur_scopes);
             cur_scopes--;
+            scope = scopes+cur_scopes;
             break;
 
         case code_gosub:
@@ -1151,21 +1210,90 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                 max_gosubs++;
 
                 // jump to the gosub line
-                line_number = code_line(code_sub, bytecode+index);
-                if (! line_number) {
+                line = code_line(code_sub, bytecode+index);
+                if (line == NULL) {
                     printf("missing sub\n");
                     goto XXX_SKIP_XXX;
                 }
-                run_line_number = line_number-1;
+                run_line_number = line->line_number-1;
+
+                // skip sub name to address sub parameters.
+                sub_bytecode = line->bytecode;
+                assert(*sub_bytecode == code_sub);
+                sub_bytecode += 1 + strlen((const char *)bytecode + index) + 1;
+                sub_length = line->length - 1 - strlen((const char * )bytecode+index) - 1;
+
+                index += strlen((char *)bytecode+index)+1;
+                
+                // for each sub parameter...
+                while (sub_length > 0) {
+                    assert(*sub_bytecode == code_load_and_push_var);
+                    sub_bytecode++;
+                    sub_length--;
+                    
+                    // check that there's a gosub parameter to pass into this parameter
+                    if (index >= length) {
+                        printf("not enough gosub parameters\n");
+                        goto XXX_SKIP_XXX;
+                    }
+
+                    index += run_evaluate(bytecode+index, length-index, &name, &value);
+
+                    // if the param is an lvalue, then just get its name and index (if its an array element).
+                    if (name != NULL) {
+                        var_declare_reference((const char *)sub_bytecode, max_gosubs, name);
+                    } else {
+                        // the current parameter value is not an lvalue expression, pass it by-value into the sub's parameter.
+                        var_declare((const char *)sub_bytecode, max_gosubs, code_ram, sizeof(int), 1, 0, 0, 0, -1);
+                        var_set((const char *)sub_bytecode, 0, value);
+                    }
+
+                    // if there's more bytecode for this gosub, they should be parameters separated by code_comma
+                    if (index < length) {
+                        assert(bytecode[index] == code_comma);
+                        index++;
+                    }
+
+                    // advance over the sub's current parameter to the next parameter
+                    n = strlen((const char *)sub_bytecode) + 1;
+                    sub_length -= n;
+                    sub_bytecode += n;
+
+                    if (sub_length > 0) {
+                        assert(*sub_bytecode == code_comma);
+                        sub_length--;
+                        sub_bytecode++;
+                    }
+                }
+
+                // check to see that all gosub parameter were consumed.  check for call site parameter overflow.
+                if (index != length) {
+                    printf("too many gosub parameters\n");
+                    goto XXX_SKIP_XXX;
+                }
+            } else {
+                index = length;
             }
-            index += strlen((char *)bytecode+index)+1;
             break;
 
         case code_label:
         case code_sub:
             // we do nothing here
             // revisit -- we could push false conditional scope for sub (and pop on endsub)
-            index += strlen((char *)bytecode+index)+1;
+            index += strlen((char *)bytecode+index)+1; // skip label/sub name
+
+            // if there might be parameters...
+            if ((code == code_sub) && (index < length)) {
+                // skip parameters.
+                while ((index < length) && (bytecode[index] == code_load_and_push_var)) {
+                    index++; // skip code
+                    index += strlen((char *)bytecode+index)+1; // skip parameter name
+                    if (index < length) {
+                        assert(bytecode[index] == code_comma);
+                        index++;
+                    }
+                }
+            }
             break;
 
         case code_return:
@@ -1181,6 +1309,7 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
                 max_gosubs--;
                 var_close_scope(gosubs[max_gosubs].return_var_scope);
                 cur_scopes = gosubs[max_gosubs].return_scope;
+                scope = scopes+cur_scopes;
 
                 // and jump to the return line
                 run_line_number = gosubs[max_gosubs].return_line_number;
@@ -1189,9 +1318,22 @@ run_bytecode_code(byte code, bool immediate, byte *bytecode, int length)
 
         case code_sleep:
             // N.B. sleeps occur in the main loop so we can service interrupts
+
+            // evaluate the time units
+            timer_unit = (enum timer_unit_type)bytecode[index++];
+            
             // evaluate the sleep time
-            index += run_evaluate(bytecode+index, length-index, &value);
+            index += run_evaluate(bytecode+index, length-index, NULL, &value);
+
             if (run_condition && run_sleep) {
+                // scale the timer interval
+                if (timer_units[timer_unit].scale < 0) {
+                    value /= -timer_units[timer_unit].scale;
+                } else {
+                    assert(timer_units[timer_unit].scale > 0);
+                    value *= timer_units[timer_unit].scale;
+                }
+
                 // prepare to sleep
                 run_sleep_ticks = ticks+value;
                 assert(! run_sleep_line_number);
@@ -1228,7 +1370,7 @@ XXX_SKIP_XXX:
 
 // this function executes a bytecode statement.
 bool  // end
-run_bytecode(bool immediate, byte *bytecode, int length)
+run_bytecode(bool immediate, const byte *bytecode, int length)
 {
     byte code;
 
@@ -1295,10 +1437,7 @@ run(bool cont, int start_line_number)
             run_isr_length[i] = 0;
         }
 
-        for (i = 0; i < MAX_TIMERS; i++) {
-            timer_interval_ticks[i] = 0;
-            timer_last_ticks[i] = ticks;
-        }
+        memset(timers, 0, sizeof(timers));
 
         memset(uart_armed, 1, sizeof(uart_armed));
 
@@ -1320,6 +1459,11 @@ run(bool cont, int start_line_number)
     // this is the main run loop that executes program statements!
     running = true;
     for (;;) {
+#if STICK_GUEST
+        // let timer ticks arrive
+        timer_ticks(false);
+#endif
+
         // if we're still sleeping...
         if (run_sleep_line_number == run_line_number && run_line_number) {
             if (ticks >= run_sleep_ticks) {
@@ -1335,7 +1479,7 @@ run(bool cont, int start_line_number)
 
             // run the statement's bytecodes
             line_number = run_line_number;
-            if (run_bytecode(false, line->bytecode, line->length)) {
+            if (run_bytecode_code(*line->bytecode, false, line->bytecode+1, line->length-1)) {
                 // we explicitly ended
                 stop();
                 break;
@@ -1359,7 +1503,7 @@ run(bool cont, int start_line_number)
         // if it has been a tick since we last checked...
         tick = ticks;
         if (tick != last_tick) {
-#if ! _WIN32
+#if ! STICK_GUEST
             // see if the sleep switch was pressed
             basic_poll();
             
@@ -1370,18 +1514,18 @@ run(bool cont, int start_line_number)
                 // see if any timers have expired
                 for (i = 0; i < MAX_TIMERS; i++) {
                     // if the timer is set...
-                    if (run_isr_bytecode[TIMER_INT(i)] && timer_interval_ticks[i]) {
+                    if (run_isr_bytecode[TIMER_INT(i)] && timers[i].interval_ticks) {
                         // if its time is due...
-                        if ((int)(tick - timer_last_ticks[i]) >= timer_interval_ticks[i]) {
+                        if ((int)(tick - timers[i].last_ticks) >= timers[i].interval_ticks) {
                             // if it is not already pending...
                             if (! (run_isr_pending & (1 << TIMER_INT(i)))) {
                                 // mark the interrupt as pending
                                 run_isr_pending |= 1<<TIMER_INT(i);
-                                timer_last_ticks[i] = tick;
+                                timers[i].last_ticks = tick;
                             }
                         }
                     } else {
-                        timer_last_ticks[i] = tick;
+                        timers[i].last_ticks = tick;
                     }
                 }
             }
@@ -1395,7 +1539,7 @@ run(bool cont, int start_line_number)
             pin_uart_pending(&rx_full, &tx_empty);
             
             for (i = 0; i < MAX_UARTS; i++) {
-#if ! _WIN32
+#if ! STICK_GUEST
                 // if the uart transmitter is empty...
                 if (run_isr_bytecode[UART_INT(i, true)] && uart_armed[UART_INT(i, true)] && (tx_empty & (1<<UART_INT(i, true)))) {
                     // mark the interrupt as pending
@@ -1418,7 +1562,7 @@ run(bool cont, int start_line_number)
             condition = run_condition;
             run_condition = true;
 
-            length = run_evaluate(watch_bytecode, watch_length, &value);
+            length = run_evaluate(watch_bytecode, watch_length, NULL, &value);
             assert(length == watch_length);
 
             run_condition = condition;
@@ -1459,7 +1603,7 @@ run(bool cont, int start_line_number)
                     assert(! isr);
                     isr = true;
                     run_line_number = -1;
-                    if (run_bytecode(false, run_isr_bytecode[i], run_isr_length[i])) {
+                    if (run_bytecode_code(*run_isr_bytecode[i], false, run_isr_bytecode[i]+1, run_isr_length[i]-1)) {
                         stop();
                     }
 
