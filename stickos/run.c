@@ -758,7 +758,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
         case code_mask:
         case code_unmask:
             // get the device
-            device = *(bytecode+index);
+            device = bytecode[index];
             index++;
 
             if (device == device_timer) {
@@ -776,12 +776,12 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             } else if (device == device_uart) {
                 // *** uart control ***
                 // get the uart number
-                uart = *(bytecode+index);
+                uart = bytecode[index];
                 index++;
                 assert(uart >= 0 && uart < MAX_UARTS);
 
                 // get the input/output flag
-                output = *(bytecode+index);
+                output = bytecode[index];
                 index++;
 
                 inter = UART_INT(uart, output);
@@ -872,7 +872,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
         case code_configure:
             // get the device
-            device = *(bytecode+index);
+            device = bytecode[index];
             index++;
 
             if (device == device_timer) {
@@ -897,14 +897,14 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             } else if (device == device_uart) {
                 // *** uart control ***
                 // get the uart number and protocol and optional loopback specifier
-                uart = *(bytecode+index);
+                uart = bytecode[index];
                 index++;
                 assert(uart >= 0 && uart < MAX_UARTS);
                 baud = run_bytecode_const(bytecode, &index);
                 data = run_bytecode_const(bytecode, &index);
-                parity = *(bytecode+index);
+                parity = bytecode[index];
                 index++;
-                loopback = *(bytecode+index);
+                loopback = bytecode[index];
                 index++;
 
 #if ! STICK_GUEST

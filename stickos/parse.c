@@ -362,7 +362,8 @@ parse_word_const_word(IN char *prefix, IN char *suffix, IN OUT char **text, IN O
     return true;
 }
 
-static bool
+static
+bool
 parse_is_legal_var_name_char(const char *text) 
 {
     return isalpha(*text) || isdigit(*text) || *text == '_';
@@ -737,7 +738,7 @@ parse_string(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 
 static
 bool
-is_string(char *text)
+parse_class(IN char *text, IN OUT int *length, IN OUT byte *bytecode)
 {
     char *p;
 
@@ -747,11 +748,46 @@ is_string(char *text)
     }
     while (text != p) {
         if (*text == '$' || *text == '"') {
+            bytecode[(*length)++] = code_string;
             return true;
         }
         text++;
     }
+    bytecode[(*length)++] = code_expression;
     return false;
+}
+
+static
+bool
+parse_string_or_expression(IN bool string, IN char **text, IN OUT int *length, IN OUT byte *bytecode)
+{
+    bool boo;
+
+    // if the next item is a string...
+    if (string) {
+        // parse the string
+        boo = parse_string(text, length, bytecode);
+
+    // otherwise, the next item is an expression...
+    } else {
+        // parse the expression
+        boo = parse_expression(0, text, length, bytecode);
+    }
+
+    return boo;
+}
+
+static
+void
+parse_format(IN char **text, IN OUT int *length, IN OUT byte *bytecode)
+{
+    if (parse_word(text, "hex")) {
+        bytecode[(*length)++] = code_hex;
+    } else if (parse_word(text, "dec")) {
+        bytecode[(*length)++] = code_dec;
+    } else if (parse_word(text, "raw")) {
+        bytecode[(*length)++] = code_raw;
+    }
 }
 
 // this function parses (compiles) a public statement line to bytecode,
@@ -977,6 +1013,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
             break;
 
         case code_read:
+        case code_data:
             if (! *text) {
                 goto XXX_ERROR_XXX;
             }
@@ -987,32 +1024,22 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     if (! parse_char(&text, ',')) {
                         goto XXX_ERROR_XXX;
                     }
-                    bytecode[length++] = code_comma;
-                }
-
-                // parse the variable
-                if (! parse_var(false, true, 1, 0, &text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
-            }
-            break;
-
-        case code_data:
-            if (! *text) {
-                goto XXX_ERROR_XXX;
-            }
-
-            // while there is more data to parse...
-            while (*text) {
-                if (length > 1) {
-                    if (! parse_char(&text, ',')) {
-                        goto XXX_ERROR_XXX;
+                    if (code == code_read) {
+                        bytecode[length++] = code_comma;
                     }
                 }
 
-                // parse the constant
-                if (! parse_const(&text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
+                if (code == code_read) {
+                    // parse the variable
+                    if (! parse_var(false, true, 1, 0, &text, &length, bytecode)) {
+                        goto XXX_ERROR_XXX;
+                    }
+                } else {
+                    // parse the constant
+                    assert(code == code_data);
+                    if (! parse_const(&text, &length, bytecode)) {
+                        goto XXX_ERROR_XXX;
+                    }
                 }
             }
             break;
@@ -1031,12 +1058,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     bytecode[length++] = code_comma;
                 }
 
-                string = is_string(text);
-                if (string) {
-                    bytecode[length++] = code_string;
-                } else {
-                    bytecode[length++] = code_expression;
-                }
+                string = parse_class(text, &length, bytecode);
 
                 // parse the variable
                 if (! parse_var(string, true, 1, 0, &text, &length, bytecode)) {
@@ -1168,12 +1190,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     bytecode[length++] = code_comma;
                 }
 
-                string = is_string(text);
-                if (string) {
-                    bytecode[length++] = code_string;
-                } else {
-                    bytecode[length++] = code_expression;
-                }
+                string = parse_class(text, &length, bytecode);
 
                 // parse the variable
                 if (! parse_var(string, true, string?0:1, 0, &text, &length, bytecode)) {
@@ -1185,17 +1202,9 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     goto XXX_ERROR_XXX;
                 }
 
-                if (string) {
-                    // parse the assignment string
-                    if (! parse_string(&text, &length, bytecode)) {
-                        goto XXX_ERROR_XXX;
-                    }
-
-                } else {
-                    // parse the assignment expression
-                    if (! parse_expression(0, &text, &length, bytecode)) {
-                        goto XXX_ERROR_XXX;
-                    }
+                // parse the string or expression
+                if (! parse_string_or_expression(string, &text, &length, bytecode)) {
+                    goto XXX_ERROR_XXX;
                 }
             }
             break;
@@ -1214,20 +1223,9 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     bytecode[length++] = code_comma;
                 }
 
-                if (parse_word(&text, "hex")) {
-                    bytecode[length++] = code_hex;
-                } else if (parse_word(&text, "dec")) {
-                    bytecode[length++] = code_dec;
-                } else if (parse_word(&text, "raw")) {
-                    bytecode[length++] = code_raw;
-                }
-                
-                string = is_string(text);
-                if (string) {
-                    bytecode[length++] = code_string;
-                } else {
-                    bytecode[length++] = code_expression;
-                }
+                parse_format(&text, &length, bytecode);
+
+                string = parse_class(text, &length, bytecode);
 
                 // parse the variable
                 if (! parse_var(string, true, string?0:1, 0, &text, &length, bytecode)) {
@@ -1256,31 +1254,13 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     bytecode[length++] = code_comma;
                 }
 
-                if (parse_word(&text, "hex")) {
-                    bytecode[length++] = code_hex;
-                } else if (parse_word(&text, "dec")) {
-                    bytecode[length++] = code_dec;
-                } else if (parse_word(&text, "raw")) {
-                    bytecode[length++] = code_raw;
-                }
-                
-                // if the next item is a string...
-                if (is_string(text)) {
-                    bytecode[length++] = code_string;
+                parse_format(&text, &length, bytecode);
 
-                    // parse the string
-                    if (! parse_string(&text, &length, bytecode)) {
-                        goto XXX_ERROR_XXX;
-                    }
+                string = parse_class(text, &length, bytecode);
 
-                // otherwise, the next item is an expression...
-                } else {
-                    bytecode[length++] = code_expression;
-
-                    // parse the expression
-                    if (! parse_expression(0, &text, &length, bytecode)) {
-                        goto XXX_ERROR_XXX;
-                    }
+                // parse the string or expression
+                if (! parse_string_or_expression(string, &text, &length, bytecode)) {
+                    goto XXX_ERROR_XXX;
                 }
             }
             break;
@@ -1799,6 +1779,19 @@ unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
 
 static
 int
+unparse_class(byte *bytecode, OUT bool *string)
+{
+    if (*bytecode == code_string) {
+        *string = true;
+    } else {
+        assert(*bytecode == code_expression);
+        *string = false;
+    }
+    return 1;
+}
+
+static
+int
 unparse_string(byte *bytecode_in, int length, char **out)
 {
     int len;
@@ -1839,6 +1832,41 @@ unparse_string(byte *bytecode_in, int length, char **out)
     }
 
     return bytecode-bytecode_in;
+}
+
+static
+int
+unparse_string_or_expression(IN bool string, byte *bytecode, int length, char **out)
+{
+    int rv;
+
+    if (string) {
+        // decompile the string
+        rv = unparse_string(bytecode, length, out);
+    } else {
+        // decompile the expression
+        rv = unparse_expression(0, bytecode, length, out);
+    }
+
+    return rv;
+}
+
+static
+int
+unparse_format(byte *bytecode, char **out)
+{
+
+    if (*bytecode == code_hex) {
+        *out += sprintf(*out, "hex ");
+    } else if (*bytecode == code_dec) {
+        *out += sprintf(*out, "dec ");
+    } else if (*bytecode == code_raw) {
+        *out += sprintf(*out, "raw ");
+    } else {
+        return 0;
+    }
+
+    return 1;
 }
 
 // this function unparses (de-compiles) a public statement line from bytecode,
@@ -1968,30 +1996,26 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
             break;
 
         case code_read:
+        case code_data:
             // while there are more variables...
             while (bytecode < bytecode_in+length) {
                 if (bytecode > bytecode_in+1) {
                     // separate variables with a comma
                     out += sprintf(out, ", ");
-                    assert(*bytecode == code_comma);
-                    bytecode++;
+                    if (code == code_read) {
+                        assert(*bytecode == code_comma);
+                        bytecode++;
+                    }
                 }
 
-                // decompile the variable
-                bytecode += unparse_var(false, true, 1, bytecode, &out);
-            }
-            break;
-
-        case code_data:
-            // while there is more data...
-            while (bytecode < bytecode_in+length) {
-                if (bytecode > bytecode_in+1) {
-                    // separate datas with a comma
-                    out += sprintf(out, ", ");
+                if (code == code_read) {
+                    // decompile the variable
+                    bytecode += unparse_var(false, true, 1, bytecode, &out);
+                } else {
+                    // decompile the constant
+                    assert(code == code_data);
+                    bytecode += unparse_const(0, bytecode, &out);
                 }
-
-                // decompile the constant
-                bytecode += unparse_const(0, bytecode, &out);
             }
             break;
 
@@ -2008,13 +2032,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                     bytecode++;
                 }
 
-                if (*bytecode == code_string) {
-                    string = true;
-                } else {
-                    assert(*bytecode == code_expression);
-                    string = false;
-                }
-                bytecode++;
+                bytecode += unparse_class(bytecode, &string);
 
                 // decompile the variable
                 bytecode += unparse_var(string, true, 1, bytecode, &out);
@@ -2089,13 +2107,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                     bytecode++;
                 }
 
-                if (*bytecode == code_string) {
-                    string = true;
-                } else {
-                    assert(*bytecode == code_expression);
-                    string = false;
-                }
-                bytecode++;
+                bytecode += unparse_class(bytecode, &string);
 
                 // decompile the variable
                 bytecode += unparse_var(string, true, string?0:1, bytecode, &out);
@@ -2103,13 +2115,8 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 // decompile the assignment
                 out += sprintf(out, " = ");
 
-                if (string) {
-                    // decompile the string
-                    bytecode += unparse_string(bytecode, bytecode_in+length-bytecode, &out);
-                } else {
-                    // decompile the expression
-                    bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
-                }
+                // decompile the string or expression
+                bytecode += unparse_string_or_expression(string, bytecode, bytecode_in+length-bytecode, &out);
             }
             break;
 
@@ -2123,24 +2130,9 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                     bytecode++;
                 }
 
-                if (*bytecode == code_hex) {
-                    bytecode++;
-                    out += sprintf(out, "hex ");
-                } else if (*bytecode == code_dec) {
-                    bytecode++;
-                    out += sprintf(out, "dec ");
-                } else if (*bytecode == code_raw) {
-                    bytecode++;
-                    out += sprintf(out, "raw ");
-                }
+                bytecode += unparse_format(bytecode, &out);
 
-                if (*bytecode == code_string) {
-                    string = true;
-                } else {
-                    assert(*bytecode == code_expression);
-                    string = false;
-                }
-                bytecode++;
+                bytecode += unparse_class(bytecode, &string);
 
                 // decompile the variable
                 bytecode += unparse_var(string, true, string?0:1, bytecode, &out);
@@ -2165,28 +2157,12 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                     bytecode++;
                 }
 
-                if (*bytecode == code_hex) {
-                    bytecode++;
-                    out += sprintf(out, "hex ");
-                } else if (*bytecode == code_dec) {
-                    bytecode++;
-                    out += sprintf(out, "dec ");
-                } else if (*bytecode == code_raw) {
-                    bytecode++;
-                    out += sprintf(out, "raw ");
-                }
-                
-                // if the next item is a string...
-                if (*bytecode == code_string) {
-                    bytecode++;
-                    // decompile the string
-                    bytecode += unparse_string(bytecode, bytecode_in+length-bytecode, &out);
-                } else {
-                    assert(*bytecode == code_expression);
-                    bytecode++;
-                    // decompile the expression
-                    bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
-                }
+                bytecode += unparse_format(bytecode, &out);
+
+                bytecode += unparse_class(bytecode, &string);
+
+                // decompile the string or expression
+                bytecode += unparse_string_or_expression(string, bytecode, bytecode_in+length-bytecode, &out);
             }
 
             if (semi) {
