@@ -540,13 +540,10 @@ void
 code_save(int renum)
 {
     bool boo;
-    int div;
-    int shift;
     int line_number;
     int line_renumber;
     struct line *line;
     struct line *ram_line;
-    struct line *last_line;
     byte ram_line_buffer[sizeof(struct line)-VARIABLE+BASIC_BYTECODE_SIZE];
 
     // blow our LRU cache
@@ -603,30 +600,9 @@ code_save(int renum)
     } else {
         printf("out of code flash\n");
     }
-
-    // if we can profile...
-    // N.B. this works if the code is all in the same page -- i.e., saved
-    if (! ((struct line *)RAM_CODE_PAGE)->line_number) {
-        // find the last line of code
-        last_line = NULL;
-        for (line = find_first_line_in_page(FLASH_CODE_PAGE); line; line = find_next_line_in_page(FLASH_CODE_PAGE, line)) {
-            if (! line->line_number) {
-                break;
-            }
-            last_line = line;
-        }
-        
-        if (last_line) {
-            // compute the shift from line number to bucket number
-            div = (last_line->line_number+PROFILE_BUCKETS-1)/PROFILE_BUCKETS;
-            for (shift = 0; 1<<shift < div; shift++) {
-                // NULL
-            }
-            profile_shift = shift;
-        } else {
-            profile_shift = 0;
-        }
-    }
+    
+    // prepare for profiling
+    code_clear2();
 }
 
 // this function erases the current program in flash.
@@ -848,11 +824,36 @@ code_timer_poll(void)
 
 void code_clear2(void)
 {
+    int div;
+    int shift;
+    struct line *line;
+    struct line *last_line;
+    
     // if we can profile...
     // N.B. this works if the code is all in the same page -- i.e., saved
     if (! ((struct line *)RAM_CODE_PAGE)->line_number) {
         // clear the profile buffer
         memset(PROFILE_BUFFER, 0, PROFILE_BUFFER_SIZE);
+
+        // find the last line of code
+        last_line = NULL;
+        for (line = find_first_line_in_page(FLASH_CODE_PAGE); line; line = find_next_line_in_page(FLASH_CODE_PAGE, line)) {
+            if (! line->line_number) {
+                break;
+            }
+            last_line = line;
+        }
+        
+        if (last_line) {
+            // compute the shift from line number to bucket number
+            div = (last_line->line_number+PROFILE_BUCKETS-1)/PROFILE_BUCKETS;
+            for (shift = 0; 1<<shift < div; shift++) {
+                // NULL
+            }
+            profile_shift = shift;
+        } else {
+            profile_shift = 0;
+        }
     }
 }
 

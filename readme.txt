@@ -1,5 +1,7 @@
 This project contains the following targets:
 
+project.mcp (for CW7.1):
+
 * Skeleton 52221 -- skeleton code to run on an MCF52221, with USB host
                     and device drivers (source code)
 * Skeleton 52233 -- skeleton code to run on an MCF52233, with Niche Lite
@@ -8,6 +10,13 @@ This project contains the following targets:
                     QSPI/EzPort
 * Empty          -- empty project to hold places for header files, etc.,
                     outside of Link Order
+
+51jm128.mcp (for CW6.2):
+
+* Skeleton 51jm128 -- skeleton code to run on an MCF51JM128, with USB host
+                      and device drivers (source code)
+* Skeleton Badge   -- skeleton code to run on a Badge Board, with USB host
+                      and device drivers (source code)
                     
 Note that the remaining targets are private, with no source code provided.
 The Niche Lite TCP/IP stack is provided in binary form to make the skeleton
