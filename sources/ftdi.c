@@ -111,6 +111,8 @@ static byte rx_out;
 
 static bool discard;  // true when we don't think anyone is listening
 
+//static int print_msecs;
+
 // this function waits for space to be available in the transport
 // buffers and then prints the specified line to the FTDI transport
 // console.
@@ -123,6 +125,8 @@ ftdi_print(const byte *buffer, int length)
     static uint32 attached_count;
     
     assert(gpl() == 0);
+    
+    //print_msecs = msecs;
 
     if (! ftdi_attached || discard) {
         return;
@@ -247,12 +251,30 @@ static bool waiting;
 void
 ftdi_command_ack(void)
 {
+    int x;
+
+    x = splx(7);
+
     if (waiting) {
         // start the tx ball rolling
         usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
         waiting = false;
     }
+    
+    splx(x);
 }
+
+//void
+//ftdi_poll(void)
+//{
+//    char buffer[2];
+//    if ((msecs - print_msecs) >= 2000) {
+//    buffer[0] = '.';
+//    buffer[1] = ('Q'-'@');  // resume
+//        ftdi_print((byte *)".", 2);
+//        print_msecs = msecs;
+//    }
+//}
 
 // this function implements the FTDI usb bulk transfer.
 static int
@@ -269,7 +291,7 @@ ftdi_bulk_transfer(bool in, byte *buffer, int length)
             usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
         } else {
             // drop the ball
-            waiting = true;
+            waiting = true;            
         }
     } else {
         rx_length[rx_out] = 2;

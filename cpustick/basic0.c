@@ -59,10 +59,14 @@ char * const help_about =
 "Welcome to StickOS for Freescale MCF52233 v" VERSION "!\n"
 #elif MCF52221
 "Welcome to StickOS for Freescale MCF52221 v" VERSION "!\n"
+#elif DEMO_KIT && MCF52259
+"Welcome to StickOS for Freescale MCF52252 DemoKit v" VERSION "!\n"
 #elif MCF52259
 "Welcome to StickOS for Freescale MCF52252 v" VERSION "!\n"
 #elif MCF5211
 "Welcome to StickOS for Freescale MCF5211 v" VERSION "!\n"
+#elif BADGE_BOARD && MCF51JM128
+"Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v" VERSION "!\n"
 #elif MCF51JM128
 "Welcome to StickOS for Freescale MCF51JM128 v" VERSION "!\n"
 #elif MCF51CN128
@@ -75,8 +79,14 @@ char * const help_about =
 "Welcome to StickOS for Freescale MC9S12DT256 v" VERSION "!\n"
 #elif MC9S12DP512
 "Welcome to StickOS for Freescale MC9S12DP512 v" VERSION "!\n"
-#elif PIC32
-"Welcome to StickOS for Microchip PIC32MX v" VERSION "!\n"
+#elif PIC32 && defined(__32MX440F256H__)
+"Welcome to StickOS for Microchip PIC32MXx-F256H v" VERSION "!\n"
+#elif PIC32 && defined(__32MX440F512H__) && HIDBL
+"Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v" VERSION "!\n"
+#elif PIC32 && defined(__32MX460F512L__) && HIDBL
+"Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v" VERSION "!\n"
+#elif PIC32 && defined(__32MX460F512L__)
+"Welcome to StickOS for Microchip PIC32MXx-F512L v" VERSION "!\n"
 #else
 #error
 #endif

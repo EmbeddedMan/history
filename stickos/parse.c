@@ -125,7 +125,6 @@ parse_word(IN OUT char **text, IN const char *word)
     return true;
 }
 
-static
 bool
 parse_wordn(IN OUT char **text, IN const char *word)
 {

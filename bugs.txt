@@ -1,18 +1,23 @@
 // prior 1
 // =======
+// include device type in pic32 help about
+// print raw ... to print raw bytes
+// "input" BASIC statement?  "get" statement to get a character
+// ";" at end of print statement to supress crlf?
+// disable FASTPRINT for non-USB CPUs
+// store console uart bard rate in flash as mode; revert to 9600 on autorun disable
+// configure usb "uart" for interrupt driven I/O???  or have get return 0 if no character available?
 // move block.c and fat32.c from pict-o-crypt to sources (include in skeleton)
-// have usb host mode append to file on boot, rather than truncate.
 // on/off/mask/unmask should move to parse2.c/run2.c
 // 9s12 and others need to reset timer counter when increasing frequency output -- see "wrap"
 // add qspi pin assignments to online help (data, clk, cs)
-// ";" at end of print statement to supress crlf?
-// "input" BASIC statement?  "get" statement to get a character
-// print raw ... to print raw bytes
-// configure usb "uart" for interrupt driven I/O???  or have get return 0 if no character available?
 // Ctrl-E to dump all variables while basic program is running?
+// add "halt" statement
 
 // doc
 // ===
+// add ctrl-c/ctrl-d to online help, like quickref
+// add watchsmart mode to online help
 // change VBUS to +5V in schematic
 // add digital input and analog output example
 // add minimum flash requirements for pic32 and 5225x to mcu details

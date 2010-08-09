@@ -1220,6 +1220,31 @@ run
 run
 EOF
 
+### long prints ###
+
+echo long prints
+"$BASIC" -q <<EOF
+10 dim i, j
+11 let i=1
+12 let j=1
+20 while (i < 1000000000) do
+25 let i=i*10
+26printj,"---------1---------2---------3---------4---------5--------",i
+30 endwhile
+list
+run
+12 let j=1000000000
+list
+run
+12 let j=1
+26printi,j,"---------1---------2---------3---------4---------5--------"
+list
+run
+12 let j=1000000000
+list
+run
+EOF
+
 ### parse errors ###
 
 echo parse errors

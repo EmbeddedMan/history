@@ -244,7 +244,7 @@ basic_run(char *text_in)
             if (*text) {
                 // find the assignment name
                 for (i = 0; i < pin_assignment_max; i++) {
-                    if (parse_word(&text, pin_assignment_names[i])) {
+                    if (parse_wordn(&text, pin_assignment_names[i])) {
                         break;
                     }
                 }
@@ -252,7 +252,7 @@ basic_run(char *text_in)
                 if (*text) {
                     // find the pin name
                     for (pin = 0; pin < PIN_LAST; pin++) {
-                        if (parse_word(&text, pins[pin].name)) {
+                        if (parse_wordn(&text, pins[pin].name)) {
                             break;
                         }
                     }

@@ -3,10 +3,7 @@
 // it just initializes all of the modules of the os and then runs the
 // main application program loop.
 
-// uncomment for UBW32 bootloader and cp procdefs.ld.ubw32 procdefs.ld
-//#define UBW32  1
-
-#if PIC32 && ! UBW32
+#if PIC32 && ! HIDBL
     #pragma config UPLLEN   = ON            // USB PLL Enabled
     #pragma config FPLLMUL  = MUL_20        // PLL Multiplier
     #pragma config UPLLIDIV = DIV_2         // USB PLL Input Divider

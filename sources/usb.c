@@ -547,7 +547,6 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
 
     // find the next bdt entry to use
     odd = endpoints[endpoint].bdtodd[tx];
-    endpoints[endpoint].bdtodd[tx] = (byte)(! odd);
 
     // initialize the bdt entry
     bdt = MYBDT(endpoint, tx, odd);
@@ -555,7 +554,7 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
     flags = TF_LITTLE(bdt->flags);
     assert(! (flags & BD_FLAGS_OWN));
     assert(length <= endpoints[endpoint].packetsize);
-    bdt->flags = TF_LITTLE(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|endpoints[endpoint].toggle[tx]/*|BD_FLAGS_DTS|*/);
+    bdt->flags = TF_LITTLE(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|endpoints[endpoint].toggle[tx]|BD_FLAGS_DTS);
 
     // enable the packet transfer
 #if PIC32
@@ -579,10 +578,6 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
 #else
     MCF_USB_OTG_ENDPT(endpoint) = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
 #endif
-
-    // revisit -- this should be on ack!!!
-    // toggle the data toggle flag
-    endpoints[endpoint].toggle[tx] = endpoints[endpoint].toggle[tx] ? 0 : BD_FLAGS_DATA;
 }
 
 static byte setup_buffer[SETUP_SIZE];  // from host
@@ -773,7 +768,12 @@ usb_isr(void)
         odd = !! (stat & MCF_USB_OTG_STAT_ODD);
         endpoint = (stat & 0xf0) >> 4;
 
-        assert(!!odd == !endpoints[endpoint].bdtodd[tx]);
+        // toggle the data toggle flag
+        endpoints[endpoint].toggle[tx] = endpoints[endpoint].toggle[tx] ? 0 : BD_FLAGS_DATA;
+        
+        // toggle the next bdt entry to use
+        ASSERT(odd == endpoints[endpoint].bdtodd[tx]);
+        endpoints[endpoint].bdtodd[tx] = ! endpoints[endpoint].bdtodd[tx];
 
         bdt = MYBDT(endpoint, tx, odd);
 
@@ -840,7 +840,7 @@ usb_isr(void)
                     }
 
                     // data phase starts with data1
-                    assert(endpoints[endpoint].toggle[1]);
+                    assert(endpoints[endpoint].toggle[1] == BD_FLAGS_DATA);
                     usb_device_enqueue(0, 1, endpoints[endpoint].data_buffer, endpoints[endpoint].data_length);
                 } else {
                     if (setup->request == REQUEST_CLEAR_FEATURE) {
@@ -852,6 +852,8 @@ usb_isr(void)
                             // clear the data toggle
                             endpoints[endpoint2].toggle[0] = 0;
                             endpoints[endpoint2].toggle[1] = 0;
+                        } else {
+                            assert(0);
                         }
                     } else if (setup->request == REQUEST_SET_ADDRESS) {
                         next_address = value;

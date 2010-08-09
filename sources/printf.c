@@ -274,21 +274,55 @@ sprintf(char *buffer, const char *format, ...)
     return n;
 }
 
+#if ! MCF51QE128 && ! MC9S08QE128
+#define FASTPRINT  1
+#endif
+
 #if ! STICK_GUEST
+#if FASTPRINT
+static char abuffer[BASIC_LINE_SIZE+2];  // 2 for \r\n
+#endif
 static char bbuffer[BASIC_LINE_SIZE+2];  // 2 for \r\n
 #else
+#if FASTPRINT
+static char abuffer[BASIC_LINE_SIZE+1];  // 1 for \n
+#endif
 static char bbuffer[BASIC_LINE_SIZE+1];  // 1 for \n
 #endif
+
+static int tprintf(char *buffer, int n);
 
 int
 printf(const char *format, ...)
 {
     int n;
+#if FASTPRINT
+    int m;
+#endif
     va_list ap;
 
-    va_start(ap, format);
-    n = vprintf(format, ap);
-    va_end(ap);
+#if FASTPRINT
+    if (run_printf) {
+        m = strlen(abuffer);
+        va_start(ap, format);
+        n = vsnprintf(abuffer+m, sizeof(abuffer)-m, format, ap);
+        va_end(ap);
+        if (strchr(format, '\n')) {
+            n = tprintf(abuffer, m+n);
+            abuffer[0] = '\0';
+        }
+    } else {
+        if (abuffer[0]) {
+            tprintf(abuffer, strlen(abuffer));
+        }
+        abuffer[0] = '\0';
+#endif
+        va_start(ap, format);
+        n = vprintf(format, ap);
+        va_end(ap);
+#if FASTPRINT
+    }
+#endif
 
     return n;
 }
@@ -362,20 +396,29 @@ int
 vprintf(const char *format, va_list ap)
 {
     int n;
-    static uint32 last_scsi_attached_count;
     
     assert(gpl() == 0);
 
     n = vsnprintf(bbuffer, sizeof(bbuffer), format, ap);
     assert(! bbuffer[sizeof(bbuffer)-1]);
     
+    n = tprintf(bbuffer, MIN(n, sizeof(bbuffer)-1));
+    return n;
+}
+
+static
+int
+tprintf(char *buffer, int n)
+{
+    static uint32 last_scsi_attached_count;
+
 #if STICK_GUEST
-    write(1, bbuffer, MIN(n, sizeof(bbuffer)-1));
+    write(1, buffer, n);
     return n;
 #else
 #if BADGE_BOARD && STICKOS
     if (run_printf && run2_scroll) {
-        jm_scroll(bbuffer, MIN(n, sizeof(bbuffer)-1));
+        jm_scroll(buffer, n);
         return n;
     }
 #endif
@@ -388,12 +431,12 @@ vprintf(const char *format, va_list ap)
         }
         
         if (open) {
-            open = append_log_file(bbuffer);
+            open = append_log_file(buffer);
         }
     }
 #endif
 
-    terminal_print((byte *)bbuffer, MIN(n, sizeof(bbuffer)-1));
+    terminal_print((byte *)buffer, n);
     return n;
 #endif
 }

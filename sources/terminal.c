@@ -564,11 +564,6 @@ terminal_poll(void)
         last = msecs;
     }
     
-    //if (msecs-last > 1000) {
-    //    // avoid usb timeouts?
-    //    terminal_print(NULL, 0);
-    //}
-    
     x = splx(7);
     strcpy(copy, forward);
     assert(strlen(copy) < sizeof(copy));
@@ -598,6 +593,11 @@ terminal_poll(void)
         }
     }
     
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
+    // avoid usb timeouts
+    //ftdi_poll();
+#endif
+
 #if ! FLASHER && ! PICTOCRYPT
     zb_poll();
 #endif

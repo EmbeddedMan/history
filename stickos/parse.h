@@ -3,6 +3,7 @@
 void parse_trim(IN char **p);
 bool parse_char(IN OUT char **text, IN char c);
 bool parse_word(IN OUT char **text, IN const char *word);
+bool parse_wordn(IN OUT char **text, IN const char *word);
 bool parse_words(IN OUT char **text_in, IN const char *words);
 char *parse_find_keyword(IN OUT char *text, IN char* word);
 bool parse_const(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode);
