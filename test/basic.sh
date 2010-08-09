@@ -2,6 +2,9 @@
 # this test exercises platform similarities
 
 case `uname 2>/dev/null` in
+  CYGWIN*)
+    build="windows"
+    ;;
   Windows*)
     build="windows"
     ;;
@@ -462,7 +465,7 @@ help variables
 help pins
 help board
 help clone
-help zigbee
+help zigflea
 EOF
 
 echo test dims
@@ -488,6 +491,102 @@ echo test dims
 60 dim f as byte flash
 70 dim g
 80 print a, b, c, d, e, f, g, m, n[3], d1, d2, d3, d4, d5, d6
+90 dim abs1 at address 0
+91 dim abs2 as byte at address 16
+92 dim abs3 as short at address 0x123
+93 dim abs4[4] as short at address 0x1048
+94 let abs1=1, abs2=2, abs3=3, abs4=4, abs4[1]=5
+95 print abs1, hex abs2, abs3, abs4, abs4[1]
+list
+run
+cont
+new
+10 dim y[0] as pin an0 for digital input
+11 dim y[1] as pin an0 for digital input
+12 dim y[2] as pin an0 for digital input
+13 dim x[10] as pin an0 for digital input
+14 dim y[2] as pin an0 for digital input
+list
+run
+new
+10 dim x
+20 dim leds[1] as pin dtin0 for digital output
+30 dim leds[2] as pin dtin1 for digital output
+40 dim leds[3] as pin dtin2 for digital output
+50 for x = 0 to 8
+60   let leds[1] = x&1
+70   let leds[2] = x>>1&1
+80   let leds[3] = x>>2&1
+90 next
+list
+run
+new
+10 print "programmatic shift"
+20 dim x[1] as pin dtin0 for digital output
+21 dim x[2] as pin dtin1 for digital output
+22 dim x[3] as pin dtin2 for digital output
+23 dim x[4] as pin dtin3 for digital output
+24 dim y
+30 for y = 1 to 3
+40   if y==4 then
+50     let x[y] = 0
+60   else
+70     let x[y] = x[y+1]
+80   endif
+90 next
+list
+run
+new
+10 print "programmatic shift with index error"
+20 dim x[0] as pin dtin0 for digital output
+21 dim x[1] as pin dtin1 for digital output
+22 dim x[2] as pin dtin2 for digital output
+23 dim x[3] as pin dtin3 for digital output
+24 dim y
+30 for y = 1 to 4
+40   let x[y-1] = x[y]
+50 next
+list
+run
+new
+  5 print "gosub params"
+  10 dim x
+  20 dim arr[3]
+  30 dim leds[0] as pin dtin0 for digital output
+  40 dim leds[1] as pin dtin1 for digital output
+  50 dim leds[3] as pin dtin2 for digital output
+  60 let x = 2, leds[0] = 1, leds[1] = 1, arr[0] = 1, arr[1] = 2
+  70 gosub dump
+  80 gosub p x
+  90 gosub dump
+ 100 gosub p leds
+ 110 gosub dump
+ 120 gosub p leds[1]
+ 130 gosub dump
+ 140 print "setting"
+ 150 gosub set x
+ 160 gosub dump
+ 170 gosub set leds
+ 180 gosub dump
+ 190 gosub set leds[1]
+ 200 gosub dump
+ 210 gosub set_1 arr
+ 220 gosub dump
+ 230 gosub set_1 leds
+ 240 end 
+ 250 sub p a
+ 260   print a
+ 270 endsub 
+ 280 sub set a
+ 290   print a
+ 300   let a = 0
+ 310 endsub 
+ 320 sub dump
+ 330   print x, leds[0], leds[1], arr[0], arr[1]
+ 340 endsub 
+ 350 sub set_1 a
+ 360   let a[1] = 0
+ 370 endsub 
 list
 run
 EOF
@@ -592,6 +691,9 @@ echo test read/data
   70 endwhile
   75 data 0x10
   list
+numbers off
+list
+numbers on
 run
    1 dim a, b
   10 data 1, 0x2, 3
@@ -665,16 +767,6 @@ servo
 10 dim x as pin dtin0 for servo output
 list
 run
-EOF
-
-echo test usb host
-"$BASIC" -q <<EOF
-usbhost
-usbhost on
-usbhost
-usbhost qqq
-usbhost off aaa
-usbhost
 EOF
 
 echo test variable scopes
@@ -871,12 +963,20 @@ echo test configures
 40 configure timer 0 for 1000 s
 50 configure timer 1 for 10 ms
 55 configure timer 2 for 17 us
-60 configure qspi for 1 csiv
 70 qspi a,b,c,d
 list
 new
 demo2
 list
+EOF
+
+echo test qspi error case
+"$BASIC" -q <<EOF
+  10 dim cmd1 as byte
+  20 while 0>500 do
+  30   qspi cmd1
+  40 endwhile
+  50 end
 EOF
 
 echo test uart
@@ -1001,6 +1101,77 @@ EOF
 
 echo watchpoints
 "$BASIC" -q <<EOF
+watchsmart
+watchsmart off
+watchsmart
+watchsmart on
+watchsmart
+10 dim x
+20 on x do print 1
+30 on x+0 do print 2
+40 on x do print 3
+list
+run
+new
+10 dim x
+20 on x+1 do print 1, x
+30 on x+2 do print 2, x
+40 on x+3 do print 3, x
+50 on x+4 do print 4, x
+60 on x+5 do print 5, x
+list
+run
+new
+watchsmart off
+10 dim x
+20 on x+1 do print 1, x
+30 on x+2 do print 2, x
+40 on x+3 do print 3, x
+50 on x+4 do print 4, x
+70 let x=1
+80 print "80"
+90 let x=-1
+100 let x=2
+110 print "110"
+120 let x=-2
+130 let x=1
+140 print "140"
+150 let x=-3
+160 let x=1
+170 print "170"
+180 let x=-4
+190 let x=1
+200 print "200"
+210 let x=-5
+220 let x=1
+list
+run
+new
+watchsmart on
+10 dim x
+20 on x+1 do print 1, x
+30 on x+2 do print 2, x
+40 on x+3 do print 3, x
+50 on x+4 do print 4, x
+70 let x=1
+80 print "80"
+90 let x=-1
+100 let x=2
+110 print "110"
+120 let x=-2
+130 let x=1
+140 print "140"
+150 let x=-3
+160 let x=1
+170 print "170"
+180 let x=-4
+190 let x=1
+200 print "200"
+210 let x=-5
+220 let x=1
+list
+run
+new
 10 dim i
 20 on i%5 do stop
 30 while 1 do
@@ -1018,6 +1189,35 @@ print i
 off i%5
 cont
 print i
+new
+10 dim x
+20 on x==1 do print "ONE",x
+21 on x%2 do print "odd",x
+30 for x = 1 to 10
+31 next
+40 print "masking"
+41 mask x==1
+42 for x = 1 to 10
+43 next
+70 print "unmasking"  
+71 unmask x==1
+72 for x = 1 to 10
+73 next
+80 print "off-ing"  
+81 off x==1
+82 for x = 1 to 10
+83 next
+list
+run
+new
+10 dim x as flash
+20 on x!=0 do print 20
+30 on x==0 do print 30
+40 let x=1
+50 print "done"
+list
+run
+run
 EOF
 
 ### parse errors ###
@@ -1209,6 +1409,37 @@ dim eeee as remote on x
 dim e as remote on nodeid
 dim f[4] as remote on nodeid
 dim g as remote on nodeid 3+
+print "absolute vars"
+dim abs1 at
+dim abs2 at xxx
+dim abs3 at address xxx
+dim abs4 at address 0x20 xxx
+dim abs5 as
+dim abs6 as xxx
+dim abs7 as byte xxx
+dim abs8 as byte at
+dim abs9 as byte at xxx
+dim abs10 as byte at address
+dim abs11 as byte at address xxx
+dim abs12 as byte at address 0x30 xxx
+dim abs13 as short xxx
+dim abs14 as short at
+dim abs15 as short at xxx
+dim abs16 as short at address
+dim abs17 as short at address xxx
+dim abs18 as short at address 0x40 xxx
+dim abs19[4] at
+dim abs20[4] at xxx
+dim abs21[4] at address xxx
+dim abs22[4] at address 0x50 xxx
+dim abs23[4] as byte at
+dim abs24[4] as byte at xxx
+dim abs25[4] as byte at address xxx
+dim abs26[4] as byte at address 0x60 xxx
+dim abs27[4] as short at
+dim abs28[4] as short at xxx
+dim abs29[4] as short at address xxx
+dim abs30[4] as short at address 0x70 xxx
 print "let"
 let
 let 0=0
@@ -1296,6 +1527,11 @@ sleep0,
 sleep,
 stop1
 end1
+watchsmart xxx
+watchsmart on xxx
+watchsmart off xxx
+watchsmart xxx on
+watchsmart xxx off
 EOF
 
 ### command errors ###
@@ -1364,7 +1600,7 @@ step aaa
 step on aaa
 print "trace"
 trace aaa
-trace on aaa
+ trace on aaa
 print "undo"
 undo aaa
 print "uptime"

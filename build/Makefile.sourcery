@@ -8,13 +8,16 @@
 # tools location
 BIN_ROOT = m68k-elf-
 
-# compiler and linker
+# compiler, linker, and tools.
 OBJCOPY = $(BIN_ROOT)objcopy
+OBJDUMP = $(BIN_ROOT)objdump
 CC = $(BIN_ROOT)gcc -pipe
 AS = $(CC) -x assembler-with-cpp
 
 ifeq (52221,$(findstring 52221,$(CPU)))
 PROC=52223
+else ifeq (52259,$(findstring 52259,$(CPU)))
+PROC=52259
 else
 $(error Invalid CPU - $(CPU))
 endif
@@ -24,7 +27,7 @@ CCFLAGS = -g \
           -ffunction-sections -Wl,-gc-sections \
           -fomit-frame-pointer -fno-builtin -ffreestanding -fverbose-asm \
           -march=isaaplus -Wa,--register-prefix-optional \
-          -mcpu=$(PROC) \
+          -mcpu=$(PROC) -malign-int \
           $(foreach a,$(subst ., ,$(TARGET)),-D$(a)) \
           $(foreach a,$(subst ., ,$(BUILD)),-D$(a)) \
           $(foreach a,$(subst ., ,$(CPU)),-D$(a)) \
@@ -52,12 +55,16 @@ OBJECTLIBS = $(LIBS:%=%.a)
 	$(AS) $(CCFLAGS) -c $< -o $@
 
 %.s19: %.elf
-	echo $(OBJCOPY) -O srec --srec-len=28 $< $@ >&2; \
-	$(OBJCOPY) -O srec --srec-len=28 $< $@
+	echo $(OBJCOPY) -O srec --srec-forceS3 --srec-len=28 $< $@ >&2; \
+	$(OBJCOPY) -O srec --srec-forceS3 --srec-len=28 $< $@
+
+%.dump: %.elf
+	echo $(OBJDUMP) -xdsS $< >&2;\
+	$(OBJDUMP) -xdsS $< > $@
 
 ifeq (PROGRAM, $(TARGETTYPE))
 
-target: $(TARGET).elf $(TARGET).s19
+target: $(TARGET).elf $(TARGET).s19 $(TARGET).dump
 $(TARGET).elf: $(LCFS) $(OBJECTS) $(OBJECTASMS) $(OBJECTLIBS) $(OBJECTLIBS)
 	echo $(CC) -o $@ -T$+ >&2; \
 	$(CC) $(LDFLAGS) $(CCFLAGS) -o $@ -T$+

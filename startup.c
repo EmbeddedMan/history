@@ -76,6 +76,12 @@ typedef unsigned char bool;
 typedef unsigned char byte;
 #endif
 
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+typedef uint16 size_t;
+#else
+typedef uint32 size_t;
+#endif
+
 enum {
     false,
     true
@@ -95,6 +101,11 @@ enum {
 // upgrade
 #include "startup.h"
 #include "vectors.h"
+
+// routines defined in util.c
+extern int memcmp(const void *d, const void *s, size_t n);
+extern void *memcpy(void *d, const void *s, size_t n);
+extern void *memset(void *p, int d, size_t n);
 
 #if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 extern unsigned char far _SP_INIT[], _SDA_BASE[];
@@ -118,50 +129,15 @@ byte big_buffer[1024];
 #endif
 
 #if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
-#if BADGE_BOARD || DEMO_KIT
-#define DECLSPEC_PAGE0_CODE
-#define DECLSPEC_PAGE0_DATA
-#elif GCC
-#define DECLSPEC_PAGE0_CODE __attribute__((section(".page0_code")))
-#define DECLSPEC_PAGE0_DATA __attribute__((section(".page0_data")))
-#define DECLSPEC_PAGE1 __attribute__((section(".page1")))
-#else
-#pragma define_section page0 ".page0" far_absolute R
-#define DECLSPEC_PAGE0_CODE  __declspec(page0)
-#define DECLSPEC_PAGE0_DATA  __declspec(page0)
-#endif
-
 
 // *** page0 ***
 
-// make cw and gcc assemblers compatible
 #if GCC
 extern void _startup(void);
-
-#define BEGIN_NAKED(func)  void func ## _not(void) \
-                           { \
-                               asm ("\t.globl " #func ); \
-                               asm ("\t.type " #func ", @function"); \
-                               asm (#func ":");
-
-#define END_NAKED              asm("\thalt"); \
-                           }
-                           
-#define Q1(a)  asm("\t" #a "\n");
-#define Q2(a,b)  asm("\t" #a " " #b "\n");
-#define Q3(a,b,c)  asm("\t" #a " " #b "," #c "\n");
-#else  // GCC
+#else // GCC
 DECLSPEC_PAGE0_CODE
 asm void _startup(void);
-
-#define BEGIN_NAKED(func)  asm void func(void)
-
-#define END_NAKED
-
-#define Q1(a)  a
-#define Q2(a,b)  a b
-#define Q3(a,b,c)  a b,c
-#endif  // GCC
+#endif // GCC
 
 #if ! BADGE_BOARD && ! DEMO_KIT
 
@@ -212,7 +188,7 @@ const uint32 _vect[256] = {
     
 // this is the cfm config
 DECLSPEC_PAGE0_DATA
-const unsigned long _cfm[] = {
+const uint32 _cfm[] = {
 #if ! MCF51JM128 && ! MCF51QE128
     0,                              // (0x00000400) KEY_UPPER
     0,                              // (0x00000404) KEY_LOWER
@@ -304,51 +280,6 @@ BEGIN_NAKED(_startup)
 }
 END_NAKED
 
-static
-DECLSPEC_PAGE0_CODE
-void *
-p0_memcpy(void *d,  const void *s, uint32 n)
-{
-    uint8 *dd = d;
-    const uint8 *ss = s;
-    
-    while (n--) {
-        *(dd++) = *(ss++);
-    }
-    return d;
-}
-
-static
-DECLSPEC_PAGE0_CODE
-void *
-p0_memset(void *p,  int d, uint32 n)
-{
-    uint8 *pp = p;
-    
-    while (n--) {
-        *(pp++) = d;
-    }
-    return p;
-}
-
-static
-DECLSPEC_PAGE0_CODE
-int
-p0_memcmp(const void *d,  const void *s, uint32 n)
-{
-    char c;
-    const uint8 *dd = d;
-    const uint8 *ss = s;
-    
-    while (n--) {
-        c = *(dd++) - *(ss++);
-        if (c) {
-            return c;
-        }
-    }
-    return 0;
-}
-
 // this function performs C initialization before main() runs.
 DECLSPEC_PAGE0_CODE
 void
@@ -362,11 +293,11 @@ p0_c_startup(void)
     // initialized data until we have completed compatible upgrade!!!
     
 #if INCOMPAT
-    p0_memset((void *)__DATA_RAM, 0, (uint32)__SP_AFTER_RESET - (uint32)__DATA_RAM - 64);
+    memset((void *)__DATA_RAM, 0, (uint32)__SP_AFTER_RESET - (uint32)__DATA_RAM - 64);
 #endif
 
     // zero all of RAM now, so we can set globals in this file
-    p0_memset((void *)__DATA_RAM, 0, (uint32)__SP_AFTER_RESET - (uint32)__DATA_RAM - 64);
+    memset((void *)__DATA_RAM, 0, (uint32)__SP_AFTER_RESET - (uint32)__DATA_RAM - 64);
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #if ! MCF5211
@@ -439,7 +370,7 @@ p0_c_startup(void)
 
     // we use the 48MHz crystal divided by 6
     MCF_CLOCK_CCHR = 5;
-
+    
     // and multiply by 10 to get 80MHz
     MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(3)|MCF_CLOCK_SYNCR_CLKSRC|MCF_CLOCK_SYNCR_PLLMODE|MCF_CLOCK_SYNCR_PLLEN;
 
@@ -555,7 +486,7 @@ p0_c_startup(void)
     // ******** COMPATIBLE UPGRADE ********
     
     // if we're in the middle of a compatible upgrade...
-    if (! p0_memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE) && ! *((uint32 *)FLASH_BYTES - 1)) {
+    if (! memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE) && ! *((uint32 *)FLASH_BYTES - 1)) {
         // initialize the flash module
         if (bus_frequency > 12800000) {
             MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((bus_frequency-1)/8/200000);
@@ -575,7 +506,7 @@ p0_c_startup(void)
         
         // copy our new flash upgrade routine to RAM
         fn = (flash_upgrade_ram_begin_f)(((uint32)big_buffer+3)&~3);
-        p0_memcpy(fn, (void *)(FLASH_BYTES/2+VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN), (int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN);
+        memcpy(fn, (void *)(FLASH_BYTES/2+VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN), (int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN);
 
         // and run it!
         fn(true);
@@ -585,5 +516,5 @@ p0_c_startup(void)
     }
 #endif
 }
-#endif
+#endif // ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 

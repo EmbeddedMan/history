@@ -17,10 +17,11 @@ extern int servo_hz;
 enum pin_assignment {
     pin_assignment_heartbeat,
     pin_assignment_safemode,
+    pin_assignment_qspi_cs,  // clone and zigflea
     pin_assignment_clone_rst,
-    pin_assignment_zigbee_rst,
-    pin_assignment_zigbee_attn,
-    pin_assignment_zigbee_rxtxen,
+    pin_assignment_zigflea_rst,
+    pin_assignment_zigflea_attn,
+    pin_assignment_zigflea_rxtxen,
     pin_assignment_max
 };
 
@@ -56,17 +57,17 @@ extern const byte pin_qual_mask[];
 
 extern const char * const pin_qual_names[];
 
-// N.B. pins marked with *** may affect zigbee or other system operation
+// N.B. pins marked with *** may affect zigflea or other system operation
 enum pin_number {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     PIN_DTIN0,
     PIN_DTIN1,
     PIN_DTIN2,
     PIN_DTIN3,
-    PIN_QSPI_DOUT,  // *** zigbee/clone
-    PIN_QSPI_DIN,  // *** zigbee/clone
-    PIN_QSPI_CLK,  // *** zigbee/clone
-    PIN_QSPI_CS0,  // *** zigbee/clone
+    PIN_QSPI_DOUT,  // *** zigflea/clone
+    PIN_QSPI_DIN,  // *** zigflea/clone
+    PIN_QSPI_CLK,  // *** zigflea/clone
+    PIN_QSPI_CS0,
 #if MCF52259
     PIN_QSPI_CS1,
     PIN_QSPI_CS2,
@@ -102,20 +103,20 @@ enum pin_number {
     PIN_CTS0,
     PIN_AN0,
     PIN_AN1,
-    PIN_AN2,  // *** zigbee
-    PIN_AN3,  // *** zigbee
-    PIN_AN4,  // *** zigbee
+    PIN_AN2,
+    PIN_AN3,
+    PIN_AN4,
     PIN_AN5,
     PIN_AN6,
     PIN_AN7,
     PIN_IRQ0,  // unused
-    PIN_IRQ1,  // *** sleep switch
+    PIN_IRQ1,
     PIN_IRQ2,  // unused
     PIN_IRQ3,  // unused
-    PIN_IRQ4,  // *** zigbee
+    PIN_IRQ4,
     PIN_IRQ5,  // unused
     PIN_IRQ6,  // unused
-    PIN_IRQ7,  // *** activity led
+    PIN_IRQ7,
 #if MCF52233
     PIN_IRQ8,  // unused
     PIN_IRQ9,  // unused
@@ -123,13 +124,13 @@ enum pin_number {
     PIN_IRQ11,
 #endif
 #if MCF52233 || MCF52259 || MCF5211
-    PIN_GPT0,  // *** zigbee
-    PIN_GPT1,  // *** zigbee
+    PIN_GPT0,
+    PIN_GPT1,
     PIN_GPT2,
     PIN_GPT3,
 #endif
-    PIN_SCL,  // *** zigbee/clone
-    PIN_SDA,  // *** zigbee
+    PIN_SCL,
+    PIN_SDA,
 #elif MCF51JM128
     PIN_PTA0 = 0,
     PIN_PTA1,
@@ -142,7 +143,7 @@ enum pin_number {
     PIN_PTB2,
     PIN_PTB3,
     PIN_PTB4,
-    PIN_PTB5,  // *** zigbee
+    PIN_PTB5,
     PIN_PTB6,
     PIN_PTB7,
     PIN_PTC0,
@@ -162,13 +163,13 @@ enum pin_number {
     PIN_PTD7,
     PIN_PTE0,
     PIN_PTE1,
-    PIN_PTE2,  // *** zigbee
-    PIN_PTE3,  // *** zigbee
-    PIN_PTE4,  // *** zigbee
-    PIN_PTE5,  // *** zigbee
-    PIN_PTE6,  // *** zigbee
-    PIN_PTE7,  // *** zigbee
-    PIN_PTF0,  // *** activity led
+    PIN_PTE2,
+    PIN_PTE3,
+    PIN_PTE4,  // *** zigflea
+    PIN_PTE5,  // *** zigflea
+    PIN_PTE6,  // *** zigflea
+    PIN_PTE7,
+    PIN_PTF0,
     PIN_PTF1,
     PIN_PTF2,
     PIN_PTF3,
@@ -191,15 +192,15 @@ enum pin_number {
     PIN_PTA7,
     PIN_PTB0,
     PIN_PTB1,
-    PIN_PTB2,  // *** zigbee
-    PIN_PTB3,  // *** zigbee
-    PIN_PTB4,  // *** zigbee
-    PIN_PTB5,  // *** zigbee
+    PIN_PTB2,  // *** zigflea
+    PIN_PTB3,  // *** zigflea
+    PIN_PTB4,  // *** zigflea
+    PIN_PTB5,
     PIN_PTB6,
     PIN_PTB7,
-    PIN_PTC0,  // *** zigbee
-    PIN_PTC1,  // *** zigbee
-    PIN_PTC2,  // activity led
+    PIN_PTC0,
+    PIN_PTC1,
+    PIN_PTC2,
     PIN_PTC3,
     PIN_PTC4,
     PIN_PTC5,
@@ -222,7 +223,7 @@ enum pin_number {
     PIN_PTE6,
     PIN_PTE7,
     PIN_PTF0,
-    PIN_PTF1,  // *** zigbee
+    PIN_PTF1,
     PIN_PTF2,
     PIN_PTF3,
     PIN_PTF4,
@@ -235,7 +236,7 @@ enum pin_number {
     PIN_PTG3,
 #elif MC9S12DT256 || MC9S12DP512
     PIN_PAD00,
-    PIN_PAD01,  // *** zigbee
+    PIN_PAD01,
     PIN_PAD02,
     PIN_PAD03,
     PIN_PAD04,
@@ -300,10 +301,10 @@ enum pin_number {
     PIN_PK7,
     PIN_PM0,
     PIN_PM1,
-    PIN_PM2,  // *** zigbee
-    PIN_PM3,  // *** zigbee
-    PIN_PM4,  // *** zigbee
-    PIN_PM5,  // *** zigbee
+    PIN_PM2,  // *** zigflea
+    PIN_PM3,
+    PIN_PM4,  // *** zigflea
+    PIN_PM5,  // *** zigflea
     PIN_PM6,
     PIN_PM7,
     PIN_PP0,
@@ -322,8 +323,8 @@ enum pin_number {
     PIN_PS5,
     PIN_PS6,
     PIN_PS7,
-    PIN_PT0,  // *** zigbee
-    PIN_PT1,  // *** zigbee
+    PIN_PT0,
+    PIN_PT1,
     PIN_PT2,
     PIN_PT3,
     PIN_PT4,
@@ -331,6 +332,7 @@ enum pin_number {
     PIN_PT6,
     PIN_PT7,
 #elif PIC32
+#if _PORTA_RA0_MASK
     PIN_RA0,
     PIN_RA1,
     PIN_RA2,
@@ -347,6 +349,7 @@ enum pin_number {
     PIN_RA13, // unused
     PIN_RA14,
     PIN_RA15,
+#endif
     PIN_AN0,  // rb0...
     PIN_AN1,
     PIN_AN2,

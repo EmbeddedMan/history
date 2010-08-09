@@ -10,6 +10,15 @@ extern bool debugger_attached;
 bool printf_scroll;
 #endif
 
+#if _WIN32
+// XXX -- I have no idea why this is needed, but without it, some other
+// function causes libcmtd.lib:*printf.obj to be sucked in, resulting in
+// a duplicate symbol at link time.
+_CRTIMP int __cdecl _get_printf_count_output() { assert(0); return 0; }
+_CRTIMP int _snprintf_s(char *buffer, size_t sizeOfBuffer, size_t count, const char *format) { return 0; }
+_CRTIMP int sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format) { return 0; }
+#endif
+
 #define MAXDIGITS  32
 
 static const char digits[] = "0123456789abcdef";
@@ -284,10 +293,18 @@ printf(const char *format, ...)
     return n;
 }
 
-#if STICKOSPLUS
+#if STICKOSPLUS && STICKOS && ! STICK_GUEST
 static bool open;
 static VOLINFO vi;
 static FILEINFO wfi;
+
+void
+flush_log_file(void)
+{
+    if (open) {
+        DFS_HostFlush(1000);
+    }
+}
 
 static
 bool

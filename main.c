@@ -185,8 +185,10 @@ main()  // we're called directly by startup.c
     delay(20);
     splx(x);
     
+#if ! PICTOCRYPT
     // initialize qspi
     qspi_initialize();
+#endif
 
 #if ! FLASHER
     // initialize adc
@@ -234,7 +236,7 @@ main()  // we're called directly by startup.c
 #endif
 
 #if ! FLASHER && ! PICTOCRYPT
-    // initialize zigbee
+    // initialize zigflea
     zb_initialize();
     
     // initialize the terminal interface

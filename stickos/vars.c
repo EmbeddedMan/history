@@ -3,7 +3,7 @@
 // pin, and flash variables, as well as the external pin control and
 // access module.
 
-// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
@@ -43,17 +43,26 @@ struct var {
     byte gosubs;
     byte type;
     byte size;  // 4 bytes per integer, 2 bytes per short, 1 byte per byte
-    short max_index;
+    uint16 max_index;  // for type == code_pin, this is 1
     union {
-        int page_offset;
         struct {
+            int page_offset;
+            uint8 watchpoints_mask;  // mask indicating the watchpoints whose conditions depend on this var
+            uint16 nodeid;  // for remote variable sets
+        } var;
+        struct {
+            uint16 only_index;  // this is the allowed array index
             byte number;
             uint8 type;
             uint8 qual;
-        } pin;
-        struct var *target_var; // type=code_var_reference
+        } pin;  // type=code_pin
+        struct {
+            struct var *target_var;
+        } ref;  // type=code_var_reference
+        struct {
+            uintptr addr;
+        } abs;  // type=code_absolute
     } u;
-    int nodeid;  // for remote variable sets
 } vars[BASIC_VARS];
 
 static int max_vars;  // allocated
@@ -62,6 +71,47 @@ static int ram_offset;  // allocated in RAM_VARIABLE_PAGE
 static int param_offset;  // allocated in FLASH_PARAM_PAGE
 
 // *** system variable access routines ***
+
+// *** pin/watchpoint associations ***
+// each array element is a bitmask of watchpoints associated with the
+// indexed pin.  Bits are set in var_get() while evaluating a
+// watchpoint condition.
+static uint8 pin_watchpoint_masks[ROUNDUP(PIN_LAST * num_watchpoints, 8) / 8];
+
+static
+int
+pin_watchpoint_mask_index(enum pin_number pin)
+{
+    assert(pin < PIN_LAST);
+    return pin / (8 / num_watchpoints);
+}
+
+static
+int
+pin_watchpoint_mask_offset(enum pin_number pin)
+{
+    assert(pin < PIN_LAST);
+    return (pin % (8 / num_watchpoints)) * num_watchpoints;
+}
+
+static
+void
+pin_watchpoint_set_mask(enum pin_number pin, uint32 watchpoint_mask)
+{
+    assert(pin < PIN_LAST);
+    assert((watchpoint_mask & all_watchpoints_mask) == watchpoint_mask);
+    assert(pin_watchpoint_mask_index(pin) < LENGTHOF(pin_watchpoint_masks));
+    pin_watchpoint_masks[pin_watchpoint_mask_index(pin)] |= watchpoint_mask << pin_watchpoint_mask_offset(pin);
+}
+
+static
+uint8
+pin_watchpoint_get_mask(enum pin_number pin)
+{
+    assert(pin < PIN_LAST);
+    assert(pin_watchpoint_mask_index(pin) < LENGTHOF(pin_watchpoint_masks));
+    return (pin_watchpoint_masks[pin_watchpoint_mask_index(pin)] >> pin_watchpoint_mask_offset(pin)) & all_watchpoints_mask;
+}
 
 // *** flash control and access ***
 
@@ -144,30 +194,43 @@ flash_promote_alternate(void)
 
 // this function finds the specified variable in our variable table.
 //
+// If index != -1, then it is a pin array index and it used to locate the pin array element name[index].
+// If index == -1, then the first variable with name is returned regardless of its index.
+//
 // *gosubs is set to the gosub level in which the variable or reference is found.  This may be different than the
 // gosub level of the returned variable if a reference was used to locate the returned variable.
 static
 struct var *
-var_find(IN const char *name, OUT int *gosubs)
+var_find(IN const char *name, IN int index, OUT int *gosubs)
 {
     struct var *var;
-
+    
     // for all declared variables...
     for (var = vars+(max_vars-1); var >= vars; var--) {
         assert(var->type);
+        
         // if the variable name matches...
         // N.B. we use strncmp so the user can use a longer variable name and still match
         if (var->name[0] == name[0] && ! strncmp(var->name, name, sizeof(var->name)-1)) {
-            // if var is a reference, return the referred to variable, making note of the gosub level and
-            // any element restriction the reference imposes.
+            // if var is a reference, return the referred to variable, making note of the gosub level.
             *gosubs = var->gosubs;
-            if (var->type == code_var_reference) {
-                // assert that the referent is in an outer scope.
-                assert(var > var->u.target_var);
+            if (var->type != code_ram) {
+                if (var->type == code_var_reference) {
+                    // assert that the referent is in an outer scope.
+                    assert(var > var->u.ref.target_var);
 
-                var = var->u.target_var;
-                assert(var->type != code_var_reference);
+                    var = var->u.ref.target_var;
+
+                    // references do not refer to other references.  every reference reaches its final destination var.
+                    assert(var->type != code_var_reference);
+                }
+
+                // if an index is specified and we're considering a pin array element, then ensure the index matches
+                if ((index != -1) && (var->type == code_pin) && (var->u.pin.only_index != index)) {
+                    continue;
+                }
             }
+            
             return var;
         }
     }
@@ -194,6 +257,12 @@ var_close_scope(IN int scope)
     
     // reclaim ram space, if any was allocated by this scope.
     if (max_vars > scope) {
+
+        // Because variables are going out of scope, pin->watchpoint_condition relationships may be changing:
+        // - invalidate all pin->watchpoint_condition relationships.
+        // - schedule all watchpoints to re-execute asap, which will re-establish pin->watchpoint_condition relationships.
+        memset(pin_watchpoint_masks, 0, sizeof(pin_watchpoint_masks));
+        possible_watchpoints_mask = all_watchpoints_mask;
         
         // find the first (if any exist) non-reference variable in this scope by skipping any references.
         for (i = scope; (i < max_vars) && (vars[i].type == code_var_reference); i++) {
@@ -202,7 +271,7 @@ var_close_scope(IN int scope)
         // release any ram allocate by this scope's variables.
         if (i < max_vars) {
             assert(vars[i].type == code_ram || vars[i].type == code_nodeid);
-            ram_offset = vars[i].u.page_offset;
+            ram_offset = vars[i].u.var.page_offset;
             memset(RAM_VARIABLE_PAGE+ram_offset, 0, sizeof(RAM_VARIABLE_PAGE)-ram_offset);
         }
         
@@ -211,7 +280,7 @@ var_close_scope(IN int scope)
 }
 
 static void
-var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid, IN struct var *target)
+var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid, IN struct var *target, IN uintptr abs_addr)
 {
     struct var *var;
     int var_gosubs;
@@ -241,13 +310,15 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
         return;
     }
 
-    if (! max_index) {
+    // catch declaration of zero length array.  allow pin array element 0.
+    if ((max_index == 0) && (type != code_pin)) {
         printf("declared 0 length array\n");
         stop();
         return;
     }
 
-    var = var_find(name, &var_gosubs);
+    // see if the variable name (and index if a pin array element) is already in-use.
+    var = var_find(name, type==code_pin ? max_index : -1, &var_gosubs);
     // if the var already exists...
     if (var) {
         // if the var exists at the same scope...
@@ -269,15 +340,16 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
     }
 
     // declare the var
-    strncpy(vars[max_vars].name, name, sizeof(vars[max_vars].name)-1);
-    assert(vars[max_vars].name[sizeof(vars[max_vars].name)-1] == '\0');
-    vars[max_vars].gosubs = gosubs;
-    vars[max_vars].type = type;
+    var = &vars[max_vars];
+    strncpy(var->name, name, sizeof(var->name)-1);
+    assert(var->name[sizeof(var->name)-1] == '\0');
+    var->gosubs = gosubs;
+    var->type = type;
     assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(uint32));
-    vars[max_vars].size = size;
-    assert(max_index > 0);
-    vars[max_vars].max_index = max_index;
-    vars[max_vars].nodeid = nodeid;
+    var->size = size;
+    if (type != code_pin) {  // allow pin array element 0.
+        assert(max_index > 0);
+    }
 
     switch (type) {
         case code_nodeid:
@@ -285,24 +357,27 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
         case code_ram:
             assert(! pin_number);
             // if we're out of ram space...
-            if (ram_offset+max_index*vars[max_vars].size > sizeof(RAM_VARIABLE_PAGE)) {
-                vars[max_vars].max_index = 0;
+            if (ram_offset+max_index*var->size > sizeof(RAM_VARIABLE_PAGE)) {
+                var->max_index = 0;
                 printf("out of variable ram\n");
                 stop();
                 return;
             }
             // *** RAM control and access ***
             // allocate the ram var
-            vars[max_vars].u.page_offset = ram_offset;
-            ram_offset += max_index*vars[max_vars].size;
+            var->max_index = max_index;
+            var->u.var.page_offset = ram_offset;
+            var->u.var.watchpoints_mask = 0;
+            var->u.var.nodeid = nodeid;
+            ram_offset += max_index*var->size;
             break;
 
         case code_flash:
             assert(! pin_number);
             assert(size == 4);  // integer only
             // if we're out of flash space...
-            if (param_offset+max_index*vars[max_vars].size > BASIC_SMALL_PAGE_SIZE-(FLASH_LAST+1)*sizeof(uint32)) {
-                vars[max_vars].max_index = 0;
+            if (param_offset+max_index*var->size > BASIC_SMALL_PAGE_SIZE-(FLASH_LAST+1)*sizeof(uint32)) {
+                var->max_index = 0;
                 printf("out of parameter flash\n");
                 stop();
                 return;
@@ -310,20 +385,22 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
             // *** flash control and access ***
             // allocate the flash var
             assert(! (param_offset & (sizeof(uint32)-1)));  // integer only
-            vars[max_vars].u.page_offset = param_offset;
-            assert(vars[max_vars].size == sizeof(uint32));  // integer only
-            param_offset += max_index*vars[max_vars].size;
+            var->max_index = max_index;
+            var->u.var.page_offset = param_offset;
+            var->u.var.watchpoints_mask = 0;
+            assert(var->size == sizeof(uint32));  // integer only
+            param_offset += max_index*var->size;
             break;
 
         case code_pin:
             // *** external pin control and access ***
-            assert(max_index == 1);
             // N.B. this was checked when we parsed
             assert(pins[pin_number].pin_type_mask & (1<<pin_type));
-
-            vars[max_vars].u.pin.number = pin_number;
-            vars[max_vars].u.pin.type = pin_type;
-            vars[max_vars].u.pin.qual = pin_qual;
+            var->max_index = 1;
+            var->u.pin.only_index = max_index;
+            var->u.pin.number = pin_number;
+            var->u.pin.type = pin_type;
+            var->u.pin.qual = pin_qual;
 
 #if ! STICK_GUEST
             pin_declare(pin_number, pin_type, pin_qual);
@@ -331,9 +408,15 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
             break;
 
         case code_var_reference:
-            vars[max_vars].u.target_var = target;
+            var->max_index = 0;  // unused
+            var->u.ref.target_var = target;
             break;
-            
+
+        case code_absolute:
+            var->max_index = max_index;
+            var->u.abs.addr = abs_addr;
+            break;
+
         default:
             assert(0);
             break;
@@ -342,13 +425,13 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
     max_vars++;
 }
 
-// this function declares a ram, flash, or pin variable!
+// this function declares a ram, flash, pin, or abs variable!
 void
-var_declare(IN const char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid)
+var_declare(IN const char *name, IN int gosubs, IN int type, IN int size, IN int max_index, IN int pin_number, IN int pin_type, IN int pin_qual, IN int nodeid, IN uintptr abs_addr)
 {
     assert(type != code_var_reference);
 
-    var_declare_internal(name, gosubs, type, size, max_index, pin_number, pin_type, pin_qual, nodeid, NULL);
+    var_declare_internal(name, gosubs, type, size, max_index, pin_number, pin_type, pin_qual, nodeid, NULL, abs_addr);
 }
 
 void
@@ -358,14 +441,14 @@ var_declare_reference(const char *name, int gosubs, const char *target_name)
     int target_gosubs;
     
     // see if the referent is a normal variable or another reference...
-    target = var_find(target_name, &target_gosubs);
+    target = var_find(target_name, 0, &target_gosubs);
     if (! target) {
         printf("unable to find referent '%s'\n", target_name);
         stop();
         return;
     }
 
-    var_declare_internal(name, gosubs, code_var_reference, target->size, target->max_index, -1, -1, -1, -1, target);
+    var_declare_internal(name, gosubs, code_var_reference, target->size, target->max_index, -1, -1, -1, -1, target, -1);
 }
 
 typedef struct remote_set {
@@ -421,8 +504,9 @@ var_set(IN const char *name, IN int index, IN int32 value)
 #if 0  // unused for now
     int i;
 #endif
-    struct var *var;
+    uint type;
     int var_gosubs;
+    struct var *var;
 #if ! STICK_GUEST
     remote_set_t set;
 #endif
@@ -431,7 +515,7 @@ var_set(IN const char *name, IN int index, IN int32 value)
         return;
     }
 
-    var = var_find(name, &var_gosubs);
+    var = var_find(name, index, &var_gosubs);
     if (! var) {
 #if 0  // unused for now
         if (! index) {
@@ -451,116 +535,119 @@ var_set(IN const char *name, IN int index, IN int32 value)
 #endif
         printf("var '%s' undefined\n", name);
         stop();
-    } else if (index >= var->max_index) {
-        printf("var '%s' index %d out of range\n", name, index);
-        stop();
     } else {
-        switch (var->type) {
-            case code_nodeid:
-                if (! zb_present) {
-                    printf("zigbee not present\n");
-                    stop();
-                    break;
+        if (var->type == code_ram && index < var->max_index) {
+            goto XXX_PERF_XXX;
+        }
+        type = var->type;
+        if ((type != code_pin && index >= var->max_index) || (type == code_pin && index != var->u.pin.only_index)) {
+            printf("var '%s' index %d out of range\n", name, index);
+            stop();
+        } else {
+            switch (type) {
+                case code_nodeid:
+                    if (! zb_present) {
+                        printf("zigflea not present\n");
+                        stop();
+                        break;
 #if ! STICK_GUEST
-                } else if (zb_nodeid == -1) {
-                    printf("zigbee nodeid not set\n");
-                    stop();
-                    break;
+                    } else if (zb_nodeid == -1) {
+                        printf("zigflea nodeid not set\n");
+                        stop();
+                        break;
 #endif
-                }
-                
+                    }
+                    
 #if ! STICK_GUEST
-                // if we're not being set from a remote node...
-                if (! remote) {
-                    // forward the variable set request to the remote node
-                    strcpy(set.name, var->name);
-                    set.index = TF_BIG((int32)index);
-                    set.value = TF_BIG((int32)value);
-                    if (! zb_send(var->nodeid, zb_class_remote_set, sizeof(set), (byte *)&set)) {
-                        value = -1;
-                    }
-                }
-                // fall thru
-#endif
-                
-            case code_ram:
-                // *** RAM control and access ***
-                // set the ram variable to value
-                if (var->size == sizeof(uint32)) {
-                    write32(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(uint32), value);
-                } else if (var->size == sizeof(short)) {
-                    write16(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short), value);
-                } else {
-                    assert(var->size == sizeof(byte));
-                    *(byte *)(RAM_VARIABLE_PAGE+var->u.page_offset+index) = (byte)value;
-                }
-                
-                // *** interactive debugger ***
-                // if debug tracing is enabled...
-                if (var_trace) {
-                    if (var->max_index > 1) {
-                        printf("%4d let %s[%d] = %ld\n", run_line_number, name, index, value);
-                    } else {
-                        printf("%4d let %s = %ld\n", run_line_number, name, value);
-                    }
-                }
-                break;
-
-            case code_flash:
-                assert(var->size == sizeof(uint32));
-
-                // *** flash control and access ***
-                // if the flash variable is not already equal to value
-                if (*(int32 *)(FLASH_PARAM_PAGE+var->u.page_offset+index*sizeof(uint32)) != value) {
-                    // set the flash variable to value
-                    flash_erase_alternate();
-                    flash_update_alternate(var->u.page_offset+index*sizeof(uint32), value);
-                    flash_promote_alternate();
-
-                    // *** interactive debugger ***
-                    // if debug tracing is enabled...
-                    if (var_trace) {
-                        if (var->max_index > 1) {
-                            printf("%4d let %s[%d] = %ld\n", run_line_number, name, index, value);
-                        } else {
-                            printf("%4d let %s = %ld\n", run_line_number, name, value);
+                    // if we're not being set from a remote node...
+                    if (! remote) {
+                        // forward the variable set request to the remote node
+                        strcpy(set.name, var->name);
+                        set.index = TF_BIG((int32)index);
+                        set.value = TF_BIG((int32)value);
+                        if (! zb_send(var->u.var.nodeid, zb_class_remote_set, sizeof(set), (byte *)&set)) {
+                            value = -1;
                         }
                     }
-                }
-                break;
-
-            case code_pin:
-                // *** external pin control and access ***
-                if (var->u.pin.type == pin_type_digital_input || var->u.pin.type == pin_type_analog_input || var->u.pin.type == pin_type_uart_input) {
-                    printf("var '%s' readonly\n", name);
-                    stop();
-                    break;
-                } else {
-                    // *** interactive debugger ***
-                    // if debug tracing is enabled...
-                    if (var_trace) {
-                        printf("%4d let %s = %ld\n", run_line_number, name, value);
+                    // fall thru
+#endif
+                    
+                case code_ram:
+XXX_PERF_XXX:
+                    // *** RAM control and access ***
+                    // set the ram variable to value
+                    if (var->size == sizeof(uint32)) {
+                        write32(RAM_VARIABLE_PAGE+var->u.var.page_offset+index*sizeof(uint32), value);
+                    } else if (var->size == sizeof(short)) {
+                        write16(RAM_VARIABLE_PAGE+var->u.var.page_offset+index*sizeof(short), value);
+                    } else {
+                        assert(var->size == sizeof(byte));
+                        *(byte *)(RAM_VARIABLE_PAGE+var->u.var.page_offset+index) = (byte)value;
                     }
 
-                }
-                
-#if ! STICK_GUEST
-                pin_set(var->u.pin.number, var->u.pin.type, var->u.pin.qual, value);
-#endif
-                break;
+                    // wakeup any watchpoints watching this var
+                    possible_watchpoints_mask |= var->u.var.watchpoints_mask;
+                    break;
 
-            default:
-                assert(0);
-                break;
+                case code_flash:
+                    assert(var->size == sizeof(uint32));
+
+                    // *** flash control and access ***
+                    // if the flash variable is not already equal to value
+                    if (*(int32 *)(FLASH_PARAM_PAGE+var->u.var.page_offset+index*sizeof(uint32)) != value) {
+                        // set the flash variable to value
+                        flash_erase_alternate();
+                        flash_update_alternate(var->u.var.page_offset+index*sizeof(uint32), value);
+                        flash_promote_alternate();
+
+                        // wakeup any watchpoints watching this var
+                        possible_watchpoints_mask |= var->u.var.watchpoints_mask;
+                    }
+                    break;
+
+                case code_pin:
+                    // *** external pin control and access ***
+                    if (var->u.pin.type == pin_type_digital_input || var->u.pin.type == pin_type_analog_input || var->u.pin.type == pin_type_uart_input) {
+                        printf("var '%s' readonly\n", name);
+                        stop();
+                        break;
+                    }
+                    
+#if ! STICK_GUEST
+                    pin_set(var->u.pin.number, var->u.pin.type, var->u.pin.qual, value);
+#endif
+                    break;
+
+                case code_absolute:
+#if ! STICK_GUEST
+                    write_n_bytes(var->size, (volatile void *)(var->u.abs.addr + (index * var->size)), value);
+#endif
+                    break;
+
+                default:
+                    assert(0);
+                    break;
+            }
+            
+            if (var_trace) {
+                // *** interactive debugger ***
+                // if debug tracing is enabled...
+                if (var->max_index > 1) {
+                    printf("%4d let %s[%d] = %ld\n", run_line_number, name, index, value);
+                } else {
+                    printf("%4d let %s = %ld\n", run_line_number, name, value);
+                }
+            }
         }
     }
 }
 
 // this function gets the value of a ram, flash, or pin variable!
 int32
-var_get(IN const char *name, IN int index)
+var_get(IN const char *name, IN int index, IN uint32 running_watchpoint_mask)
 {
     int i;
+    uint type;
     int32 value;
     int var_gosubs;
     struct var *var;
@@ -571,7 +658,7 @@ var_get(IN const char *name, IN int index)
 
     value = 0;
 
-    var = var_find(name, &var_gosubs);
+    var = var_find(name, index, &var_gosubs);
     if (! var) {
         if (! index) {
             // see if this could be a special system variable
@@ -583,43 +670,64 @@ var_get(IN const char *name, IN int index)
         }
         printf("var '%s' undefined\n", name);
         stop();
-    } else if (index >= var->max_index) {
-        printf("var '%s' index %d out of range\n", name, index);
-        stop();
     } else {
-        switch (var->type) {
-            case code_nodeid:
-            case code_ram:
-                // *** RAM control and access ***
-                // get the value of the ram variable
-                if (var->size == sizeof(uint32)) {
-                    value = read32(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(uint32));
-                } else if (var->size == sizeof(short)) {
-                    value = read16(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short));
-                } else {
-                    assert(var->size == sizeof(byte));
-                    value = *(byte *)(RAM_VARIABLE_PAGE+var->u.page_offset+index);
-                }
-                break;
+        if (var->type == code_ram && index < var->max_index) {
+            goto XXX_PERF_XXX;
+        }
+        type = var->type;
+        if ((type != code_pin && index >= var->max_index) || (type == code_pin && index != var->u.pin.only_index)) {
+            printf("var '%s' index %d out of range\n", name, index);
+            stop();
+        } else {
+            switch (type) {
+                case code_nodeid:
+                case code_ram:
+XXX_PERF_XXX:
+                    // *** RAM control and access ***
+                    // get the value of the ram variable
+                    if (var->size == sizeof(uint32)) {
+                        value = read32(RAM_VARIABLE_PAGE+var->u.var.page_offset+index*sizeof(uint32));
+                    } else if (var->size == sizeof(short)) {
+                        value = read16(RAM_VARIABLE_PAGE+var->u.var.page_offset+index*sizeof(short));
+                    } else {
+                        assert(var->size == sizeof(byte));
+                        value = *(byte *)(RAM_VARIABLE_PAGE+var->u.var.page_offset+index);
+                    }
+                    var->u.var.watchpoints_mask |= running_watchpoint_mask;
+                    break;
 
-            case code_flash:
-                assert(var->size == sizeof(uint32));
+                case code_flash:
+                    assert(var->size == sizeof(uint32));
 
-                // *** flash control and access ***
-                // get the value of the flash variable
-                value = *(int32 *)(FLASH_PARAM_PAGE+var->u.page_offset+index*sizeof(uint32));
-                break;
+                    // *** flash control and access ***
+                    // get the value of the flash variable
+                    value = *(int32 *)(FLASH_PARAM_PAGE+var->u.var.page_offset+index*sizeof(uint32));
 
-            case code_pin:
-                // *** external pin control and access ***
+                    var->u.var.watchpoints_mask |= running_watchpoint_mask;
+                    break;
+
+                case code_pin:
+                    // *** external pin control and access ***
 #if ! STICK_GUEST
-                value = pin_get(var->u.pin.number, var->u.pin.type, var->u.pin.qual);
-#endif
-                break;
+                    value = pin_get(var->u.pin.number, var->u.pin.type, var->u.pin.qual);
 
-            default:
-                assert(0);
-                break;
+                    pin_watchpoint_set_mask((enum pin_number)var->u.pin.number, running_watchpoint_mask);
+
+                    // if this pin is part of any watchpoints, then mark the watchpoint(s) as possible.
+                    possible_watchpoints_mask |= pin_watchpoint_get_mask((enum pin_number)var->u.pin.number);
+#endif
+                    break;
+
+                case code_absolute:
+#if ! STICK_GUEST
+                    value = read_n_bytes(var->size, (const volatile void *)(var->u.abs.addr + (index * var->size)));
+#endif
+                    break;
+
+                default:
+                    assert(0);
+                    break;
+            }
         }
     }
 
@@ -633,10 +741,15 @@ var_get_size(IN const char *name, OUT int *max_index)
     int size;
     int var_gosubs;
     struct var *var;
+
+    if (! run_condition) {
+        *max_index = 1;
+        return 1;
+    }
     
     size = 1;
-    
-    var = var_find(name, &var_gosubs);
+
+    var = var_find(name, -1, &var_gosubs);
     if (! var) {
         printf("var '%s' undefined\n", name);
         stop();
@@ -702,6 +815,12 @@ var_mem(void)
 void
 var_initialize(void)
 {
+    // because struct var uses a byte for pin.number, assert that a byte is large enough to represented all pin numbers.
+    assert(PIN_LAST <= 255);
+
+    // because pin_watchpoint_*() routines depend on a power of 2 number of watchpoints.
+    assert((num_watchpoints == 1) || (num_watchpoints == 2) || (num_watchpoints == 4) || (num_watchpoints == 8));
+
 #if ! STICK_GUEST
     zb_register(zb_class_remote_set, class_remote_set);
 #endif

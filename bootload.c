@@ -2,7 +2,11 @@
 
 // this file meets bootloader requirements for targets with bootloaders
 
+#if GCC
+extern void _startup(void);
+#else
 extern asm void _startup(void);
+#endif
 
 #if MCF51JM128
 #if ! BADGE_BOARD
@@ -18,14 +22,26 @@ extern asm void _startup(void);
 #error
 #endif
 
-const byte _UserEntry[] @ USER_ENTRY_ADDRESS = {
+#if GCC
+__attribute__((section(".loader_entry_data")))
+const byte _UserEntry[]
+#else
+const byte _UserEntry[] @ USER_ENTRY_ADDRESS
+#endif
+= {
     0x4E,
     0x71,
     0x4E,
     0xF9  // asm NOP(0x4E71), asm JMP(0x4EF9)           
 };
 
-void  (* const _UserEntry2[])()@(USER_ENTRY_ADDRESS+4)=
+#if GCC
+__attribute__((section(".loader_entry2_data")))
+void  (* const _UserEntry2[])()
+#else
+void  (* const _UserEntry2[])()@(USER_ENTRY_ADDRESS+4)
+#endif
+=
 {
     _startup,
 };
@@ -39,8 +55,8 @@ void pre_main(void)
 
 #if MCF51JM128
     
-    asm (move.l  #0x00800000,d0);
-    asm (movec   d0,vbr);
+    Q3_NON_NAKED(move.l, #0x00800000,d0);
+    Q3_NON_NAKED(movec, d0,vbr);
 
     v = (uint32 **)0x00800000;
 
@@ -48,8 +64,8 @@ void pre_main(void)
         v[i] = _swvect+2*i;
     }
 #else
-    asm (move.l  #0x20000000,d0);
-    asm (movec   d0,vbr);
+    Q3_NON_NAKED(move.l, #0x20000000,d0);
+    Q3_NON_NAKED(movec, d0,vbr);
 
     v = (uint32 **)0x20000000;
 

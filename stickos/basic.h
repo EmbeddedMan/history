@@ -30,6 +30,7 @@ enum bytecode {
       code_pin,  // pin_number, pin_type
       code_nodeid,
       code_var_reference, // for sub reference parameters
+      code_absolute, // for absolute variables
     code_let,
     code_print,
       code_string,
@@ -125,8 +126,6 @@ extern byte *end_of_dynamic;
 bool basic_const(IN OUT char **text, OUT int *value_out);
 
 void basic_run(char *line);
-
-void basic_poll(void);
 
 void basic_initialize(void);
 

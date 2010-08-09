@@ -2,12 +2,13 @@
 // this file implements bytecode code storage and access and merge
 // functionality, as well as the stickos filesystem.
 
-// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
 
 bool code_indent = true;
+bool code_numbers = true;
 
 // the last word of each flash bank is the generation number
 #define LGENERATION(p)  *(int32 *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(uint32))
@@ -318,6 +319,9 @@ code_insert(int line_number, char *text_in, IN int text_offset)
         strcpy(text, text_in);
         if (! parse_line(text, &length, bytecode, &syntax_error)) {
             terminal_command_error(text_offset + syntax_error);
+#if ! STICK_GUEST
+            main_auto = 0;
+#endif
             return;
         }
     } else {
@@ -327,7 +331,7 @@ code_insert(int line_number, char *text_in, IN int text_offset)
 
     if (! insert_line_in_page(RAM_CODE_PAGE, line_number, length, bytecode)) {
         printf("auto save\n");
-        code_save(0);
+        code_save(true, 0);
         if (! insert_line_in_page(RAM_CODE_PAGE, line_number, length, bytecode)) {
             printf("out of code ram\n");
         }
@@ -415,7 +419,11 @@ code_list(bool profile, int start_line_number, int end_line_number)
                         printf("          %4d %s\n", line_number, text);
                     }
                 } else {
-                    printf("%4d %s\n", line_number, text);
+                    if (code_numbers) {
+                        printf("%4d %s\n", line_number, text);
+                    } else {
+                        printf("%s\n", text);
+                    }
                 }
             }
             if (end_line_number && line_number > end_line_number) {
@@ -519,7 +527,7 @@ const static struct line empty = { 0, LINESIZE, 0 };
 // to become current.
 static
 void
-code_promote_alternate(void)
+code_promote_alternate(bool fast)
 {
     bool boo;
     int32 generation;
@@ -537,12 +545,14 @@ code_promote_alternate(void)
     assert(FLASH_CODE_PAGE == alternate_flash_code_page);
     assert(LGENERATION(FLASH_CODE1_PAGE) != LGENERATION(FLASH_CODE2_PAGE));
 
-    delay(500);  // this always takes a while!
+    if (! fast) {
+        delay(500);  // this always takes a while!
+    }
 }
 
 // this function saves/merges the current program from ram to flash.
 void
-code_save(int renum)
+code_save(bool fast, int renum)
 {
     bool boo;
     int line_number;
@@ -597,7 +607,7 @@ code_save(int renum)
     // if we saved all lines successfully...
     if (boo) {
         // promote the alternate flash bank
-        code_promote_alternate();
+        code_promote_alternate(fast);
 
         // clear ram
         memset(RAM_CODE_PAGE, 0, sizeof(RAM_CODE_PAGE));
@@ -618,7 +628,7 @@ code_new(void)
     code_erase_alternate();
 
     // promote the alternate flash bank
-    code_promote_alternate();
+    code_promote_alternate(false);
 
     // clear ram
     memset(RAM_CODE_PAGE, 0, sizeof(RAM_CODE_PAGE));
@@ -679,7 +689,7 @@ code_store(char *name)
 #endif
 
     // update the primary flash
-    code_save(0);
+    code_save(false, 0);
 
     if (! *name) {
         return;
@@ -758,7 +768,7 @@ code_load(char *name)
 #endif
 
     // update the primary flash and clear ram
-    code_save(0);
+    code_save(false, 0);
 
     catalog = (struct catalog *)FLASH_CATALOG_PAGE;
 

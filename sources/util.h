@@ -3,18 +3,18 @@
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #define SPL_PIT0  6  // pit0 isr runs at interrupt level 6
 #define SPL_USB  4  // usb isr runs at interrupt level 4
-#define SPL_IRQ4  4  // irq4 isr runs at interrupt level 4 (fixed, zigbee)
+#define SPL_IRQ4  4  // irq4 isr runs at interrupt level 4 (fixed, zigflea)
 #define SPL_SERIAL  4  // uart0 isr runs at interrupt level 4
-#define SPL_IRQ1  1  // irq1 isr runs at interrupt level 1 (fixed, sleep or zigbee)
+#define SPL_IRQ1  1  // irq1 isr runs at interrupt level 1 (fixed, sleep or zigflea)
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #define SPL_PIT0  6  // pit0 isr runs at interrupt level 6
 #define SPL_USB  6  // usb isr runs at interrupt level 6
-#define SPL_IRQ4  4  // irq isr runs at interrupt level 4 (zigbee)
+#define SPL_IRQ4  4  // irq isr runs at interrupt level 4 (zigflea)
 #define SPL_SERIAL  3  // uart0 isr runs at interrupt level 3
 #elif PIC32
 #define SPL_PIT0  6  // pit0 isr runs at interrupt level 6
 #define SPL_USB  6  // usb isr runs at interrupt level 6
-#define SPL_IRQ4  4  // irq isr runs at interrupt level 4 (zigbee)
+#define SPL_IRQ4  4  // irq isr runs at interrupt level 4 (zigflea)
 #define SPL_SERIAL  4
 #else
 #error
@@ -42,9 +42,12 @@ read16(const byte *addr);
 #define read16(a)  (*(uint16 *)(a))
 #endif
 
+uint32 read_n_bytes(int size, const volatile void *addr);
+void write_n_bytes(int size, volatile void *addr, uint32 value);
+
 // N.B. the usb controller bdt data structures and the usb protocol
 // layers are defined to be little endian and the coldfire core is
-// big endian, so we have to byteswap.  the zigbee transceiver and
+// big endian, so we have to byteswap.  the zigflea transceiver and
 // protocol layers are defined to be big endian and the pic32 core
 // is little endian, so we have to byteswap.
 

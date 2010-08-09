@@ -1,0 +1,99 @@
+// prior 1
+// =======
+// change pic32 to use uart2 for serial.c (#define UART_NUMBER)
+// move block.c and fat32.c from pict-o-crypt to sources (include in skeleton)
+// have usb host mode append to file on boot, rather than truncate.
+// on/off/mask/unmask should move to parse2.c/run2.c
+// 9s12 and others need to reset timer counter when increasing frequency output -- see "wrap"
+// add qspi pin assignments to online help (data, clk, cs)
+// ";" at end of print statement to supress crlf?
+// "input" BASIC statement?
+// Ctrl-E to dump all variables while basic program is running?
+
+// doc
+// ===
+// change VBUS to +5V in schematic
+// add digital input and analog output example
+// add minimum flash requirements for pic32 and 5225x to mcu details
+// document "conflicting timer usage"
+// remove 52221 examples from help reference section
+
+// prior 2
+// =======
+// saw bug changing pic32 pin from servo to freq mode on fly?
+// add demokit skeleton
+// attempt to decouple servo pwm from frequency -- 256 should be 2.56ms independent of Hz!
+//   9s12 and cfv2 can do 4 16 bit channels!
+// i2c support
+// spi-to-sd card data logging
+// how to enable different uart selection (other than lowest number) for console?
+// gets warnings
+// permanent params (protected from upgrade) for nodeid, ipaddress, etc.
+// zigbee read remote variables
+// we need a way to prevent you from upgrading the wrong firmware file!!!
+// change ftdi to cdc and use mst for inf file access
+// if data area of flash looks bogus on boot, we should clear it all!
+// have nodeid and clusterid, and broadcast 0x4242 and clusterid as magic number
+// save zigbee channel in nvparam!
+// need a second catalog page for safe updates!
+// add character constants 'c', '\n'; do we want a way to print in character form?
+// add strings
+// optionally restore usb serial number in eeprom from sources/ftdi.c v1.53 to make com port number persistent?
+
+// prior 3
+// =======
+// PC/Cell framework!!!
+// add mst interface for basic progs and fw access
+// add zigbee support thru xbee for ubw32?
+// prompt on|off|ok
+// get rid of remaining SPL_USB, SPL_IRQ4, etc.
+// get rid of rtc isr remap on jm/qe
+// if dhcp not found on 33, assign random ip compatible with windows?
+// why mcf52xxx dtim freq not off by 2x?
+// figure out usb "pop" on first badge run -- is that the badge issue?
+
+// prior 4
+// =======
+// can we make sub/endsub block behave more like for/next, from error and listing perspective?
+// expose mass storage interface with access to basic programs (and firmware upgrade?)
+// allow broadcast/remote nodeid setting (with switch), like pagers
+// builtin operators -- lengthof(a) or a#
+// short circuit && and || operators
+// add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
+// multiple (main) threads?
+// "on usb [connect|disconnect]" statement for slave mode!
+// ?: operator!
+// add support for comments at the end of lines '?  //?
+// switch statement (on xxx goto...?)
+// allow gosub from command line?
+// sub stack trace?  (with sub local vars?)
+// one line "if <expression> then <statement> [else <statement>]"
+// optional "let" statement
+// sleeps and timers don't work with single-stepping
+// should we attempt to make rx transfers never time out/clear feature?
+// core dump -- copy ram to secondary code flash on assert/exception/halt?
+// handle uart errors (interrupt as well as poll)
+
+// perf
+// ====
+// mave var one slot towards "last in gosub scope" on usage rand()%16?
+// can we skip statement execution more fully when run_condition is false?
+
+// pcb
+// ===
+// battery holder
+// pin offset for headers
+// smt power switch and reset switch
+// all diffs in PCBUNDO
+// tp for pstclk
+// Fill a bunch of copper to the U1 heat sink pad -- both sides would be helpful
+// Break the solder mask below U1 to allow for it to better dissipate heat.
+// U2 heat sinking as well?
+
+ports
+=====
+stm32
+avr32  EVK1104
+MSP430 or Atmel XMega
+lpc1758?  lpc2xxx?
+pic24

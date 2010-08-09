@@ -6,9 +6,10 @@
 # build/Makefile.windows
 
 # compiler flags
-CLFLAGS = /nologo /W3 /FR /YX \
+CLFLAGS = /nologo /W3 /FR \
           /MTd \
           /D "_CONSOLE" /D "_WIN32" /D "WIN32" /D "STICK_GUEST" \
+          /D _CRT_SECURE_NO_WARNINGS \
           /WX \
           $(foreach a,$(subst ., ,$(TARGET)),/D $(a)) \
           $(foreach a,$(subst ., ,$(BUILD)),/D $(a)) \
@@ -18,9 +19,9 @@ CLFLAGS = /nologo /W3 /FR /YX \
           $(foreach a,$(SOURCEDIRS:;= ),/I $(a))
 
 ifeq (RELEASE,$(findstring RELEASE,$(MODE)))
-CLFLAGS += /Og /Ot
+CLFLAGS += /Zi
 else
-CLFLAGS += /Zi /GZ
+CLFLAGS += /Zi /RTC1
 endif
 
 # lib flags
@@ -35,7 +36,7 @@ OBJECTLIBS = $(LIBS:%=%.lib)
 
 %.obj: %.c
 	echo cl /c $< >&2; \
-	cl $(CLFLAGS) /c $<
+	cl $(CLFLAGS) /c c:$<
 
 ifeq (PROGRAM, $(TARGETTYPE))
 
@@ -58,10 +59,10 @@ endif
 DEPENDS = $(SOURCES:%.c=%.dep)
 
 %.dep: %.c
-	@cl /E $(CLFLAGS) $< | \
+	@cl /E $(CLFLAGS) c:$< | \
 	grep '^#line 1 ' | sed "s!\\\\!/!g; s!//!/!g" | grep -i $(ROOTDIR) | \
 	sed 's!^.* !$(notdir $(<:.c=.obj)) $(notdir $(<:.c=.dep)): !; s!"!!g' | \
-	awk '{ p = length("$(ROOTDIR)"); c = substr($$3, p + 1); print $$1, $$2, "$$(ROOTDIR)" c }' | \
+	awk '{ p = length("$(ROOTDIR)"); c = substr($$3, p + 3); print $$1, $$2, "$$(ROOTDIR)" c }' | \
 	grep -vi war""ning: >$@; :
 
 depend: $(DEPENDS)

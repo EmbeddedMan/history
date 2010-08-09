@@ -1,10 +1,7 @@
 // *** qspi.h *********************************************************
 
 extern void
-qspi_transfer(byte *buffer, int length);
-
-extern void
-qspi_inactive(bool csiv);
+qspi_transfer(bool cs, byte *buffer, int length);
 
 extern void
 qspi_baud_fast(void);

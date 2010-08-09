@@ -140,6 +140,7 @@ uint32 scsi_attached_count;
 bool other_attached;  // set when other device is attached
 
 bool ftdi_attached;  // set when ftdi host is attached
+uint32 ftdi_attached_count;
 
 static
 void
@@ -856,6 +857,7 @@ usb_isr(void)
                         next_address = value;
                     } else if (setup->request == REQUEST_SET_CONFIGURATION) {
                         assert(value == 1);
+                        ftdi_attached_count++;
                         ftdi_attached = 1;
                     } else {
                         assert(0);

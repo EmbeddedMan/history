@@ -1,4 +1,4 @@
-// *** basic2.h *******************************************************
+// *** basic0.h *******************************************************
 
 enum bytecode2 {
     code_private = code_max,
@@ -28,11 +28,13 @@ extern char * const help_about_short;
 #pragma CODE_SEG HELP_CODE
 #endif
 
-void basic2_help(IN char *text_in);
+void basic0_help(IN char *text_in);
 
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
 
-bool basic2_run(char *text_in);
+void basic0_run(char *text_in);
+
+void basic0_poll(void);
 

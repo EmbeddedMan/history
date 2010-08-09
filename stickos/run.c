@@ -4,7 +4,7 @@
 // handlers.  it also implements the core of the interactive debugger,
 // coupled with the command interpreter and variable access module.
 
-// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
@@ -12,8 +12,6 @@
 #if ! GCC
 int cw7bug;
 #endif
-
-bool watch_armed;
 
 bool run_step;
 bool run_sleep = true;
@@ -32,13 +30,14 @@ static int run_sleep_line_number;
 
 // N.B. we assume UART_INTS start at 0!
 
-#define MAX_INTS  (UART_INTS+TIMER_INTS+1)
-
-#define WATCH_INT  (MAX_INTS-1)
+#define MAX_INTS  (UART_INTS+TIMER_INTS+num_watchpoints)
 
 #define UART_MASK  ((1<<UART_INTS)-1)
 
 #define TIMER_INT(timer)  (UART_INTS+timer)
+
+#define WATCH_INT(watch)  (UART_INTS+TIMER_INTS+(watch))
+#define WATCH_MASK  (all_watchpoints_mask<<(UART_INTS+TIMER_INTS))
 
 static uint32 run_isr_enabled;  // bitmask
 static uint32 run_isr_pending;  // bitmask
@@ -47,8 +46,14 @@ static uint32 run_isr_masked;  // bitmask
 static const byte *run_isr_bytecode[MAX_INTS];
 static int run_isr_length[MAX_INTS];
 
-static int watch_length;
-static const byte *watch_bytecode;
+uint32 possible_watchpoints_mask; // bitmask: bit is set if respective watchpoint expression might be true.
+static uint32 watchpoints_armed_mask;
+bool watch_mode_smart;
+
+static struct {
+    int length;
+    const byte *bytecode;
+} watchpoints[num_watchpoints];
 
 static struct {
     int32 interval_ticks; // ticks/interrupt
@@ -86,7 +91,7 @@ struct open_scope {
     bool condition_restore;
     
 #if ! MC9S08QE128
-    int dummy;  // N.B. shrink code significantly by increasing struct size
+    int pad;  // N.B. shrink code significantly by increasing struct size
 #endif
 } scopes[MAX_SCOPES];
 
@@ -219,12 +224,12 @@ run_evaluate_is_lvalue(const byte *bytecode, int length, const byte *bytecode_in
 // - in a non-lvalue is found:
 //   - set *lvalue_var_name=NULL
 //   - set *value to the expression value
-int
-run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int32 *value)
+static int
+run_evaluate_watchpoint(const byte *bytecode_in, int length, IN uint32 running_watchpoint_mask, IN OUT const char **lvalue_var_name, OUT int32 *value)
 {
     int32 lhs;
     int32 rhs;
-    byte code;
+    uint code;
     const byte *bytecode;
 
     bytecode = bytecode_in;
@@ -286,13 +291,13 @@ run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var
                         *lvalue_var_name = (const char *)bytecode;
                     } else {
                         // do not want lvalue, or non-lvalue found, evaluate.
-                        push_stack(var_get((char *)bytecode, 0));
+                        push_stack(var_get((char *)bytecode, 0, running_watchpoint_mask));
                     }
                     bytecode += strlen((char *)bytecode)+1;
                     break;
 
                 case code_load_and_push_var_indexed:  // index on stack; variable name, '\0'
-                    push_stack(var_get((char *)bytecode, pop_stack()));
+                    push_stack(var_get((char *)bytecode, pop_stack(), running_watchpoint_mask));
                     bytecode += strlen((char *)bytecode)+1;
                     break;
 
@@ -416,10 +421,16 @@ run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var
     return bytecode - bytecode_in;
 }
 
+int
+run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int32 *value)
+{
+    return run_evaluate_watchpoint(bytecode_in, length, 0, lvalue_var_name, value);
+}
+
 // this function executes a bytecode statement, with an independent keyword
 // bytecode.
 bool  // end
-run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
+run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 {
     int i;
     int n;
@@ -429,7 +440,6 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
     byte parity;
     byte loopback;
     byte device;
-    bool end;
     int inter;
     int blen;
     int32 value;
@@ -442,7 +452,6 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
     int timer;
     int32 interval;
     enum timer_unit_type timer_unit;
-    int csiv;
     int32 max_index;
     int32 max_count;
     int count;
@@ -453,24 +462,26 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
     struct line *line;
     bool hex;
     bool output;
+    bool simple_var;
     int isr_length;
     const byte *isr_bytecode;
     int sub_length;
     const byte *sub_bytecode;
+    int watch_length;
+    const byte *watch_bytecode;
+    int32 abs_addr;
     int nodeid;
     struct open_scope *scope;
     
     assert(code >= code_deleted && code < code_max_max);
     
-    end = false;
-
     index = 0;
 
     scope = scopes+cur_scopes;
     
     run_condition = scope->condition && scope->condition_initial;
     run_condition |= immediate;
-
+    
     switch (code) {
         case code_deleted:
             // nothing to do
@@ -514,16 +525,50 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
 
                 inter = UART_INT(uart, output);
             } else if (device == device_watch) {
-                inter = WATCH_INT;
-
                 // this is the expression to watch
                 watch_length = read32(bytecode + index);
                 index += sizeof(uint32);
                 watch_bytecode = bytecode+index;
                 index += watch_length;
 
+                // are other watches with the same condition?
+                n = -1;
+                for (i = 0; i < num_watchpoints; i++) {
+                    // remember the first empty watchpoint
+                    if ((watchpoints[i].length == 0) && (n == -1)) {
+                        n = i;
+                        continue;
+                    }
+                    // if the i'th watch matches the current condition, then bail
+                    if ((watchpoints[i].length == watch_length) &&
+                        (memcmp(watchpoints[i].bytecode, watch_bytecode, watch_length) == 0)) {
+                        break;
+                    }
+                }
+
                 assert(bytecode[index] == code_comma);
                 index++;
+
+                if (code == code_on) {
+                    // if watch expression already being watched, then bail
+                    if (i < num_watchpoints) {
+                        printf("watchpoint already defined\n");
+                        goto XXX_SKIP_XXX;
+                    }
+
+                    i = n;
+
+                    // are all watchpoints in-use?
+                    if (i == -1) {
+                        printf("too many watchpoints\n");
+                        goto XXX_SKIP_XXX;
+                    }
+
+                    watchpoints[i].length = watch_length;
+                    watchpoints[i].bytecode = watch_bytecode;
+                }
+
+                inter = WATCH_INT((i == -1) ? 0 : i);
             } else {
                 assert(0);
             }
@@ -541,6 +586,11 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     run_isr_masked |= 1<<inter;
                 } else if (code == code_unmask) {
                     run_isr_masked &= ~(1<<inter);
+                
+                    if (device == device_watch) {
+                        // schedule watchpoint for evaluation.
+                        possible_watchpoints_mask |= 1 << n;
+                    }
                 } else if (code == code_off) {
                     run_isr_enabled &= ~(1<<inter);
                     run_isr_length[inter] = 0;
@@ -550,6 +600,11 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     run_isr_enabled |= 1<<inter;
                     run_isr_length[inter] = isr_length;
                     run_isr_bytecode[inter] = isr_bytecode;
+
+                    if (device == device_watch) {
+                        // schedule watchpoint for evaluation.
+                        possible_watchpoints_mask |= 1 << n;
+                    }
                 }
             }
             break;
@@ -600,16 +655,6 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     pin_uart_configure(uart, baud, data, parity, loopback);
                 }
 #endif
-            } else if (device == device_qspi) {
-                // get the timer number and interval
-                csiv = read32(bytecode+index);
-                index += sizeof(uint32);
-
-                if (run_condition) {
-#if ! STICK_GUEST
-                    qspi_inactive(csiv);
-#endif
-                }
             } else {
                 assert(0);
             }
@@ -701,10 +746,12 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 // if we're dimensioning a simple variable
                 if (bytecode[index] == code_load_and_push_var) {
                     // set the array length to 1
+                    simple_var = true;
                     index++;
                     max_index = 1;
                 } else {
                     // we're dimensioning an array
+                    simple_var = false;
                     assert(bytecode[index] == code_load_and_push_var_indexed);
                     index++;
 
@@ -725,28 +772,48 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
 
                 assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(uint32));
 
-                // if this is a memory variable...
-                if (var_type == code_ram || var_type == code_flash) {
-                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, 0, -1);
-                // otherwise, if this is a pin variable...
-                } else if (var_type == code_pin) {
-                    // get the pin number (from the pin name) and pin type (from the pin usage)
-                    pin_number = bytecode[index++];
-                    pin_type = bytecode[index++];
-                    pin_qual = bytecode[index++];
+                // setup default var_declare() parameter values.
+                pin_number = 0;
+                pin_type = 0;
+                pin_qual = 0;
+                nodeid = 0;
+                abs_addr = -1;
 
-                    assert(pin_number >= 0 && pin_number < PIN_LAST);
+                // extract variable type dependent parameters
+                switch (var_type) {
+                    case code_ram:
+                    case code_flash:
+                        break;
 
-                    var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type, pin_qual, -1);
-                } else {
-                    // this is a remote variable
-                    assert(var_type == code_nodeid);
-                    
-                    nodeid = read32(bytecode+index);
-                    index += sizeof(uint32);
-                    
-                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, 0, nodeid);
+                    case code_absolute:
+                        index += run_evaluate(bytecode+index, length-index, NULL, &abs_addr);
+                        break;
+
+                    case code_pin:
+                        // get the pin number (from the pin name) and pin type (from the pin usage)
+                        pin_number = bytecode[index++];
+                        pin_type = bytecode[index++];
+                        pin_qual = bytecode[index++];
+
+                        assert(pin_number >= 0 && pin_number < PIN_LAST);
+
+                        // treat a non-array variable element as element zero of an array.
+                        if (simple_var) {
+                            max_index = 0;
+                        }
+                        break;
+
+                    case code_nodeid:
+                        nodeid = read32(bytecode+index);
+                        index += sizeof(uint32);
+                        break;
+
+                    default:
+                        assert(0);
+                        break;
                 }
+
+                var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type, pin_qual, nodeid, abs_addr);
             } while (index < length && bytecode[index] == code_comma);
             break;
 
@@ -849,7 +916,17 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 run_printf = false;
             }
             break;
+#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51QE128 || MCF5211
+        default:
+            goto XXX_MORE_XXX;  // N.B. CW compiler bug
+            break;
+    }
+    
+    goto XXX_DONE_XXX;
 
+XXX_MORE_XXX:  // N.B. CW compiler bug
+    switch (code) {
+#endif
         case code_qspi:
             // we'll walk the variable list twice
             oindex = index;
@@ -899,7 +976,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     if (! pass) {
                         for (i = max_index; i < max_count; i++) {
                             // get the variable data
-                            value = var_get(name, i);
+                            value = var_get(name, i, 0);
 
                             // pack it into the qspi buffer
                             if (size == sizeof(byte)) {
@@ -948,11 +1025,13 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 } while (index < length && bytecode[index] == code_comma);
 
                 // if this is the first pass...
-                if (! pass && run_condition) {
-                    // perform the qspi transfer
+                if (! pass) {
+                    if (run_condition) {
+                        // perform the qspi transfer
 #if ! STICK_GUEST
-                    qspi_transfer(big_buffer, p-big_buffer);
+                        qspi_transfer(false, big_buffer, p-big_buffer);
 #endif
+                    }
 
                     // now update the variables for the next pass
                     index = oindex;
@@ -1177,7 +1256,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
             if (run_condition) {
                 // if this is a for loop...
                 if (code == code_next) {
-                    value = var_get(scope->for_variable_name, scope->for_variable_index);
+                    value = var_get(scope->for_variable_name, scope->for_variable_index, 0);
                     value += scope->for_step_value;
 
                     // if the stepped value is still in range...
@@ -1201,8 +1280,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     if (run_condition) {
                         run_line_number = scope->line_number;
                         // N.B we re-open the scope here!
-                        cur_scopes++;
-                        scope = scopes+cur_scopes;
+                        goto XXX_PERF_XXX;
                     }
                 } else if (code == code_endwhile) {
                     // go back for more (including the while line)!
@@ -1213,8 +1291,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                         // go back for more (skip the do line)!
                         run_line_number = scope->line_number;
                         // N.B we re-open the scope here!
-                        cur_scopes++;
-                        scope = scopes+cur_scopes;
+                        goto XXX_PERF_XXX;
                     }
                 }
             }
@@ -1223,6 +1300,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
             assert(cur_scopes);
             cur_scopes--;
             scope = scopes+cur_scopes;
+XXX_PERF_XXX:
             break;
 
         case code_gosub:
@@ -1273,7 +1351,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                         var_declare_reference((const char *)sub_bytecode, max_gosubs, name);
                     } else {
                         // the current parameter value is not an lvalue expression, pass it by-value into the sub's parameter.
-                        var_declare((const char *)sub_bytecode, max_gosubs, code_ram, sizeof(uint32), 1, 0, 0, 0, -1);
+                        var_declare((const char *)sub_bytecode, max_gosubs, code_ram, sizeof(uint32), 1, 0, 0, 0, -1, -1);
                         var_set((const char *)sub_bytecode, 0, value);
                     }
 
@@ -1379,7 +1457,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
             if (run_condition) {
                 // we end in a stopped infinite loop
                 run_line_number = run_line_number-1;
-                end = true;
+                return true;
             }
             break;
 
@@ -1387,13 +1465,17 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
             return run2_bytecode_code(code, bytecode, length);
             break;
     }
+    
+#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51QE128 || MCF5211
+XXX_DONE_XXX:
+#endif
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51QE128 || MCF5211
     assert_ram(index == length);  // CW bug
 #else
     assert(index == length);
 #endif
-    return end;
+    return false;
 
 XXX_SKIP_XXX:
     stop();
@@ -1404,18 +1486,16 @@ XXX_SKIP_XXX:
 bool  // end
 run_bytecode(bool immediate, const byte *bytecode, int length)
 {
-    byte code;
-
     assert(length);
-
-    code = *bytecode;
-    return run_bytecode_code(code, immediate, bytecode+1, length-1);
+    return run_bytecode_code(*bytecode, immediate, bytecode+1, length-1);
 }
 
 
 void
 run_clear(bool flash)
 {
+    int i;
+
     // open an unconditional scope to run in
     cur_scopes = 0;
     scopes[cur_scopes].line_number = 0;
@@ -1424,10 +1504,27 @@ run_clear(bool flash)
     scopes[cur_scopes].condition_ever = true;
     scopes[cur_scopes].condition_initial = true;
     scopes[cur_scopes].condition_restore = false;
-
     
     max_gosubs = 0;
     
+    run_isr_enabled = 0;
+    run_isr_pending = 0;
+    run_isr_masked = 0;
+    for (i = 0; i < MAX_INTS; i++) {
+        run_isr_bytecode[i] = NULL;
+        run_isr_length[i] = 0;
+    }
+
+    memset(timers, 0, sizeof(timers));
+
+    memset(uart_armed, 1, sizeof(uart_armed));
+
+    memset(watchpoints, 0, sizeof(watchpoints));
+    watchpoints_armed_mask = all_watchpoints_mask;
+
+    data_line_number = 0;
+    data_line_offset = 0;
+
     code_clear2();
     var_clear(flash);
 }
@@ -1445,7 +1542,6 @@ run(bool cont, int start_line_number)
     int32 value;
     int line_number;
     int32 last_tick;
-    bool condition;
     struct line *line;
 
     if (! run_sleep) {
@@ -1456,27 +1552,8 @@ run(bool cont, int start_line_number)
 
     if (! cont) {
         // prepare for a new run
-
         run_clear(false);
-
-        run_isr_enabled = 0;
-        run_isr_pending = 0;
-        run_isr_masked = 0;
-        for (i = 0; i < MAX_INTS; i++) {
-            run_isr_bytecode[i] = NULL;
-            run_isr_length[i] = 0;
-        }
-
-        memset(timers, 0, sizeof(timers));
-
-        memset(uart_armed, 1, sizeof(uart_armed));
-
-        watch_armed = true;
-
         run_line_number = start_line_number?start_line_number-1:0;
-
-        data_line_number = 0;
-        data_line_offset = 0;
     } else {
         // continue a stopped run
         run_line_number = start_line_number?start_line_number-1:run_line_number;
@@ -1495,7 +1572,7 @@ run(bool cont, int start_line_number)
 #endif
 
         // if we're still sleeping...
-        if (run_sleep_line_number == run_line_number && run_line_number) {
+        if (run_sleep_line_number && run_sleep_line_number == run_line_number) {
             if (ticks >= run_sleep_ticks) {
                 run_sleep_line_number = 0;
             }
@@ -1533,14 +1610,19 @@ run(bool cont, int start_line_number)
         // if it has been a tick since we last checked...
         tick = ticks;
         if (tick != last_tick) {
+            // pin values may have changed so consider all watchpoints possible.  they're likely still false, and but
+            // will be checked once per tick because of this.
+            possible_watchpoints_mask = all_watchpoints_mask;
+
 #if ! STICK_GUEST
-            //if (! (tick & 15)) {
-                // see if the sleep switch was pressed
-                basic_poll();
+            // If a msec elapsed...
+            if ((tick & (ticks_per_msec - 1)) == 0) {
+                // poll for non-isr work to do
+                basic0_poll();
                 
+                // blink our led fast
                 led_unknown_progress();
-            //}
-            
+            }
 #endif
 
             if (run_isr_enabled) {
@@ -1593,30 +1675,45 @@ run(bool cont, int start_line_number)
             }
         }
 
-        // if the watch int is enabled
-        if (run_isr_enabled & (1 << WATCH_INT)) {
-            condition = run_condition;
-            run_condition = true;
-
-            length = run_evaluate(watch_bytecode, watch_length, NULL, &value);
-            assert(length == watch_length);
-
-            run_condition = condition;
-
-            // if the watch is non-0...
-            if (value) {
-                // if this transition has not yet been delivered...
-                if (watch_armed) {
-                    // mark the interrupt as pending
-                    run_isr_pending |= 1 << WATCH_INT;
-                    watch_armed = false;
+        if (run_isr_enabled & WATCH_MASK) {
+            for (i = 0; i < num_watchpoints; i++) {
+                // skip if the watch int is disabled
+                if (!(run_isr_enabled & (1 << WATCH_INT(i)))) {
+                    continue;
                 }
-            } else {
-                watch_armed = true;
+                // skip if this watchpoint is not set
+                if (watchpoints[i].length == 0) {
+                    continue;
+                }
+                // in smart watch mode, skip if this watchpoint is known to be false
+                if (watch_mode_smart && !(possible_watchpoints_mask & (1<<i))) {
+                    continue;
+                }
+                // evaluation watchpoint condition.  tell evaluator to decorate each evaluated pin/var with the current
+                // watchpoint num so changes to these pins/vars set the watchpoint as possible.
+                run_condition = true;
+                length = run_evaluate_watchpoint(watchpoints[i].bytecode, watchpoints[i].length, 1 << i, NULL, &value);
+                assert(length == watchpoints[i].length);
+
+                // if the watch is non-0...
+                if (value) {
+                    // if this transition has not yet been delivered...
+                    if (watchpoints_armed_mask & (1<<i)) {
+                        // mark the interrupt as pending
+                        run_isr_pending |= 1 << WATCH_INT(i);
+                        watchpoints_armed_mask &= ~(1<<i);
+                    }
+                } else {
+                    // watchpoint just evaluated to false.  it will remain false until on a var/pin change
+                    possible_watchpoints_mask &= ~(1<<i);
+
+                    watchpoints_armed_mask |= 1<<i;
+                }
             }
         }
 
         // if we're not already running an isr...
+      XXX_CHECK_ISRS_XXX:
         if (run_isr_pending && ! isr) {
             for (i = 0; i < MAX_INTS; i++) {
                 // if we have an isr to run...
@@ -1661,6 +1758,10 @@ run(bool cont, int start_line_number)
 
             assert(isr);
             isr = false;
+
+            // check for more isrs before running any non-isr code.  multiple watchpoints may be enabled and should all be
+            // executed to completion before continuing non-isr code.
+            goto XXX_CHECK_ISRS_XXX;
         }
     }
     running = false;
@@ -1693,6 +1794,7 @@ stop()
 void
 run_initialize(void)
 {
+    watch_mode_smart = var_get_flash(FLASH_WATCH_SMART);
     assert(MAX_INTS < sizeof(run_isr_enabled)*8);
 }
 

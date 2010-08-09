@@ -1,8 +1,8 @@
 
 ### platform MCF52221 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -17,12 +17,12 @@ for more information:
   help pins
   help board
   help clone
-  help zigbee
+  help zigflea
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 auto <line>                   -- automatically number program lines
@@ -55,17 +55,19 @@ analog [<millivolts>]             -- set/display analog voltage scale
 autorun [on|off]                  -- autorun (on reset) mode
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
-nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
 sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
+watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
-  heartbeat     safemode*
-  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+  heartbeat  safemode*
+  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
@@ -112,9 +114,6 @@ gosub <subname> [<expression>, ...]
 sub <subname> [<param>, ...]
   [return]
 endsub
-qspi:
-  configure qspi for <n> csiv
-
 timers:
   configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
@@ -160,6 +159,9 @@ ram variables:
   dim <var>[[n]]
   dim <var>[[n]] as (byte|short)
 
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
 flash parameter variables:
   dim <varflash>[[n]] as flash
 
@@ -174,15 +176,15 @@ system variables:
 for more information:
   help pins
 pin names:
-    0        1        2        3        4     5     6     7
-  -------- -------- -------- --------- ----- ----- ----- ------+
-  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
-  scl      sda                                                 | PORT AS
-           irq1*                       irq4*             irq7* | PORT NQ
-  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
-  dtin0    dtin1    dtin2    dtin3                             | PORT TC
-  utxd0    urxd0    urts0*   ucts0*                            | PORT UA
-  utxd1    urxd1    urts1*   ucts1*                            | PORT UB
+    0         1         2         3        4     5        6        7
+  --------  --------- --------- -------- ----- -------- -------- ------+
+  an0       an1       an2       an3      an4   an5      an6      an7   | AN
+  scl       sda                                                        | AS
+            irq1*                        irq4*                   irq7* | NQ
+  qspi_dout qspi_din  qspi_clk  qspi_cs0       qspi_cs2 qspi_cs3       | QS
+  dtin0     dtin1     dtin2     dtin3                                  | TC
+  utxd0     urxd0     urts0*    ucts0*                                 | UA
+  utxd1     urxd1     urts1*    ucts1*                                 | UB
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
@@ -213,35 +215,54 @@ utxd? = potential uart output pins (transmit byte)
 
                 1  2  3  4  5  6  7  8  9  10 11 12 13 14
 clone cable:
-  master     slave
-  ---------  ----------------
-  qspi_clk   qspi_clk (ezpck)
-  qspi_din   qspi_dout (ezpq)
-  qspi_dout  qspi_din (ezpd)
-  qspi_cs0   rcon* (ezpcs*)
-  scl        rsti*
-  vss        vss
-  vdd        vdd
-connect <nodeid>              -- connect to MCU <nodeid> via zigbee
+  master           slave
+  ---------        ----------------
+  qspi_clk         qspi_clk (ezpck)
+  qspi_din         qspi_dout (ezpq)
+  qspi_dout        qspi_din (ezpd)
+  qspi_cs0         rcon* (ezpcs*)
+  pins clone_rst*  rsti*
+  vss              vss
+  vdd              vdd
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
-zigbee cable:
-  MCU                 MC1320X
-  -------------       -----------
-  qspi_clk            spiclk
-  qspi_din            miso
-  qspi_dout           mosi
-  qspi_cs0            ce*
-  irq4*               irq*
-  pins zigbee_rst*    rst*
-  pins zigbee_rxtxen  rxtxen
-  vss                 vss
-  vdd                 vdd
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  qspi_clk             spiclk
+  qspi_din             miso
+  qspi_dout            mosi
+  irq4*                irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing pins
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat dtin3
+safemode* irq1*
+qspi_cs* qspi_cs0
+clone_rst* scl
+zigflea_rst* an2
+zigflea_attn* an3
+zigflea_rxtxen an5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -255,8 +276,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -265,15 +286,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF52233 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52233 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -287,12 +308,12 @@ for more information:
   help variables
   help pins
   help clone
-  help zigbee
+  help zigflea
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52233 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 auto <line>                   -- automatically number program lines
@@ -326,17 +347,19 @@ autorun [on|off]                  -- autorun (on reset) mode
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 ipaddress [dhcp|<ipaddress>]      -- set/display ip address
-nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
 sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
+watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
-  heartbeat     safemode*
-  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+  heartbeat  safemode*
+  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
@@ -383,9 +406,6 @@ gosub <subname> [<expression>, ...]
 sub <subname> [<param>, ...]
   [return]
 endsub
-qspi:
-  configure qspi for <n> csiv
-
 timers:
   configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
@@ -431,6 +451,9 @@ ram variables:
   dim <var>[[n]]
   dim <var>[[n]] as (byte|short)
 
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
 flash parameter variables:
   dim <varflash>[[n]] as flash
 
@@ -445,17 +468,17 @@ system variables:
 for more information:
   help pins
 pin names:
-    0        1        2        3        4     5     6     7
-  -------- -------- -------- --------- ----- ----- ----- ------+
-  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
-  scl      sda                                                 | PORT AS
-  gpt0     gpt1     gpt2     gpt3                              | PORT TA
-           irq1*                       irq4*             irq7* | PORT NQ
-                             irq11*                            | PORT GP
-  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
-  dtin0    dtin1    dtin2    dtin3                             | PORT TC
-  utxd0    urxd0    urts0*   ucts0*                            | PORT UA
-  utxd1    urxd1    urts1*   ucts1*                            | PORT UB
+    0         1         2         3        4     5        6        7
+  --------  --------- --------- -------- ----- -------- -------- ------+
+  an0       an1       an2       an3      an4   an5      an6      an7   | AN
+  scl       sda                                                        | AS
+  gpt0      gpt1      gpt2      gpt3                                   | TA
+            irq1*                        irq4*                   irq7* | NQ
+                                irq11*                                 | GP
+  qspi_dout qspi_din  qspi_clk  qspi_cs0       qspi_cs2 qspi_cs3       | QS
+  dtin0     dtin1     dtin2     dtin3                                  | TC
+  utxd0     urxd0     urts0*    ucts0*                                 | UA
+  utxd1     urxd1     urts1*    ucts1*                                 | UB
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
@@ -466,35 +489,54 @@ urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
        ^ - error
 clone cable:
-  master     slave
-  ---------  ----------------
-  qspi_clk   qspi_clk (ezpck)
-  qspi_din   qspi_dout (ezpq)
-  qspi_dout  qspi_din (ezpd)
-  qspi_cs0   rcon* (ezpcs*)
-  scl        rsti*
-  vss        vss
-  vdd        vdd
-connect <nodeid>              -- connect to MCU <nodeid> via zigbee
+  master           slave
+  ---------        ----------------
+  qspi_clk         qspi_clk (ezpck)
+  qspi_din         qspi_dout (ezpq)
+  qspi_dout        qspi_din (ezpd)
+  qspi_cs0         rcon* (ezpcs*)
+  pins clone_rst*  rsti*
+  vss              vss
+  vdd              vdd
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
-zigbee cable:
-  MCU                 MC1320X
-  -------------       -----------
-  qspi_clk            spiclk
-  qspi_din            miso
-  qspi_dout           mosi
-  qspi_cs0            ce*
-  irq4*               irq*
-  pins zigbee_rst*    rst*
-  pins zigbee_rxtxen  rxtxen
-  vss                 vss
-  vdd                 vdd
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  qspi_clk             spiclk
+  qspi_din             miso
+  qspi_dout            mosi
+  irq4*                irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing pins
+Welcome to StickOS for Freescale MCF52233 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat dtin3
+safemode* irq1*
+qspi_cs* qspi_cs0
+clone_rst* scl
+zigflea_rst* gpt0
+zigflea_attn* gpt1
+zigflea_rxtxen an5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52233 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -508,23 +550,23 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52233 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 dhcp
 1.2.3.4
 dhcp
 ... testing reset
-Welcome to StickOS for Freescale MCF52233 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52233 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF52259 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52252 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -539,12 +581,12 @@ for more information:
   help pins
   help board
   help clone
-  help zigbee
+  help zigflea
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52252 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 auto <line>                   -- automatically number program lines
@@ -577,18 +619,20 @@ analog [<millivolts>]             -- set/display analog voltage scale
 autorun [on|off]                  -- autorun (on reset) mode
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
-nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
 sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
-usbhost [on|off]                  -- set/display USB host mode (on reset)
+usbhost [on|off]                  -- USB host mode (on reset)
+watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
-  heartbeat     safemode*
-  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+  heartbeat  safemode*
+  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
@@ -635,9 +679,6 @@ gosub <subname> [<expression>, ...]
 sub <subname> [<param>, ...]
   [return]
 endsub
-qspi:
-  configure qspi for <n> csiv
-
 timers:
   configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
@@ -683,6 +724,9 @@ ram variables:
   dim <var>[[n]]
   dim <var>[[n]] as (byte|short)
 
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
 flash parameter variables:
   dim <varflash>[[n]] as flash
 
@@ -697,17 +741,19 @@ system variables:
 for more information:
   help pins
 pin names:
-    0        1        2        3        4     5     6     7
-  -------- -------- -------- --------- ----- ----- ----- ------+
-  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
-  scl      sda                                                 | PORT AS
-  gpt0     gpt1     gpt2     gpt3                              | PORT TA
-           irq1*             irq3*           irq5*       irq7* | PORT NQ
-  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
-  dtin0    dtin1    dtin2    dtin3                             | PORT TC
-  utxd0    urxd0    urts0*   ucts0*                            | PORT UA
-  utxd1    urxd1    urts1*   ucts1*                            | PORT UB
-  utxd2    urxd2    urts2*   ucts2*                            | PORT UC
+    0         1         2         3        4     5        6        7
+  --------  --------- --------- -------- ----- -------- -------- ------+
+  an0       an1       an2       an3      an4   an5      an6      an7   | AN
+  scl       sda                                                        | AS
+  gpt0      gpt1      gpt2      gpt3                                   | TA
+            irq1*               irq3*          irq5*             irq7* | NQ
+  qspi_dout qspi_din  qspi_clk  qspi_cs0       qspi_cs2 qspi_cs3       | QS
+  dtin0     dtin1     dtin2     dtin3                                  | TC
+  utxd0     urxd0     urts0*    ucts0*                                 | UA
+  utxd1     urxd1     urts1*    ucts1*                                 | UB
+  fec_col   fec_crs   fec_rxclk fec_rxd[0-3]                  fec_rxdv | TI
+  fec_rxer  fec_txclk fec_txd[0-3]                   fec_txen fec_txer | TJ
+  utxd2     urxd2     urts2*    ucts2*                                 | UC
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
@@ -740,35 +786,53 @@ d  d  0  0  d  d  1  1  n  n  n  n     n  3  c  d  n  n  n  n  n  n  n  n
 
 1  2  3  4  5  6  7  8  9  10 11 12    1  2  3  4  5  6  7  8  9  10 11 12
 clone cable:
-  master     slave
-  ---------  ----------------
-  qspi_clk   qspi_clk (ezpck)
-  qspi_din   qspi_dout (ezpq)
-  qspi_dout  qspi_din (ezpd)
-  qspi_cs0   rcon* (ezpcs*)
-  scl        rsti*
-  vss        vss
-  vdd        vdd
-connect <nodeid>              -- connect to MCU <nodeid> via zigbee
+  master           slave
+  ---------        ----------------
+  qspi_clk         qspi_clk (ezpck)
+  qspi_din         qspi_dout (ezpq)
+  qspi_dout        qspi_din (ezpd)
+  qspi_cs0         rcon* (ezpcs*)
+  pins clone_rst*  rsti*
+  vss              vss
+  vdd              vdd
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
-zigbee cable:
-  MCU                 MC1320X
-  -------------       -----------
-  qspi_clk            spiclk
-  qspi_din            miso
-  qspi_dout           mosi
-  qspi_cs0            ce*
-  irq1*               irq*
-  pins zigbee_rst*    rst*
-  pins zigbee_rxtxen  rxtxen
-  vss                 vss
-  vdd                 vdd
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  qspi_clk             spiclk
+  qspi_din             miso
+  qspi_dout            mosi
+  irq1*                irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+off
+on
+error -   ^
+error -       ^
+on
+... testing pins
+Welcome to StickOS for Freescale MCF52252 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat dtin3
+safemode* irq5*
+qspi_cs* qspi_cs0
+clone_rst* scl
+zigflea_rst* an2
+zigflea_attn* an3
+zigflea_rxtxen an5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52252 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -782,8 +846,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52252 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -792,15 +856,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF52252 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52252 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF5211 ###
 ... testing help
-Welcome to StickOS for Freescale MCF5211 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -813,12 +877,13 @@ for more information:
   help expressions
   help variables
   help pins
-  help zigbee
+  help clone
+  help zigflea
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF5211 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 auto <line>                   -- automatically number program lines
@@ -851,17 +916,19 @@ analog [<millivolts>]             -- set/display analog voltage scale
 autorun [on|off]                  -- autorun (on reset) mode
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
-nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
 sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
+watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
-  heartbeat     safemode*
-  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+  heartbeat  safemode*
+  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
@@ -908,9 +975,6 @@ gosub <subname> [<expression>, ...]
 sub <subname> [<param>, ...]
   [return]
 endsub
-qspi:
-  configure qspi for <n> csiv
-
 timers:
   configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
@@ -956,6 +1020,9 @@ ram variables:
   dim <var>[[n]]
   dim <var>[[n]] as (byte|short)
 
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
 flash parameter variables:
   dim <varflash>[[n]] as flash
 
@@ -970,16 +1037,16 @@ system variables:
 for more information:
   help pins
 pin names:
-    0        1        2        3        4     5     6     7
-  -------- -------- -------- --------- ----- ----- ----- ------+
-  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
-  scl      sda                                                 | PORT AS
-  gpt0     gpt1     gpt2     gpt3                              | PORT TA
-           irq1*                       irq4*             irq7* | PORT NQ
-  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
-  dtin0    dtin1    dtin2    dtin3                             | PORT TC
-  utxd0    urxd0    urts0*   ucts0*                            | PORT UA
-  utxd1    urxd1    urts1*   ucts1*                            | PORT UB
+    0         1         2         3        4     5        6        7
+  --------  --------- --------- -------- ----- -------- -------- ------+
+  an0       an1       an2       an3      an4   an5      an6      an7   | AN
+  scl       sda                                                        | AS
+  gpt0      gpt1      gpt2      gpt3                                   | TA
+            irq1*                        irq4*                   irq7* | NQ
+  qspi_dout qspi_din  qspi_clk  qspi_cs0       qspi_cs2 qspi_cs3       | QS
+  dtin0     dtin1     dtin2     dtin3                                  | TC
+  utxd0     urxd0     urts0*    ucts0*                                 | UA
+  utxd1     urxd1     urts1*    ucts1*                                 | UB
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
@@ -989,27 +1056,55 @@ dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
        ^ - error
-       ^ - error
-connect <nodeid>              -- connect to MCU <nodeid> via zigbee
+clone cable:
+  master           slave
+  ---------        ----------------
+  qspi_clk         qspi_clk (ezpck)
+  qspi_din         qspi_dout (ezpq)
+  qspi_dout        qspi_din (ezpd)
+  qspi_cs0         rcon* (ezpcs*)
+  pins clone_rst*  rsti*
+  vss              vss
+  vdd              vdd
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
-zigbee cable:
-  MCU                 MC1320X
-  -------------       -----------
-  qspi_clk            spiclk
-  qspi_din            miso
-  qspi_dout           mosi
-  qspi_cs0            ce*
-  irq4*               irq*
-  pins zigbee_rst*    rst*
-  pins zigbee_rxtxen  rxtxen
-  vss                 vss
-  vdd                 vdd
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  qspi_clk             spiclk
+  qspi_din             miso
+  qspi_dout            mosi
+  irq4*                irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing pins
+Welcome to StickOS for Freescale MCF5211 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat dtin3
+safemode* irq4*
+qspi_cs* qspi_cs0
+clone_rst* scl
+zigflea_rst* gpt0
+zigflea_attn* gpt1
+zigflea_rxtxen an5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF5211 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -1023,8 +1118,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF5211 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -1033,15 +1128,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF5211 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF5211 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF51JM128 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -1054,12 +1149,12 @@ for more information:
   help expressions
   help variables
   help pins
-  help zigbee
+  help zigflea
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 auto <line>                   -- automatically number program lines
@@ -1091,17 +1186,19 @@ analog [<millivolts>]             -- set/display analog voltage scale
 autorun [on|off]                  -- autorun (on reset) mode
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
-nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
 sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
+watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
-  heartbeat     safemode*
-  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+  heartbeat  safemode*
+  qspi_cs*   zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
@@ -1148,9 +1245,6 @@ gosub <subname> [<expression>, ...]
 sub <subname> [<param>, ...]
   [return]
 endsub
-qspi:
-  configure qspi for <n> csiv
-
 timers:
   configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
@@ -1195,6 +1289,9 @@ array variable indices start at 0; v[0] is the same as v
 ram variables:
   dim <var>[[n]]
   dim <var>[[n]] as (byte|short)
+
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
 
 flash parameter variables:
   dim <varflash>[[n]] as flash
@@ -1229,26 +1326,45 @@ pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)
 pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
-connect <nodeid>              -- connect to MCU <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
-zigbee cable:
-  MCU                 MC1320X
-  -------------       -----------
-  spsck1 (pte6)       spiclk
-  miso1 (pte4)        miso
-  mosi1 (pte5)        mosi
-  ss1* (pte7)         ce*
-  irq*                irq*
-  pins zigbee_rst*    rst*
-  pins zigbee_rxtxen  rxtxen
-  vss                 vss
-  vdd                 vdd
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  spsck1 (pte6)        spiclk
+  miso1 (pte4)         miso
+  mosi1 (pte5)         mosi
+  irq*                 irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing pins
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat ptf0
+safemode* ptg0
+qspi_cs* pte7
+clone_rst* none
+zigflea_rst* pte2
+zigflea_attn* pte3
+zigflea_rxtxen ptb5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -1262,8 +1378,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -1272,15 +1388,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform MCF51QE128 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51QE128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -1293,12 +1409,12 @@ for more information:
   help expressions
   help variables
   help pins
-  help zigbee
+  help zigflea
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51QE128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 auto <line>                   -- automatically number program lines
@@ -1330,17 +1446,19 @@ analog [<millivolts>]             -- set/display analog voltage scale
 autorun [on|off]                  -- autorun (on reset) mode
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
-nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
 sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
+watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
-  heartbeat     safemode*
-  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+  heartbeat  safemode*
+  qspi_cs*   zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
@@ -1387,9 +1505,6 @@ gosub <subname> [<expression>, ...]
 sub <subname> [<param>, ...]
   [return]
 endsub
-qspi:
-  configure qspi for <n> csiv
-
 timers:
   configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
@@ -1435,6 +1550,9 @@ ram variables:
   dim <var>[[n]]
   dim <var>[[n]] as (byte|short)
 
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
 flash parameter variables:
   dim <varflash>[[n]] as flash
 
@@ -1468,26 +1586,45 @@ ptb0 (u1), ptc6 (u2) = potential uart input pins (received byte)
 ptb1 (u1), ptc7 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
-connect <nodeid>              -- connect to MCU <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
-zigbee cable:
-  MCU                 MC1320X
-  -------------       -----------
-  spsck1 (ptb2)       spiclk
-  miso1 (ptb4)        miso
-  mosi1 (ptb3)        mosi
-  ss1* (ptb5)         ce*
-  irq*                irq*
-  pins zigbee_rst*    rst*
-  pins zigbee_rxtxen  rxtxen
-  vss                 vss
-  vdd                 vdd
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  spsck1 (ptb2)        spiclk
+  miso1 (ptb4)         miso
+  mosi1 (ptb3)         mosi
+  irq*                 irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing pins
+Welcome to StickOS for Freescale MCF51QE128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat ptc2
+safemode* pta2
+qspi_cs* ptb5
+clone_rst* none
+zigflea_rst* ptc0
+zigflea_attn* ptc1
+zigflea_rxtxen ptf1
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51QE128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
     ^ - error
@@ -1501,8 +1638,8 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51QE128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -1511,15 +1648,15 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51QE128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51QE128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
 ### platform BADGE_BOARD ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 for more information:
@@ -1532,12 +1669,12 @@ for more information:
   help expressions
   help variables
   help pins
-  help zigbee
+  help zigflea
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 auto <line>                   -- automatically number program lines
@@ -1568,17 +1705,19 @@ analog [<millivolts>]             -- set/display analog voltage scale
 autorun [on|off]                  -- autorun (on reset) mode
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
-nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
 sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
+watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
-  heartbeat     safemode*
-  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+  heartbeat  safemode*
+  qspi_cs*   zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
@@ -1627,9 +1766,6 @@ gosub <subname> [<expression>, ...]
 sub <subname> [<param>, ...]
   [return]
 endsub
-qspi:
-  configure qspi for <n> csiv
-
 timers:
   configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
@@ -1675,6 +1811,9 @@ ram variables:
   dim <var>[[n]]
   dim <var>[[n]] as (byte|short)
 
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
 flash parameter variables:
   dim <varflash>[[n]] as flash
 
@@ -1708,26 +1847,45 @@ pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)
 pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)
        ^ - error
        ^ - error
-connect <nodeid>              -- connect to MCU <nodeid> via zigbee
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
-zigbee cable:
-  MCU                 MC1320X
-  -------------       -----------
-  spsck1 (pte6)       spiclk
-  miso1 (pte4)        miso
-  mosi1 (pte5)        mosi
-  ss1* (pte7)         ce*
-  irq*                irq*
-  pins zigbee_rst*    rst*
-  pins zigbee_rxtxen  rxtxen
-  vss                 vss
-  vdd                 vdd
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  spsck1 (pte6)        spiclk
+  miso1 (pte4)         miso
+  mosi1 (pte5)         mosi
+  irq*                 irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing pins
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat ptf0
+safemode* ptg0
+qspi_cs* pte7
+clone_rst* none
+zigflea_rst* pte2
+zigflea_attn* pte3
+zigflea_rxtxen ptb5
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 error -     ^
@@ -1742,8 +1900,8 @@ error -         ^
 end
 hello
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
   ^ - error
@@ -1752,7 +1910,7 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF51JM128 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com

@@ -2,5 +2,5 @@
 
 extern bool run2_scroll;
 
-extern bool run2_bytecode_code(byte code, const byte *bytecode, int length);
+extern bool run2_bytecode_code(uint code, const byte *bytecode, int length);
 

@@ -57,10 +57,16 @@ typedef unsigned int uint32;
 #endif
 
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#if MC9S08QE128
+#define MCU_CORE_BITS 8
+#elif MC9S12DT256 || MC9S12DP512
+#define MCU_CORE_BITS 16
+#endif
 typedef long intptr;
 typedef unsigned long uintptr;
 typedef uint16 size_t;
 #else
+#define MCU_CORE_BITS 32
 typedef int intptr;
 typedef unsigned int uintptr;
 typedef uint32 size_t;
@@ -71,9 +77,6 @@ typedef uint32 size_t;
 #define far
 #define __IPSBAR ((volatile uint8 *)0x40000000)
 #define RAMBAR_ADDRESS ((uintptr)__RAMBAR)
-#define DECLSPEC_PAGE0_CODE __attribute__((section(".page0_code")))
-#define DECLSPEC_PAGE0_DATA __attribute__((section(".page0_data")))
-#define DECLSPEC_PAGE1 __attribute__((section(".page1")))
 #define FLASH_UPGRADE_RAM_BEGIN __attribute__((section(".text_flash_upgrade_ram_begin")))
 #define FLASH_UPGRADE_RAM_END __attribute__((section(".text_flash_upgrade_ram_end")))
 
@@ -87,7 +90,6 @@ typedef uint32 size_t;
 #else
 #define INTERRUPT  __declspec(interrupt)
 #endif
-#define DECLSPEC_PAGE1 __declspec(page1)
 #define asm_halt() asm { halt }
 #define asm_stop_2000() asm { stop #0x2000 }
 #define asm_stop_2700() asm { stop #0x2700 }
@@ -148,7 +150,7 @@ typedef uint64_t size_t;
 typedef uint32 size_t;
 #endif
 #else // ! GCC
-#define _WIN32_WINNT 0x0500
+#define _WIN32_WINNT 0x0600
 #include <windows.h>
 extern int isatty(int);
 #if ! NO_UINT_TYPEDEFS
@@ -177,6 +179,7 @@ typedef unsigned char bool;
 #if (! MCF51JM128 && ! MCF51QE128) || GCC
 typedef unsigned char byte;
 #endif
+typedef unsigned int uint;
 
 enum {
     false,
@@ -202,7 +205,7 @@ enum {
 #include "pin.h"
 #include "printf.h"
 #include "qspi.h"
-#include "zigbee.h"
+#include "zigflea.h"
 #include "terminal.h"
 #include "timer.h"
 #include "util.h"
@@ -258,19 +261,11 @@ enum {
 #include "parse.h"
 #include "run.h"
 #include "vars.h"
-#include "basic2.h"
+#include "basic0.h"
 #include "parse2.h"
 #include "run2.h"
 
-#if STICKOSPLUS
-#include "block.h"
-#include "fat32.h"
-#endif
-
-#elif SKELETON
-#include "skeleton.h"
-
-#if STICKOSPLUS
+#if STICKOSPLUS && STICKOS
 #include "block.h"
 #include "fat32.h"
 #endif
@@ -289,17 +284,17 @@ extern void os_yield(void);
 #if ! STICK_GUEST
 
 #if DEBUG
-#define assert(x)  if (! (x)) { led_line(__LINE__); }
+#define assert(x)  do { if (! (x)) { led_line(__LINE__); } } while (0)
 #else
 #define assert(x)
 #endif
 #if DEBUG || PIC32
-#define assert_ram(x)  if (! (x)) { asm_halt(); }
+#define assert_ram(x)  do { if (! (x)) { asm_halt(); } } while (0)
 #else
 #define assert_ram(x)
 #endif
-#define ASSERT(x)  if (! (x)) { led_line(__LINE__); }
-#define ASSERT_RAM(x)  if (! (x)) { asm_halt(); }
+#define ASSERT(x)  do { if (! (x)) { led_line(__LINE__); } } while (0)
+#define ASSERT_RAM(x)  do { if (! (x)) { asm_halt(); } } while (0)
 
 #else  // STICK_GUEST
 

@@ -19,6 +19,8 @@
 #define FTDI_GET_MODEM_STATUS  5
 #define FTDI_SET_EVENT_CHAR  6
 #define FTDI_SET_ERROR_CHAR  7
+#define FTDI_SET_LATENCY 9
+#define FTDI_GET_LATENCY 10
 
 static const byte ftdi_device_descriptor[] = {
     18,  // length
@@ -42,11 +44,7 @@ static const byte ftdi_configuration_descriptor[] = {
     0x01,  // configuration value
     0x00,  // configuration (string)
     0x80,  // attributes
-#if PICTOCRYPT
     250,  // 500 mA
-#else
-    100,  // 200 mA
-#endif
 
     9,  // length
     0x04,  // interface descriptor
@@ -122,6 +120,7 @@ ftdi_print(const byte *buffer, int length)
     int m;
     int x;
     bool start;
+    static uint32 attached_count;
     
     assert(gpl() == 0);
 
@@ -140,6 +139,12 @@ ftdi_print(const byte *buffer, int length)
     
     if (! length) {
         return;
+    }
+    
+    // revisit -- without this delays, we can get usb hangs on boot
+    if (attached_count != ftdi_attached_count) {
+        delay(100);
+        attached_count = ftdi_attached_count;
     }
 
     x = splx(7);
@@ -209,8 +214,12 @@ ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
         case FTDI_SET_ERROR_CHAR:
             length = 0;
             break;
-        case 0x09:  // set latency timer?
-            assert(length == 0);
+        case FTDI_SET_LATENCY:
+            length = 0;
+            break;
+        case FTDI_GET_LATENCY:
+            assert(length == 1);
+            buffer[0] = 1; // XXX: just a guess
             break;
         case 0x90:  // read eeprom?
             assert(length == 2);

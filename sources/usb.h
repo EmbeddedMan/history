@@ -37,6 +37,7 @@ extern uint32 scsi_attached_count;
 extern bool other_attached;
 
 extern bool ftdi_attached;  // set when ftdi host is attached
+extern uint32 ftdi_attached_count;
 
 extern byte bulk_in_ep;
 extern byte bulk_out_ep;

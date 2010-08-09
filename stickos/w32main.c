@@ -111,7 +111,7 @@ main(int argc, char **argv)
     basic_initialize();
 
     if (argc == 1) {
-        basic_run("help about");
+        basic0_run("help about");
     }
     for (;;) {
         if (isatty(0) && main_prompt) {
@@ -121,7 +121,8 @@ main(int argc, char **argv)
             break;
         }
         text[LINE_INPUT_SIZE-1] = '\0';
-        basic_run(text);
+        basic0_run(text);
     }
     return 0;
 }
+

@@ -1,11 +1,7 @@
 #include "main.h"
 
 #if STICKOSPLUS || PICTOCRYPT
-#if STICKOSPLUS
-#define OPTIMIZE  0
-#else
 #define OPTIMIZE  1
-#endif
 
 #define RETRIES  2
 

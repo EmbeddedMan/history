@@ -2,7 +2,7 @@
 // this file implements the bytecode compiler and de-compiler for
 // stickos.
 
-// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
@@ -595,6 +595,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
     int pin_type;
     int pin_qual;
     int pin_number;
+    int ram_or_abs_var_size;
 
     text = text_in;
     parse_trim(&text);
@@ -786,20 +787,6 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 } else {
                     bytecode[length++] = 0;
                 }
-            } else if (parse_word(&text, "qspi")) {
-                bytecode[length++] = device_qspi;
-            
-                if (! parse_word(&text, "for")) {
-                    goto XXX_ERROR_XXX;
-                }
-
-                // parse the chip select initial value
-                if (! parse_const(&text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
-                if (! parse_word(&text, "csiv")) {
-                    goto XXX_ERROR_XXX;
-                }
             } else {
                 goto XXX_ERROR_XXX;
             }
@@ -886,15 +873,15 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     goto XXX_ERROR_XXX;
                 }
 
+                ram_or_abs_var_size = 0;
+
                 // if the user specified "as"...
                 if (parse_word(&text, "as")) {
                     // parse the size specifier
                     if (parse_word(&text, "byte")) {
-                        bytecode[length++] = sizeof(byte);
-                        bytecode[length++] = code_ram;
+                        ram_or_abs_var_size = 1;
                     } else if (parse_word(&text, "short")) {
-                        bytecode[length++] = sizeof(short);
-                        bytecode[length++] = code_ram;
+                        ram_or_abs_var_size = 2;
                     } else {
                         bytecode[length++] = sizeof(uint32);
 
@@ -963,8 +950,26 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                         }
                     }
                 } else {
-                    bytecode[length++] = sizeof(uint32);
-                    bytecode[length++] = code_ram;
+                    ram_or_abs_var_size = 4;
+                }
+
+                // if parsing a ram or absolute variable...
+                if (ram_or_abs_var_size) {
+                    bytecode[length++] = ram_or_abs_var_size;
+                    // parse optional "at address <address>" suffix
+                    if (parse_word(&text, "at")) {
+                        if (parse_word(&text, "address")) {
+                            bytecode[length++] = code_absolute;
+                            // parse the <address>
+                            if (! parse_expression(0, &text, &length, bytecode)) {
+                                    goto XXX_ERROR_XXX;
+                            }
+                        } else {
+                            goto XXX_ERROR_XXX;
+                        }
+                    } else {
+                        bytecode[length++] = code_ram;
+                    }
                 }
             }
             break;
@@ -1510,7 +1515,6 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
     byte loopback;
     int32 interval;
     enum timer_unit_type timer_unit;
-    int csiv;
     byte device;
     byte code2;
     byte *bytecode;
@@ -1623,15 +1627,6 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
 
                 // and decompile it
                 out += sprintf(out, "for %ld baud %d data %s parity%s", baud, data, parity==0?"even":(parity==1?"odd":"no"), loopback?" loopback":"");
-            } else if (device == device_qspi) {
-                // decompile the qspi
-                out += sprintf(out, "qspi ");
-
-                // and the chip select initial value
-                csiv = read32(bytecode);
-                bytecode += sizeof(uint32);
-                out += sprintf(out, "for %d csiv", csiv);
-
             } else {
                 assert(0);
             }
@@ -1698,54 +1693,58 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 code2 = *bytecode++;
 
                 // decompile the "as"
-                if (size != sizeof(uint32) || code2 != code_ram) {
+                if (size != sizeof(uint32) || (code2 != code_ram) && (code2 != code_absolute)) {
                     out += sprintf(out, " as ");
 
                     // decompile the size specifier
                     if (size == sizeof(byte)) {
-                        assert(code2 == code_ram);
+                        assert(code2 == code_ram || code2 == code_absolute);
                         out += sprintf(out, "byte");
                     } else if (size == sizeof(short)) {
-                        assert(code2 == code_ram);
+                        assert(code2 == code_ram || code2 == code_absolute);
                         out += sprintf(out, "short");
                     } else {
                         assert(size == sizeof(uint32));
-                        
-                        // decompile the type specifier
-                        if (code2 == code_flash) {
-                            out += sprintf(out, "flash");
-                        } else if (code2 == code_pin) {
-                            out += sprintf(out, "pin ");
-
-                            pin = *bytecode++;
-                            type = *bytecode++;
-                            qual = *bytecode++;
-
-                            // decompile the pin name
-                            assert(pin >= 0 && pin < PIN_LAST);
-                            out += sprintf(out, "%s ", pins[pin].name);
-
-                            out += sprintf(out, "for ");
-
-                            // decompile the pin usage
-                            assert(type >= 0 && type < pin_type_last);
-                            out += sprintf(out, "%s", pin_type_names[type]);
-                            
-                            // decompile the pin qualifier(s)
-                            for (i = 0; i < pin_qual_last; i++) {
-                                if (qual & (1<<i)) {
-                                    out += sprintf(out, " %s", pin_qual_names[i]);
-                                }
-                            }
-                        } else {
-                            assert(code2 == code_nodeid);
-
-                            nodeid = read32(bytecode);
-                            bytecode += sizeof(uint32);
-                            
-                            out += sprintf(out, "remote on nodeid %u", nodeid);
-                        }
                     }
+                }
+
+                // decompile the type specifier
+                if (code2 == code_ram) {
+                } else if (code2 == code_flash) {
+                    out += sprintf(out, "flash");
+                } else if (code2 == code_pin) {
+                    out += sprintf(out, "pin ");
+
+                    pin = *bytecode++;
+                    type = *bytecode++;
+                    qual = *bytecode++;
+
+                    // decompile the pin name
+                    assert(pin >= 0 && pin < PIN_LAST);
+                    out += sprintf(out, "%s ", pins[pin].name);
+
+                    out += sprintf(out, "for ");
+
+                    // decompile the pin usage
+                    assert(type >= 0 && type < pin_type_last);
+                    out += sprintf(out, "%s", pin_type_names[type]);
+
+                    // decompile the pin qualifier(s)
+                    for (i = 0; i < pin_qual_last; i++) {
+                            if (qual & (1<<i)) {
+                                    out += sprintf(out, " %s", pin_qual_names[i]);
+                            }
+                    }
+                } else if (code2 == code_absolute) {
+                    out += sprintf(out, " at address ");
+                    bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+                } else {
+                    assert(code2 == code_nodeid);
+
+                    nodeid = read32(bytecode);
+                    bytecode += sizeof(uint32);
+
+                    out += sprintf(out, "remote on nodeid %u", nodeid);
                 }
             }
             break;

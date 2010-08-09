@@ -1,7 +1,7 @@
 // *** basic.c ********************************************************
 // this file implements the stickos command interpreter.
 
-// Copyright (c) Rich Testardi, 2008.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2009.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
@@ -27,165 +27,52 @@ struct timer_unit const timer_units[] = {
     "s", ticks_per_msec*1000,
 };
 
-// prior 1
-// =======
-// help board for '59
-// allow pwm frequency to be specified in flash
-// add "servo output" as pin type?  100% is max scale and it uses the pwm freq from flash.
-// usb host mode/spi-to-cf data logging with fat/fat32
-// spi on pic32; test with zigbee
-// heartbeat/autorun disable flash pin selection
-// add pin "e2" (?? to control led e2 on '59?  do we want control of fec pins?
-// post s19s on web for 9s08, 9s12
-
-// prior 2
-// =======
-// i2c support
-// how to enable different uart selection (other than lowest number) for console?
-// update skeleton.zip to have simplified 51jm128/52259 bootloader interface
-// gets warnings
-// permanent params (protected from upgrade) for nodeid, ipaddress, etc.
-// zigbee read remote variables
-// we need a way to prevent you from upgrading the wrong firmware file!!!
-// dim x as register 0x40000004
-// change ftdi to cdc and use mst for inf file access
-// if data area of flash looks bogus on boot, we should clear it all!
-// have nodeid and clusterid, and broadcast 0x4242 and clusterid as magic number
-// save zigbee channel in nvparam!
-// multiple watchpoints?
-// need a second catalog page for safe updates!
-
-// prior 3
-// =======
-// PC/Cell framework!!!
-// add mst interface for basic progs and fw access
-// add zigbee support thru xbee for ubw32?
-// prompt on|off|ok
-// get rid of remaining SPL_USB, SPL_IRQ4, etc.
-// get rid of rtc isr remap on jm/qe
-// if dhcp not found on 33, assign random ip compatible with windows?
-// why mcf52xxx dtim freq not off by 2x?
-// figure out usb "pop" on first badge run -- is that the badge issue?
-// add character constants 'c', '\n'; do we want a way to print in character form?
-// add strings
-
-// prior 4
-// =======
-// can we make sub/endsub block behave more like for/next, from error and listing perspective?
-// expose mass storage interface with access to basic programs (and firmware upgrade?)
-// allow broadcast/remote nodeid setting (with switch), like pagers
-// builtin operators -- lengthof(a) or a#
-// short circuit && and || operators
-// add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
-// multiple (main) threads?  "input" statement?
-// "on usb [connect|disconnect]" statement for slave mode!
-// ?: operator!
-// add support for comments at the end of lines '?  //?
-// switch statement (on xxx goto...?)
-// allow gosub from command line?
-// sub stack trace?  (with sub local vars?)
-// one line "if <expression> then <statement> [else <statement>]"
-// optional "let" statement
-// sleeps and timers don't work with single-stepping
-// should we attempt to make rx transfers never time out/clear feature?
-// core dump -- copy ram to secondary code flash on assert/exception/halt?
-// handle uart errors (interrupt as well as poll)
-
-// perf
-// ====
-// mave var one slot towards "last in gosub scope" on usage rand()%16?
-// can we skip statement execution more fully when run_condition is false?
-
-// pcb
-// ===
-// battery holder
-// pin offset for headers
-// smt power switch and reset switch
-// all diffs in PCBUNDO
-// tp for pstclk
-
-
 enum cmdcode {
     command_analog,  // nnn
-    command_autorun,  // [on|off]
     command_auto,  // [nnn]
     command_clear,  // [flash]
-    command_clone,  // [run]
     command_cls,
-    command_connect,  // nnn
     command_cont,  // [nnn]
     command_delete,  // ([nnn] [-] [nnn]|<subname>)
     command_dir,
-    command_download,  // nnn
-    command_echo,  // [on|off]
     command_edit, // nnn
-    command_indent,  // [on|off]
     command_list,  // ([nnn] [-] [nnn]|<subname>)
     command_load,  // <name>
     command_memory,
     command_new,
-    command_nodeid,  // nnn
     command_pins,  // <pinname> <pinnumber>
     command_profile,  // ([nnn] [-] [nnn]|<subname>)
-    command_prompt,  // [on|off]
     command_purge, // <name>
     command_renumber,
-    command_reset,
     command_run,  // [nnn]
     command_save,  // [<name>]
     command_servo,  // [nnn]
-    command_sleep, // [on|off]
-    command_step, // [on|off]
-    command_trace, // [on|off]
     command_undo,
-    command_upgrade,
-    command_uptime,
-    command_usbhost  // [on|off]
-#if DEBUG
-    ,command_zigbee
-#endif
+    num_commands
 };
 
 static
 const char * const commands[] = {
     "analog",
-    "autorun",
     "auto",
     "clear",
-    "clone",
     "cls",
-    "connect",
     "cont",
     "delete",
     "dir",
-    "download",
-    "echo",
     "edit",
-    "indent",
     "list",
     "load",
     "memory",
     "new",
-    "nodeid",
     "pins",
     "profile",
-    "prompt",
     "purge",
     "renumber",
-    "reset",
     "run",
     "save",
     "servo",
-    "sleep",
-    "step",
-    "trace",
     "undo",
-    "upgrade",
-    "uptime",
-    "usbhost"
-#if DEBUG
-    ,"zigbee"
-#endif
 };
 
 // revisit -- merge this with basic.c/parse.c???
@@ -211,33 +98,48 @@ basic_const(IN OUT char **text, OUT int *value_out)
     return true;
 }
 
+struct mode {
+    const char * const   name;
+    bool * const         var;
+    const enum flash_var flash_var;
+};
+
+// define command controllable variables each is backed by a global variable and/or a flash variable.
+static const struct mode modes[] = {
+    // name         var                flash_var
+    { "autorun",    NULL,              FLASH_AUTORUN      },
+    { "echo",       &terminal_echo,    FLASH_LAST         },
+    { "indent",     &code_indent,      FLASH_LAST         },
+    { "numbers",    &code_numbers,     FLASH_LAST         }, 
+    { "prompt",     &main_prompt,      FLASH_LAST         },
+    { "sleep",      &run_sleep,        FLASH_LAST         },
+    { "step",       &run_step,         FLASH_LAST         },
+    { "trace",      &var_trace,        FLASH_LAST         },
+#if MCF52259 || PIC32
+    { "usbhost",    NULL,              FLASH_USBHOST      },
+#endif
+    { "watchsmart", &watch_mode_smart, FLASH_WATCH_SMART  },
+    { NULL,         NULL,              FLASH_LAST         }  // terminator
+};
 
 // this function implements the stickos command interpreter.
 void
 basic_run(char *text_in)
 {
     int i;
-    int t;
-    int d;
-    int h;
-    int m;
     int cmd;
     int len;
     bool boo;
-#if DEBUG
-    bool reset;
-    bool init;
-#endif
     char *text;
     int pin;
     int length;
     int number1;
     int number2;
-    bool *boolp;
     struct line *line;
     int syntax_error;
     byte bytecode[BASIC_BYTECODE_SIZE];
     static uint8 empty;
+    const struct mode *mode;
 
     if (run_step && ! *text_in) {
         text = "cont";
@@ -246,6 +148,48 @@ basic_run(char *text_in)
     }
 
     parse_trim(&text);
+    
+    // find mode by name
+    for (mode = modes; mode->name; mode++) {
+        if (parse_word(&text, mode->name)) {
+            if (*text) {
+                // parse the new value: <on|off>
+                if (parse_word(&text, "on")) {
+                    boo = true;
+                } else if (parse_word(&text, "off")) {
+                    boo = false;
+                } else {
+                    goto XXX_ERROR_XXX;
+                }
+                if (*text) {
+                    goto XXX_ERROR_XXX;
+                }
+                if (mode->flash_var != FLASH_LAST) {
+                    var_set_flash(mode->flash_var, boo);
+                }
+                if (mode->var) {
+                    *mode->var = boo;
+                }
+            } else {
+                if (mode->var) {
+                    boo = *mode->var;
+                } else {
+                    boo = var_get_flash(mode->flash_var) == 1;
+                }
+                printf("%s\n", boo ? "on" : "off");
+#if ! STICK_GUEST && (MCF52259 || PIC32)
+                if (mode->flash_var == FLASH_USBHOST && boo) {
+                    if (scsi_attached) {
+                        printf("(attached)\n");
+                    } else {
+                        printf("(detached)\n");
+                    }
+                }
+#endif
+            }
+            return;
+        }
+    }
 
     for (cmd = 0; cmd < LENGTHOF(commands); cmd++) {
         len = strlen(commands[cmd]);
@@ -296,29 +240,6 @@ basic_run(char *text_in)
             }
             break;
 
-        case command_autorun:
-        case command_usbhost:
-            if (*text) {
-                if (parse_word(&text, "on")) {
-                    boo = true;
-                } else if (parse_word(&text, "off")) {
-                    boo = false;
-                } else {
-                    goto XXX_ERROR_XXX;
-                }
-                if (*text) {
-                    goto XXX_ERROR_XXX;
-                }
-                var_set_flash(cmd == command_autorun ? FLASH_AUTORUN : FLASH_USBHOST, boo);
-            } else {
-                if (var_get_flash(cmd == command_autorun ? FLASH_AUTORUN : FLASH_USBHOST) == 1) {
-                    printf("on\n");
-                } else {
-                    printf("off\n");
-                }
-            }
-            break;
-            
         case command_pins:
             if (*text) {
                 // find the assignment name
@@ -365,32 +286,6 @@ basic_run(char *text_in)
 #endif
             break;
             
-        case command_nodeid:
-            if (*text) {
-                if (parse_word(&text, "none")) {
-                    number1 = -1;
-                } else {
-                    if (! basic_const(&text, &number1) || number1 == -1) {
-                        goto XXX_ERROR_XXX;
-                    }
-                }
-                if (*text) {
-                    goto XXX_ERROR_XXX;
-                }
-                var_set_flash(FLASH_NODEID, number1);
-#if ! STICK_GUEST
-                zb_nodeid = number1;
-#endif
-            } else {
-                i = var_get_flash(FLASH_NODEID);
-                if (i == -1) {
-                    printf("none\n");
-                } else {
-                    printf("%u\n", i);
-                }
-            }
-            break;
-        
         case command_clear:
             boo = false;
             if (parse_word(&text, "flash")) {
@@ -403,20 +298,6 @@ basic_run(char *text_in)
             run_clear(boo);
             break;
 
-        case command_clone:
-            boo = false;
-            if (parse_word(&text, "run")) {
-                boo = true;
-            }
-            if (*text) {
-                goto XXX_ERROR_XXX;
-            }
-
-            basic2_help(help_about);
-            printf("cloning...\n");
-            clone(boo);
-            break;
-
         case command_cls:
             if (*text) {
                 goto XXX_ERROR_XXX;
@@ -424,39 +305,6 @@ basic_run(char *text_in)
             printf("%c[2J\n", '\033');
             break;
             
-        case command_connect:
-            if (! zb_present) {
-                printf("zigbee not present\n");
-#if ! STICK_GUEST
-            } else if (zb_nodeid == -1) {
-                printf("zigbee nodeid not set\n");
-#endif
-            } else {
-                if (! basic_const(&text, &number1) || number1 == -1) {
-                    goto XXX_ERROR_XXX;
-                }
-                if (*text) {
-                    goto XXX_ERROR_XXX;
-                }
-                
-                printf("press Ctrl-D to disconnect...\n");
-
-#if ! STICK_GUEST
-                assert(main_command);
-                main_command = NULL;
-                terminal_command_ack(false);
-
-                terminal_rxid = number1;
-                
-                while (terminal_rxid != -1) {
-                    basic_poll();
-                }
-#endif
-
-                printf("...disconnected\n");
-            }
-            break;
-
         case command_cont:
         case command_run:
             if (*text) {
@@ -569,78 +417,7 @@ basic_run(char *text_in)
                 goto XXX_ERROR_XXX;
             }
 
-            code_save(number1);
-            break;
-
-        case command_reset:
-            if (*text) {
-                goto XXX_ERROR_XXX;
-            }
-
-#if ! STICK_GUEST
-            (void)splx(7);
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-            MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-#elif MCF51JM128
-            asm {
-                move.l  #0x00000000,d0
-                movec   d0,CPUCR
-                trap    #0
-            };
-#elif PIC32
-            SYSKEY = 0;
-            SYSKEY = 0xAA996655;
-            SYSKEY = 0x556699AA;
-            RSWRSTSET = _RSWRST_SWRST_MASK;
-            while (RSWRST, true) {
-                // NULL
-            }
-#else
-#endif
-            ASSERT(0);
-#endif
-            break;
-
-        case command_echo:
-        case command_indent:
-        case command_prompt:
-        case command_sleep:
-        case command_step:
-        case command_trace:
-            // *** interactive debugger ***
-            if (cmd == command_echo) {
-                boolp = &terminal_echo;
-            } else if (cmd == command_indent) {
-                boolp = &code_indent;
-            } else if (cmd == command_prompt) {
-                boolp = &main_prompt;
-            } else if (cmd == command_sleep) {
-                boolp = &run_sleep;
-            } else if (cmd == command_step) {
-                boolp = &run_step;
-            } else {
-                assert(cmd == command_trace);
-                boolp = &var_trace;
-            }
-
-            if (*text) {
-                if (parse_word(&text, "on")) {
-                    *boolp = true;
-                } else if (parse_word(&text, "off")) {
-                    *boolp = false;
-                } else {
-                    goto XXX_ERROR_XXX;
-                }
-                if (*text) {
-                    goto XXX_ERROR_XXX;
-                }
-            } else {
-                if (*boolp) {
-                    printf("on\n");
-                } else {
-                    printf("off\n");
-                }
-            }
+            code_save(false, number1);
             break;
 
         case command_undo:
@@ -651,55 +428,14 @@ basic_run(char *text_in)
             code_undo();
             break;
 
-        case command_upgrade:  // upgrade StickOS S19 file
-        case command_download:  // relay S19 file to QSPI to EzPort
-            number1 = 0;
-            if (cmd == command_download) {
-                // get fsys_frequency
-                (void)basic_const(&text, &number1);
-                if (! number1 || *text) {
-                    goto XXX_ERROR_XXX;
-                }
-                // validate fsys_frequency
-                if (number1 < 1000000 || number1 > 80000000) {
-                    goto XXX_ERROR_XXX;
-                }
-            }
-            flash_upgrade(number1);
-            break;
-
-        case command_uptime:
-            if (*text) {
-                goto XXX_ERROR_XXX;
-            }
-
-            t = seconds;
-            d = t/(24*60*60);
-            t = t%(24*60*60);
-            h = t/(60*60);
-            t = t%(60*60);
-            m = t/(60);
-            printf("%dd %dh %dm\n", d, h, m);
-            break;
-            
-#if DEBUG
-        case command_zigbee:
-            reset = parse_word(&text, "reset");
-            init = parse_word(&text, "init");
-            if (*text) {
-                goto XXX_ERROR_XXX;
-            }
-#if ! STICK_GUEST
-            zb_diag(reset, init);
-#endif
-            break;
-#endif
-
         case LENGTHOF(commands):
             // if the line begins with a line number
             if (isdigit(*text)) {
                 (void)basic_const(&text, &number1);
                 if (! number1) {
+#if ! STICK_GUEST
+                    main_auto = 0;
+#endif
                     goto XXX_ERROR_XXX;
                 }
                 if (*text) {
@@ -718,16 +454,13 @@ basic_run(char *text_in)
                 main_auto = 0;
 #endif
                 if (*text) {
-                    // if this is not a private command...
-                    if (! basic2_run(text_in)) {
-                        // *** interactive debugger ***
-                        // see if this might be a basic line executing directly
-                        if (parse_line(text, &length, bytecode, &syntax_error)) {
-                            // run the bytecode
-                            run_bytecode(true, bytecode, length);
-                        } else {
-                            terminal_command_error(text-text_in + syntax_error);
-                        }
+                    // *** interactive debugger ***
+                    // see if this might be a basic line executing directly
+                    if (parse_line(text, &length, bytecode, &syntax_error)) {
+                        // run the bytecode
+                        run_bytecode(true, bytecode, length);
+                    } else {
+                        terminal_command_error(text-text_in + syntax_error);
                     }
                 }
             }
@@ -743,15 +476,6 @@ XXX_ERROR_XXX:
     terminal_command_error(text-text_in);
 }
 
-#if ! STICK_GUEST
-void
-basic_poll(void)
-{
-    terminal_poll();
-    var_poll();
-}
-#endif
-
 // this function initializes the basic module.
 void
 basic_initialize(void)
@@ -762,13 +486,14 @@ basic_initialize(void)
 
     end_of_dynamic = FLASH_PARAM2_PAGE+BASIC_SMALL_PAGE_SIZE;
     ASSERT((uint32)end_of_dynamic <= FLASH_START+FLASH_BYTES);
-    
+
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     ASSERT(BASIC_STORES*BASIC_LARGE_PAGE_SIZE < FLASH2_BYTES);
     ASSERT(START_DYNAMIC >= 48*1024L);
 #endif
 #endif
 
+    assert(LENGTHOF(commands) == num_commands);
     code_initialize();
     var_initialize();
     run_initialize();

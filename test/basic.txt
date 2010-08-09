@@ -687,12 +687,12 @@ for more information:
   help pins
   help board
   help clone
-  help zigbee
+  help zigflea
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 auto <line>                   -- automatically number program lines
@@ -725,17 +725,19 @@ analog [<millivolts>]             -- set/display analog voltage scale
 autorun [on|off]                  -- autorun (on reset) mode
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
-nodeid [<nodeid>|none]            -- set/display zigbee nodeid
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
 sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
+watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
-  heartbeat     safemode*
-  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen
+  heartbeat  safemode*
+  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
@@ -782,9 +784,6 @@ gosub <subname> [<expression>, ...]
 sub <subname> [<param>, ...]
   [return]
 endsub
-qspi:
-  configure qspi for <n> csiv
-
 timers:
   configure timer <n> for <n> (s|ms|us)
   on timer <n> do <statement>                -- on timer execute statement
@@ -830,6 +829,9 @@ ram variables:
   dim <var>[[n]]
   dim <var>[[n]] as (byte|short)
 
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
 flash parameter variables:
   dim <varflash>[[n]] as flash
 
@@ -844,15 +846,15 @@ system variables:
 for more information:
   help pins
 pin names:
-    0        1        2        3        4     5     6     7
-  -------- -------- -------- --------- ----- ----- ----- ------+
-  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
-  scl      sda                                                 | PORT AS
-           irq1*                       irq4*             irq7* | PORT NQ
-  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
-  dtin0    dtin1    dtin2    dtin3                             | PORT TC
-  utxd0    urxd0    urts0*   ucts0*                            | PORT UA
-  utxd1    urxd1    urts1*   ucts1*                            | PORT UB
+    0         1         2         3        4     5        6        7
+  --------  --------- --------- -------- ----- -------- -------- ------+
+  an0       an1       an2       an3      an4   an5      an6      an7   | AN
+  scl       sda                                                        | AS
+            irq1*                        irq4*                   irq7* | NQ
+  qspi_dout qspi_din  qspi_clk  qspi_cs0       qspi_cs2 qspi_cs3       | QS
+  dtin0     dtin1     dtin2     dtin3                                  | TC
+  utxd0     urxd0     urts0*    ucts0*                                 | UA
+  utxd1     urxd1     urts1*    ucts1*                                 | UB
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
@@ -883,32 +885,32 @@ utxd? = potential uart output pins (transmit byte)
 
                 1  2  3  4  5  6  7  8  9  10 11 12 13 14
 clone cable:
-  master     slave
-  ---------  ----------------
-  qspi_clk   qspi_clk (ezpck)
-  qspi_din   qspi_dout (ezpq)
-  qspi_dout  qspi_din (ezpd)
-  qspi_cs0   rcon* (ezpcs*)
-  scl        rsti*
-  vss        vss
-  vdd        vdd
-connect <nodeid>              -- connect to MCU <nodeid> via zigbee
+  master           slave
+  ---------        ----------------
+  qspi_clk         qspi_clk (ezpck)
+  qspi_din         qspi_dout (ezpq)
+  qspi_dout        qspi_din (ezpd)
+  qspi_cs0         rcon* (ezpcs*)
+  pins clone_rst*  rsti*
+  vss              vss
+  vdd              vdd
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
 
 remote node variables:
   dim <varremote>[[n]] as remote on nodeid <nodeid>
 
-zigbee cable:
-  MCU                 MC1320X
-  -------------       -----------
-  qspi_clk            spiclk
-  qspi_din            miso
-  qspi_dout           mosi
-  qspi_cs0            ce*
-  irq4*               irq*
-  pins zigbee_rst*    rst*
-  pins zigbee_rxtxen  rxtxen
-  vss                 vss
-  vdd                 vdd
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  qspi_clk             spiclk
+  qspi_din             miso
+  qspi_dout            mosi
+  irq4*                irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
 test dims
 error -            ^
   10 dim a as pin dtin0 for digital output
@@ -931,10 +933,120 @@ error -            ^
   55 let e = 5
   70 dim g
   80 print a, b, c, d, e, f, g, m, n[3], d1, d2, d3, d4, d5, d6
+  90 dim abs1 at address 0
+  91 dim abs2 as byte at address 16
+  92 dim abs3 as short at address 0x123
+  93 dim abs4[4] as short at address 0x1048
+  94 let abs1 = 1, abs2 = 2, abs3 = 3, abs4 = 4, abs4[1] = 5
+  95 print abs1, hex abs2, abs3, abs4, abs4[1]
 end
 0 0 0 0 5 var 'f' undefined
 0 0 0 0 0 0 0 0 0 0
 STOP at line 80!
+0 0x0 0x0 0x0 0x0
+  10 dim y[0] as pin an0 for digital input
+  11 dim y[1] as pin an0 for digital input
+  12 dim y[2] as pin an0 for digital input
+  13 dim x[10] as pin an0 for digital input
+  14 dim y[2] as pin an0 for digital input
+end
+var 'y' already defined at this scope
+STOP at line 14!
+  10 dim x
+  20 dim leds[1] as pin dtin0 for digital output
+  30 dim leds[2] as pin dtin1 for digital output
+  40 dim leds[3] as pin dtin2 for digital output
+  50 for x = 0 to 8
+  60   let leds[1] = x&1
+  70   let leds[2] = x>>1&1
+  80   let leds[3] = x>>2&1
+  90 next 
+end
+  10 print "programmatic shift"
+  20 dim x[1] as pin dtin0 for digital output
+  21 dim x[2] as pin dtin1 for digital output
+  22 dim x[3] as pin dtin2 for digital output
+  23 dim x[4] as pin dtin3 for digital output
+  24 dim y
+  30 for y = 1 to 3
+  40   if y==4 then
+  50     let x[y] = 0
+  60   else 
+  70     let x[y] = x[y+1]
+  80   endif 
+  90 next 
+end
+programmatic shift
+  10 print "programmatic shift with index error"
+  20 dim x[0] as pin dtin0 for digital output
+  21 dim x[1] as pin dtin1 for digital output
+  22 dim x[2] as pin dtin2 for digital output
+  23 dim x[3] as pin dtin3 for digital output
+  24 dim y
+  30 for y = 1 to 4
+  40   let x[y-1] = x[y]
+  50 next 
+end
+programmatic shift with index error
+var 'x' undefined
+STOP at line 40!
+   5 print "gosub params"
+  10 dim x
+  20 dim arr[3]
+  30 dim leds[0] as pin dtin0 for digital output
+  40 dim leds[1] as pin dtin1 for digital output
+  50 dim leds[3] as pin dtin2 for digital output
+  60 let x = 2, leds[0] = 1, leds[1] = 1, arr[0] = 1, arr[1] = 2
+  70 gosub dump
+  80 gosub p x
+  90 gosub dump
+ 100 gosub p leds
+ 110 gosub dump
+ 120 gosub p leds[1]
+ 130 gosub dump
+ 140 print "setting"
+ 150 gosub set x
+ 160 gosub dump
+ 170 gosub set leds
+ 180 gosub dump
+ 190 gosub set leds[1]
+ 200 gosub dump
+ 210 gosub set_1 arr
+ 220 gosub dump
+ 230 gosub set_1 leds
+ 240 end 
+ 250 sub p a
+ 260   print a
+ 270 endsub 
+ 280 sub set a
+ 290   print a
+ 300   let a = 0
+ 310 endsub 
+ 320 sub dump
+ 330   print x, leds[0], leds[1], arr[0], arr[1]
+ 340 endsub 
+ 350 sub set_1 a
+ 360   let a[1] = 0
+ 370 endsub 
+end
+gosub params
+2 0 0 1 2
+2
+2 0 0 1 2
+0
+2 0 0 1 2
+0
+2 0 0 1 2
+setting
+2
+0 0 0 1 2
+0
+0 0 0 1 2
+0
+0 0 0 1 2
+0 0 0 1 0
+var 'a' undefined
+STOP at line 360!
 test flash memory
   10 dim a as flash
   20 dim b[4] as flash
@@ -958,6 +1070,8 @@ on
   80 next 
 end
 0
+  30 let a = 0
+  40 let b[0] = 0
   50 let a = 1
   40 let b[1] = 1
   50 let a = 2
@@ -974,6 +1088,7 @@ end
 3 9
 3
   30 let a = 0
+  40 let b[0] = 0
   50 let a = 1
   40 let b[1] = 2
   50 let a = 2
@@ -990,6 +1105,8 @@ end
 3 18
 off
 0
+  30 let a = 0
+  40 let b[0] = 0
   50 let a = 1
   40 let b[1] = 1
   50 let a = 2
@@ -1063,6 +1180,17 @@ test read/data
   70 endwhile 
   75 data 0x10
 end
+dim a, b
+data 1, 0x2, 3
+data 0x4
+data 5, 0x6
+data -7
+while 1 do
+  read a
+  print a
+endwhile 
+data 0x10
+end
 1
 2
 3
@@ -1124,10 +1252,11 @@ off
 test pins
 heartbeat dtin3
 safemode* irq1*
+qspi_cs* qspi_cs0
 clone_rst* scl
-zigbee_rst* an2
-zigbee_attn* an3
-zigbee_rxtxen an5
+zigflea_rst* an2
+zigflea_attn* an3
+zigflea_rxtxen an5
        ^ - error
 dtin3
 error -          ^
@@ -1137,10 +1266,11 @@ dtin2
 none
 heartbeat dtin2
 safemode* none
+qspi_cs* qspi_cs0
 clone_rst* scl
-zigbee_rst* an2
-zigbee_attn* an3
-zigbee_rxtxen an5
+zigflea_rst* an2
+zigflea_attn* an3
+zigflea_rxtxen an5
 test servo
 45
 45
@@ -1149,12 +1279,6 @@ error -    ^
 45
   10 dim x as pin dtin0 for servo output
 end
-test usb host
-off
-on
-error -   ^
-error -       ^
-on
 test variable scopes
   10 dim a
   20 let a = 1
@@ -2305,7 +2429,6 @@ test configures
   40 configure timer 0 for 1000 s
   50 configure timer 1 for 10 ms
   55 configure timer 2 for 17 us
-  60 configure qspi for 1 csiv
   70 qspi a, b, c, d
 end
   10 rem ### uart pio ###
@@ -2321,6 +2444,7 @@ end
  110 print rx
  120 end 
 end
+test qspi error case
 test uart
   10 rem ### uart isr ###
   20 dim data
@@ -2378,13 +2502,13 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
+Welcome to StickOS for Freescale MCF52221 v1.72!
+Copyright (c) 2008-2009; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 cloning...
@@ -2464,6 +2588,99 @@ on/off/mask/unmask
  100 off uart 0 input
 end
 watchpoints
+on
+off
+on
+  10 dim x
+  20 on x do print 1
+  30 on x+0 do print 2
+  40 on x do print 3
+end
+watchpoint already defined
+STOP at line 40!
+  10 dim x
+  20 on x+1 do print 1, x
+  30 on x+2 do print 2, x
+  40 on x+3 do print 3, x
+  50 on x+4 do print 4, x
+  60 on x+5 do print 5, x
+end
+1 0
+2 0
+3 0
+4 0
+too many watchpoints
+STOP at line 60!
+  10 dim x
+  20 on x+1 do print 1, x
+  30 on x+2 do print 2, x
+  40 on x+3 do print 3, x
+  50 on x+4 do print 4, x
+  70 let x = 1
+  80 print "80"
+  90 let x = -1
+ 100 let x = 2
+ 110 print "110"
+ 120 let x = -2
+ 130 let x = 1
+ 140 print "140"
+ 150 let x = -3
+ 160 let x = 1
+ 170 print "170"
+ 180 let x = -4
+ 190 let x = 1
+ 200 print "200"
+ 210 let x = -5
+ 220 let x = 1
+end
+1 0
+2 0
+3 0
+4 0
+80
+1 2
+110
+2 1
+140
+3 1
+170
+4 1
+200
+  10 dim x
+  20 on x+1 do print 1, x
+  30 on x+2 do print 2, x
+  40 on x+3 do print 3, x
+  50 on x+4 do print 4, x
+  70 let x = 1
+  80 print "80"
+  90 let x = -1
+ 100 let x = 2
+ 110 print "110"
+ 120 let x = -2
+ 130 let x = 1
+ 140 print "140"
+ 150 let x = -3
+ 160 let x = 1
+ 170 print "170"
+ 180 let x = -4
+ 190 let x = 1
+ 200 print "200"
+ 210 let x = -5
+ 220 let x = 1
+end
+1 0
+2 0
+3 0
+4 0
+80
+1 2
+110
+2 1
+140
+3 1
+170
+4 1
+200
   10 dim i
   20 on i%5 do stop 
   30 while 1 do
@@ -2479,6 +2696,61 @@ STOP at line 50!
 STOP at line 51!
 6
 100
+  10 dim x
+  20 on x==1 do print "ONE", x
+  21 on x%2 do print "odd", x
+  30 for x = 1 to 10
+  31 next 
+  40 print "masking"
+  41 mask x==1
+  42 for x = 1 to 10
+  43 next 
+  70 print "unmasking"
+  71 unmask x==1
+  72 for x = 1 to 10
+  73 next 
+  80 print "off-ing"
+  81 off x==1
+  82 for x = 1 to 10
+  83 next 
+end
+ONE 1
+odd 1
+odd 3
+odd 5
+odd 7
+odd 9
+masking
+odd 1
+odd 3
+odd 5
+odd 7
+odd 9
+unmasking
+ONE 10
+ONE 1
+odd 1
+odd 3
+odd 5
+odd 7
+odd 9
+off-ing
+odd 1
+odd 3
+odd 5
+odd 7
+odd 9
+  10 dim x as flash
+  20 on x!=0 do print 20
+  30 on x==0 do print 30
+  40 let x = 1
+  50 print "done"
+end
+30
+20
+done
+20
+done
 parse errors
 error -   ^
         ^ - error
@@ -2647,6 +2919,37 @@ error -                 ^
 error -                    ^
 error -                       ^
 error -                      ^
+absolute vars
+error -      ^
+error -       ^
+var 'xxx' undefined
+error -                    ^
+error -      ^
+error -       ^
+error -            ^
+error -              ^
+error -               ^
+error -                       ^
+var 'xxx' undefined
+error -                             ^
+error -              ^
+error -                ^
+error -                 ^
+error -                        ^
+var 'xxx' undefined
+error -                              ^
+error -          ^
+error -           ^
+var 'xxx' undefined
+error -                        ^
+error -                  ^
+error -                   ^
+var 'xxx' undefined
+error -                                ^
+error -                   ^
+error -                    ^
+var 'xxx' undefined
+error -                                 ^
 let
      ^ - error
       ^ - error
@@ -2734,6 +3037,11 @@ more
        ^ - error
       ^ - error
      ^ - error
+error -      ^
+error -         ^
+error -          ^
+error -      ^
+error -      ^
 command errors
 autorun
 error -   ^
@@ -2759,10 +3067,7 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.60!
-Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
-support@cpustick.com
+error -      ^
 list
        ^ - error
        ^ - error
@@ -2798,7 +3103,7 @@ step
 error -   ^
 trace
         ^ - error
-error -    ^
+error -     ^
 undo
        ^ - error
 uptime

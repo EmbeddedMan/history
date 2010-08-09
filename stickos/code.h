@@ -14,6 +14,7 @@ struct line {
 
 
 extern bool code_indent;
+extern bool code_numbers;
 
 // used for code execution
 struct line *code_next_line(IN bool deleted_ok, IN OUT int *line_number);  // returns NULL at eop
@@ -25,7 +26,7 @@ void code_insert(IN int line_number, IN char *text, IN int text_offset);
 void code_edit(int line_number_in);
 void code_list(bool profile, int start_line_number, int end_line_number);
 void code_delete(int start_line_number, int end_line_number);
-void code_save(int renum);  // coalesce ram/flash and save to alt flash and flip flash flag
+void code_save(bool fast, int renum);  // coalesce ram/flash and save to alt flash and flip flash flag
 void code_new(void);
 void code_undo(void);
 void code_mem(void);

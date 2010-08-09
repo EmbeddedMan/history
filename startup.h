@@ -1,4 +1,26 @@
 #ifndef STARTUP_INCLUDED
+
+#if PIC32 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512 || BADGE_BOARD || DEMO_KIT
+#define MCU_HAS_PAGE0 0
+#else
+#define MCU_HAS_PAGE0 1
+#endif
+
+#if !MCU_HAS_PAGE0 || STICK_GUEST
+#define DECLSPEC_PAGE0_CODE
+#define DECLSPEC_PAGE0_DATA
+#define DECLSPEC_PAGE1
+#elif GCC
+#define DECLSPEC_PAGE0_CODE __attribute__((section(".page0_code")))
+#define DECLSPEC_PAGE0_DATA __attribute__((section(".page0_data")))
+#define DECLSPEC_PAGE1 __attribute__((section(".page1")))
+#else
+#pragma define_section page0 ".page0" far_absolute R
+#define DECLSPEC_PAGE0_CODE  __declspec(page0)
+#define DECLSPEC_PAGE0_DATA  __declspec(page0)
+#define DECLSPEC_PAGE1 __declspec(page1)
+#endif
+
 #if MCF52233
 #define FLASH_START  0
 #define FLASH_BYTES  (256*1024)
@@ -82,7 +104,7 @@
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  4096
 #define BASIC_VARS  100
-#define BASIC_STORES  8
+#define BASIC_STORES  6
 
 #define FLASH2_START  0x9FC00000  // boot flash, for flash upgrade
 #define FLASH2_BYTES  (12*1024)
@@ -119,6 +141,36 @@ extern byte big_buffer[8192];
 #else
 extern byte big_buffer[1024];
 #endif
+
+// make cw and gcc assemblers compatible
+#if GCC
+#define BEGIN_NAKED(func)  void func ## _not(void) \
+                           { \
+                               asm ("\t.globl " #func ); \
+                               asm ("\t.type " #func ", @function"); \
+                               asm (#func ":");
+
+#define END_NAKED              asm("\thalt"); \
+                           }
+                           
+// use Q[1-3]() within naked functions, declared with BEGIN_NAKED()/END_NAKED.
+#define Q1(a)  asm("\t" #a "\n");
+#define Q2(a,b)  asm("\t" #a " " #b "\n");
+#define Q3(a,b,c)  asm("\t" #a " " #b "," #c "\n");
+// use within a non-naked routine for inline asm.
+#define Q3_NON_NAKED(a,b,c)  asm("\t" #a " " #b "," #c "\n");
+#else  // GCC
+#define BEGIN_NAKED(func)  asm void func(void)
+
+#define END_NAKED
+
+// use Q[1-3]() within naked functions, declared with BEGIN_NAKED()/END_NAKED.
+#define Q1(a)  a
+#define Q2(a,b)  a b
+#define Q3(a,b,c)  a b,c
+// use within a non-naked routine for inline asm.
+#define Q3_NON_NAKED(a,b,c)  asm(a b,c)
+#endif  // GCC
 
 typedef void (*flash_upgrade_ram_begin_f)(bool);
 

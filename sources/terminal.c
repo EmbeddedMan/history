@@ -58,7 +58,7 @@ unsigned char
 TRKAccessFile(long command, unsigned long file_handle, int *length_ptr, char *buffer_ptr)
 {
 #if GCC || PIC32 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
-    asm_halt(); // Unimplemented
+    assert(0);
     return 0;
 #else
     move.l    D3,-(a7)
@@ -117,7 +117,7 @@ terminal_print(const byte *buffer, int length)
 #else
 #error
 #endif
-    if (! printed && debugger_attached && length) {
+    if (! printed && ! usb_host_mode && debugger_attached && length) {
         TRKAccessFile(0xD0, 0, &length, (char *)buffer);
     }
 }

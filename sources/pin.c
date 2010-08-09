@@ -27,20 +27,21 @@ int servo_hz = 45;
 const char * const pin_assignment_names[] = {
     "heartbeat",
     "safemode*",
+    "qspi_cs*",  // clone and zigflea
     "clone_rst*",
-    "zigbee_rst*",
-    "zigbee_attn*",
-    "zigbee_rxtxen",
+    "zigflea_rst*",
+    "zigflea_attn*",
+    "zigflea_rxtxen",
 };
 
 byte pin_assignments[pin_assignment_max] = {
     // set our default pin assignments
 #if MC9S08QE128 || MCF51QE128
-    PIN_PTC2, PIN_PTA2, PIN_UNASSIGNED, PIN_PTC0, PIN_PTC1, PIN_PTF1
+    PIN_PTC2, PIN_PTA2, PIN_PTB5, PIN_UNASSIGNED, PIN_PTC0, PIN_PTC1, PIN_PTF1
 #elif MC9S12DT256 || MC9S12DP512
-    PIN_PB7, PIN_PP0, PIN_UNASSIGNED, PIN_PT0, PIN_PT1, PIN_PB6
+    PIN_PB7, PIN_PP0, PIN_PM3, PIN_UNASSIGNED, PIN_PT0, PIN_PT1, PIN_PB6
 #elif MCF51JM128
-    PIN_PTF0, PIN_PTG0, PIN_UNASSIGNED, PIN_PTE2, PIN_PTE3, PIN_PTB5
+    PIN_PTF0, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_PTE2, PIN_PTE3, PIN_PTB5
 #elif MCF5211 || MCF52221 || MCF52233 || (MCF52259 && DEMO)
     PIN_DTIN3,
 #if MCF5211
@@ -50,20 +51,17 @@ byte pin_assignments[pin_assignment_max] = {
 #elif MCF52259
       PIN_IRQ5,
 #endif
-#if MCF52221 || MCF52259
-        PIN_SCL,
-#else
-        PIN_UNASSIGNED,
-#endif
+        PIN_QSPI_CS0,
+          PIN_SCL,
 #if MCF5211 || MCF52233
-          PIN_GPT0, PIN_GPT1, PIN_AN5
+            PIN_GPT0, PIN_GPT1, PIN_AN5
 #else
-          PIN_AN2, PIN_AN3, PIN_AN5
+            PIN_AN2, PIN_AN3, PIN_AN5
 #endif
 #elif MCF52259
-    PIN_FEC_CRS, PIN_FEC_COL, PIN_QSPI_CS2, PIN_FEC_RXER, PIN_UNASSIGNED, PIN_FEC_TXCLK
+    PIN_FEC_CRS, PIN_FEC_COL, PIN_QSPI_CS0, PIN_QSPI_CS2, PIN_FEC_RXER, PIN_UNASSIGNED, PIN_FEC_TXCLK
 #elif PIC32
-    PIN_RE0, PIN_RE6, PIN_UNASSIGNED, PIN_RG6, PIN_RG9, PIN_RG7
+    PIN_RE0, PIN_RE6, PIN_RG8, PIN_UNASSIGNED, PIN_RG6, PIN_RG9, PIN_RG7
 #else
 #error
 #endif
@@ -99,6 +97,8 @@ const char * const pin_qual_names[] = {
 };
 
 uint16 pin_analog = 3300;
+
+static byte declared[(PIN_UNASSIGNED+7)/8];
 
 #define DIO  (1<<pin_type_digital_output|1<<pin_type_digital_input)
 
@@ -387,6 +387,7 @@ const struct pin pins[] = {
     "pt6", DIO|1<<pin_type_frequency_output,
     "pt7", DIO|1<<pin_type_frequency_output,
 #elif PIC32
+#ifdef _PORTA_RA0_MASK
     "ra0", DIO,
     "ra1", DIO,
     "ra2", DIO,
@@ -403,6 +404,7 @@ const struct pin pins[] = {
     "ra13", 0,
     "ra14", DIO,
     "ra15", DIO,
+#endif
     "an0", DIO|1<<pin_type_analog_input,  // rb0...
     "an1", DIO|1<<pin_type_analog_input,
     "an2", DIO|1<<pin_type_analog_input,
@@ -573,7 +575,9 @@ enum debounce_ports {
     port_s,
     port_t,
 #elif PIC32
+#ifdef _PORTA_RA0_MASK
     port_a,
+#endif
     port_b,
     port_c,
     port_d,
@@ -588,12 +592,14 @@ enum debounce_ports {
 
 // This structure records recent samples from digital pins.
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
-static uint8 pin_digital_debounce[pin_digital_debounce_history_depth][port_max];
+typedef uint8 pin_port_sample_t;
 #elif PIC32
-static uint16 pin_digital_debounce[pin_digital_debounce_history_depth][port_max];
+typedef uint16 pin_port_sample_t;
 #else
 #error
 #endif
+
+static pin_port_sample_t pin_digital_debounce[pin_digital_debounce_history_depth][port_max];
 
 static int pin_digital_debounce_cycle; // indexes into pin_digital_debounce_data.
 
@@ -621,8 +627,9 @@ pin_get_digital_debounced(int port_offset, int pin_offset)
 #endif // ! STICK_GUEST && ! FLASHER
 
 
-static void
-pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN bool set)
+static
+void
+pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN bool set, IN bool user)
 {
 #if ! STICK_GUEST && ! SHRINK
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
@@ -637,6 +644,11 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
     uint32 adc;
 #endif
     uint32 offset;
+    
+    assert(pin_number != PIN_UNASSIGNED);
+    if (user) {
+        declared[pin_number/8] |= 1 << (pin_number%8);
+    }
 
     if (! set && (pin_type == pin_type_digital_output) && (pin_qual & 1<<pin_qual_open_drain)) {
         // on initial declaration, configure open_drain outputs as inputs
@@ -855,11 +867,11 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 assign = 0;
             } else if (pin_type == pin_type_analog_output) {
                 assign = 3;
-                MCF_PWM_PWMCLK &= ~(1 << (offset*2));  // prescaled clock
+                MCF_PWM_PWMCLK &= ~(1 << (offset*2+1));  // prescaled clock
             } else {
                 assert(pin_type == pin_type_servo_output);
                 assign = 3;
-                MCF_PWM_PWMCLK |= 1 << (offset*2);  // prescaled and scaled clock
+                MCF_PWM_PWMCLK |= 1 << (offset*2+1);  // prescaled and scaled clock
             }
             MCF_GPIO_PTAPAR = (MCF_GPIO_PTAPAR &~ (3<<(offset*2))) | (assign<<(offset*2));
             if (pin_type == pin_type_digital_output) {
@@ -2007,6 +2019,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
 #elif PIC32
     // configure the PIC32 pin for the requested function
     switch (pin_number) {
+#ifdef _PORTA_RA0_MASK
         case PIN_RA0:
         case PIN_RA1:
         case PIN_RA2:
@@ -2026,6 +2039,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 TRISASET = 1<<offset;
             }
             break;
+#endif
         case PIN_AN0:
         case PIN_AN1:
         case PIN_AN2:
@@ -2283,7 +2297,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
 void
 pin_declare(IN int pin_number, IN int pin_type, IN int pin_qual)
 {
-    pin_declare_internal(pin_number, pin_type, pin_qual, false);
+    pin_declare_internal(pin_number, pin_type, pin_qual, false, true);
 }
 
 static byte ulasttx[MAX_UARTS];
@@ -2372,7 +2386,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
     // open_drain pin, which would be bad if the line is held high by another driver.
     if (value && (pin_qual & 1<<pin_qual_open_drain)) {
         assert(pin_type == pin_type_digital_output);
-        pin_declare_internal(pin_number, pin_type_digital_input, pin_qual, true);
+        pin_declare_internal(pin_number, pin_type_digital_input, pin_qual, true, false);
     }
     
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
@@ -3434,6 +3448,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
 #elif PIC32
     // set the PIC32 pin to value
     switch (pin_number) {
+#ifdef _PORTA_RA0_MASK
         case PIN_RA0:
         case PIN_RA1:
         case PIN_RA2:
@@ -3453,6 +3468,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                 LATACLR = 1<<offset;
             }
             break;
+#endif
         case PIN_AN0:
         case PIN_AN1:
         case PIN_AN2:
@@ -3678,7 +3694,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
     // driving a 1 (which the pin's latch may held at the start of this function).
     if ((! value) && (pin_qual & 1<<pin_qual_open_drain)) {
         assert(pin_type == pin_type_digital_output);
-        pin_declare_internal(pin_number, pin_type_digital_output, pin_qual, true);
+        pin_declare_internal(pin_number, pin_type_digital_output, pin_qual, true, false);
     }
 }
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
@@ -3959,7 +3975,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             assert(offset < 8);
             if (pin_type == pin_type_analog_input) {
                 adc = offset;
-                assert(adc >= 0 && adc < 4);
+                assert(adc >= 0 && adc < 8);
                 value = adc_get_value(adc, pin_qual);
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
@@ -4599,6 +4615,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
 #elif PIC32
     // get the value of the PIC32 pin
     switch (pin_number) {
+#ifdef _PORTA_RA0_MASK
         case PIN_RA0:
         case PIN_RA1:
         case PIN_RA2:
@@ -4619,6 +4636,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = !! (PORTA & 1 << offset);
             }
             break;
+#endif
         case PIN_AN0:
         case PIN_AN1:
         case PIN_AN2:
@@ -5062,8 +5080,19 @@ pin_uart_rx(int uart)
 void
 pin_clear(void)
 {
+    int i;
+    
     // N.B. we use 0 to mean no frequency type
     assert(! pin_type_digital_input);
+    
+    // reset all explicitly declared pins to digital input
+    for (i = 0; i < PIN_UNASSIGNED; i++) {
+        if (declared[i/8] & (1 << (i%8))) {
+            if (pins[i].pin_type_mask & (1 << pin_type_digital_input)) {
+                pin_declare_internal(i, pin_type_digital_input, 0, false, false);
+            }
+        }
+    }
     
 #if ! STICK_GUEST
 #if MCF51JM128 || MCF51QE128 || MC9S08QE128
@@ -5087,53 +5116,59 @@ void
 pin_timer_poll(void)
 {
 #if ! STICK_GUEST && ! FLASHER
+    pin_port_sample_t *sample;
+
+    sample = pin_digital_debounce[pin_digital_debounce_cycle];
+    
     // for each port...
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-    pin_digital_debounce[pin_digital_debounce_cycle][port_tc] = MCF_GPIO_SETTC;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_qs] = MCF_GPIO_SETQS;
+    sample[port_tc] = MCF_GPIO_SETTC;
+    sample[port_qs] = MCF_GPIO_SETQS;
 #if MCF52259
-    pin_digital_debounce[pin_digital_debounce_cycle][port_ti] = MCF_GPIO_SETTI;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_tj] = MCF_GPIO_SETTJ;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_uc] = MCF_GPIO_SETUC;
+    sample[port_ti] = MCF_GPIO_SETTI;
+    sample[port_tj] = MCF_GPIO_SETTJ;
+    sample[port_uc] = MCF_GPIO_SETUC;
 #endif
-    pin_digital_debounce[pin_digital_debounce_cycle][port_ub] = MCF_GPIO_SETUB;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_ua] = MCF_GPIO_SETUA;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_an] = MCF_GPIO_SETAN;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_nq] = MCF_GPIO_SETNQ;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_as] = MCF_GPIO_SETAS;
+    sample[port_ub] = MCF_GPIO_SETUB;
+    sample[port_ua] = MCF_GPIO_SETUA;
+    sample[port_an] = MCF_GPIO_SETAN;
+    sample[port_nq] = MCF_GPIO_SETNQ;
+    sample[port_as] = MCF_GPIO_SETAS;
 #if MCF52233
-    pin_digital_debounce[pin_digital_debounce_cycle][port_gp] = MCF_GPIO_SETGP;
+    sample[port_gp] = MCF_GPIO_SETGP;
 #endif
 #if MCF52233 || MCF52259 || MCF5211
-    pin_digital_debounce[pin_digital_debounce_cycle][port_ta] = MCF_GPIO_SETTA;
+    sample[port_ta] = MCF_GPIO_SETTA;
 #endif
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128
-    pin_digital_debounce[pin_digital_debounce_cycle][port_a] = PTAD;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_b] = PTBD;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_c] = PTCD;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_d] = PTDD;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_e] = PTED;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_f] = PTFD;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_g] = PTGD;
+    sample[port_a] = PTAD;
+    sample[port_b] = PTBD;
+    sample[port_c] = PTCD;
+    sample[port_d] = PTDD;
+    sample[port_e] = PTED;
+    sample[port_f] = PTFD;
+    sample[port_g] = PTGD;
 #elif MC9S12DT256 || MC9S12DP512
-    pin_digital_debounce[pin_digital_debounce_cycle][port_ad0] = PORTAD0;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_ad1] = PORTAD1;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_a] = PORTA;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_b] = PORTB;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_e] = PORTE;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_j] = PTIJ;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_m] = PTIM;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_p] = PTIP;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_s] = PTIS;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_t] = PTIT;
+    sample[port_ad0] = PORTAD0;
+    sample[port_ad1] = PORTAD1;
+    sample[port_a] = PORTA;
+    sample[port_b] = PORTB;
+    sample[port_e] = PORTE;
+    sample[port_j] = PTIJ;
+    sample[port_m] = PTIM;
+    sample[port_p] = PTIP;
+    sample[port_s] = PTIS;
+    sample[port_t] = PTIT;
 #elif PIC32
-    pin_digital_debounce[pin_digital_debounce_cycle][port_a] = PORTA;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_b] = PORTB;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_c] = PORTC;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_d] = PORTD;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_e] = PORTE;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_f] = PORTF;
-    pin_digital_debounce[pin_digital_debounce_cycle][port_g] = PORTG;
+#ifdef _PORTA_RA0_MASK
+    sample[port_a] = PORTA;
+#endif
+    sample[port_b] = PORTB;
+    sample[port_c] = PORTC;
+    sample[port_d] = PORTD;
+    sample[port_e] = PORTE;
+    sample[port_f] = PORTF;
+    sample[port_g] = PORTG;
 #endif
 
     if (++pin_digital_debounce_cycle >= pin_digital_debounce_history_depth) {
@@ -5152,9 +5187,9 @@ pin_assign(int assign, int pin)
 
     if (pin < PIN_UNASSIGNED) {
         if (assign == pin_assignment_safemode) {
-            pin_declare(pin, pin_type_digital_input, 0);
+            pin_declare_internal(pin, pin_type_digital_input, 0, false, false);
         } else {
-            pin_declare(pin, pin_type_digital_output, 0);
+            pin_declare_internal(pin, pin_type_digital_output, 0, false, false);
         }
     }
 }
@@ -5168,11 +5203,11 @@ pin_initialize(void)
     int32 pin;
     int32 analog;
 #endif
-    
+
     assert(pin_type_last < (sizeof(uint16)*8));
     assert(pin_qual_last < (sizeof(byte)*8));
     assert(LENGTHOF(pins) == PIN_LAST);
-    
+
     memset(umask, -1, sizeof(umask));
 
 #if ! STICK_GUEST

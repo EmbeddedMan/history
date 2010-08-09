@@ -205,7 +205,7 @@ timer_initialize(void)
     // configure pit0 to interrupt every ticks times per msec.
     MCF_PIT0_PCSR = 0;
     MCF_PIT0_PMR = bus_frequency/1000/ticks_per_msec - 1;
-    MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_DOZE|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
+    MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_DOZE|MCF_PIT_PCSR_DBG|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128
 #if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     // remap rtc to level 6
@@ -235,7 +235,7 @@ timer_initialize(void)
     /* CRGINT: LOCKIE=0,SCMIE=0 */
     clrReg8Bits(CRGINT, 18);              
     /* COPCTL: RSBCK=0 */
-    clrReg8Bits(COPCTL, 64);              
+    //clrReg8Bits(COPCTL, 64);              
     /* RDRIV: RDPK=0,RDPE=0,RDPB=0,RDPA=0 */
     clrReg8Bits(RDRIV, 147);              
     /* RDRH: RDRH7=0,RDRH6=0,RDRH5=0,RDRH4=0,RDRH3=0,RDRH2=0,RDRH1=0,RDRH0=0 */

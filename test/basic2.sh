@@ -7,6 +7,9 @@ echo
 echo "### platform $platform ###"
 
 case `uname 2>/dev/null` in
+  CYGWIN*)
+    build="windows"
+    ;;
   Windows*)
     build="windows"
     ;;
@@ -35,7 +38,22 @@ help variables
 help pins
 help board
 help clone
-help zigbee
+help zigflea
+EOF
+
+echo test usb host
+"$BASIC" -q <<EOF
+usbhost
+usbhost on
+usbhost
+usbhost qqq
+usbhost off aaa
+usbhost
+EOF
+
+echo "... testing pins"
+"$BASIC" <<EOF
+pins
 EOF
 
 echo "... testing jm commands"

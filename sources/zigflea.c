@@ -1,5 +1,5 @@
-// *** zigbee.c *******************************************************
-// this file implements the zigbee wireless transport over qspi.
+// *** zigflea.c ******************************************************
+// this file implements the zigflea wireless transport over qspi.
 
 #include "main.h"
 
@@ -82,7 +82,7 @@ zb_seq(int nodeid)
 static void
 zb_rxtxen(bool boo)
 {
-    pin_set(pin_assignments[pin_assignment_zigbee_rxtxen], pin_type_digital_output, 0, boo);
+    pin_set(pin_assignments[pin_assignment_zigflea_rxtxen], pin_type_digital_output, 0, boo);
 }
 
 static void
@@ -114,12 +114,12 @@ zb_rmw(int n, int and, int or)
 
     memset(buf, 0xff, sizeof(buf));
     buf[1] = 0x80|n;
-    qspi_transfer(buf+1, 1 + 2);
+    qspi_transfer(true, buf+1, 1 + 2);
     buf[1] = 0x00|n;
     v = TF_BIG(*(uint16 *)(buf+2));
     v = (v & and) | or;
     *(uint16 *)(buf+2) = TF_BIG(v);
-    qspi_transfer(buf+1, 1 + 2);
+    qspi_transfer(true, buf+1, 1 + 2);
 }
 
 // this function reads a tranceiver register, via qspi.
@@ -132,7 +132,7 @@ zb_read(int n)
 
     memset(buf, 0xff, sizeof(buf));
     buf[1] = 0x80|n;
-    qspi_transfer(buf+1, 1 + 2);
+    qspi_transfer(true, buf+1, 1 + 2);
     
     return TF_BIG(*(uint16 *)(buf+2));
 }
@@ -148,7 +148,7 @@ zb_write(int n, int d)
     memset(buf, 0xff, sizeof(buf));
     buf[1] = 0x00|n;
     *(uint16 *)(buf+2) = TF_BIG((uint16)d);
-    qspi_transfer(buf+1, 1 + 2);
+    qspi_transfer(true, buf+1, 1 + 2);
 }
 
 // this function enables the receiver.
@@ -227,7 +227,7 @@ zb_packet_transmit(
     packet->ackseq = ackseq;
     packet->length = length_in;
     memcpy(packet->payload, payload, length_in);
-    qspi_transfer(buf+1, 1 + OFFSETOF(packet_t, payload) + length);
+    qspi_transfer(true, buf+1, 1 + OFFSETOF(packet_t, payload) + length);
 
     // transmit packet
     zb_rmw(0x06, ~0x0003, TX);
@@ -285,7 +285,7 @@ zb_packet_receive(
     // RAM address is not accessed for the first word read operation.
     
     packet = (packet_t *)(buf+2+2);
-    qspi_transfer(buf+1, 1 + 2 + length);
+    qspi_transfer(true, buf+1, 1 + 2 + length);
     
     // byteswap in place
     packet->magic = TF_BIG(packet->magic);
@@ -365,7 +365,7 @@ zb_packet_deliver(
             zb_ready();
         
             // deliver it
-            assert(recv_cbfn != NULL)
+            assert(recv_cbfn != NULL);
             recv_cbfn[class](txid, length, payload);
             
             zb_unready();
@@ -407,7 +407,7 @@ zb_isr(void)
     // nothing?
 #endif
 
-    assert(! zb_in_isr)
+    assert(! zb_in_isr);
     assert((zb_in_isr = true) ? true : true);
     assert((zb_in_ticks = ticks) ? true : true);
     
@@ -646,17 +646,17 @@ void
 zb_reset(void)
 {
     // assert rst*
-    pin_set(pin_assignments[pin_assignment_zigbee_rst], pin_type_digital_output, 0, 0);
+    pin_set(pin_assignments[pin_assignment_zigflea_rst], pin_type_digital_output, 0, 0);
 
     delay(1);
 
     // deassert rst*
-    pin_set(pin_assignments[pin_assignment_zigbee_rst], pin_type_digital_output, 0, 1);
+    pin_set(pin_assignments[pin_assignment_zigflea_rst], pin_type_digital_output, 0, 1);
 
     delay(50);
 }
 
-#if DEBUG
+#if DEBUG || MCF52259 || PIC32
 void
 zb_diag(bool reset, bool init)
 {
@@ -717,23 +717,24 @@ zb_initialize(void)
     
     assert(sizeof(packet_t) <= 125);
     
-    memset(rxseqid, -1, sizeof(rxseqid));
+    // leave clone in reset while we use the qspi chip select for zigflea
+    //pin_set(pin_assignments[pin_assignment_clone_rst], pin_type_digital_output, 0, 0);
     
-    qspi_inactive(1);
+    memset(rxseqid, -1, sizeof(rxseqid));
 
     // deassert rst*
-    pin_set(pin_assignments[pin_assignment_zigbee_rst], pin_type_digital_output, 0, 1);
+    pin_set(pin_assignments[pin_assignment_zigflea_rst], pin_type_digital_output, 0, 1);
 
     // assert attn*
-    pin_set(pin_assignments[pin_assignment_zigbee_attn], pin_type_digital_output, 0, 0);
+    pin_set(pin_assignments[pin_assignment_zigflea_attn], pin_type_digital_output, 0, 0);
 
     delay(50);
 
-    // if zigbee is present...
+    // if zigflea is present...
     x = splx(7);
     id = zb_read(0x2c);
     if ((id & 0xfb00) != 0x6000 && (id & 0xfb00) != 0x6400) {
-        // no zigbee present
+        // no zigflea present
         splx(x);
         return;
     }
@@ -767,7 +768,9 @@ zb_initialize(void)
     zb_rmw(0x09, ~0x00a0, 0x00a0);  // out of idle indicator on gpio1 (part a)
     zb_rmw(0x0b, ~0x0081, 0x0080);  // out of idle indicator on gpio1 (part b)
 #endif
+    zb_write(0x12, 0x00fc);  // almost full power
 
+    ready = false;
     zb_ready();
     splx(x);
     

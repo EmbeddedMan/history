@@ -8,7 +8,7 @@
 # 4. extract.sh
 # ...
 # 10. remove all non-critical files from zip!
-# 11. extract zip and build Skeleton's, StickOS's, Flasher
+# 11. extract zip and build Skeleton's, Flasher
 
 extract()
 {
@@ -55,6 +55,10 @@ echo "#endif"
 
 echo "#if MCF52233"
 extract 52235
+echo "#endif"
+
+echo "#if MCF52259"
+extract 52259
 echo "#endif"
 ) >extract.h
 

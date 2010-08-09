@@ -4,6 +4,9 @@
 extern bool printf_scroll;
 #endif
 
+void
+flush_log_file(void);
+
 int
 snprintf(char *buffer, unsigned long length, const char *format, ...);
 

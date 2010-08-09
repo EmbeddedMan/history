@@ -1,5 +1,23 @@
 #! /bin/sh
 
+# To make a branch in your current sandbox:
+# 
+#  cd project   # current sandbox
+#  cvs tag -b NAMEn
+#  cvs update -r NAMEn
+#  cvs commit
+#  [review -r HEAD   # as needed]
+# 
+# Then, when it comes time to check in to the HEAD, create a new sandbox and
+# merge with the branch prior to HEAD checkin:
+# 
+#  cvs co project   # new sandbox
+#  cd project
+#  cvs update -j NAMEn
+#  [review   # as needed]
+#  cvs commit
+
+
 echo "did you remember to rebuild all CW targets?"
 echo "did you run test.sh and test2.sh?"
 echo

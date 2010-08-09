@@ -396,7 +396,7 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 61
     UINT32HALT, 0,                               // 62
     UINT32HALT, 0,                               // 63
-    UINT32JMP, (uint32)zb_pre_isr,               // 64 zigbee.c
+    UINT32JMP, (uint32)zb_pre_isr,               // 64 zigflea.c
     UINT32HALT, 0,                               // 65
     UINT32HALT, 0,                               // 66
     UINT32HALT, 0,                               // 67
@@ -452,7 +452,7 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 97
     UINT32HALT, 0,                               // 98
 #if MCF51QE128
-    UINT32JMP, (uint32)zb_isr,                   // 99 zigbee.c
+    UINT32JMP, (uint32)zb_isr,                   // 99 zigflea.c
 #else
     UINT32HALT, 0,                               // 99
 #endif
@@ -464,7 +464,7 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 105
     UINT32HALT, 0,                               // 106
 #if MCF51JM128
-    UINT32JMP, (uint32)zb_isr,                   // 107 zigbee.c
+    UINT32JMP, (uint32)zb_isr,                   // 107 zigflea.c
 #else
     UINT32HALT, 0,                               // 107
 #endif

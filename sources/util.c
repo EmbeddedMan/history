@@ -38,6 +38,41 @@ read16(const byte *addr)
 #endif
 
 uint32
+read_n_bytes(int size, const volatile void *addr)
+{
+    switch (size) {
+        case 4:
+            return *(volatile uint32 *)addr;
+        case 2:
+            return *(volatile uint16 *)addr;
+        case 1:
+            return *(volatile uint8 *)addr;
+        default:
+            assert(0);
+            return 0;
+    }
+}
+
+void
+write_n_bytes(int size, volatile void *addr, uint32 value)
+{
+    switch (size) {
+        case 4:
+            *(volatile uint32 *)addr = value;
+            break;
+        case 2:
+            *(volatile uint16 *)addr = value;
+            break;
+        case 1:
+            *(volatile uint8 *)addr = value;
+            break;
+        default:
+            assert(0);
+            break;
+    }
+}
+
+uint32
 byteswap(uint32 x, uint32 size)
 {
     // byteswap all bytes of x within size
@@ -270,13 +305,21 @@ tailtrim(char *text)
     *p = '\0';
 }
 
+// without compiler optimizations 32 bit optimizations make mem*() routines too big for precious page0.
+#if (MCU_CORE_BITS >= 32) && (!MCU_HAS_PAGE0 || !DEBUG)
+#define MEM_32_BIT_ROUTINES 1
+#else
+#define MEM_32_BIT_ROUTINES 0
+#endif
+
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
+DECLSPEC_PAGE0_CODE
 void *
 memcpy(void *d,  const void *s, size_t n)
 {
-#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
+#if MEM_32_BIT_ROUTINES
     if (((uintptr)d&3)+((uintptr)s&3)+(n&3) == 0) {
         uint32 *dtemp = d;
         const uint32 *stemp = s;
@@ -293,7 +336,7 @@ memcpy(void *d,  const void *s, size_t n)
         while (n--) {
             *(dtemp++) = *(stemp++);
         }
-#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
+#if MEM_32_BIT_ROUTINES
     }
 #endif
     return d;
@@ -318,10 +361,11 @@ memmove(void *d,  const void *s, size_t n)
     }
 }
 
+DECLSPEC_PAGE0_CODE
 void *
 memset(void *p,  int d, size_t n)
 {
-#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
+#if MEM_32_BIT_ROUTINES
     int dd;
     
     if (((uintptr)p&3)+(n&3) == 0) {
@@ -340,12 +384,13 @@ memset(void *p,  int d, size_t n)
         while (n--) {
             *(ptemp++) = d;
         }
-#if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
+#if MEM_32_BIT_ROUTINES
     }
 #endif
     return p;
 }
 
+DECLSPEC_PAGE0_CODE
 int
 memcmp(const void *d,  const void *s, size_t n)
 {
@@ -396,7 +441,7 @@ strncat(char *dest, const char *src, size_t n)
     while (*dest) {
         dest++;
     }
-    while ((n-- > 0) && *src) {
+    while (n-- && *src) {
         *(dest++) = *(src++);
     }
     *dest = '\0';
@@ -450,7 +495,7 @@ strcmp(const char *s1, const char *s2)
 int
 strncmp(const char *s1, const char *s2, size_t n)
 {
-    for (; (n > 0) && (*s1 == *s2); n--, s1++, s2++) {
+    for (; n && (*s1 == *s2); n--, s1++, s2++) {
         if (! *s1) {
             return 0;
         }

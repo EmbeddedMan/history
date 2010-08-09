@@ -1,27 +1,49 @@
-// *** basic2.c *******************************************************
+// *** basic0.c *******************************************************
 // this file implements private extensions to the stickos command
 // interpreter.
 
 #include "main.h"
 
-#define SHRINK  0
-
 enum cmdcode {
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+    command_clone,  // [run]
+#endif
+    command_connect,  // nnn
     command_demo,
+    command_download,  // nnn
     command_help,
 #if MCF52233
     command_ipaddress,  // [dhcp|<ipaddress>]
+#endif
+    command_nodeid,  // nnn
+    command_reset,
+    command_upgrade,
+    command_uptime,
+#if DEBUG || MCF52259 || PIC32
+    command_zigflea,
 #endif
     command_dummy
 };
 
 static
 const char * const commands[] = {
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+    "clone",
+#endif
+    "connect",
     "demo",
+    "download",
     "help",
 #if MCF52233
     "ipaddress",
 #endif    
+    "nodeid",
+    "reset",
+    "upgrade",
+    "uptime",
+#if DEBUG || MCF52259 || PIC32
+    "zigflea",
+#endif
 };
 
 
@@ -56,7 +78,7 @@ char * const help_about =
 #else
 #error
 #endif
-"Copyright (c) 2008; all rights reserved.\n"
+"Copyright (c) 2008-2009; all rights reserved.\n"
 "http://www.cpustick.com\n"
 "support@cpustick.com\n"
 #if INCOMPAT
@@ -75,7 +97,7 @@ char * const help_about =
 // functions that copy these to RAM in unbanked memory.
 #endif
 
-#if ! SHRINK
+#if ! DEBUG || STICK_GUEST
 static char *const help_general =
 "for more information:\n"
 "  help about\n"
@@ -90,10 +112,10 @@ static char *const help_general =
 #if MCF52221 || MCF52259
 "  help board\n"
 #endif
-#if MCF52221 || MCF52233 || MCF52259
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "  help clone\n"
 #endif
-"  help zigbee\n"
+"  help zigflea\n"
 "\n"
 "see also:\n"
 "  http://www.cpustick.com\n"
@@ -140,7 +162,8 @@ static char * const help_modes =
 #if MCF52233
 "ipaddress [dhcp|<ipaddress>]      -- set/display ip address\n"
 #endif
-"nodeid [<nodeid>|none]            -- set/display zigbee nodeid\n"
+"nodeid [<nodeid>|none]            -- set/display zigflea nodeid\n"
+"numbers [on|off]                  -- listing line numbers mode\n"
 "pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments\n"
 "prompt [on|off]                   -- terminal prompt mode\n"
 "servo [<Hz>]                      -- set/display servo Hz (on reset)\n"
@@ -148,12 +171,17 @@ static char * const help_modes =
 "step [on|off]                     -- debugger single-step mode\n"
 "trace [on|off]                    -- debugger trace mode\n"
 #if MCF52259 || PIC32
-"usbhost [on|off]                  -- set/display USB host mode (on reset)\n"
+"usbhost [on|off]                  -- USB host mode (on reset)\n"
 #endif
+"watchsmart [on|off]               -- low-overhead watchpoint mode\n"
 "\n"
 "pin assignments:\n"
-"  heartbeat     safemode*\n"
-"  clone_rst*    zigbee_rst*   zigbee_attn*  zigbee_rxtxen\n"
+"  heartbeat  safemode*\n"
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+"  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
+#else
+"  qspi_cs*   zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
+#endif
 "\n"
 "for more information:\n"
 "  help pins\n"
@@ -213,9 +241,6 @@ static char * const help_blocks =
 ;
 
 static char * const help_devices =
-"qspi:\n"
-"  configure qspi for <n> csiv\n"
-"\n"
 "timers:\n"
 "  configure timer <n> for <n> (s|ms|us)\n"
 "  on timer <n> do <statement>                -- on timer execute statement\n"
@@ -267,6 +292,9 @@ static char *const help_variables =
 "  dim <var>[[n]]\n"
 "  dim <var>[[n]] as (byte|short)\n"
 "\n"
+"absolute variables:\n"
+"  dim <var>[[n]] [as (byte|short)] at address <addr>\n"
+"\n"
 "flash parameter variables:\n"
 "  dim <varflash>[[n]] as flash\n"
 "\n"
@@ -285,27 +313,29 @@ static char *const help_variables =
 static char *const help_pins =
 "pin names:\n"
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"    0        1        2        3        4     5     6     7\n"
-"  -------- -------- -------- --------- ----- ----- ----- ------+\n"
-"  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN\n"
-"  scl      sda                                                 | PORT AS\n"
+"    0         1         2         3        4     5        6        7\n"
+"  --------  --------- --------- -------- ----- -------- -------- ------+\n"
+"  an0       an1       an2       an3      an4   an5      an6      an7   | AN\n"
+"  scl       sda                                                        | AS\n"
 #if MCF52233 || MCF52259 || MCF5211
-"  gpt0     gpt1     gpt2     gpt3                              | PORT TA\n"
+"  gpt0      gpt1      gpt2      gpt3                                   | TA\n"
 #endif
 #if MCF52259
-"           irq1*             irq3*           irq5*       irq7* | PORT NQ\n"
+"            irq1*               irq3*          irq5*             irq7* | NQ\n"
 #else
-"           irq1*                       irq4*             irq7* | PORT NQ\n"
+"            irq1*                        irq4*                   irq7* | NQ\n"
 #endif
 #if MCF52233
-"                             irq11*                            | PORT GP\n"
+"                                irq11*                                 | GP\n"
 #endif
-"  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS\n"
-"  dtin0    dtin1    dtin2    dtin3                             | PORT TC\n"
-"  utxd0    urxd0    urts0*   ucts0*                            | PORT UA\n"
-"  utxd1    urxd1    urts1*   ucts1*                            | PORT UB\n"
+"  qspi_dout qspi_din  qspi_clk  qspi_cs0       qspi_cs2 qspi_cs3       | QS\n"
+"  dtin0     dtin1     dtin2     dtin3                                  | TC\n"
+"  utxd0     urxd0     urts0*    ucts0*                                 | UA\n"
+"  utxd1     urxd1     urts1*    ucts1*                                 | UB\n"
 #if MCF52259
-"  utxd2    urxd2    urts2*   ucts2*                            | PORT UC\n"
+"  fec_col   fec_crs   fec_rxclk fec_rxd[0-3]                  fec_rxdv | TI\n"
+"  fec_rxer  fec_txclk fec_txd[0-3]                   fec_txen fec_txer | TJ\n"
+"  utxd2     urxd2     urts2*    ucts2*                                 | UC\n"
 #endif
 "\n"
 "all pins support general purpose digital input/output\n"
@@ -383,8 +413,10 @@ static char *const help_pins =
 #elif PIC32
 "  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
+#if _PORTA_RA0_MASK
 "  ra0     ra1     ra2     ra3     ra4     ra5     ra6     ra7     | PORT A\n"
 "                                                  ra14    ra15    |      A+8\n"
+#endif
 "  an0     an1     an2     an3     an4     an5     an6     an7     | PORT B\n"
 "  an8     an9     an10    an11    an12    an13    an14    an15    |      B+8\n"
 "          rc1     rc2     rc3     rc4                             | PORT C\n"
@@ -463,77 +495,73 @@ static char *const help_board =
 ;
 #endif
 
-#if MCF52221 || MCF52233 || MCF52259
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 static char *const help_clone =
 "clone cable:\n"
-"  master     slave\n"
-"  ---------  ----------------\n"
-"  qspi_clk   qspi_clk (ezpck)\n"
-"  qspi_din   qspi_dout (ezpq)\n"
-"  qspi_dout  qspi_din (ezpd)\n"
-"  qspi_cs0   rcon* (ezpcs*)\n"
-"  scl        rsti*\n"
-"  vss        vss\n"
-"  vdd        vdd\n"
+"  master           slave\n"
+"  ---------        ----------------\n"
+"  qspi_clk         qspi_clk (ezpck)\n"
+"  qspi_din         qspi_dout (ezpq)\n"
+"  qspi_dout        qspi_din (ezpd)\n"
+"  qspi_cs0         rcon* (ezpcs*)\n"
+"  pins clone_rst*  rsti*\n"
+"  vss              vss\n"
+"  vdd              vdd\n"
 ;
 #endif
 
-static char *const help_zigbee =
-"connect <nodeid>              -- connect to MCU <nodeid> via zigbee\n"
+static char *const help_zigflea =
+"connect <nodeid>              -- connect to MCU <nodeid> via zigflea\n"
 "\n"
 "remote node variables:\n"
 "  dim <varremote>[[n]] as remote on nodeid <nodeid>\n"
 "\n"
-"zigbee cable:\n"
-"  MCU                 MC1320X\n"
-"  -------------       -----------\n"
+"zigflea cable:\n"
+"  MCU                  MC1320X\n"
+"  -------------        -----------\n"
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"  qspi_clk            spiclk\n"
-"  qspi_din            miso\n"
-"  qspi_dout           mosi\n"
-"  qspi_cs0            ce*\n"
+"  qspi_clk             spiclk\n"
+"  qspi_din             miso\n"
+"  qspi_dout            mosi\n"
 #if MCF52259
-"  irq1*               irq*\n"
+"  irq1*                irq*\n"
 #else
-"  irq4*               irq*\n"
+"  irq4*                irq*\n"
 #endif
 #elif MCF51JM128
-"  spsck1 (pte6)       spiclk\n"
-"  miso1 (pte4)        miso\n"
-"  mosi1 (pte5)        mosi\n"
-"  ss1* (pte7)         ce*\n"
-"  irq*                irq*\n"
+"  spsck1 (pte6)        spiclk\n"
+"  miso1 (pte4)         miso\n"
+"  mosi1 (pte5)         mosi\n"
+"  irq*                 irq*\n"
 #elif MCF51QE128 || MC9S08QE128
-"  spsck1 (ptb2)       spiclk\n"
-"  miso1 (ptb4)        miso\n"
-"  mosi1 (ptb3)        mosi\n"
-"  ss1* (ptb5)         ce*\n"
-"  irq*                irq*\n"
+"  spsck1 (ptb2)        spiclk\n"
+"  miso1 (ptb4)         miso\n"
+"  mosi1 (ptb3)         mosi\n"
+"  irq*                 irq*\n"
 #elif MC9S12DT256 || MC9S12DP512
-"  sck0 (pm5)          spiclk\n"
-"  miso0 (pm2)         miso\n"
-"  mosi0 (pm4)         mosi\n"
-"  ss0* (pm3)          ce*\n"
-"  irq* (pe1)          irq*\n"
+"  sck0 (pm5)           spiclk\n"
+"  miso0 (pm2)          miso\n"
+"  mosi0 (pm4)          mosi\n"
+"  irq* (pe1)           irq*\n"
 #elif PIC32
-// REVISIT -- implement zigbee on MRF24J40
-"  sck1                spiclk\n"
-"  sdi1                miso\n"
-"  sdo1                mosi\n"
-"  rg8                 ce*\n"
-"  int1                irq*\n"
+// REVISIT -- implement zigflea on MRF24J40
+"  sck1                 spiclk\n"
+"  sdi1                 miso\n"
+"  sdo1                 mosi\n"
+"  int1                 irq*\n"
 #else
 #error
 #endif
-"  pins zigbee_rst*    rst*\n"
-"  pins zigbee_rxtxen  rxtxen\n"
-"  vss                 vss\n"
-"  vdd                 vdd\n"
+"  pins qspi_cs*        ce*\n"
+"  pins zigflea_rst*    rst*\n"
+"  pins zigflea_rxtxen  rxtxen\n"
+"  vss                  vss\n"
+"  vdd                  vdd\n"
 ;
 #endif
 
 void
-basic2_help(IN char *text_in)
+basic0_help(IN char *text_in)
 {
     char *p;
     char *text;
@@ -573,171 +601,188 @@ basic2_help(IN char *text_in)
 
 // *** demo ***********************************************************
 
-#if ! SHRINK
-static const char * const demo0[] = {
-  "rem ### blinky ###",
-  "dim i",
+static const char * const demos[] = {
+  "rem ### blinky ###\n"
+#if STICK_GUEST
+  "dim i\n"
+#endif
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-  "dim led as pin dtin2 for digital output",
+  "dim led as pin dtin2 for digital output\n"
 #elif MCF51JM128
-  "dim led as pin ptf1 for digital output inverted",
+  "dim led as pin ptf1 for digital output inverted\n"
 #elif MCF51QE128 || MC9S08QE128
-  "dim led as pin ptc3 for digital output inverted",
+  "dim led as pin ptc3 for digital output inverted\n"
 #elif MC9S12DT256 || MC9S12DP512
-  "dim led as pin pb6 for digital output inverted",
+  "dim led as pin pb6 for digital output inverted\n"
 #elif PIC32
-  "dim led as pin rd2 for digital output inverted",
+  "dim led as pin rd2 for digital output inverted\n"
 #else
 #error
 #endif
-  "while 1 do",
-  "  for i = 1 to 16",
-  "    let led = !led",
-  "    sleep 50 ms",
-  "  next",
-  "  sleep 800 ms",
-  "endwhile",
-  "end"
-};
-
-static const char *const demo1[] = {
-  "rem ### uart isr ###",
-  "dim data",
-  "data 1, 1, 2, 3, 5, 8, 13, 21, 0",
+#if STICK_GUEST
+  "while 1 do\n"
+  "  for i = 1 to 16\n"
+  "    let led = !led\n"
+  "    sleep 50 ms\n"
+  "  next\n"
+  "  sleep 800 ms\n"
+  "endwhile\n"
+  "end\n"
+#endif
+,
+  "rem ### uart isr ###\n"
+#if STICK_GUEST
+  "dim data\n"
+  "data 1, 1, 2, 3, 5, 8, 13, 21, 0\n"
+#endif
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MC9S12DT256 || MC9S12DP512
-  "configure uart 0 for 300 baud 8 data no parity loopback",
+  "configure uart 0 for 300 baud 8 data no parity loopback\n"
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-  "dim tx as pin utxd0 for uart output",
-  "dim rx as pin urxd0 for uart input",
+  "dim tx as pin utxd0 for uart output\n"
+  "dim rx as pin urxd0 for uart input\n"
 #elif MC9S12DT256 || MC9S12DP512
-  "dim tx as pin ps1 for uart output",
-  "dim rx as pin ps0 for uart input",
+  "dim tx as pin ps1 for uart output\n"
+  "dim rx as pin ps0 for uart input\n"
 #else
 #error
 #endif
-  "on uart 0 input do gosub receive",
-  "on uart 0 output do gosub transmit",
+  "on uart 0 input do gosub receive\n"
+  "on uart 0 output do gosub transmit\n"
 #else
-  "configure uart 2 for 300 baud 8 data no parity loopback",
+  "configure uart 2 for 300 baud 8 data no parity loopback\n"
 #if MCF51JM128
-  "dim tx as pin ptc3 for uart output",
-  "dim rx as pin ptc5 for uart input",
+  "dim tx as pin ptc3 for uart output\n"
+  "dim rx as pin ptc5 for uart input\n"
 #elif MCF51QE128 || MC9S08QE128
-  "dim tx as pin ptc7 for uart output",
-  "dim rx as pin ptc6 for uart input",
+  "dim tx as pin ptc7 for uart output\n"
+  "dim rx as pin ptc6 for uart input\n"
 #elif PIC32
-  "dim tx as pin rf5 for uart output",
-  "dim rx as pin rf4 for uart input",
+  "dim tx as pin rf5 for uart output\n"
+  "dim rx as pin rf4 for uart input\n"
 #else
 #error
 #endif
-  "on uart 2 input do gosub receive",
-  "on uart 2 output do gosub transmit",
+  "on uart 2 input do gosub receive\n"
+  "on uart 2 output do gosub transmit\n"
 #endif
-  "sleep 1000 ms",
-  "end",
-  "sub receive",
-  "  print \"received\", rx",
-  "endsub",
-  "sub transmit",
-  "  read data",
-  "  if ! data then",
-  "    return",
-  "  endif",
-  "  assert !tx",
-  "  print \"sending\", data",
-  "  let tx = data",
-  "endsub"
-};
-
-static const char *const demo2[] = {
-  "rem ### uart pio ###",
-  "configure uart 1 for 9600 baud 7 data even parity loopback",
+#if STICK_GUEST
+  "sleep 1000 ms\n"
+  "end\n"
+  "sub receive\n"
+  "  print \"received\", rx\n"
+  "endsub\n"
+  "sub transmit\n"
+  "  read data\n"
+  "  if ! data then\n"
+  "    return\n"
+  "  endif\n"
+  "  assert !tx\n"
+  "  print \"sending\", data\n"
+  "  let tx = data\n"
+  "endsub\n"
+#endif
+,
+  "rem ### uart pio ###\n"
+#if STICK_GUEST
+  "configure uart 1 for 9600 baud 7 data even parity loopback\n"
+#endif
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-  "dim tx as pin utxd1 for uart output",
-  "dim rx as pin urxd1 for uart input",
+  "dim tx as pin utxd1 for uart output\n"
+  "dim rx as pin urxd1 for uart input\n"
 #elif MCF51JM128
-  "dim tx as pin pte0 for uart output",
-  "dim rx as pin pte1 for uart input",
+  "dim tx as pin pte0 for uart output\n"
+  "dim rx as pin pte1 for uart input\n"
 #elif MCF51QE128 || MC9S08QE128
-  "dim tx as pin ptb1 for uart output",
-  "dim rx as pin ptb0 for uart input",
+  "dim tx as pin ptb1 for uart output\n"
+  "dim rx as pin ptb0 for uart input\n"
 #elif MC9S12DT256 || MC9S12DP512
-  "dim tx as pin ps3 for uart output",
-  "dim rx as pin ps2 for uart input",
+  "dim tx as pin ps3 for uart output\n"
+  "dim rx as pin ps2 for uart input\n"
 #elif PIC32
-  "dim tx as pin rf8 for uart output",
-  "dim rx as pin rf2 for uart input",
+  "dim tx as pin rf8 for uart output\n"
+  "dim rx as pin rf2 for uart input\n"
 #else
 #error
 #endif
-  "let tx = 3",
+#if STICK_GUEST
+  "let tx = 3\n"
 #if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
-  "while tx do",
-  "endwhile",
-  "print rx",
+  "while tx do\n"
+  "endwhile\n"
+  "print rx\n"
 #endif
-  "let tx = 4",
-  "while tx do",
-  "endwhile",
-  "print rx",
-  "print rx",
-  "print rx",
-  "end"
-};
-
-static const char *const demo3[] = {
-  "rem ### toaster ###",
-  "dim target, secs",
+  "let tx = 4\n"
+  "while tx do\n"
+  "endwhile\n"
+  "print rx\n"
+  "print rx\n"
+  "print rx\n"
+  "end\n"
+#endif
+,
+  "rem ### toaster ###\n"
+#if STICK_GUEST
+  "dim target, secs\n"
+#endif
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211 || PIC32
-  "dim thermocouple as pin an0 for analog input",
-  "dim relay as pin an1 for digital output",
+  "dim thermocouple as pin an0 for analog input\n"
+  "dim relay as pin an1 for digital output\n"
 #elif MCF51JM128 || MCF51QE128 || MC9S08QE128
-  "dim thermocouple as pin ptb0 for analog input",
-  "dim relay as pin ptb1 for digital output",
+  "dim thermocouple as pin ptb2 for analog input\n"
+  "dim relay as pin ptb3 for digital output\n"
 #elif MC9S12DT256 || MC9S12DP512
-  "dim thermocouple as pin pad00 for analog input",
-  "dim relay as pin pa0 for digital output",
+  "dim thermocouple as pin pad00 for analog input\n"
+  "dim relay as pin pa0 for digital output\n"
 #else
 #error
 #endif
-  "data 5124, 6, 7460, 9, 8940, 3, -1, -1",
-  "configure timer 0 for 1000 ms",
-  "on timer 0 do gosub adjust",
-  "rem ---------------",
-  "while target!=-1 do",
-  "  sleep secs s",
-  "  read target, secs",
-  "endwhile",
-  "let relay = 0",
-  "end",
-  "sub adjust",
-  "  if thermocouple>=target then",
-  "    let relay = 0",
-  "  else",
-  "    let relay = 1",
-  "  endif",
-  "endsub",
-};
+#if STICK_GUEST
+  "data 5124, 6, 7460, 9, 8940, 3, -1, -1\n"
+  "configure timer 0 for 1000 ms\n"
+  "on timer 0 do gosub adjust\n"
+  "rem ---------------\n"
+  "while target!=-1 do\n"
+  "  sleep secs s\n"
+  "  read target, secs\n"
+  "endwhile\n"
+  "let relay = 0\n"
+  "end\n"
+  "sub adjust\n"
+  "  if thermocouple>=target then\n"
+  "    let relay = 0\n"
+  "  else\n"
+  "    let relay = 1\n"
+  "  endif\n"
+  "endsub\n"
 #endif
+};
 
-// *** basic2_run() ***************************************************
+
+// *** basic0_run() ***************************************************
 
 // this function implements the stickos command interpreter.
-bool
-basic2_run(char *text_in)
+void
+basic0_run(char *text_in)
 {
-#if ! SHRINK
     int i;
-#endif
+    int d;
+    int h;
+    int m;
+    int t;
     int cmd;
     int len;
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+    bool boo;
+#endif
+#if DEBUG || MCF52259 || PIC32
+    bool reset;
+    bool init;
+#endif
+    const char *p;
+    const char *np;
     char *text;
     int number1;
     int number2;
-#if MCF52233
-    bool boo;
-#endif
 #if MCF52233
     int a0, a1, a2, a3;
 #endif
@@ -746,6 +791,7 @@ basic2_run(char *text_in)
 
     parse_trim(&text);
 
+    // parse private commands
     for (cmd = 0; cmd < LENGTHOF(commands); cmd++) {
         len = strlen(commands[cmd]);
         if (! strncmp(text, commands[cmd], len)) {
@@ -762,11 +808,59 @@ basic2_run(char *text_in)
     number2 = 0;
 
     switch (cmd) {
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+        case command_clone:
+            boo = false;
+            if (parse_word(&text, "run")) {
+                boo = true;
+            }
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+
+            basic0_help(help_about);
+            printf("cloning...\n");
+            clone(boo);
+            break;
+#endif
+
+        case command_connect:
+            if (! zb_present) {
+                printf("zigflea not present\n");
+#if ! STICK_GUEST
+            } else if (zb_nodeid == -1) {
+                printf("zigflea nodeid not set\n");
+#endif
+            } else {
+                if (! basic_const(&text, &number1) || number1 == -1) {
+                    goto XXX_ERROR_XXX;
+                }
+                if (*text) {
+                    goto XXX_ERROR_XXX;
+                }
+                
+                printf("press Ctrl-D to disconnect...\n");
+
+#if ! STICK_GUEST
+                assert(main_command);
+                main_command = NULL;
+                terminal_command_ack(false);
+
+                terminal_rxid = number1;
+                
+                while (terminal_rxid != -1) {
+                    basic0_poll();
+                }
+#endif
+
+                printf("...disconnected\n");
+            }
+            break;
+
         case command_demo:
-#if ! SHRINK
             number1 = 0;
             if (*text) {
-                if (! basic_const(&text, &number1) || number1 < 0 || number1 >= 4) {
+                if (! basic_const(&text, &number1) || number1 < 0 || number1 >= LENGTHOF(demos)) {
                     goto XXX_ERROR_XXX;
                 }
             }
@@ -786,67 +880,60 @@ basic2_run(char *text_in)
                 code_new();
             }
 
-            if (number1 == 0) {
-                for (i = 0; i < LENGTHOF(demo0); i++) {
-                    code_insert(number2+i*10, (char *)demo0[i], 0);
-                }
-            } else if (number1 == 1) {
-                for (i = 0; i < LENGTHOF(demo1); i++) {
-                    code_insert(number2+i*10, (char *)demo1[i], 0);
-                }
-            } else if (number1 == 2) {
-                for (i = 0; i < LENGTHOF(demo2); i++) {
-                    code_insert(number2+i*10, (char *)demo2[i], 0);
-                }
-            } else if (number1 == 3) {
-                for (i = 0; i < LENGTHOF(demo3); i++) {
-                    code_insert(number2+i*10, (char *)demo3[i], 0);
-                }
-            } else {
-                assert(0);
+            i = 0;
+            for (p = (char *)demos[number1]; *p; p = np+1) {
+                np = strchr(p, '\n');
+                assert(np);
+                strncpy((char *)big_buffer, p, np-p);
+                big_buffer[np-p] = '\0';
+                code_insert(number2+i*10, (char *)big_buffer, 0);
+                i++;
             }
-#endif
             break;
 
         case command_help:
-#if ! SHRINK
+#if ! DEBUG || STICK_GUEST
             if (! *text) {
-                basic2_help(help_general);
+                p = help_general;
             } else
 #endif
             if (parse_word(&text, "about")) {
-                basic2_help(help_about);
-#if ! SHRINK
+                p = help_about;
+#if ! DEBUG || STICK_GUEST
             } else if (parse_word(&text, "commands")) {
-                basic2_help(help_commands);
+                p = help_commands;
             } else if (parse_word(&text, "modes")) {
-                basic2_help(help_modes);
+                p = help_modes;
             } else if (parse_word(&text, "statements")) {
-                basic2_help(help_statements);
+                p = help_statements;
             } else if (parse_word(&text, "devices")) {
-                basic2_help(help_devices);
+                p = help_devices;
             } else if (parse_word(&text, "blocks")) {
-                basic2_help(help_blocks);
+                p = help_blocks;
             } else if (parse_word(&text, "expressions")) {
-                basic2_help(help_expressions);
+                p = help_expressions;
             } else if (parse_word(&text, "variables")) {
-                basic2_help(help_variables);
+                p = help_variables;
             } else if (parse_word(&text, "pins")) {
-                basic2_help(help_pins);
+                p = help_pins;
 #if MCF52221 || MCF52259
             } else if (parse_word(&text, "board")) {
-                basic2_help(help_board);
+                p = help_board;
 #endif
-#if MCF52221 || MCF52233 || MCF52259
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
             } else if (parse_word(&text, "clone")) {
-                basic2_help(help_clone);
+                p = help_clone;
 #endif
-            } else if (parse_word(&text, "zigbee")) {
-                basic2_help(help_zigbee);
+            } else if (parse_word(&text, "zigflea")) {
+                p = help_zigflea;
+#endif
             } else {
                 goto XXX_ERROR_XXX;
-#endif
             }
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+            basic0_help((char *)p);
             break;
 
 #if MCF52233
@@ -881,15 +968,138 @@ basic2_run(char *text_in)
             break;
 #endif
 
+        case command_nodeid:
+            if (*text) {
+                if (parse_word(&text, "none")) {
+                    number1 = -1;
+                } else {
+                    if (! basic_const(&text, &number1) || number1 == -1) {
+                        goto XXX_ERROR_XXX;
+                    }
+                }
+                if (*text) {
+                    goto XXX_ERROR_XXX;
+                }
+                var_set_flash(FLASH_NODEID, number1);
+#if ! STICK_GUEST
+                zb_nodeid = number1;
+#endif
+            } else {
+                i = var_get_flash(FLASH_NODEID);
+                if (i == -1) {
+                    printf("none\n");
+                } else {
+                    printf("%u\n", i);
+                }
+            }
+            break;
+        
+        case command_reset:
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+
+#if ! STICK_GUEST
+            (void)splx(7);
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+            MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
+#elif MCF51JM128 || MCF51QE128
+            asm {
+                move.l  #0x00000000,d0
+                movec   d0,CPUCR
+                trap    #0
+            };
+#elif MC9S08QE128
+            asm(stop);
+#elif MC9S12DT256 || MC9S12DP512
+            COPCTL = 0x01; // cop activated with shortest timeout 
+            ARMCOP = 0x47; // here we will get kicked by the dog
+#elif PIC32
+            SYSKEY = 0;
+            SYSKEY = 0xAA996655;
+            SYSKEY = 0x556699AA;
+            RSWRSTSET = _RSWRST_SWRST_MASK;
+            while (RSWRST, true) {
+                // NULL
+            }
+#else
+#error
+#endif
+            ASSERT(0);
+#endif
+            break;
+
+        case command_upgrade:  // upgrade StickOS S19 file
+        case command_download:  // relay S19 file to QSPI to EzPort
+            number1 = 0;
+            if (cmd == command_download) {
+                // get fsys_frequency
+                (void)basic_const(&text, &number1);
+                if (! number1 || *text) {
+                    goto XXX_ERROR_XXX;
+                }
+                // validate fsys_frequency
+                if (number1 < 1000000 || number1 > 80000000) {
+                    goto XXX_ERROR_XXX;
+                }
+            }
+            flash_upgrade(number1);
+            break;
+
+        case command_uptime:
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+
+            t = seconds;
+            d = t/(24*60*60);
+            t = t%(24*60*60);
+            h = t/(60*60);
+            t = t%(60*60);
+            m = t/(60);
+            printf("%dd %dh %dm\n", d, h, m);
+            break;
+            
+#if DEBUG || MCF52259 || PIC32
+        case command_zigflea:
+            reset = parse_word(&text, "reset");
+            init = parse_word(&text, "init");
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+#if ! STICK_GUEST
+            zb_diag(reset, init);
+#endif
+            break;
+#endif
+
+        case LENGTHOF(commands):
+            // this is not a private command; process a public command...
+            basic_run(text_in);
+            break;
+
         default:
-            return false;
+            assert(0);
             break;
     }
-    
-    return true;
+
+    return;
 
 XXX_ERROR_XXX:
     terminal_command_error(text-text_in);
-    return true;
 }
+
+#if ! STICK_GUEST
+void
+basic0_poll(void)
+{
+    terminal_poll();
+    var_poll();
+
+#if STICKOSPLUS
+    // flush dirty lbas to the filesystem
+    flush_log_file();
+#endif
+}
+#endif
 

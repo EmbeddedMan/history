@@ -32,7 +32,7 @@ clone_status(void)
 
     // read the status register
     buffer[0] = READ_STATUS_REGISTER;
-    qspi_transfer(buffer, 1+1);
+    qspi_transfer(true, buffer, 1+1);
 
     return buffer[1];
 }
@@ -51,7 +51,7 @@ clone_write(byte *buffer, int length)
 
     // enable the write
     command = WRITE_ENABLE;
-    qspi_transfer(&command, 1);
+    qspi_transfer(true, &command, 1);
 
     status = clone_status();
     if (! (status & WRITE_ENABLE_STATUS)) {
@@ -59,7 +59,7 @@ clone_write(byte *buffer, int length)
     }
 
     // do the write
-    qspi_transfer(buffer, length);
+    qspi_transfer(true, buffer, length);
 
     // wait for the write to complete
     do {
@@ -98,9 +98,9 @@ clone_init(uint32 slave_fsys)
     byte buffer[4];
 
     // enter ezport mode
-    qspi_inactive(0);
+    pin_set(pin_assignments[pin_assignment_qspi_cs], pin_type_digital_output, 0, 0);
     clone_reset();
-    qspi_inactive(1);
+    pin_set(pin_assignments[pin_assignment_qspi_cs], pin_type_digital_output, 0, 1);
 
     status = clone_status();
     if (status & (WRITE_ERROR|WRITE_IN_PROGRESS)) {
@@ -160,7 +160,7 @@ clone_program(uint32 addr, uint32 *data, uint32 length)
     big_buffer[2] = addr/0x100;
     big_buffer[3] = addr;
     memset(big_buffer+4, 0x5a, length);
-    qspi_transfer(big_buffer, 4+length);
+    qspi_transfer(true, big_buffer, 4+length);
 
     // verify the data
     if (data != (void *)-1) {
@@ -189,40 +189,49 @@ clone(bool and_run)
     uint32 addr;
     uint32 *data;
 
-    clone_init(SLAVE_FSYS);
-
-    // for all bytes to clone...
-    for (addr = 0; addr < FLASH_BYTES; addr += CLONE_PAGE_SIZE) {
-        if (SECURE && addr >= FLASH_BYTES/2) {
-            // reference data is secure; just erase it
-            data = (void *)-1;
-        } else {
-            // get the reference data from our flash
-            data = (uint32 *)addr;
-        }
-        
-        if (! clone_program(addr, data, CLONE_PAGE_SIZE)) {
-            return;
-        }
+#if ! FLASHER
+    // leave zigflea in reset while we use the qspi chip select for clone
+    pin_set(pin_assignments[pin_assignment_zigflea_rst], pin_type_digital_output, 0, 0);
+#endif
+    
+    if (clone_init(SLAVE_FSYS)) {
+        // for all bytes to clone...
+        for (addr = 0; addr < FLASH_BYTES; addr += CLONE_PAGE_SIZE) {
+            if (SECURE && addr >= FLASH_BYTES/2) {
+                // reference data is secure; just erase it
+                data = (void *)-1;
+            } else {
+                // get the reference data from our flash
+                data = (uint32 *)addr;
+            }
+            
+            if (! clone_program(addr, data, CLONE_PAGE_SIZE)) {
+                break;
+            }
 
 #if ! FLASHER
-        printf(".");
-#else
-        if (addr/CLONE_PAGE_SIZE % 2) {
             printf(".");
-        }
-        if (addr/CLONE_PAGE_SIZE % 160 == 159) {
-            printf("\n");
-        }
+#else
+            if (addr/CLONE_PAGE_SIZE % 2) {
+                printf(".");
+            }
+            if (addr/CLONE_PAGE_SIZE % 160 == 159) {
+                printf("\n");
+            }
 #endif
-    }
+        }
 
-    if (and_run) {
-        // allow the target to run!
-        clone_reset();
-    }
+        if (and_run) {
+            // allow the target to run!
+            clone_reset();
+        }
 
-    printf("\nclone done!\n");
+        printf("\nclone done!\n");
+    }
+    
+#if ! FLASHER
+    zb_initialize();
+#endif
 #endif
 }
 

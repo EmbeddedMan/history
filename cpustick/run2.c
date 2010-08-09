@@ -8,7 +8,7 @@ bool run2_scroll;
 
 // this function executes a private bytecode statement.
 bool  // end
-run2_bytecode_code(byte code, const byte *bytecode, int length)
+run2_bytecode_code(uint code, const byte *bytecode, int length)
 {
 #if BADGE_BOARD
     int r;
@@ -32,7 +32,7 @@ run2_bytecode_code(byte code, const byte *bytecode, int length)
 #if ! STICK_GUEST
             while (! jm_scroll_ready()) {
                 // see if the sleep switch was pressed
-                basic_poll();
+                basic0_poll();
             }
 #endif
             

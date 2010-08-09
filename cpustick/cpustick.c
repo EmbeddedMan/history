@@ -53,19 +53,19 @@ main_run(void)
 
     // we just poll here waiting for commands
     for (;;) {
-        basic_poll();
+        basic0_poll();
 
         ready = 0;
         autoend = false;
         if (! autoran && ! disable_autorun && var_get_flash(FLASH_AUTORUN) == 1) {
-            basic_run("run");
+            basic0_run("run");
             autoend = true;
         } else if (main_command) {
-            basic_poll();
+            basic0_poll();
             if (terminal_echo) {
                 printf("\n");
             }
-            basic_run(main_command);
+            basic0_run(main_command);
             ready = 1;
             
             if (main_auto) {
@@ -79,8 +79,7 @@ main_run(void)
 
         if (autoend || ready) {
             if (! first) {
-                printf(" \n"); delay(1);  // revisit -- why???
-                basic_run("help about");
+                basic0_run("help about");
                 if (disable_autorun) {
                     printf("AUTORUN DISABLED!\n");
                 }
