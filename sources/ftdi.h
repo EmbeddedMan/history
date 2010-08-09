@@ -1,5 +1,7 @@
 // *** ftdi.h *********************************************************
 
+extern bool ftdi_active;
+
 typedef void (*ftdi_reset_cbfn)(void);
 
 void

@@ -65,6 +65,9 @@ led_sad(enum code code)
 }
 #endif
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 // this function turns an LED on or off.
 static
 void
@@ -73,7 +76,7 @@ led_set(enum led n, int on)
     assert (n >= 0 && n < led_max);
 
 #if ! STICK_GUEST
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #if PICTOCRYPT
     // red LED workaround; tri-state when off!
     if (on) {
@@ -97,6 +100,14 @@ led_set(enum led n, int on)
     }
 #endif
 
+#if MCF52259
+    if (on) {
+        MCF_GPIO_CLRTI = (uint8)~(1 << 1);
+    } else {
+        MCF_GPIO_SETTI = (uint8)(1 << 1);
+    }
+#endif
+
     if (on) {
         MCF_GPIO_CLRNQ = (uint8)~(1 << 7);
     } else {
@@ -108,6 +119,18 @@ led_set(enum led n, int on)
         PTFD &= ~0x01;
     } else {
         PTFD |= 0x01;
+    }
+#elif MCF51QE128 || MC9S08QE128
+    if (on) {
+        PTCD &= ~0x04;
+    } else {
+        PTCD |= 0x04;
+    }
+#elif MC9S12DT256
+    if (on) {
+        PORTB &= ~0x80;
+    } else {
+        PORTB |= 0x80;
     }
 #elif PIC32
 #if STARTER
@@ -128,6 +151,9 @@ led_set(enum led n, int on)
 #endif
 #endif // ! STICK_GUEST
 }
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 void
 led_timer_poll()
@@ -176,6 +202,9 @@ led_timer_poll()
 
 #if ! STICK_GUEST
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 // this function displays a diagnostic code on a LED.
 void
 led_line(int line)
@@ -194,8 +223,8 @@ led_line(int line)
             if (n++ >= 10) {
 #if PICTOCRYPT
                 sleep_delay(0);
-#endif
                 sleep_poll();
+#endif
             }
             
             for (i = 1000; i > 0; i /= 10) {
@@ -237,8 +266,8 @@ led_hex(int hex)
             if (n++ >= 10) {
 #if PICTOCRYPT
                 sleep_delay(0);
-#endif
                 sleep_poll();
+#endif
             }
             
             for (i = 0x10000000; i > 0; i /= 16) {
@@ -261,6 +290,9 @@ led_hex(int hex)
         }
     }
 }
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 #endif // ! STICK_GUEST
 
@@ -269,7 +301,7 @@ void
 led_initialize(void)
 {
 #if ! STICK_GUEST
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // TC is gpio output
     MCF_GPIO_PTCPAR = 0;
     MCF_GPIO_DDRTC = 0xf;
@@ -278,9 +310,25 @@ led_initialize(void)
 #else
     MCF_GPIO_SETTC = 0xf;  // all LEDs on to indicate reset!
 #endif
+#if MCF52259
+    // TI bit 1 is gpio output
+    MCF_GPIO_PTIPAR = 0;
+    MCF_GPIO_DDRTI = 0x2;
+    
+    // TJ bits 0 and 1 are gpio output
+    // REVISIT -- this should be in zigbee.c!
+    MCF_GPIO_PTJPAR = 0;
+    MCF_GPIO_DDRTJ = 0x3;
+#endif
 #elif MCF51JM128
     // f0 is gpio output
     PTFDD = 0x01;
+#elif MCF51QE128 || MC9S08QE128
+    // c2 is gpio output
+    PTCDD = 0x04;
+#elif MC9S12DT256
+    // b7 is output
+    DDRB = 0x80;
 #elif PIC32
 #if STARTER
     // rd0 is digital output

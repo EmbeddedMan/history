@@ -46,6 +46,9 @@ byteswap(uint32 x, uint32 size)
 {
 #if PIC32
     return x;
+#elif MC9S08QE128 || MC9S12DT256
+    ASSERT(0);
+    return x;
 #else
     // byteswap all bytes of x within size
     switch (size) {
@@ -93,16 +96,38 @@ byteswap(uint32 x, uint32 size)
 }
 #endif // ! STICK_GUEST
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 // return the current interrupt mask level
 int
 gpl(void)
 {
+#if PIC32
     int oldlevel;
 
-#if PIC32
     oldlevel = (_CP0_GET_STATUS() >> 10) & 7;
+#elif MC9S08QE128
+    byte oldlevel;
+
+    asm {
+        tpa
+        sta oldlevel
+    }
+    
+    oldlevel = (oldlevel & 8) ? 7 : 0;
+#elif MC9S12DT256
+    byte oldlevel;
+
+    asm {
+        tpa
+        staa oldlevel
+    }
+    
+    oldlevel = (oldlevel & 0x10) ? 7 : 0;
 #else
     short csr;
+    int oldlevel;
 
     // get the sr
     csr = get_sr();
@@ -137,7 +162,25 @@ splx(int level)
     // update the sr
     _CP0_SET_STATUS(csr);
 
+    assert(oldlevel >= 0 && oldlevel <= 7);
     return -oldlevel;
+#elif MC9S08QE128 || MC9S12DT256
+    byte oldlevel;
+    
+    oldlevel = gpl();
+    if (level <= 0) {
+        // we're going down
+        level = -level;
+    } else {
+        // we're going up
+        level = MAX(level, oldlevel);
+    }
+    if (level) {
+        __asm SEI;
+    } else {
+        __asm CLI;
+    }
+    return oldlevel;
 #else
     short csr;
     int oldlevel;
@@ -159,6 +202,7 @@ splx(int level)
     // update the sr
     set_sr(csr);
 
+    assert(oldlevel >= 0 && oldlevel <= 7);
     return -oldlevel;
 #endif
 }
@@ -178,7 +222,7 @@ blip(void)
 
 // delay for the specified number of milliseconds
 void
-delay(int ms)
+delay(int32 ms)
 {
 #if STICK_GUEST
     // we sleep quicker for unit tests
@@ -189,8 +233,8 @@ delay(int ms)
     usleep(ms * 1000);
 #endif
 #else // ! STICK_GUEST
-    int m;
     int x;
+    int32 m;
     int blips;
         
     // if interrupts are initialized...
@@ -216,6 +260,9 @@ delay(int ms)
     }
 #endif // ! STICK_GUEST
 }
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 int
 gethex(char *p)
@@ -264,10 +311,13 @@ tailtrim(char *text)
     *p = '\0';
 }
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 void *
 memcpy(void *d,  const void *s, size_t n)
 {
-    
+#if ! MC9S08QE128 && ! MC9S12DT256
     if (((uintptr)d&3)+((uintptr)s&3)+(n&3) == 0) {
         uint32 *dtemp = d;
         const uint32 *stemp = s;
@@ -277,15 +327,21 @@ memcpy(void *d,  const void *s, size_t n)
             *(dtemp++) = *(stemp++);
         }
     } else {
+#endif
         uint8 *dtemp = d;
         const uint8 *stemp = s;
         
         while (n--) {
             *(dtemp++) = *(stemp++);
         }
+#if ! MC9S08QE128 && ! MC9S12DT256
     }
+#endif
     return d;
 }
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 void *
 memmove(void *d,  const void *s, size_t n)
@@ -306,6 +362,7 @@ memmove(void *d,  const void *s, size_t n)
 void *
 memset(void *p,  int d, size_t n)
 {
+#if ! MC9S08QE128 && ! MC9S12DT256
     int dd;
     
     if (((uintptr)p&3)+(n&3) == 0) {
@@ -318,12 +375,15 @@ memset(void *p,  int d, size_t n)
             *(ptemp++) = dd;
         }
     } else {
+#endif
         uint8 *ptemp = p;
         
         while (n--) {
             *(ptemp++) = d;
         }
+#if ! MC9S08QE128 && ! MC9S12DT256
     }
+#endif
     return p;
 }
 
@@ -448,6 +508,9 @@ strncmp(const char *s1, const char *s2, size_t n)
     }
 }
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 char *
 strchr(const char *s, int c)
 {
@@ -456,8 +519,14 @@ strchr(const char *s, int c)
             return (char *)s;
         }
     }
+    if (*s == c) {
+        return (char *)s;
+    }
     return NULL;
 }
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 int
 isdigit(int c)
@@ -502,7 +571,7 @@ isprint(int c)
 }
 
 #if STICK_GUEST
-static uint16 sr;
+static uint16 sr = 0x2000;
 #endif
 
 #if ! PIC32
@@ -514,22 +583,29 @@ get_sr(void)
     csr = sr;
 #elif GCC
     __asm__("move.w  %/sr, %0\n" : /* outputs */ "=r" (csr));
+#elif MC9S08QE128 || MC9S12DT256
+    ASSERT(0);
+    csr = 0;
 #else
     asm {
         move.w     sr,d0
         move.w     d0,csr
     }
 #endif
+    assert(csr & 0x2000);
     return csr;
 }
 
 void
 set_sr(uint16 csr)
 {
+    assert(csr & 0x2000);
 #if STICK_GUEST
     sr = csr;
 #elif GCC
     __asm__("move.w  %0, %/sr\n" :: /* inputs */ "r" (csr));
+#elif MC9S08QE128 || MC9S12DT256
+    ASSERT(0);
 #else
     asm {
         move.w     csr,d0

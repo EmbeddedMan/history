@@ -3,7 +3,7 @@
 // this file to hook up __declspec(interrupt) functions to hardware
 // interrupts.
 
-#if ! PIC32
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
 #include "main.h"
 
 // *** page1 ***
@@ -15,18 +15,21 @@
 #define JMP  0x4EF9
 #define HALT  0x4AC8
 #define RTE  0x4e73
+
 #define UINT32JMP  (NOP<<16|JMP)
-
-
 #define UINT32HALT  (HALT<<16|RTE)
 
 #if MCF52233
 extern __declspec(interrupt) void fec_isr(void);
 #endif
 
-#if ! MCF51JM128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 // this is the software interrupt vector table, in page1.
+#if ! BADGE_BOARD && ! DEMO_KIT
 DECLSPEC_PAGE1
+#else
+const
+#endif
 uint32 _swvect[512] = {
 #if ! FLASHER
     (uint32)flash_upgrade_ram_begin, (uint32)flash_upgrade_ram_end,
@@ -97,11 +100,15 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 62
     UINT32HALT, 0,                               // 63
     UINT32HALT, 0,                               // 64
-    UINT32JMP, (uint32)sleep_isr,                // 65
+#if ! FLASHER && ! PICTOCRYPT && (MCF52259 || MCF5211)
+    UINT32JMP, (uint32)zb_isr,                   // 65 - irq1*
+#else
+    UINT32HALT, 0,                               // 65
+#endif
     UINT32HALT, 0,                               // 66
     UINT32HALT, 0,                               // 67
-#if ! FLASHER && ! PICTOCRYPT
-    UINT32JMP, (uint32)zb_isr,                   // 68
+#if ! FLASHER && ! PICTOCRYPT && ! MCF52259 && ! MCF5211
+    UINT32JMP, (uint32)zb_isr,                   // 68 - irq4*
 #else
     UINT32HALT, 0,                               // 68
 #endif
@@ -113,7 +120,7 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 74
     UINT32HALT, 0,                               // 75
     UINT32HALT, 0,                               // 76
-#if SERIAL_DRIVER
+#if ! FLASHER && ! PICTOCRYPT
     UINT32JMP, (uint32)serial_isr,               // 77 - uart0
 #else
     UINT32HALT, 0,                               // 77
@@ -173,7 +180,7 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 114
     UINT32HALT, 0,                               // 115
     UINT32HALT, 0,                               // 116
-#if MCF52221 && ! FLASHER
+#if (MCF52221 || MCF52259) && ! FLASHER
     UINT32JMP, (uint32)usb_isr,                  // 117 usb.c
 #else
     UINT32HALT, 0,                               // 117
@@ -317,9 +324,13 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 254
     UINT32HALT, 0,                               // 255
 };
-#else  // ! MCF51JM128
+#elif MCF51JM128 || MCF51QE128
 // this is the software interrupt vector table, in page1.
+#if ! BADGE_BOARD && ! DEMO_KIT
 __declspec(page1)
+#else
+const
+#endif
 uint32 _swvect[512] = {
     (uint32)flash_upgrade_ram_begin, (uint32)flash_upgrade_ram_end,
     (uint32)init, 0,
@@ -390,7 +401,11 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 66
     UINT32HALT, 0,                               // 67
     UINT32HALT, 0,                               // 68
+#if MCF51JM128
     UINT32JMP, (uint32)usb_isr,                  // 69 usb.c
+#else
+    UINT32HALT, 0,                               // 69
+#endif
     UINT32HALT, 0,                               // 70
     UINT32HALT, 0,                               // 71
     UINT32HALT, 0,                               // 72
@@ -398,21 +413,37 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 74
     UINT32HALT, 0,                               // 75
     UINT32HALT, 0,                               // 76
+#if MCF51QE128
+    UINT32JMP, (uint32)serial_isr,               // 77 serial.c
+#else
     UINT32HALT, 0,                               // 77
+#endif
     UINT32HALT, 0,                               // 78
     UINT32HALT, 0,                               // 79
     UINT32HALT, 0,                               // 80
     UINT32HALT, 0,                               // 81
+#if MCF51JM128
+    UINT32JMP, (uint32)serial_isr,               // 82 serial.c
+#else
     UINT32HALT, 0,                               // 82
+#endif
     UINT32HALT, 0,                               // 83
     UINT32HALT, 0,                               // 84
     UINT32HALT, 0,                               // 85
+#if MCF51QE128
+    UINT32JMP, (uint32)timer_isr,                // 86 timer.c
+#else
     UINT32HALT, 0,                               // 86
+#endif
     UINT32HALT, 0,                               // 87
     UINT32HALT, 0,                               // 88
     UINT32HALT, 0,                               // 89
     UINT32HALT, 0,                               // 90
+#if MCF51JM128
     UINT32JMP, (uint32)timer_isr,                // 91 timer.c
+#else
+    UINT32HALT, 0,                               // 91
+#endif
     UINT32HALT, 0,                               // 92
     UINT32HALT, 0,                               // 93
     UINT32HALT, 0,                               // 94
@@ -420,7 +451,11 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 96
     UINT32HALT, 0,                               // 97
     UINT32HALT, 0,                               // 98
+#if MCF51QE128
+    UINT32JMP, (uint32)zb_isr,                   // 99 zigbee.c
+#else
     UINT32HALT, 0,                               // 99
+#endif
     UINT32HALT, 0,                               // 100
     UINT32HALT, 0,                               // 101
     UINT32HALT, 0,                               // 102
@@ -428,7 +463,11 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 104
     UINT32HALT, 0,                               // 105
     UINT32HALT, 0,                               // 106
+#if MCF51JM128
     UINT32JMP, (uint32)zb_isr,                   // 107 zigbee.c
+#else
+    UINT32HALT, 0,                               // 107
+#endif
     UINT32HALT, 0,                               // 108
     UINT32HALT, 0,                               // 109
     UINT32HALT, 0,                               // 110
@@ -578,6 +617,8 @@ uint32 _swvect[512] = {
     UINT32HALT, 0,                               // 254
     UINT32HALT, 0,                               // 255
 };
+#else
+#error
 #endif
 #endif
 

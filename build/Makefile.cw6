@@ -19,6 +19,8 @@ AS = $(TOOLS)/mwasmmcf.exe
 
 ifeq (51JM128,$(findstring 51JM128,$(CPU)))
 PROC=51JMe
+else ifeq (51QE128,$(findstring 51QE128,$(CPU)))
+PROC=51QE
 else
 $(error Invalid CPU - $(CPU))
 endif

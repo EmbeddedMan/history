@@ -146,8 +146,16 @@ static char *help_about =
 "Welcome to Skeleton for Freescale MCF52233 v" VERSION "!\n"
 #elif MCF52221
 "Welcome to Skeleton for Freescale MCF52221 v" VERSION "!\n"
+#elif MCF52259
+"Welcome to Skeleton for Freescale MCF52252 v" VERSION "!\n"
+#elif MCF5211
+"Welcome to Skeleton for Freescale MCF5211 v" VERSION "!\n"
 #elif MCF51JM128
 "Welcome to Skeleton for Freescale MCF51JM128 v" VERSION "!\n"
+#elif MCF51QE128
+"Welcome to Skeleton for Freescale MCF51QE128 v" VERSION "!\n"
+#elif PIC32
+"Welcome to Skeleton for Microchip PIC32MX4 v" VERSION "!\n"
 #else
 #error
 #endif
@@ -340,7 +348,7 @@ command_run(char *text_in)
             }
 
 #if ! _WIN32
-#if ! MCF51JM128
+#if ! MCF51JM128 && ! MCF51QE128
             MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
             asm { halt }
 #endif
@@ -429,25 +437,25 @@ void
 main_run(void)
 {
     for (;;) {
-#if MCF52221 || MCF51JM128
+#if MCF52221 || MCF52259 || MCF51JM128
         // if our usb device is attached...
         if (scsi_attached) {
             int rv;
             byte cdb[6];
-            byte inq[37];
+            byte inq[36];
         
             memset(cdb, 0, sizeof(cdb));
             cdb[0] = 0x12;
             cdb[4] = sizeof(inq);
             do {
                 rv = scsi_bulk_transfer(1, cdb, sizeof(cdb), inq, sizeof(inq));
-                if (rv == 36) {
-                    inq[sizeof(inq)] = '\0';
-                    printf("found %s\n", inq+8);
+                if (rv == sizeof(inq)) {
+                    inq[sizeof(inq)-1] = '\0';
+                    //printf("found %s\n", inq+8);
                     led_unknown_progress();
                     delay(1000);
                 }
-            } while (rv == 36);
+            } while (rv == sizeof(inq));
             usb_host_detach();
         }
         
@@ -464,7 +472,7 @@ main_run(void)
                 if (rv > 0) {
                     assert(configuration[4]);
                 
-                    printf("found 0x%x.0x%x\n", configuration[14], configuration[15]);
+                    //printf("found 0x%x.0x%x\n", configuration[14], configuration[15]);
                     led_unknown_progress();
                     delay(1000);
                 }
@@ -482,6 +490,10 @@ main_run(void)
         if (rich_so) {
             main_run_admin();
         }
+        
+#elif MCF5211 || MCF51QE128
+        main_run_admin();
+        
 #else
 #error
 #endif

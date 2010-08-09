@@ -19,13 +19,15 @@ CLFLAGS = /nologo /W3 /FR /YX \
 
 ifeq (RELEASE,$(findstring RELEASE,$(MODE)))
 CLFLAGS += /Og /Ot
+else
+CLFLAGS += /Zi /GZ
 endif
 
 # lib flags
 LIBFLAGS = /nologo
 
 # linker flags
-LINKFLAGS = /nologo -subsystem:console -machine:I386
+LINKFLAGS = /nologo -subsystem:console -machine:I386 /DEBUG
 
 OBJECTS = $(SOURCES:%.c=%.obj)
 OBJECTASMS = $(ASMS:%.s=%.obj)

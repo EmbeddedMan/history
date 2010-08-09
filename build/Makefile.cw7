@@ -21,6 +21,10 @@ ifeq (52221,$(findstring 52221,$(CPU)))
 PROC=52221
 else ifeq (52233,$(findstring 52233,$(CPU)))
 PROC=52233
+else ifeq (52259,$(findstring 52259,$(CPU)))
+PROC=52259
+else ifeq (5211,$(findstring 5211,$(CPU)))
+PROC=5211
 else
 $(error Invalid CPU - $(CPU))
 endif
@@ -42,7 +46,7 @@ CCFLAGS = -g \
           $(foreach a,$(SYSDIRS),-I"$(INSTALL)/$(a)")
 
 ifeq (RELEASE,$(findstring RELEASE,$(MODE)))
-CCFLAGS += -O4 -opt speed -coloring -peephole -noa6
+CCFLAGS += -O2 -opt speed -coloring -peephole -noa6
 endif
 
 # linker flags

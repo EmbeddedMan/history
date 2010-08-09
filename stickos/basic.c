@@ -15,8 +15,8 @@ byte FLASH_PARAM1_PAGE[BASIC_SMALL_PAGE_SIZE];
 byte FLASH_PARAM2_PAGE[BASIC_SMALL_PAGE_SIZE];
 #endif
 
-byte RAM_CODE_PAGE[BASIC_SMALL_PAGE_SIZE];
-byte RAM_VARIABLE_PAGE[BASIC_SMALL_PAGE_SIZE];
+byte RAM_CODE_PAGE[BASIC_RAM_PAGE_SIZE];
+byte RAM_VARIABLE_PAGE[BASIC_RAM_PAGE_SIZE];
 
 byte *start_of_dynamic;
 byte *end_of_dynamic;
@@ -27,30 +27,44 @@ struct timer_unit timer_units[] = {
     "s", ticks_per_msec*1000,
 };
 
+// allow nvram selection for uart pins, led pins, autorun disable pins
+// we need a way to prevent you from upgrading the wrong firmware file!!!
+// dim x as register 0x40000004
+// FAT32 on either usb host mode or SPI!!!
 // PC/Cell framework!!!
+// prompt on|off|ok
+// add zigbee support thru xbee for ubw32?
+// add "register" variables to allow access to chip hw!?!
+// get rid of remaining SPL_USB, SPL_IRQ4, etc.
+// add mst interface for basic progs and fw access
+// change ftdi to cdc and use mst for inf file access
+// if dhcp not found on 33, assign random ip compatible with windows?
+// add spi cf access for data logging (and fprint command)
+// qspi should fill entire array, not just index 0, when reading/writing an array
+// add pin "e2" (?? to control led e2 on '59?  do we want control of fec pins?
 
 // phase #1
 // why mcf52xxx dtim freq not off by 2x?
 // figure out usb "pop" on first badge run -- is that the badge issue?
+// document autorun disable switch/pins for all mcus; make work for all boards!
+// move autorun disable off precious irq pin!!!  get rid of sleep mode?
 
 // phase #2
 // features:
-//  pic32: disable pullups on analog input
+//  add character constants 'c', '\n'; do we want a way to print in character form?
+//  add strings
+//  expose mass storage interface with access to basic programs (and firmware upgrade?)
 //  pic32: add autorun disable switch (rd6?)
 //  if data area of flash looks bogus on boot, we should clear it all!
 //  allow broadcast/remote nodeid setting (with switch), like pagers
 //  need way for upgrade to preserve nodeid (and ipaddress, and maybe just flash param page?)
 //  allow zigbee remote variable to be read as well as written
-//  auto line number (for paste)
 //  have nodeid and clusterid, and broadcast 0x4242 and clusterid as magic number
 //  save zigbee channel in nvparam!
-//  get rid of on uart/on timer???
 //  multiple watchpoints?
 //  builtin operators -- lengthof(a) or a#
 //  short circuit && and || operators
-//  add character constants 'c', '\n'; do we want a way to print in character form?
 //  add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
-//  add strings
 //  multiple (main) threads?  "input" statement?
 //  "on usb [connect|disconnect]" statement for slave mode!
 //  ?: operator!
@@ -65,7 +79,6 @@ struct timer_unit timer_units[] = {
 //  can we skip statement execution more fully when run_condition is false?
 // user guide:
 // bugs:
-//  sleep switch power draw is too high!
 //  need mechanism to reconfigure pins irq1* and irq7*, other than reset!
 //  need a second catalog page for safe updates!
 //  can we make sub/endsub block behave more like for/next, from error and listing perspective?
@@ -81,8 +94,9 @@ struct timer_unit timer_units[] = {
 //  add usb device control
 
 enum cmdcode {
-    command_autoreset,  // [on|off]
+    command_analog,  // nnn
     command_autorun,  // [on|off]
+    command_auto,  // [nnn]
     command_clear,  // [flash]
     command_clone,  // [run]
     command_cls,
@@ -116,8 +130,9 @@ enum cmdcode {
 
 static
 const char *commands[] = {
-    "autoreset",
+    "analog",
     "autorun",
+    "auto",
     "clear",
     "clone",
     "cls",
@@ -195,6 +210,7 @@ basic_run(char *text_in)
     struct line *line;
     int syntax_error;
     byte bytecode[BASIC_BYTECODE_SIZE];
+    static uint8 empty;
 
     if (run_step && ! *text_in) {
         text = "cont";
@@ -226,7 +242,21 @@ basic_run(char *text_in)
     number2 = 0;
 
     switch (cmd) {
-        case command_autoreset:
+        case command_analog:
+            if (*text) {
+                if (! basic_const(&text, &number1) || number1 == -1) {
+                    goto XXX_ERROR_XXX;
+                }
+                if (*text || number1 < 1000 || number1 > 5000) {
+                    goto XXX_ERROR_XXX;
+                }
+                var_set_flash(FLASH_ANALOG, number1);
+                pin_analog = number1;
+            } else {
+                printf("%d\n", pin_analog);
+            }
+            break;
+
         case command_autorun:
             if (*text) {
                 if (parse_word(&text, "on")) {
@@ -239,16 +269,28 @@ basic_run(char *text_in)
                 if (*text) {
                     goto XXX_ERROR_XXX;
                 }
-                var_set_flash(cmd==command_autorun?FLASH_AUTORUN:FLASH_AUTORESET, boo);
+                var_set_flash(FLASH_AUTORUN, boo);
             } else {
-                if (var_get_flash(cmd==command_autorun?FLASH_AUTORUN:FLASH_AUTORESET) == 1) {
+                if (var_get_flash(FLASH_AUTORUN) == 1) {
                     printf("on\n");
                 } else {
                     printf("off\n");
                 }
             }
             break;
-
+            
+        case command_auto:
+            if (! basic_const(&text, &number1)) {
+                number1 = 10;
+            }
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+#if ! STICK_GUEST
+            main_auto = number1;
+#endif
+            break;
+            
         case command_nodeid:
             if (*text) {
                 if (parse_word(&text, "none")) {
@@ -463,7 +505,7 @@ basic_run(char *text_in)
 
 #if ! STICK_GUEST
             (void)splx(7);
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
             MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
 #elif MCF51JM128
             asm {
@@ -574,19 +616,30 @@ basic_run(char *text_in)
                 }
                 if (*text) {
                     code_insert(number1, text, text-text_in);
+                    empty = 0;
                 } else {
                     code_insert(number1, NULL, text-text_in);
+#if ! STICK_GUEST
+                    if (++empty > 1) {
+                        main_auto = 0;
+                    }
+#endif
                 }
-            } else if (*text) {
-                // if this is not a private command...
-                if (! basic2_run(text_in)) {
-                    // *** interactive debugger ***
-                    // see if this might be a basic line executing directly
-                    if (parse_line(text, &length, bytecode, &syntax_error)) {
-                        // run the bytecode
-                        run_bytecode(true, bytecode, length);
-                    } else {
-                        terminal_command_error(text-text_in + syntax_error);
+            } else {
+#if ! STICK_GUEST
+                main_auto = 0;
+#endif
+                if (*text) {
+                    // if this is not a private command...
+                    if (! basic2_run(text_in)) {
+                        // *** interactive debugger ***
+                        // see if this might be a basic line executing directly
+                        if (parse_line(text, &length, bytecode, &syntax_error)) {
+                            // run the bytecode
+                            run_bytecode(true, bytecode, length);
+                        } else {
+                            terminal_command_error(text-text_in + syntax_error);
+                        }
                     }
                 }
             }
@@ -620,10 +673,15 @@ basic_initialize(void)
     ASSERT(end_of_static < start_of_dynamic);
 
     end_of_dynamic = FLASH_PARAM2_PAGE+BASIC_SMALL_PAGE_SIZE;
-    ASSERT(end_of_dynamic <= (byte *)(FLASH_START+FLASH_BYTES));
+    ASSERT((uint32)end_of_dynamic <= FLASH_START+FLASH_BYTES);
+    
+#if MC9S08QE128
+    ASSERT(BASIC_STORES*BASIC_LARGE_PAGE_SIZE < FLASH2_BYTES);
+#endif
 #endif
 
     code_initialize();
     var_initialize();
+    run_initialize();
 }
 

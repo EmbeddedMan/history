@@ -1,4 +1,4 @@
-#if MCF52221 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
 // *** usb.c **********************************************************
 // this file implements a generic usb device driver; the FTDI transport
 // sits on top of this module to implement a specific usb device.
@@ -110,7 +110,12 @@ byte bulk_in_ep;
 byte bulk_out_ep;
 byte int_ep;
 
+#if DEBUG
 volatile bool usb_in_isr;
+volatile int32 usb_in_ticks;
+volatile int32 usb_out_ticks;
+volatile int32 usb_max_ticks;
+#endif
 
 bool scsi_attached;  // set when usb mass storage device is attached
 uint32 scsi_attached_count;
@@ -242,6 +247,7 @@ transaction(int endpoint, int token, void *buffer, int length)
         // if we got reset...
         if (int_stat & MCF_USB_OTG_INT_STAT_USB_RST) {
             MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
+            // we must detach!!!
             return -1;
         }
 
@@ -462,7 +468,7 @@ usb_device_wait()
     MCF_USB_OTG_OTG_CTRL = MCF_USB_OTG_OTG_CTRL_DP_HIGH|MCF_USB_OTG_OTG_CTRL_OTG_EN;
 #else
     USB_OTG_CONTROL |= USB_OTG_CONTROL_DPPULLUP_NONOTG_MASK;
-    USBTRC0 |= USBTRC0_USBPU_MASK|USBTRC0_USBVREN_MASK;
+    USBTRC0 |= USBTRC0_USBPU_MASK;
 #endif
 
     // enable (only) usb reset interrupt
@@ -583,11 +589,12 @@ usb_isr(void)
     
     assert(! usb_in_isr);
     assert((usb_in_isr = true) ? true : true);
+    assert((usb_in_ticks = ticks) ? true : true);
     
 #if PIC32
     IFS1CLR = 0x02000000; // USBIF
 #else
-     (void)splx(-SPL_USB);
+     (void)splx(7);
 #endif
     
     // *** host ***
@@ -600,8 +607,8 @@ usb_isr(void)
         assert(usb_host_mode);
         
         delay(100);  // debounce
-
         MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_ATTACH;
+        delay(10);  // debounce
         
         // if this attach is not real...
         if (! (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_ATTACH)) {
@@ -626,13 +633,13 @@ usb_isr(void)
         MCF_USB_OTG_CTL |= MCF_USB_OTG_CTL_RESET;
         delay(10);
         MCF_USB_OTG_CTL &= ~MCF_USB_OTG_CTL_RESET;
-        MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
 
         // enable sof
         MCF_USB_OTG_CTL |= MCF_USB_OTG_CTL_USB_EN_SOF_EN;
         MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_SLEEP|MCF_USB_OTG_INT_STAT_RESUME;
 
         delay(100);  // post reset
+        MCF_USB_OTG_INT_STAT = MCF_USB_OTG_INT_STAT_USB_RST;
 
         // enable transfers
         MCF_USB_OTG_ENDPT0 = MCF_USB_OTG_ENDPT_HOST_WO_HUB/*|MCF_USB_OTG_ENDPT_RETRY_DIS*/;
@@ -694,7 +701,7 @@ usb_isr(void)
         rv = usb_control_transfer(&setup, NULL, 0);
         assert(rv == 0);
         
-        delay(200);  // post set address recovery
+        delay(200);  // post set configuration recovery
         
         for (e = 1; e < LENGTHOF(endpoints); e++) {
             assert(endpoints[e].toggle[0] == 0);
@@ -947,6 +954,7 @@ usb_isr(void)
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_USB_RST) {
         assert(! usb_host_mode);
     
+        ftdi_active = 0;
         ftdi_attached = 0;
 
         usb_device_default();
@@ -970,6 +978,7 @@ usb_isr(void)
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_SLEEP) {
         assert(! usb_host_mode);
     
+        ftdi_active = 0;
         ftdi_attached = 0;
 
         // disable usb sleep interrupts
@@ -980,6 +989,8 @@ usb_isr(void)
 XXX_SKIP_XXX:
     assert(usb_in_isr);
     assert((usb_in_isr = false) ? true : true);
+    assert((usb_out_ticks = ticks) ? true : true);
+    assert((usb_max_ticks = MAX(usb_max_ticks, usb_out_ticks-usb_in_ticks)) ? true : true);
 }
 
 // this function is called by upper level code to register callback
@@ -1036,17 +1047,18 @@ usb_initialize(void)
 
     assert(BDT_RAM_SIZE >= LENGTHOF(endpoints)*4*sizeof(struct bdt));
 
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52259
     // enable usb interrupt
     MCF_INTC0_ICR53 = MCF_INTC_ICR_IL(SPL_USB)|MCF_INTC_ICR_IP(SPL_USB);
-    MCF_INTC0_IMRH &= ~MCF_INTC_IMRH_INT_MASK53;  // usb
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
+    MCF_INTC0_IMRH &= ~MCF_INTC_IMRH_INT_MASK53;  // usb
 #elif MCF51JM128
     /* Reset USB module first. */
     USBTRC0_USBRESET = 1;
     while (USBTRC0_USBRESET ) {
         // NULL
     }
+    USBTRC0 |= USBTRC0_USBVREN_MASK;
 #elif PIC32
     // power on
     U1PWRCbits.USBPWR = 1;
@@ -1056,7 +1068,7 @@ usb_initialize(void)
     INTSetPriority(INT_USB, 6);
 #endif
 
-#if MCF52221 || MCF52233 || MCF51JM128
+#if MCF52221 || MCF52259 || MCF51JM128
     // initialize usb timing
     if (oscillator_frequency == 48000000) {
         MCF_USB_OTG_USB_CTRL = MCF_USB_OTG_USB_CTRL_CLK_SRC(1);

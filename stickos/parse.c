@@ -125,6 +125,25 @@ parse_word(IN OUT char **text, IN const char *word)
     return true;
 }
 
+static
+bool
+parse_wordn(IN OUT char **text, IN const char *word)
+{
+    int len;
+
+    len = strlen(word);
+
+    if (strncmp(*text, word, len) || isdigit(*(*text+len))) {
+        return false;
+    }
+
+    // advance *text past word
+    (*text) += len;
+
+    parse_trim(text);
+    return true;
+}
+
 bool
 parse_words(IN OUT char **text_in, IN char *words)
 {
@@ -210,7 +229,7 @@ bool
 parse_const(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
     char c;
-    int value;
+    int32 value;
 
     if (! isdigit((*text)[0])) {
         return false;
@@ -240,7 +259,7 @@ parse_const(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
     }
 
     write32(bytecode+*length, value);
-    *length += sizeof(int);
+    *length += sizeof(uint32);
 
     parse_trim(text);
     return true;
@@ -340,7 +359,7 @@ parse_var(IN bool lvalue, IN int obase, IN bool allow_array_index, IN OUT char *
             // for lvalues we generate the code first, followed by the index expression length
             bytecode[(*length)++] = code_load_and_push_var_indexed;
             hole = (int *)(bytecode + *length);
-            *length += sizeof(int);
+            *length += sizeof(uint32);
             olength = *length;
         }
 
@@ -364,7 +383,7 @@ parse_var(IN bool lvalue, IN int obase, IN bool allow_array_index, IN OUT char *
 
         if (lvalue) {
             // fill in the index expression length from the parse
-            *hole = *length - olength;
+            write32((byte *)hole, *length - olength);
         } else {
             // for rvalues we generate the code last, following the index expression
             bytecode[(*length)++] = code_load_and_push_var_indexed;
@@ -600,8 +619,8 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 if (! parse_const(&text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
-                assert(length >= sizeof(int));
-                if (read32(bytecode+length-sizeof(int)) < 0 || read32(bytecode+length-sizeof(int)) >= MAX_TIMERS) {
+                assert(length >= sizeof(uint32));
+                if (read32(bytecode+length-sizeof(uint32)) < 0 || read32(bytecode+length-sizeof(uint32)) >= MAX_TIMERS) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -640,11 +659,11 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                     assert(*d == 'd');
                     *d = '\0';
                 }
-                len = length+sizeof(int);
+                len = length+sizeof(uint32);
                 if (! parse_expression(0, &text, &len, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
-                write32(bytecode+length, len-(length+sizeof(int)));
+                write32(bytecode+length, len-(length+sizeof(uint32)));
                 length = len;
                 text += strlen(text);
                 if (d) {
@@ -662,11 +681,11 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 }
 
                 // parse the interrupt handler statement
-                if (! parse_line(text, &len, bytecode+length+sizeof(int), syntax_error)) {
+                if (! parse_line(text, &len, bytecode+length+sizeof(uint32), syntax_error)) {
                     goto XXX_ERROR_XXX;
                 }
                 write32(bytecode+length, len);
-                length += sizeof(int);
+                length += sizeof(uint32);
                 length += len;
                 text += strlen(text);
             }
@@ -681,8 +700,8 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 if (! parse_const(&text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
-                assert(length >= sizeof(int));
-                if (read32(bytecode+length-sizeof(int)) < 0 || read32(bytecode+length-sizeof(int)) >= MAX_TIMERS) {
+                assert(length >= sizeof(uint32));
+                if (read32(bytecode+length-sizeof(uint32)) < 0 || read32(bytecode+length-sizeof(uint32)) >= MAX_TIMERS) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -739,8 +758,8 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 if (! parse_word(&text, "data")) {
                     goto XXX_ERROR_XXX;
                 }
-                assert(length >= sizeof(int));
-                if (read32(bytecode+length-sizeof(int)) < 5 || read32(bytecode+length-sizeof(int)) > 8) {
+                assert(length >= sizeof(uint32));
+                if (read32(bytecode+length-sizeof(uint32)) < 5 || read32(bytecode+length-sizeof(uint32)) > 8) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -841,7 +860,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 // if the user requested negative...
                 if (neg) {
                     // make it so
-                    write32(bytecode+length-sizeof(int), 0-read32(bytecode+length-sizeof(int)));
+                    write32(bytecode+length-sizeof(uint32), 0-read32(bytecode+length-sizeof(uint32)));
                 }
             }
             break;
@@ -874,7 +893,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                         bytecode[length++] = sizeof(short);
                         bytecode[length++] = code_ram;
                     } else {
-                        bytecode[length++] = sizeof(int);
+                        bytecode[length++] = sizeof(uint32);
 
                         // parse the type specifier
                         if (parse_word(&text, "flash")) {
@@ -884,7 +903,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
 
                             // parse the pin name
                             for (pin_number = 0; pin_number < PIN_LAST; pin_number++) {
-                                if (parse_word(&text, pins[pin_number].name)) {
+                                if (parse_wordn(&text, pins[pin_number].name)) {
                                     break;
                                 }
                             }
@@ -941,7 +960,7 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                         }
                     }
                 } else {
-                    bytecode[length++] = sizeof(int);
+                    bytecode[length++] = sizeof(uint32);
                     bytecode[length++] = code_ram;
                 }
             }
@@ -1092,14 +1111,14 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
                 if (! parse_const(&text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
-                assert(length >= sizeof(int));
-                if (! read32(bytecode+length-sizeof(int))) {
+                assert(length >= sizeof(uint32));
+                if (! read32(bytecode+length-sizeof(uint32))) {
                     goto XXX_ERROR_XXX;
                 }
             } else {
                 // break/continue 1 level
                 write32(bytecode+length, 1);
-                length += sizeof(int);
+                length += sizeof(uint32);
             }
             break;
 
@@ -1322,7 +1341,7 @@ unparse_var_lvalue(byte *bytecode_in, char **out)
 
         // get the index expression length; the variable name follows the index expression
         blen = read32(bytecode);
-        bytecode += sizeof(int);
+        bytecode += sizeof(uint32);
 
         // decompile the variable name and index expression
         *out += sprintf(*out, "%s[", bytecode+blen);
@@ -1357,7 +1376,7 @@ unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
     int n;
     int ttop;
     byte code;
-    int value;
+    int32 value;
     bool unary;
     byte *bytecode;
     char temp[BASIC_LINE_SIZE];
@@ -1377,13 +1396,13 @@ unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
             case code_load_and_push_immediate:
             case code_load_and_push_immediate_hex:
                 value = read32(bytecode);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
                 precedence[ttop] = 100;
                 // decompile the constant
                 if (code == code_load_and_push_immediate_hex) {
-                    sprintf(texts[ttop++], "0x%x", value);
+                    sprintf(texts[ttop++], "0x%lx", value);
                 } else {
-                    sprintf(texts[ttop++], "%d", value);
+                    sprintf(texts[ttop++], "%ld", value);
                 }
                 break;
 
@@ -1481,12 +1500,12 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
     int type;
     int qual;
     int uart;
-    int baud;
+    int32 baud;
     int data;
-    int value;
+    int32 value;
     byte parity;
     byte loopback;
-    int interval;
+    int32 interval;
     enum timer_unit_type timer_unit;
     int csiv;
     byte device;
@@ -1518,7 +1537,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 // and the timer number
                 timer = read32(bytecode);
                 assert(timer >= 0 && timer < MAX_TIMERS);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
                 out += sprintf(out, "%d", timer);
 
             } else if (device == device_uart) {
@@ -1537,7 +1556,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
 
                 // this is an expression
                 len = read32(bytecode);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
 
                 bytecode += unparse_expression(0, bytecode, len, &out);
 
@@ -1552,7 +1571,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 out += sprintf(out, " do ");
 
                 len = read32(bytecode);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
 
                 // decompile the interrupt handler statement
                 unparse_bytecode(bytecode, len, out);
@@ -1570,13 +1589,13 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 // and the timer number
                 timer = read32(bytecode);
                 assert(timer >= 0 && timer < MAX_TIMERS);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
                 out += sprintf(out, "%d ", timer);
 
                 // and the timer interval
                 interval = read32(bytecode);
-                bytecode += sizeof(int);
-                out += sprintf(out, "for %d ", interval);
+                bytecode += sizeof(uint32);
+                out += sprintf(out, "for %ld ", interval);
 
                 // and the timer interval unit specifier
                 timer_unit = (enum timer_unit_type)*(bytecode++);
@@ -1593,21 +1612,21 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
 
                 // find the uart protocol and optional loopback specifier
                 baud = read32(bytecode);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
                 data = read32(bytecode);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
                 parity = *bytecode++;
                 loopback = *bytecode++;
 
                 // and decompile it
-                out += sprintf(out, "for %d baud %d data %s parity%s", baud, data, parity==0?"even":(parity==1?"odd":"no"), loopback?" loopback":"");
+                out += sprintf(out, "for %ld baud %d data %s parity%s", baud, data, parity==0?"even":(parity==1?"odd":"no"), loopback?" loopback":"");
             } else if (device == device_qspi) {
                 // decompile the qspi
                 out += sprintf(out, "qspi ");
 
                 // and the chip select initial value
                 csiv = read32(bytecode);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
                 out += sprintf(out, "for %d csiv", csiv);
 
             } else {
@@ -1646,12 +1665,12 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 // decompile the constant
                 code2 = *bytecode++;
                 value = read32(bytecode);
-                bytecode += sizeof(int);
+                bytecode += sizeof(uint32);
                 if (code2 == code_load_and_push_immediate_hex) {
-                    out += sprintf(out, "0x%x", value);
+                    out += sprintf(out, "0x%lx", value);
                 } else {
                     assert(code2 == code_load_and_push_immediate);
-                    out += sprintf(out, "%d", value);
+                    out += sprintf(out, "%ld", value);
                 }
             }
             break;
@@ -1676,7 +1695,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                 code2 = *bytecode++;
 
                 // decompile the "as"
-                if (size != sizeof(int) || code2 != code_ram) {
+                if (size != sizeof(uint32) || code2 != code_ram) {
                     out += sprintf(out, " as ");
 
                     // decompile the size specifier
@@ -1687,7 +1706,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                         assert(code2 == code_ram);
                         out += sprintf(out, "short");
                     } else {
-                        assert(size == sizeof(int));
+                        assert(size == sizeof(uint32));
                         
                         // decompile the type specifier
                         if (code2 == code_flash) {
@@ -1719,7 +1738,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
                             assert(code2 == code_nodeid);
 
                             nodeid = read32(bytecode);
-                            bytecode += sizeof(int);
+                            bytecode += sizeof(uint32);
                             
                             out += sprintf(out, "remote on nodeid %u", nodeid);
                         }
@@ -1824,7 +1843,7 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
         case code_break:
         case code_continue:
             n = read32(bytecode);
-            bytecode += sizeof(int);
+            bytecode += sizeof(uint32);
             // if the break/continue level is not 1...
             if (n != 1) {
                 // decompile the break/continue level

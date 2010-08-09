@@ -18,24 +18,50 @@
 #include "MCF52235.h"
 #elif MCF52221
 #include "MCF52221.h"
+#elif MCF52259
+#include "MCF52259.h"
+#elif MCF5211
+#include "MCF5211.h"
+#define MCF_INTC0_ICR01  MCF_INTC_ICR01
+#define MCF_INTC0_ICR13  MCF_INTC_ICR13
+#define MCF_INTC0_ICR55  MCF_INTC_ICR55
+#define MCF_INTC0_IMRH  MCF_INTC_IMRH
+#define MCF_INTC0_IMRL  MCF_INTC_IMRL
 #elif MCF51JM128
 #include "MCF51JM128.h"
+#include "compat.h"
+#elif MCF51QE128
+#include "MCF51QE128.h"
+#include "compat.h"
+#elif MC9S08QE128
+#include "MC9S08QE128.h"
+#include "compat.h"
+#elif MC9S12DT256
+#include "MC9S12DT256.h"
 #include "compat.h"
 #elif PIC32
 #include <plib.h>
 typedef unsigned char uint8;
 typedef unsigned short uint16;
+typedef int int32;
 typedef unsigned int uint32;
 #else
 typedef unsigned char uint8;
 typedef unsigned short uint16;
+typedef int int32;
 typedef unsigned int uint32;
 #endif
 #endif
 
+#if MC9S08QE128 || MC9S12DT256
+typedef long intptr;
+typedef unsigned long uintptr;
+typedef uint16 size_t;
+#else
 typedef int intptr;
 typedef unsigned int uintptr;
 typedef uint32 size_t;
+#endif
 
 #if GCC
 #define INTERRUPT __attribute__((interrupt))
@@ -52,8 +78,8 @@ typedef uint32 size_t;
 #define asm_stop_2000(x) __asm__("stop #0x2000")
 #define asm_stop_2700(x) __asm__("stop #0x2700")
 
-#elif MCF52221 || MCF52233 || MCF51JM128
-#if MCF51JM128
+#elif MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128
+#if MCF51JM128 || MCF51QE128
 #define INTERRUPT  interrupt
 #else
 #define INTERRUPT  __declspec(interrupt)
@@ -62,6 +88,14 @@ typedef uint32 size_t;
 #define asm_halt() asm { halt }
 #define asm_stop_2000() asm { stop #0x2000 }
 #define asm_stop_2700() asm { stop #0x2700 }
+#elif MC9S08QE128
+#define INTERRUPT
+#define asm_halt()  asm("bgnd");
+#define DECLSPEC_PAGE1
+#elif MC9S12DT256
+#define INTERRUPT
+#define asm_halt()  asm("bgnd");
+#define DECLSPEC_PAGE1
 #elif PIC32
 #define INTERRUPT
 #define asm_halt()  asm("SDBBP");
@@ -74,11 +108,34 @@ typedef uint32 size_t;
 
 #define INTERRUPT
 
+#if WIN32
+// _DEBUG/NDEBUG win
+#if _DEBUG
+#define DEBUG  1
+#else
+#if NDEBUG
+#define DEBUG  0
+#else
+#error _DEBUG/NDEBUG?
+#endif
+#endif  // _DEBUG
+#else  // WIN32
+// DEBUG wins
+#if DEBUG
+#define _DEBUG
+#undef NDEBUG
+#else
+#define NDEBUG
+#undef _DEBUG
+#endif  // DEBUG
+#endif  // WIN32
+
 #if GCC
 #include <inttypes.h>
 #include <bits/wordsize.h>
 typedef uint8_t uint8;
 typedef uint16_t uint16;
+typedef int32_t int32;
 typedef uint32_t uint32;
 typedef uintptr_t uintptr;
 typedef intptr_t intptr;
@@ -94,6 +151,7 @@ extern int isatty(int);
 #if ! NO_UINT_TYPEDEFS
 typedef unsigned char uint8;
 typedef unsigned short uint16;
+typedef  int int32;
 typedef unsigned int uint32;
 typedef int intptr;
 typedef unsigned int uintptr;
@@ -102,6 +160,7 @@ typedef unsigned int uintptr;
 #endif // ! GCC
 #include <assert.h>
 #define ASSERT(x)  assert(x)
+#define assert_ram(x)  assert(x)
 
 extern void write(int, const void *, size_t);
 extern char *gets(char *);
@@ -109,12 +168,11 @@ extern char *gets(char *);
 #define inline
 #undef MAX_PATH
 #define W32BYTESWAP(x) ((x)&0xff)<<24|((x)&0xff00)<<8|((x)&0xff0000)>>8|((x)&0xff000000)>>24;
-#define FLASH_PAGE_SIZE  2048
 
 #endif  // ! STICK_GUEST
 
 typedef unsigned char bool;
-#if ! MCF51JM128 || GCC
+#if (! MCF51JM128 && ! MCF51QE128) || GCC
 typedef unsigned char byte;
 #endif
 
@@ -149,16 +207,17 @@ enum {
 #include "adc.h"
 #include "led.h"
 
+#include "startup.h"
+
 #if ! STICK_GUEST
 
-#include "startup.h"
 #include "init.h"
 #include "vectors.h"
 
 #include "serial.h"
 #include "sleep.h"
 
-#if MCF52221 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
 #include "ftdi.h"
 #include "scsi.h"
 #include "usb.h"
@@ -181,7 +240,7 @@ enum {
 
 #endif  // ! STICK_GUEST
 
-#if PICTOCRYPT
+#if PICTOCRYPT && ! MCF51JM128
 #include "pict-o-crypt.h"
 #include "admin.h"
 #include "aes.h"
@@ -219,9 +278,12 @@ extern void os_yield(void);
 
 #if DEBUG
 #define assert(x)  if (! (x)) { led_line(__LINE__); }
-#define assert_ram(x)  if (! (x)) { asm_halt(); }
 #else
 #define assert(x)
+#endif
+#if DEBUG || PIC32
+#define assert_ram(x)  if (! (x)) { asm_halt(); }
+#else
 #define assert_ram(x)
 #endif
 #define ASSERT(x)  if (! (x)) { led_line(__LINE__); }

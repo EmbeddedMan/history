@@ -25,15 +25,28 @@
 
 #ifndef MAIN_INCLUDED
 
-#if EXTRACT && ! MCF51JM128
+#if EXTRACT && ! MCF51JM128 && ! MCF51QE128
 #include "extract.h"
 #else
 #if MCF52233
 #include "MCF52235.h"
 #elif MCF52221
 #include "MCF52221.h"
+#elif MCF52259
+#include "MCF52259.h"
+#elif MCF5211
+#include "MCF5211.h"
 #elif MCF51JM128
 #include "MCF51JM128.h"
+#include "compat.h"
+#elif MCF51QE128
+#include "MCF51QE128.h"
+#include "compat.h"
+#elif MC9S08QE128
+#include "MC9S08QE128.h"
+#include "compat.h"
+#elif MC9S12DT256
+#include "MC9S12DT256.h"
 #include "compat.h"
 #elif PIC32
 #include <plib.h>
@@ -56,7 +69,7 @@ extern uint8 __RAMBAR[];
 #endif
 
 typedef unsigned char bool;
-#if ! MCF51JM128
+#if ! MCF51JM128 && ! MCF51QE128
 typedef unsigned char byte;
 #endif
 
@@ -80,7 +93,7 @@ enum {
 #include "startup.h"
 #include "vectors.h"
 
-#if ! PIC32
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
 extern unsigned char far _SP_INIT[], _SDA_BASE[];
 extern unsigned char far __SP_AFTER_RESET[];
 extern unsigned char far ___RAMBAR[], ___RAMBAR_SIZE[];
@@ -101,8 +114,8 @@ byte big_buffer[8192];
 byte big_buffer[1024];
 #endif
 
-#if ! PIC32
-#if BADGE_BOARD
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
+#if BADGE_BOARD || DEMO_KIT
 #define DECLSPEC_PAGE0_CODE
 #define DECLSPEC_PAGE0_DATA
 #elif GCC
@@ -147,7 +160,7 @@ asm void _startup(void);
 #define Q3(a,b,c)  a b,c
 #endif  // GCC
 
-#if ! BADGE_BOARD
+#if ! BADGE_BOARD && ! DEMO_KIT
 
 #if ! FLASHER
 #define X  0  // we're running in flash
@@ -197,7 +210,7 @@ const uint32 _vect[256] = {
 // this is the cfm config
 DECLSPEC_PAGE0_DATA
 const unsigned long _cfm[] = {
-#if ! MCF51JM128
+#if ! MCF51JM128 && ! MCF51QE128
     0,                              // (0x00000400) KEY_UPPER
     0,                              // (0x00000404) KEY_LOWER
     0xffffffff,                     // (0x00000408) CFMPROT
@@ -215,11 +228,11 @@ const unsigned long _cfm[] = {
     0x00ff0000                      // 40c prot/opt
 #endif
 };
-#else  // ! BADGE_BOARD
+#else  // ! BADGE_BOARD && ! DEMO_KIT
 extern
 void
 init(void);
-#endif  // ! BADGE_BOARD
+#endif  // ! BADGE_BOARD && ! DEMO_KIT
 
 DECLSPEC_PAGE0_CODE
 void
@@ -233,7 +246,7 @@ BEGIN_NAKED(_startup)
     // disable interrupts
     Q3(move.w,  #0x2700,sr)
     
-#if ! MCF51JM128
+#if ! MCF51JM128 && ! MCF51QE128
     // initialize RAMBAR
     Q3(move.l,  #__RAMBAR+0x21,d0)
     Q3(movec,   d0,RAMBAR)
@@ -247,7 +260,11 @@ BEGIN_NAKED(_startup)
     // initialize FLASHBAR
     Q3(move.l,  #__FLASHBAR,d0)
     Q3(andi.l,  #0xFFF80000,d0)  // need to mask
+#if MCF52259
+    Q3(add.l,   #0x21,d0)
+#else
     Q3(add.l,   #0x61,d0)
+#endif
     Q3(movec,   d0,FLASHBAR)
 #else
     Q3(move.l,  #0xc0000000,d0)
@@ -270,7 +287,7 @@ BEGIN_NAKED(_startup)
     // set up the real stack pointer
     Q3(lea,     _SP_INIT,a7)
 
-#if ! BADGE_BOARD
+#if ! BADGE_BOARD && ! DEMO_KIT
     // late C initialization, post-upgrade (init(), page1 indirect)
     Q3(lea,     VECTOR_OLD_INIT,a0)
     Q3(move.l,  (a0),a0)
@@ -348,20 +365,35 @@ p0_c_startup(void)
     // zero all of RAM now, so we can set globals in this file
     p0_memset((void *)__DATA_RAM, 0, (uint32)__SP_AFTER_RESET - (uint32)__DATA_RAM - 64);
 
-#if ! MCF51JM128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+#if ! MCF5211
     // enable debug
     MCF_GPIO_PDDPAR = 0x0F;
+#endif
 
     // disable Software Watchdog Timer
     MCF_SCM_CWCR = 0;
-#else
+#elif MCF51JM128
     // disable Software Watchdog Timer
     SOPT1 = SOPT1_STOPE_MASK;
     SOPT2 &= ~SOPT2_USB_BIGEND_MASK;
+#elif MCF51QE128
+    // disable Software Watchdog Timer
+    SOPT1 = SOPT1_STOPE_MASK|SOPT1_BKGDPE_MASK;
+#else
+#error
 #endif
 
-#if MCF52221 || MCF52233
-#if MCF52221
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+#if MCF5211
+        // and multiply by 8 to get 64MHz
+        MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(2)|MCF_CLOCK_SYNCR_CLKSRC|MCF_CLOCK_SYNCR_PLLMODE|MCF_CLOCK_SYNCR_PLLEN;
+        
+        // no USB
+        cpu_frequency = 64000000;
+        bus_frequency = cpu_frequency/2;
+        oscillator_frequency = 8000000;
+#elif MCF52221
     // if we don't have a crystal...
     if (MCF_CLOCK_SYNSR & MCF_CLOCK_SYNSR_OCOSC) {
         // we use the 8MHz internal oscillator divided by 1
@@ -390,13 +422,32 @@ p0_c_startup(void)
     // we use the 25MHz crystal divided by 5
     MCF_CLOCK_CCHR = 4;
 
-    // and multiply by 12 to get 64MHz
+    // and multiply by 12 to get 60MHz
     MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(4)|MCF_CLOCK_SYNCR_CLKSRC|MCF_CLOCK_SYNCR_PLLMODE|MCF_CLOCK_SYNCR_PLLEN;
     
     // no USB
     cpu_frequency = 60000000;
     bus_frequency = cpu_frequency/2;
     oscillator_frequency = 25000000;
+#elif MCF52259
+    MCF_CLOCK_OCLR = 0xC0;  //turn on crystal
+    MCF_CLOCK_CCLR = 0x00;  //switch to crystal 
+    MCF_CLOCK_OCHR = 0x00;  //turn off relaxation osc
+
+    // we use the 48MHz crystal divided by 6
+    MCF_CLOCK_CCHR = 5;
+
+    // and multiply by 10 to get 80MHz
+    MCF_CLOCK_SYNCR = MCF_CLOCK_SYNCR_MFD(3)|MCF_CLOCK_SYNCR_CLKSRC|MCF_CLOCK_SYNCR_PLLMODE|MCF_CLOCK_SYNCR_PLLEN;
+
+    // USB uses oscillator
+    cpu_frequency = 80000000;
+    bus_frequency = cpu_frequency/2;
+    oscillator_frequency = 48000000;
+    
+    // shut down non-essential clocks
+    MCF_SCM_PPMRL = MCF_SCM_PPMRL_CDFEC|MCF_SCM_PPMRL_CDMINIBUS;
+    MCF_SCM_PPMRH = MCF_SCM_PPMRH_CDPIT1;
 #else
 #error
 #endif
@@ -407,7 +458,12 @@ p0_c_startup(void)
     }
     
     // set real time clock freq
+#if MCF52259
+    MCF_RTC_RTCGOCU = 0x8000>>16;
+    MCF_RTC_RTCGOCL = 0x8000;
+#elif ! MCF5211
     MCF_CLOCK_RTCDR = cpu_frequency;
+#endif
 
     // enable on-chip modules to access internal SRAM
     MCF_SCM_RAMBAR = (0|MCF_SCM_RAMBAR_BA(RAMBAR_ADDRESS)|MCF_SCM_RAMBAR_BDE);
@@ -463,6 +519,31 @@ p0_c_startup(void)
     if (KBI1SC == 0x01) {
         debugger_attached = true;
     }
+#elif MCF51QE128
+#define setReg8(RegName, val)  (RegName = (byte)(val))
+#define clrSetReg8Bits(RegName, ClrMask, SetMask)  (RegName = (byte)((byte)((byte)RegName & (~(byte)(ClrMask))) | (byte)(SetMask)))
+
+    /*  System clock initialization */
+    /* ICSC1: CLKS=0,RDIV=0,IREFS=1,IRCLKEN=1,IREFSTEN=0 */
+    setReg8(ICSC1, 0x06);                /* Initialization of the ICS control register 1 */ 
+    /* ICSC2: BDIV=0,RANGE=0,HGO=0,LP=0,EREFS=0,ERCLKEN=0,EREFSTEN=0 */
+    setReg8(ICSC2, 0x00);                /* Initialization of the ICS control register 2 */ 
+    while(!ICSSC_IREFST) {               /* Wait until the source of reference clock is internal clock */
+    }
+    /* ICSSC: DRST_DRS=2,DMX32=0 */
+    clrSetReg8Bits(ICSSC, 0x60, 0x80);   /* Initialization of the ICS status and control */ 
+    while((ICSSC & 0xC0) != 0x80) {      /* Wait until the FLL switches to High range DCO mode */
+    }
+    
+    cpu_frequency = 50330000;
+    bus_frequency = cpu_frequency/2;
+    oscillator_frequency = 32768;
+    
+    // we read KBI1SC's initial value to determine if the debugger is attached
+    // N.B. this value must be set by the debugger's cmd file!
+    if (KBI1SC == 0x01) {
+        debugger_attached = true;
+    }
 #else
 #error
 #endif
@@ -479,7 +560,7 @@ p0_c_startup(void)
             MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((bus_frequency-1)/200000);
         }
 
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
         MCF_CFM_CFMPROT = 0;
         MCF_CFM_CFMSACC = 0;
         MCF_CFM_CFMDACC = 0;

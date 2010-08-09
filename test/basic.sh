@@ -491,7 +491,6 @@ EOF
 echo test flash memory
 "$BASIC" -q <<EOF
 trace on
-autoreset on
 autorun off
 10 dim a as flash
 20 dim b[4] as flash
@@ -509,11 +508,9 @@ indent off
 list
 run
 run
-autoreset
 autorun
 clear flash
 run
-autoreset
 autorun
 prompt
 prompt off
@@ -627,7 +624,7 @@ run
 cont 80
 EOF
 
-echo test autorun and autoreset
+echo test autorun
 "$BASIC" -q <<EOF
 autorun
 autorun on
@@ -636,13 +633,6 @@ autorun on
 autorun
 autorun off
 autorun
-autoreset
-autoreset on
-autoreset
-autoreset on
-autoreset
-autoreset off
-autoreset
 EOF
 
 echo test variable scopes
@@ -1270,9 +1260,6 @@ EOF
 
 echo command errors
 "$BASIC" -q <<EOF
-print "autoreset"
-autoreset aaa
-autoreset on aaa
 print "autorun"
 autorun aaa
 autorun on aaa

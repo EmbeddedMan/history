@@ -15,8 +15,6 @@ AS = $(CC) -x assembler-with-cpp
 
 ifeq (52221,$(findstring 52221,$(CPU)))
 PROC=52223
-else ifeq (52233,$(findstring 52233,$(CPU)))
-PROC=52235
 else
 $(error Invalid CPU - $(CPU))
 endif

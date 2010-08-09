@@ -11,16 +11,18 @@ project.mcp (for CW7.1):
 * Empty          -- empty project to hold places for header files, etc.,
                     outside of Link Order
 
-51jm128.mcp (for CW6.2):
+flexis.mcp (for CW6.2):
 
 * Skeleton 51jm128 -- skeleton code to run on an MCF51JM128, with USB host
                       and device drivers (source code)
 * Skeleton Badge   -- skeleton code to run on a Badge Board, with USB host
                       and device drivers (source code)
-                      
+
+hcs12.mcp (for CW 4.7)
+
 pic32.mcw (for MPLAB8.1):
 
-* pic32.mcp        -- skeleton code to run on a PIC32MX4, with USB host
+* pic32.mcp        -- skeleton code to run on a PIC32MX3/4, with USB host
                       and device drivers (source code)
                     
 Note that the remaining targets are private, with no source code provided.

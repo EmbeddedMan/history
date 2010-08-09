@@ -4,6 +4,8 @@
 
 #include "main.h"
 
+#define SHRINK  0
+
 enum cmdcode {
     command_demo,
     command_help,
@@ -35,15 +37,26 @@ char *help_about =
 "Welcome to StickOS for Freescale MCF52233 v" VERSION "!\n"
 #elif MCF52221
 "Welcome to StickOS for Freescale MCF52221 v" VERSION "!\n"
+#elif MCF52259
+"Welcome to StickOS for Freescale MCF52252 v" VERSION "!\n"
+#elif MCF5211
+"Welcome to StickOS for Freescale MCF5211 v" VERSION "!\n"
 #elif MCF51JM128
 "Welcome to StickOS for Freescale MCF51JM128 v" VERSION "!\n"
+#elif MCF51QE128
+"Welcome to StickOS for Freescale MCF51QE128 v" VERSION "!\n"
+#elif MC9S08QE128
+"Welcome to StickOS for Freescale MC9S08QE128 v" VERSION "!\n"
+#elif MC9S12DT256
+"Welcome to StickOS for Freescale MC9S12DT256 v" VERSION "!\n"
 #elif PIC32
 "Welcome to StickOS for Microchip PIC32MX4 v" VERSION "!\n"
 #else
 #error
 #endif
 "Copyright (c) 2008; all rights reserved.\n"
-"http://www.cpustick.com\n"
+"info: http://www.cpustick.com\n"
+"bugs: support@cpustick.com\n"
 #if INCOMPAT
 "incompatible\n"
 #endif
@@ -52,6 +65,15 @@ char *help_about =
 #endif
 ;
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG HELP_CODE
+#pragma STRING_SEG HELP_STRING
+// N.B. for MC9S08QE128/MC9S12DT256 we put all the help strings and the
+// function that accesses them in page 7 or 38; we have to put the functions
+// that copy these to RAM in unbanked memory.
+#endif
+
+#if ! SHRINK
 static char *help_general =
 "for more information:\n"
 "  help about\n"
@@ -66,7 +88,7 @@ static char *help_general =
 #if MCF52221
 "  help board\n"
 #endif
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259
 "  help clone\n"
 #endif
 "  help zigbee\n"
@@ -76,8 +98,9 @@ static char *help_general =
 ;
 
 static char *help_commands =
+"auto <line>                   -- automatically number program lines\n"
 "clear [flash]                 -- clear ram [and flash] variables\n"
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "clone [run]                   -- clone flash to slave CPUStick [and run]\n"
 #endif
 "cls                           -- clear terminal screen\n"
@@ -97,7 +120,7 @@ static char *help_commands =
 "run [<line>]                  -- run program\n"
 "save [<name>]                 -- save code ram to flash memory\n"
 "undo                          -- undo code changes since last save\n"
-#if ! BADGE_BOARD
+#if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC51QE128
 "upgrade                       -- upgrade StickOS firmware!\n"
 #endif
 "uptime                        -- print time since last reset\n"
@@ -107,7 +130,7 @@ static char *help_commands =
 ;
 
 static char *help_modes =
-"autoreset [on|off]            -- autoreset (on wake) mode\n"
+"analog [<millivolts>]         -- set analog voltage scale\n"
 "autorun [on|off]              -- autorun (on reset) mode\n"
 "echo [on|off]                 -- terminal echo mode\n"
 "indent [on|off]               -- listing indent mode\n"
@@ -245,23 +268,37 @@ static char *help_variables =
 
 static char *help_pins =
 "pin names:\n"
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "    0        1        2        3        4     5     6     7\n"
 "  -------- -------- -------- --------- ----- ----- ----- ------+\n"
 "  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN\n"
 "  scl      sda                                                 | PORT AS\n"
-#if MCF52233
-"  gpt0     gpt1     gpt2     irq11*                            | PORT GP\n"
+#if MCF52233 || MCF52259 || MCF5211
+"  gpt0     gpt1     gpt2     gpt3                              | PORT TA\n"
 #endif
+#if MCF52259
+"           irq1*             irq3*           irq5*       irq7* | PORT NQ\n"
+#else
 "           irq1*                       irq4*             irq7* | PORT NQ\n"
+#endif
+#if MCF52233
+"                             irq11*                            | PORT GP\n"
+#endif
 "  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS\n"
 "  dtin0    dtin1    dtin2    dtin3                             | PORT TC\n"
 "  utxd0    urxd0    urts0*   ucts0*                            | PORT UA\n"
 "  utxd1    urxd1    urts1*   ucts1*                            | PORT UB\n"
+#if MCF52259
+"  utxd2    urxd2    urts2*   ucts2*                            | PORT UC\n"
+#endif
 "\n"
 "all pins support general purpose digital input/output\n"
 "an? = potential analog input pins (mV)\n"
-"dtin? = potential analog output (PWM actually) pins (mV)\n"
+#if MCF52233 || MCF52259 || MCF5211
+"dtin?, gpt? = potential analog output (PWM) pins (mV)\n"
+#else
+"dtin? = potential analog output (PWM) pins (mV)\n"
+#endif
 "dtin? = potential frequency output pins (Hz)\n"
 "urxd? = potential uart input pins (received byte)\n"
 "utxd? = potential uart output pins (transmit byte)\n"
@@ -278,10 +315,47 @@ static char *help_pins =
 "\n"
 "all pins support general purpose digital input/output\n"
 "ptb?, ptd[0134] = potential analog input pins (mV)\n"
-"pte[23], ptf[0-5] = potential analog output (PWM actually) pins (mV)\n"
+"pte[23], ptf[0-5] = potential analog output (PWM) pins (mV)\n"
 "pte[23], ptf[0-5] = potential frequency output pins (Hz)\n"
 "pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)\n"
 "pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)\n"
+#elif MCF51QE128 || MC9S08QE128
+"    0       1       2       3       4       5       6       7\n"
+"  ------- ------- ------- ------- ------- ------- ------- --------+\n"
+"  pta0    pta1    pta2    pta3    pta4    pta5    pta6    pta7    | PORT A\n"
+"  ptb0    ptb1    ptb2    ptb3    ptb4    ptb5    ptb6    ptb7    | PORT B\n"
+"  ptc0    ptc1    ptc2    ptc3    ptc4    ptc5    ptc6    ptc7    | PORT C\n"
+"  ptd0    ptd1    ptd2    ptd3    ptd4    ptd5    ptd6    ptd7    | PORT D\n"
+"  pte0    pte1    pte2    pte3    pte4    pte5    pte6    pte7    | PORT E\n"
+"  ptf0    ptf1    ptf2    ptf3    ptf4    ptf5    ptf6    ptf7    | PORT F\n"
+"  ptg0    ptg1    ptg2    ptg3                                    | PORT G\n"
+"\n"
+"all pins support general purpose digital input/output\n"
+"pta[0-367], ptb[0-3], ptf[0-7], ptg[23] = potential analog input pins (mV)\n"
+"pta[0167], ptb[45], ptc[0-5] = potential analog output (PWM) pins (mV)\n"
+"pta[0167], ptb[45], ptc[0-5] = potential frequency output pins (Hz)\n"
+"ptb0 (u1), ptc6 (u2) = potential uart input pins (received byte)\n"
+"ptb1 (u1), ptc7 (u2) = potential uart output pins (transmit byte)\n"
+#elif MC9S12DT256
+"    0       1       2       3       4       5       6       7\n"
+"  ------- ------- ------- ------- ------- ------- ------- --------+\n"
+"  pad00   pad01   pad02   pad03   pad04   pad05   pad06   pad07   | PORT AD0\n"
+"  pa0     pa1     pa2     pa3     pa4     pa5     pa6     pa7     | PORT A\n"
+"  pb0     pb1     pb2     pb3     pb4     pb5     pb6     pb7     | PORT B\n"
+"  pe0     pe1     pe2     pe3     pe4     pe5     pe6     pe7     | PORT E\n"
+"                                                  pj6     pj7     | PORT J\n"
+"  pm0     pm1     pm2     pm3     pm4     pm5     pm6     pm7     | PORT M\n"
+"  pp0     pp1     pp2     pp3     pp4     pp5     pp6     pp7     | PORT P\n"
+"  ps0     ps1     ps2     ps3                                     | PORT S\n"
+"  pt0     pt1     pt2     pt3     pt4     pt5     pt6     pt7     | PORT T\n"
+"\n"
+"all pins support general purpose digital input\n"
+"all pins except pad?? and pe[01] support general purpose digital output\n"
+"pad?? = potential analog input pins (mV)\n"
+"pp? = potential analog output (PWM) pins (mV)\n"
+"pt? = potential frequency output pins (Hz)\n"
+"ps0 (u0), ps2 (u1) = potential uart input pins (received byte)\n"
+"ps1 (u0), ps3 (u1) = potential uart output pins (transmit byte)\n"
 #elif PIC32
 "  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
@@ -297,15 +371,15 @@ static char *help_pins =
 "  re8     re9                                                     |      E+8\n"
 "  rf0     rf1     rf2     rf3     rf4     rf5                     | PORT F\n"
 "  rf8                             rf12    rf13                    |      F+8\n"
-"  rg0     rg1                                     sck2    sdi2    | PORT G\n"
-"  sdo2    ssi2                    rg12    rg13    rg14            |      G+8\n"
+"  rg0     rg1                                     rg6     rg7     | PORT G\n"
+"  rg8     rg9                     rg12    rg13    rg14            |      G+8\n"
 "\n"
 "all pins support general purpose digital input/output\n"
 "an? = potential analog input pins (mV)\n"
-"rd[0-4] = potential analog output (PWM actually) pins (mV)\n"
+"rd[0-4] = potential analog output (PWM) pins (mV)\n"
 "rd[0-4] = potential frequency output pins (Hz)\n"
 "rf2 (u1), rf4 (u2) = potential uart input pins (received byte)\n"
-"rf3 (u1), rf5 (u2) = potential uart output pins (transmit byte)\n"
+"rf8 (u1), rf5 (u2) = potential uart output pins (transmit byte)\n"
 #else
 #error
 #endif
@@ -314,6 +388,7 @@ static char *help_pins =
 #if MCF52221
 static char *help_board =
 "                1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
+
 "\n"
 "                g  +  u  u  u  u  u  u  u  u  i  i  i  +\n"
 "                n  3  c  r  r  t  c  r  r  t  r  r  r  5\n"
@@ -327,8 +402,8 @@ static char *help_board =
 "6  qspi_din\n"
 "7  qspi_dout\n"
 "8  qspi_clk\n"
-"9  qspi_cs0         d  d  d  d\n"
-"10 rcon*/irq4*      t  t  t  t\n"
+"9  qspi_cs0           d  d  d  d\n"
+"10 rcon*/irq4*        t  t  t  t\n"
 "                g  +  i  i  i  i  a  a  a  a  a  a  a  a\n"
 "                n  3  n  n  n  n  n  n  n  n  n  n  n  n\n"
 "                d  V  3  2  1  0  0  1  2  3  4  5  6  7\n"
@@ -337,7 +412,7 @@ static char *help_board =
 ;
 #endif
 
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259
 static char *help_clone =
 "clone cable:\n"
 "  master     slave\n"
@@ -363,12 +438,16 @@ static char *help_zigbee =
 "zigbee cable:\n"
 "  MCU            MC1320X\n"
 "  -------------  -----------\n"
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "  qspi_clk       spiclk\n"
 "  qspi_din       miso\n"
 "  qspi_dout      mosi\n"
 "  qspi_cs0       ce*\n"
+#if MCF52259
+"  irq1*          irq*\n"
+#else
 "  irq4*          irq*\n"
+#endif
 "  scl            rst*\n"
 "  sda            rxtxen\n"
 #elif MCF51JM128
@@ -379,6 +458,22 @@ static char *help_zigbee =
 "  irq*           irq*\n"
 "  pte2           rst*\n"
 "  ptb5           rxtxen\n"
+#elif MCF51QE128 || MC9S08QE128
+"  spsck1 (ptb2)  spiclk\n"
+"  miso1 (ptb4)   miso\n"
+"  mosi1 (ptb3)   mosi\n"
+"  ss1* (ptb5)    ce*\n"
+"  irq*           irq*\n"
+"  ptc0           rst*\n"
+"  ptf1           rxtxen\n"
+#elif MC9S12DT256
+"  sck0 (pm5)     spiclk\n"
+"  miso0 (pm2)    miso\n"
+"  mosi0 (pm4)    mosi\n"
+"  ss0* (pm3)     ce*\n"
+"  irq* (pe1)     irq*\n"
+"  pt0            rst*\n"
+"  pb6            rxtxen\n"
 #elif PIC32
 // REVISIT -- implement zigbee on MRF24J40
 "  sck2 (rg6)     spiclk\n"
@@ -394,6 +489,7 @@ static char *help_zigbee =
 "  vss            vss\n"
 "  vdd            vdd\n"
 ;
+#endif
 
 void
 basic2_help(IN char *text_in)
@@ -411,6 +507,9 @@ basic2_help(IN char *text_in)
         assert(p);
         assert(p-text < BASIC_LINE_SIZE);
         memcpy(line, text, p-text);
+#if MC9S08QE128 || MC9S12DT256
+#pragma STRING_SEG DEFAULT
+#endif
         line[p-text] = '\0';
         printf("%s\n", line);
         text = p+1;
@@ -426,16 +525,25 @@ basic2_help(IN char *text_in)
 #endif
 }
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
+
 
 // *** demo ***********************************************************
 
+#if ! SHRINK
 static const char * const demo0[] = {
   "rem ### blinky ###",
   "dim i",
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
   "dim led as pin dtin2 for digital output",
 #elif MCF51JM128
   "dim led as pin ptf1 for digital output inverted",
+#elif MCF51QE128 || MC9S08QE128
+  "dim led as pin ptc3 for digital output inverted",
+#elif MC9S12DT256
+  "dim led as pin pb6 for digital output inverted",
 #elif PIC32
   "dim led as pin rd2 for digital output inverted",
 #else
@@ -455,10 +563,17 @@ static const char *const demo1[] = {
   "rem ### uart isr ###",
   "dim data",
   "data 1, 1, 2, 3, 5, 8, 13, 21, 0",
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MC9S12DT256
   "configure uart 0 for 300 baud 8 data no parity loopback",
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
   "dim tx as pin utxd0 for uart output",
   "dim rx as pin urxd0 for uart input",
+#elif MC9S12DT256
+  "dim tx as pin ps1 for uart output",
+  "dim rx as pin ps0 for uart input",
+#else
+#error
+#endif
   "on uart 0 input do gosub receive",
   "on uart 0 output do gosub transmit",
 #else
@@ -466,6 +581,9 @@ static const char *const demo1[] = {
 #if MCF51JM128
   "dim tx as pin ptc3 for uart output",
   "dim rx as pin ptc5 for uart input",
+#elif MCF51QE128 || MC9S08QE128
+  "dim tx as pin ptc7 for uart output",
+  "dim rx as pin ptc6 for uart input",
 #elif PIC32
   "dim tx as pin rf5 for uart output",
   "dim rx as pin rf4 for uart input",
@@ -493,24 +611,27 @@ static const char *const demo1[] = {
 
 static const char *const demo2[] = {
   "rem ### uart pio ###",
-#if MCF52221 || MCF52233
   "configure uart 1 for 9600 baud 7 data even parity loopback",
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
   "dim tx as pin utxd1 for uart output",
   "dim rx as pin urxd1 for uart input",
-#else
-  "configure uart 1 for 9600 baud 7 data even parity loopback",
-#if MCF51JM128
+#elif MCF51JM128
   "dim tx as pin pte0 for uart output",
   "dim rx as pin pte1 for uart input",
+#elif MCF51QE128 || MC9S08QE128
+  "dim tx as pin ptb1 for uart output",
+  "dim rx as pin ptb0 for uart input",
+#elif MC9S12DT256
+  "dim tx as pin ps3 for uart output",
+  "dim rx as pin ps2 for uart input",
 #elif PIC32
   "dim tx as pin rf8 for uart output",
   "dim rx as pin rf2 for uart input",
 #else
 #error
 #endif
-#endif
   "let tx = 3",
-#if MCF51JM128
+#if MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
   "while tx do",
   "endwhile",
   "print rx",
@@ -527,12 +648,17 @@ static const char *const demo2[] = {
 static const char *const demo3[] = {
   "rem ### toaster ###",
   "dim target, secs",
-#if MCF52221 || MCF52233 || PIC32
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || PIC32
   "dim thermocouple as pin an0 for analog input",
   "dim relay as pin an1 for digital output",
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128
+  "dim thermocouple as pin ptb0 for analog input",
+  "dim relay as pin ptb1 for digital output",
+#elif MC9S12DT256
+  "dim thermocouple as pin pad00 for analog input",
+  "dim relay as pin pa0 for digital output",
 #else
-  "dim thermocouple as pin ptd0 for analog input",
-  "dim relay as pin ptd1 for digital output",
+#error
 #endif
   "data 5124, 6, 7460, 9, 8940, 3, -1, -1",
   "configure timer 0 for 1000 ms",
@@ -552,7 +678,7 @@ static const char *const demo3[] = {
   "  endif",
   "endsub",
 };
-
+#endif
 
 // *** basic2_run() ***************************************************
 
@@ -560,7 +686,9 @@ static const char *const demo3[] = {
 bool
 basic2_run(char *text_in)
 {
+#if ! SHRINK
     int i;
+#endif
     int cmd;
     int len;
     char *text;
@@ -594,6 +722,7 @@ basic2_run(char *text_in)
 
     switch (cmd) {
         case command_demo:
+#if ! SHRINK
             number1 = 0;
             if (*text) {
                 if (! basic_const(&text, &number1) || number1 < 0 || number1 >= 4) {
@@ -635,13 +764,18 @@ basic2_run(char *text_in)
             } else {
                 assert(0);
             }
+#endif
             break;
 
         case command_help:
+#if ! SHRINK
             if (! *text) {
                 basic2_help(help_general);
-            } else if (parse_word(&text, "about")) {
+            } else
+#endif
+            if (parse_word(&text, "about")) {
                 basic2_help(help_about);
+#if ! SHRINK
             } else if (parse_word(&text, "commands")) {
                 basic2_help(help_commands);
             } else if (parse_word(&text, "modes")) {
@@ -662,7 +796,7 @@ basic2_run(char *text_in)
             } else if (parse_word(&text, "board")) {
                 basic2_help(help_board);
 #endif
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259
             } else if (parse_word(&text, "clone")) {
                 basic2_help(help_clone);
 #endif
@@ -670,6 +804,7 @@ basic2_run(char *text_in)
                 basic2_help(help_zigbee);
             } else {
                 goto XXX_ERROR_XXX;
+#endif
             }
             break;
 
@@ -699,7 +834,7 @@ basic2_run(char *text_in)
                 if (! i || i == -1) {
                     printf("dhcp\n");
                 } else {
-                    printf("%u.%u.%u.%u\n", (unsigned)i>>24, (i>>16)&0xff, (i>>8)&0xff, i&0xff);
+                    printf("%u.%u.%u.%u\n", (int)(i>>24)&0xff, (int)(i>>16)&0xff, (int)(i>>8)&0xff, (int)i&0xff);
                 }
             }
             break;

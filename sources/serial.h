@@ -1,11 +1,22 @@
 // *** serial.h ************************************************************
 
+extern bool serial_active;
+
 void
-serial_initialize(void);
+serial_disable(void);
+
+void
+serial_command_ack(void);
+
+#if ! PIC32
+INTERRUPT
+void
+serial_isr(void);
+#endif
 
 void
 serial_send(const byte *buffer, int length);
 
-INTERRUPT
 void
-serial_isr(void);
+serial_initialize(void);
+

@@ -5,7 +5,7 @@
 
 #include "main.h"
 
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 static
 void
 flash_command(uint8 cmd, uint32 *addr, uint32 data)
@@ -74,7 +74,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 
 #if DEBUG
     for (i = 0; i < npages_in*FLASH_PAGE_SIZE/sizeof(uint32); i++) {
-        assert(addr_in[i] == 0xffffffff);
+        assert(addr_in[i] == -1);
     }
 #endif
 }
@@ -118,9 +118,12 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     }
 #endif
 }
-#elif MCF51JM128
-typedef void (*flash_command_ram_f)(uint8 cmd, uint32 *addr, uint32 data);
-
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#else
+#define near
+#endif
 static
 void
 flash_command_ram(uint8 cmd, uint32 *addr, uint32 data)
@@ -128,7 +131,13 @@ flash_command_ram(uint8 cmd, uint32 *addr, uint32 data)
     // N.B. this code generates no relocations so we can run it from RAM!!!
 
     // write the flash thru the frontdoor address
+#if MC9S08QE128
+    *(byte *)addr = data;
+#elif MC9S12DT256
+    *(uint16 *)addr = data;
+#else
     *addr = data;
+#endif
 
     // write the command
     MCF_CFM_CFMCMD = cmd;
@@ -151,7 +160,7 @@ static
 void
 flash_command(uint8 cmd, uint32 *addr, uint32 data)
 {
-    flash_command_ram_f fn;
+    void *fn;
     
     // assert we're initialized
     assert(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
@@ -162,10 +171,10 @@ flash_command(uint8 cmd, uint32 *addr, uint32 data)
     // assert no errors
     MCF_CFM_CFMUSTAT |= MCF_CFM_CFMUSTAT_PVIOL|MCF_CFM_CFMUSTAT_ACCERR;
     assert(! (MCF_CFM_CFMUSTAT & (MCF_CFM_CFMUSTAT_PVIOL|MCF_CFM_CFMUSTAT_ACCERR)));
-
-    fn = (flash_command_ram_f)(((uint32)big_buffer+3)&~3);
+    
+    fn = (void *)(((uint32)big_buffer+3)&~3);
     memcpy(fn, flash_command_ram, (uint32)flash_command-(uint32)flash_command_ram);
-    fn(cmd, addr, data);
+    ((void (* near)(uint8, uint32 *, uint32))fn)(cmd, addr, data);
 }
 
 // this function erases the specified pages of flash memory.
@@ -195,7 +204,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 
 #if DEBUG
     for (i = 0; i < npages_in*FLASH_PAGE_SIZE/sizeof(uint32); i++) {
-        assert(addr_in[i] == 0xffffffff);
+        assert(addr_in[i] == -1);
     }
 #endif
 }
@@ -207,6 +216,49 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 #if DEBUG
     int i;
 #endif
+#if MC9S08QE128
+    int x;
+    byte *addr;
+    byte *data;
+    uint32 nbytes;
+
+    addr = (byte *)addr_in;
+    data = (byte *)data_in;
+    nbytes = nwords_in*sizeof(uint32);
+        
+    x = splx(7);
+
+    // while there are more bytes to program...
+    while (nbytes) {
+        flash_command(MCF_CFM_CFMCMD_WORD_PROGRAM, (uint32 *)addr, (uint32)*data);
+        nbytes--;
+        addr++;
+        data++;
+    }
+
+    (void)splx(x);
+#elif MC9S12DT256
+    int x;
+    uint16 *addr;
+    uint16 *data;
+    uint32 nshorts;
+
+    addr = (uint16 *)addr_in;
+    data = (uint16 *)data_in;
+    nshorts = nwords_in*sizeof(uint16);
+        
+    x = splx(7);
+
+    // while there are more shorts to program...
+    while (nshorts) {
+        flash_command(MCF_CFM_CFMCMD_WORD_PROGRAM, (uint32 *)addr, (uint32)*data);
+        nshorts--;
+        addr++;
+        data++;
+    }
+
+    (void)splx(x);
+#else
     int x;
     uint32 *addr;
     uint32 *data;
@@ -215,7 +267,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     addr = addr_in;
     data = data_in;
     nwords = nwords_in;
-    
+        
     x = splx(7);
 
     // while there are more words to program...
@@ -227,6 +279,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     }
 
     (void)splx(x);
+#endif
 
 #if DEBUG
     for (i = 0; i < nwords_in; i++) {
@@ -234,15 +287,17 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     }
 #endif
 }
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
+
 #elif PIC32
 #define NVMOP_PAGE_ERASE        0x4004      // Page erase operation
 #define NVMOP_WORD_PGM          0x4001      // Word program operation
 
 static
 void
-#if PIC32
 __attribute__((nomips16))
-#endif
 flash_operation(unsigned int nvmop)
 {
     // Enable Flash Write/Erase Operations
@@ -253,7 +308,6 @@ flash_operation(unsigned int nvmop)
     NVMCONSET = NVMCON_WR;
 
     // Wait for WR bit to clear
-    assert_ram(NVMCON & NVMCON_WR);
     while (NVMCON & NVMCON_WR) {
         // NULL
     }
@@ -302,7 +356,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
 
 #if DEBUG
     for (i = 0; i < npages_in*FLASH_PAGE_SIZE/sizeof(uint32); i++) {
-        assert(addr_in[i] == 0xffffffff);
+        assert(addr_in[i] == -1);
     }
 #endif
 }
@@ -364,7 +418,8 @@ __attribute__((nomips16))
 #endif
 flash_upgrade_ram_begin(bool compatible)
 {
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+#if ! DEMO_KIT
     uint32 *addr;
     uint32 *data;
     uint32 nwords;
@@ -456,7 +511,8 @@ flash_upgrade_ram_begin(bool compatible)
     // reset the MCU
     MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
     asm_halt();
-#elif MCF51JM128
+#endif
+#elif MCF51JM128 || MCF51QE128
 #if ! BADGE_BOARD
     uint32 *addr;
     uint32 *data;
@@ -550,6 +606,8 @@ flash_upgrade_ram_begin(bool compatible)
     };
     asm_halt();
 #endif
+#elif MC9S08QE128 || MC9S12DT256
+    asm_halt();
 #elif PIC32
     uint32 *addr;
     uint32 *data;
@@ -573,7 +631,6 @@ flash_upgrade_ram_begin(bool compatible)
         NVMKEY = 0xAA996655;
         NVMKEY = 0x556699AA;
         NVMCONSET = NVMCON_WR;
-        assert_ram(NVMCON & NVMCON_WR);
         while (NVMCON & NVMCON_WR) {
         }
         assert_ram(! (NVMCON & NVMCON_WR));
@@ -601,7 +658,6 @@ flash_upgrade_ram_begin(bool compatible)
         NVMKEY = 0xAA996655;
         NVMKEY = 0x556699AA;
         NVMCONSET = NVMCON_WR;
-        assert_ram(NVMCON & NVMCON_WR);
         while (NVMCON & NVMCON_WR) {
         }
         assert_ram(! (NVMCON & NVMCON_WR));
@@ -628,7 +684,6 @@ flash_upgrade_ram_begin(bool compatible)
         NVMKEY = 0xAA996655;
         NVMKEY = 0x556699AA;
         NVMCONSET = NVMCON_WR;
-        assert_ram(NVMCON & NVMCON_WR);
         while (NVMCON & NVMCON_WR) {
         }
         assert_ram(! (NVMCON & NVMCON_WR));
@@ -656,7 +711,6 @@ flash_upgrade_ram_begin(bool compatible)
         NVMKEY = 0xAA996655;
         NVMKEY = 0x556699AA;
         NVMCONSET = NVMCON_WR;
-        assert_ram(NVMCON & NVMCON_WR);
         while (NVMCON & NVMCON_WR) {
         }
         assert_ram(! (NVMCON & NVMCON_WR));
@@ -678,7 +732,6 @@ flash_upgrade_ram_begin(bool compatible)
         NVMKEY = 0xAA996655;
         NVMKEY = 0x556699AA;
         NVMCONSET = NVMCON_WR;
-        assert_ram(NVMCON & NVMCON_WR);
         while (NVMCON & NVMCON_WR) {
         }
         assert_ram(! (NVMCON & NVMCON_WR));
@@ -715,8 +768,8 @@ flash_upgrade_ram_end(void)
 void
 flash_upgrade()
 {
-#if MCF52221 || MCF52233 || MCF51JM128
-#if ! BADGE_BOARD
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128
+#if ! BADGE_BOARD && ! DEMO_KIT
     int i;
     int n;
     int x;
@@ -917,11 +970,7 @@ flash_upgrade()
     compatible = ! memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE);
         
     printf("programming flash for %s upgrade...\n", compatible?"compatible":"incompatible");
-#if STICKOS
-    printf("wait for CPUStick LED e1 to blink!\n");
-#else
-    printf("wait for LED to blink!\n");
-#endif
+    printf("wait for heartbeat LED to blink!\n");
     delay(100);
 
     ASSERT((int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN <= sizeof(big_buffer)-4);
@@ -933,9 +982,9 @@ flash_upgrade()
         flash_write_words((uint32 *)FLASH_BYTES - 1, &zero, 1);
 
         // reset the MCU; init() will take care of the rest
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
         MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-#elif MCF51JM128
+#elif MCF51JM128 || MCF51QE128
         asm {
             move.l  #0x00000000,d0
             movec   d0,CPUCR
@@ -968,6 +1017,7 @@ flash_upgrade()
     printf("upgrade failed\n");
     return;
 #endif
+#elif MC9S08QE128 || MC9S12DT256
 #elif PIC32
     int i;
     int n;
@@ -1195,11 +1245,7 @@ flash_upgrade()
     printf("\npaste done!\n");
     
     printf("programming flash for incompatible upgrade...\n");
-#if STICKOS
-    printf("wait for CPUStick LED e1 to blink!\n");
-#else
-    printf("wait for LED to blink!\n");
-#endif
+    printf("wait for heartbeat LED to blink!\n");
     delay(100);
 
     // N.B. this is an incompatible upgrade; if we crash before we are through,
@@ -1229,16 +1275,49 @@ flash_upgrade()
 void
 flash_initialize(void)
 {
-#if MCF52221 || MCF52233 || MCF51JM128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
     assert((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer));
-
+#if MC9S12DT256
+    if (oscillator_frequency > 12800000) {
+        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((oscillator_frequency/8-1)/200000);
+    } else {
+        MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((oscillator_frequency-1)/200000);
+    }
+    
+#define setReg8(RegName, val)                                    (RegName = (byte)(val))
+    /* FCNFG: CBEIE=0,CCIE=0,KEYACC=0,??=0,??=0,??=0,BKSEL1=0,BKSEL0=1 */
+    setReg8(FCNFG, 1);                   /* Select the flash block #1 */ 
+    /* FSTAT: CBEIF=0,CCIF=0,PVIOL=1,ACCERR=1,??=0,BLANK=0,??=0,??=0 */
+    setReg8(FSTAT, 48);                  /* Clear error flags PVIOL and ACCERR */ 
+    /* FPROT: FPOPEN=1,NV6=1,FPHDIS=1,FPHS1=1,FPHS0=1,FPLDIS=1,FPLS1=1,FPLS0=1 */
+    setReg8(FPROT, 255);                 /* Set protection of flash block #1 */ 
+    /* FCNFG: CBEIE=0,CCIE=0,KEYACC=0,??=0,??=0,??=0,BKSEL1=1,BKSEL0=0 */
+    setReg8(FCNFG, 2);                   /* Select the flash block #2 */ 
+    /* FSTAT: CBEIF=0,CCIF=0,PVIOL=1,ACCERR=1,??=0,BLANK=0,??=0,??=0 */
+    setReg8(FSTAT, 48);                  /* Clear error flags PVIOL and ACCERR */ 
+    /* FPROT: FPOPEN=1,NV6=1,FPHDIS=1,FPHS1=1,FPHS0=1,FPLDIS=1,FPLS1=1,FPLS0=1 */
+    setReg8(FPROT, 255);                 /* Set protection of flash block #2 */ 
+    /* FCNFG: CBEIE=0,CCIE=0,KEYACC=0,??=0,??=0,??=0,BKSEL1=1,BKSEL0=1 */
+    setReg8(FCNFG, 3);                   /* Select the flash block #3 */ 
+    /* FSTAT: CBEIF=0,CCIF=0,PVIOL=1,ACCERR=1,??=0,BLANK=0,??=0,??=0 */
+    setReg8(FSTAT, 48);                  /* Clear error flags PVIOL and ACCERR */ 
+    /* FPROT: FPOPEN=1,NV6=1,FPHDIS=1,FPHS1=1,FPHS0=1,FPLDIS=1,FPLS1=1,FPLS0=1 */
+    setReg8(FPROT, 255);                 /* Set protection of flash block #3 */ 
+    /* FCNFG: CBEIE=0,CCIE=0,KEYACC=0,??=0,??=0,??=0,BKSEL1=0,BKSEL0=0 */
+    setReg8(FCNFG, 0);                   /* Select the flash block #0 */ 
+    /* FSTAT: CBEIF=0,CCIF=0,PVIOL=1,ACCERR=1,??=0,BLANK=0,??=0,??=0 */
+    setReg8(FSTAT, 48);                  /* Clear error flags PVIOL and ACCERR */ 
+    /* FPROT: FPOPEN=1,NV6=1,FPHDIS=1,FPHS1=1,FPHS0=1,FPLDIS=1,FPLS1=1,FPLS0=1 */
+    setReg8(FPROT, 255);                 /* Set protection of flash block #0 */ 
+#else
     if (bus_frequency > 12800000) {
         MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((bus_frequency/8-1)/200000);
     } else {
         MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_DIV((bus_frequency-1)/200000);
     }
+#endif
 
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     MCF_CFM_CFMPROT = 0;
     MCF_CFM_CFMSACC = 0;
     MCF_CFM_CFMDACC = 0;

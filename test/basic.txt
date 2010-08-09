@@ -670,9 +670,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave CPUStick [and run]
 cls                           -- clear terminal screen
@@ -697,7 +699,7 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-autoreset [on|off]            -- autoreset (on wake) mode
+analog [<millivolts>]         -- set analog voltage scale
 autorun [on|off]              -- autorun (on reset) mode
 echo [on|off]                 -- terminal echo mode
 indent [on|off]               -- listing indent mode
@@ -822,7 +824,7 @@ pin names:
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
-dtin? = potential analog output (PWM actually) pins (mV)
+dtin? = potential analog output (PWM) pins (mV)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
@@ -840,8 +842,8 @@ utxd? = potential uart output pins (transmit byte)
 6  qspi_din
 7  qspi_dout
 8  qspi_clk
-9  qspi_cs0         d  d  d  d
-10 rcon*/irq4*      t  t  t  t
+9  qspi_cs0           d  d  d  d
+10 rcon*/irq4*        t  t  t  t
                 g  +  i  i  i  i  a  a  a  a  a  a  a  a
                 n  3  n  n  n  n  n  n  n  n  n  n  n  n
                 d  V  3  2  1  0  0  1  2  3  4  5  6  7
@@ -955,7 +957,6 @@ end
 2 8
   80 let a = 3
 3 18
-on
 off
 0
   50 let a = 1
@@ -972,7 +973,6 @@ off
 2 4
   80 let a = 3
 3 9
-on
 off
 on
 on
@@ -1085,11 +1085,7 @@ out of data
 STOP at line 50!
 5 6 7
 missing endwhile/next
-test autorun and autoreset
-off
-on
-on
-off
+test autorun
 off
 on
 on
@@ -1429,12 +1425,12 @@ STOP at line 23!
 end
 STOP at line 23!
 257
- 12% ram code bytes used (unsaved changes!)
+ 11% ram code bytes used (unsaved changes!)
   0% flash code bytes used
  12% ram variable bytes used
   0% flash parameter bytes used
   3% variables used
- 12% ram code bytes used (unsaved changes!)
+ 11% ram code bytes used (unsaved changes!)
   0% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -2317,13 +2313,15 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 cloning...
 filesystem
 out of storage
@@ -2672,9 +2670,6 @@ more
       ^ - error
      ^ - error
 command errors
-autoreset
-error -     ^
-error -        ^
 autorun
 error -   ^
 error -      ^
@@ -2699,9 +2694,10 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 list
        ^ - error
        ^ - error
@@ -2790,7 +2786,7 @@ STOP at line 60!
 auto save
 auto save
  66% ram code bytes used (unsaved changes!)
- 35% flash code bytes used
+ 34% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3006,7 +3002,7 @@ auto save
 9200 endsub 
 end
   0% ram code bytes used
- 46% flash code bytes used
+ 45% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3018,7 +3014,7 @@ auto save
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
- 33% ram code bytes used (unsaved changes!)
+ 32% ram code bytes used (unsaved changes!)
  95% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used

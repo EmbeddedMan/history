@@ -1,119 +1,242 @@
 // *** serial.c *******************************************************
-// This file implements an interrupt driven serial device driver.
+// This file implements an interrupt driven serial console.
 
 #include "main.h"
 
-#if SERIAL_DRIVER
+#define BAUDRATE  9600
 
-// This could be shrunk if RAM is precious.
-enum { tx_buffer_size = 64 };
+#define BUFFERSIZE  64
 
-static byte tx_buffer[tx_buffer_size];
-static byte tx_offset;
-static byte tx_len;
+static byte rxbuffer[BUFFERSIZE];
+static int rxlength;  // number of rx bytes in buffer
+
+static bool waiting;  // we have sent Ctrl-S at end of command
+static bool suspend;  // set this to send Ctrl-S in next send() loop
+static bool resume;  // set this to send Ctrl-Q in next send() loop
+static bool busy;  // we're in the middle of a send() loop
+
+#define CTRLS  ('S'-'@')  // suspend
+#define CTRLQ  ('Q'-'@')  // resume
+
+bool serial_active;
+
+#if DEBUG
+volatile bool serial_in_isr;
+volatile int32 serial_in_ticks;
+volatile int32 serial_out_ticks;
+volatile int32 serial_max_ticks;
+#endif
+
+// this function disables the serial isr when BASIC takes over control
+void
+serial_disable(void)
+{
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+    // disable uart0 receive interrupts
+    MCF_UART0_UIMR = 0;
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+    // disable uart1 receive interrupts
+    SCI1C2X &= ~SCI1C2_RIE_MASK;
+#elif PIC32
+    // Unconfigure UART1 RX Interrupt
+    ConfigIntUART1(0);
+#endif
+    // don't allow the rx ball to start rolling
+    waiting = false;
+}
+
+
+// this function acknowledges receipt of a serial command from upper
+// level code.
+void
+serial_command_ack(void)
+{
+    int x;
+    bool boo;
+    
+    ASSERT(gpl() == 0);
+
+    x = splx(7);
+    
+    // if we held off the serial rx...
+    if (waiting) {
+        // receive new characters
+        if (rxlength) {    
+            // accumulate new commands
+            boo = terminal_receive(rxbuffer, rxlength);
+            rxlength = 0;
+            
+            // if a full command was accumulated...
+            if (! boo) {
+                // wait for another terminal_command_ack();
+                goto XXX_SKIP_XXX;
+            }
+        }
+        
+        // start the rx ball rolling
+        waiting = false;
+        
+        // if the tx is ready...
+        if (pin_uart_tx_ready(0)) {
+            // stuff a resume
+            pin_uart_tx(0, CTRLQ);
+        } else {
+            // record we need a resume
+            suspend = false;
+            resume = true;
+            assert(busy);
+        }
+    }
+    
+XXX_SKIP_XXX:
+    splx(x);
+}
 
 INTERRUPT
 void
+#if PIC32
+__ISR(24, ipl2) // REVISIT -- ipl?
+#endif
 serial_isr(void)
 {
-    const uint8 usr = MCF_UART0_USR;
+    char c;
+    bool boo;
+    
+    assert(! serial_in_isr);
+    assert((serial_in_isr = true) ? true : true);
+    assert((serial_in_ticks = ticks) ? true : true);
 
-    if (usr & MCF_UART_USR_RXRDY) {
-        const uint8 byte = MCF_UART0_URB;
+#if ! MC9S08QE128 && ! MC9S12DT256
+    (void)splx(7);
+#endif
 
-        if (usr & (MCF_UART_USR_FE | MCF_UART_USR_OE | MCF_UART_USR_RB)) {
-            // Reset error status.
-            MCF_UART0_UCR = MCF_UART_UCR_RESET_ERROR;
-        } else {
-            terminal_receive(&byte, 1);
+#if PIC32
+    // Clear the RX interrupt Flag
+    mU1RXClearIntFlag();
+#endif
+
+    do {
+        // process the receive fifo
+        while (pin_uart_rx_ready(0)) {
+            c = pin_uart_rx(0);
+            if (c && c != CTRLS && c != CTRLQ) {
+                if (c == '\r') {
+                    serial_active = true;
+                }
+                rxbuffer[rxlength++] = c;
+                assert(rxlength < sizeof(rxbuffer));
+            }
         }
-    }
-
-    if (usr & MCF_UART_USR_TXRDY) {
-        if (! tx_len) {
-            // No more data to send.  Disable TXRDY interrupts.
-            MCF_UART0_UCR = MCF_UART_UCR_RX_ENABLED | MCF_UART_UCR_TX_DISABLED;
-        } else {
-            // Send next byte to host.
-            MCF_UART0_UTB = tx_buffer[tx_offset++];
-            tx_len--;
+        
+        
+        // receive characters
+        if (rxlength && ! waiting) {    
+            // accumulate commands
+            boo = terminal_receive(rxbuffer, rxlength);
+            rxlength = 0;
+            
+            // if a full command was accumulated...
+            if (! boo) {
+                // if the tx is ready...
+                if (pin_uart_tx_ready(0)) {
+                    // stuff a suspend
+                    pin_uart_tx(0, CTRLS);
+                } else {
+                    // record we need a suspend
+                    suspend = true;
+                    resume = false;
+                    assert(busy);
+                }
+                
+                // drop the ball
+                waiting = true;
+            }
         }
-    }
+    } while (pin_uart_rx_ready(0));
+    
+    assert(serial_in_isr);
+    assert((serial_in_isr = false) ? true : true);
+    assert((serial_out_ticks = ticks) ? true : true);
+    assert((serial_max_ticks = MAX(serial_max_ticks, serial_out_ticks-serial_in_ticks)) ? true : true);
 }
 
 void
 serial_send(const byte *buffer, int length)
 {
-    int x;
+    ASSERT(gpl() == 0);
 
-    while (length > 0) {
-        // Spin wait for transmitter space.  Could be more
-        // aggressive by appending to existing transmit data
-        // (space permitting).
-        while (1) {
-            x = splx(7);
-            // XXX: Need assertion checking that serial interrupt are enabled and unmasked.
-            if (! tx_len) {
+    assert(! busy);
+    busy = true;
+    
+    while (! pin_uart_tx_ready(0)) {
+        // revisit -- poll?
+    }
+    
+    // send the characters synchronously
+    for (;;) {
+        // if we have a suspend or resume to send, they take precedence
+        if (suspend) {
+            pin_uart_tx(0, CTRLS);
+            suspend = false;
+            assert(! resume);
+        } else if (resume) {
+            pin_uart_tx(0, CTRLQ);
+            resume = false;
+            assert(! suspend);
+        } else {
+            if (! length) {
                 break;
             }
-            splx(x);
+            
+            pin_uart_tx(0, *buffer);
+            buffer++;
+            length--;
         }
         
-        tx_len = MIN(length, tx_buffer_size);
-        tx_offset = 0;
-        memcpy(tx_buffer, buffer, tx_len);
-        
-        length -= tx_len;
-        buffer += tx_len;
-        
-        // Enable tx interrupts.
-        MCF_UART0_UCR = MCF_UART_UCR_RX_ENABLED | MCF_UART_UCR_TX_ENABLED;
-        
-        splx(x);
+        while (! pin_uart_tx_ready(0)) {
+            // revisit -- poll?
+        }
     }
+    
+    assert(busy);
+    busy = false;
 }
 
 void
 serial_initialize(void)
 {
-    const int uart_num = 0;
-    const int baudrate = 115200;
-    const uint32 divider = cpu_frequency / baudrate / 32;
+    // configure the first uart for serial terminal by default
+    pin_uart_configure(0, BAUDRATE, 8, 2, false);
+    
+    // start us out with a CTRLQ
+    pin_uart_tx(0, CTRLQ);
 
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // UART 0
     // PORT UA (4 pins)
-    // UCTS0#, URTS0#, URXD0, and UTXD0 are "primary" functions of
-    // their pin group.
+    // UCTS0#, URTS0#, URXD0, and UTXD0 are "primary" functions of their pin group.
     // Set to primary function (0x01).
     MCF_GPIO_PUAPAR = 0x55;
     
-    // Set URTS0# (PUA[2]) and UTXD0 (PUA[0]) as outputs.
-    MCF_GPIO_DDRUA = 0x5;
-
-    MCF_UART_UCR(uart_num) = MCF_UART_UCR_RESET_TX | 
-        MCF_UART_UCR_RESET_RX | MCF_UART_UCR_RESET_MR;
-
-    MCF_UART_UIMR(uart_num) = MCF_UART_UIMR_TXRDY | MCF_UART_UIMR_FFULL_RXRDY;
+    // enable uart0 interrupt.
+    MCF_INTC0_ICR13 = MCF_INTC_ICR_IL(SPL_SERIAL)|MCF_INTC_ICR_IP(SPL_SERIAL-2);
+    MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
+    MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK13;  // uart0
     
-    // Use internal bus clock for uart clock.
-    MCF_UART_UCSR(uart_num) = 0xdd;
+    // configure uart0 receive interrupts
+    MCF_UART0_UIMR = MCF_UART_UIMR_FFULL_RXRDY;
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
+    SCI1C2X = SCI1C2_TE_MASK|SCI1C2_RE_MASK;
+    
+    // configure uart1 receive interrupts
+    SCI1C2X |= SCI1C2_RIE_MASK;
+#elif PIC32
+    U1MODE |= _U1MODE_UARTEN_MASK;
 
-    // Baud rate divider = (UBG1 << 8) | UBG2
-    MCF_UART_UBG1(uart_num) = divider >> 8;
-    MCF_UART_UBG2(uart_num) = divider;
-
-    // Set UMR1n.
-    MCF_UART0_UMR1 = MCF_UART_UMR_BC_8 | MCF_UART_UMR_PM_NONE;
-    // Set UMR2n.
-    MCF_UART0_UMR2 = MCF_UART_UMR_CM_NORMAL | MCF_UART_UMR_SB_STOP_BITS_1;
-
-    // UCRn: enable transmitter and receiver.
-    MCF_UART_UCR(uart_num) = MCF_UART_UCR_TX_ENABLED |
-        MCF_UART_UCR_RX_ENABLED;
-
-    // Enable uart interrupt.
-    MCF_INTC0_ICR13 = MCF_INTC_ICR_IL(SPL_SERIAL)|MCF_INTC_ICR_IP(SPL_SERIAL);
-    MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK13;
+    // Configure UART1 RX Interrupt
+    ConfigIntUART1(UART_INT_PR2 | UART_RX_INT_EN);
+#else
+#error
+#endif
 }
 
-#endif // SERIAL_DRIVER

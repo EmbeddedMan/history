@@ -27,7 +27,11 @@ static bool hist_first = true;
 #if PICTOCRYPT
 #define NHIST  2
 #else
+#if MCF51QE128 || MC9S08QE128  // REVISIT
+#define NHIST  2
+#else
 #define NHIST  8
+#endif
 #endif
 #define HISTWRAP(x)  (((unsigned)(x))%NHIST)
 static char history[NHIST][TERMINAL_INPUT_LINE_SIZE];
@@ -47,14 +51,15 @@ static char forward[TERMINAL_INPUT_LINE_SIZE*2];
 static bool ack = true;
 
 static
-#if ! GCC && ! PIC32
+#if ! GCC && ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
 asm __declspec(register_abi)
 #endif
 unsigned char
 TRKAccessFile(long command, unsigned long file_handle, int *length_ptr, char *buffer_ptr)
 {
-#if GCC || PIC32
-    asm_halt(); // Unimplemented on GCC.
+#if GCC || PIC32 || MC9S08QE128 || MC9S12DT256
+    asm_halt(); // Unimplemented
+    return 0;
 #else
     move.l    D3,-(a7)
     andi.l    #0x000000ff,D0
@@ -72,10 +77,13 @@ void
 terminal_print(const byte *buffer, int length)
 {
     int id;
+    bool printed;
     
     assert(gpl() == 0);
     
     led_unknown_progress();
+    
+    printed = false;
 
     // if we're connected to another node...
     id = terminal_txid;
@@ -86,27 +94,32 @@ terminal_print(const byte *buffer, int length)
 #endif
     }
 
-#if SERIAL_TERMINAL
-    serial_send(buffer, length);
-#endif
-#if MCF52221 || MCF51JM128 || PIC32
-#if ! FLASHER
-    if (ftdi_attached) {
-        ftdi_print(buffer, length);
-    } else
-#endif
-    if (debugger_attached) {
-        TRKAccessFile(0xD0, 0, &length, (char *)buffer);
+#if ! FLASHER && ! PICTOCRYPT
+    if (serial_active) {
+        serial_send(buffer, length);
+        printed = true;
     }
+#endif
+
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
+#if ! FLASHER
+    if (ftdi_attached && ftdi_active) {
+        ftdi_print(buffer, length);
+        printed = true;
+    }
+#endif
+#elif MCF5211 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
 #elif MCF52233
     if (rich_so) {
         m_send(rich_so, buffer, length);
-    } else if (debugger_attached) {
-        TRKAccessFile(0xD0, 0, &length, (char *)buffer);
+        printed = true;
     }
 #else
 #error
 #endif
+    if (! printed && debugger_attached && length) {
+        TRKAccessFile(0xD0, 0, &length, (char *)buffer);
+    }
 }
 
 // *** line editor ***
@@ -167,10 +180,9 @@ accumulate(char c)
     int orig;
     int again;
   
-#if MCF52221 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
     assert(gpl() >= MIN(SPL_USB, SPL_IRQ4));
 #endif
-
     if (c == '\003' || c == '\025') { // Clear line on ctrl-c or ctrl-u.
         if (cursor) {
             sprintf(echo+strlen(echo), KEYS_LEFT, cursor);
@@ -309,8 +321,9 @@ accumulate(char c)
         orig = cursor;
         for (i = 0; i < ki; i++) {
             if (isprint(keys[i])) {
-                if (strlen(command) < sizeof(command)-1) {
-                    memmove(command+cursor+1, command+cursor, sizeof(command)-cursor-1);
+                n = strlen(command);
+                if (n < sizeof(command)-1) {
+                    memmove(command+cursor+1, command+cursor, n+1-cursor);
                     command[cursor] = keys[i];
                     cursor++;
                     assert(cursor <= sizeof(command)-1);
@@ -351,7 +364,7 @@ terminal_receive_internal(const byte *buffer, int length)
     id = terminal_rxid;
     if (id != -1) {
         // forward packets
-        x = splx(MAX(SPL_USB, SPL_IRQ4));
+        x = splx(7);
         strncat(forward, (char *)buffer, length);
         assert(strlen(forward) < sizeof(forward));
         boo = !!strchr((char *)forward, '\r');
@@ -471,7 +484,7 @@ terminal_command_ack(bool edit)
     // if we had extra left over from last time...
     if (extra[0]) {
         // process it now
-        x = splx(MAX(SPL_USB, SPL_IRQ4));
+        x = splx(7);
         boo = terminal_receive_internal((byte *)extra, strlen(extra));
         splx(x);
         if (! boo) {
@@ -480,11 +493,14 @@ terminal_command_ack(bool edit)
         }
     }
 
-#if MCF52221 || MCF51JM128 || PIC32
     if (terminal_txid == -1) {
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
         ftdi_command_ack();
-    }
 #endif
+#if ! FLASHER && ! PICTOCRYPT
+        serial_command_ack();
+#endif
+    }
     
     ack = true;
 #if ! FLASHER && ! PICTOCRYPT
@@ -530,13 +546,14 @@ void
 terminal_poll(void)
 {
     int x;
+    static int last;
     char copy[TERMINAL_INPUT_LINE_SIZE*2];
     
-#if MCF52221 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
     assert(gpl() == 0);
 #endif
 
-    x = splx(MAX(SPL_USB, SPL_IRQ4));
+    x = splx(7);
     strcpy(copy, echo);
     assert(strlen(copy) < sizeof(copy));
     echo[0] = '\0';
@@ -544,9 +561,15 @@ terminal_poll(void)
     
     if (terminal_echo && copy[0]) {
         terminal_print((byte *)copy, strlen(copy));
+        last = msecs;
     }
     
-    x = splx(MAX(SPL_USB, SPL_IRQ4));
+    //if (msecs-last > 1000) {
+    //    // avoid usb timeouts?
+    //    terminal_print(NULL, 0);
+    //}
+    
+    x = splx(7);
     strcpy(copy, forward);
     assert(strlen(copy) < sizeof(copy));
     forward[0] = '\0';
@@ -562,11 +585,14 @@ terminal_poll(void)
         }
         
         if (strchr((char *)copy, '\r')) {
-#if MCF52221 || MCF51JM128 || PIC32
             if (terminal_txid == -1) {
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
                 ftdi_command_ack();
-            }
 #endif
+#if ! FLASHER && ! PICTOCRYPT
+                serial_command_ack();
+#endif
+            }
 
             ack = true;
         }
@@ -576,7 +602,9 @@ terminal_poll(void)
     zb_poll();
 #endif
     
+#if PICTOCRYPT
     sleep_poll();
+#endif
     
     os_yield();
 }
@@ -604,7 +632,7 @@ class_print(int nodeid, int length, byte *buffer)
 {
     int x;
     
-    x = splx(MAX(SPL_USB, SPL_IRQ4));
+    x = splx(7);
     strncat(echo, (char *)buffer, length);
     assert(strlen(echo) < sizeof(echo));
     splx(x);

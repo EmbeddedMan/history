@@ -1,7 +1,7 @@
 #! /bin/sh
 # this test exercises platform differences
 
-for platform in MCF52221 MCF52233 MCF51JM128 BADGE_BOARD; do
+for platform in MCF52221 MCF52233 MCF52259 MCF5211 MCF51JM128 MCF51QE128 BADGE_BOARD; do
 
 echo
 echo "### platform $platform ###"

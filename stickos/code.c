@@ -10,10 +10,10 @@
 bool code_indent = true;
 
 // the last word of each flash bank is the generation number
-#define LGENERATION(p)  *(int *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(int))
+#define LGENERATION(p)  *(int32 *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(uint32))
 
 #undef PAGE_SIZE
-#define PAGE_SIZE(p)  (((p) == FLASH_CODE1_PAGE || (p) == FLASH_CODE2_PAGE) ? BASIC_LARGE_PAGE_SIZE : BASIC_SMALL_PAGE_SIZE)
+#define PAGE_SIZE(p)  (((p) == FLASH_CODE1_PAGE || (p) == FLASH_CODE2_PAGE) ? BASIC_LARGE_PAGE_SIZE : sizeof(RAM_CODE_PAGE))
 
 // we always pick the newer flash bank
 #define FLASH_CODE_PAGE  ((LGENERATION(FLASH_CODE1_PAGE)+1 > LGENERATION(FLASH_CODE2_PAGE)+1) ? FLASH_CODE1_PAGE : FLASH_CODE2_PAGE)
@@ -21,7 +21,7 @@ bool code_indent = true;
 
 // profiling
 #define PROFILE_BUFFER  (RAM_CODE_PAGE+OFFSETOF(struct line, bytecode))
-#define PROFILE_BUFFER_SIZE  (BASIC_SMALL_PAGE_SIZE-OFFSETOF(struct line, bytecode))
+#define PROFILE_BUFFER_SIZE  (sizeof(RAM_CODE_PAGE)-OFFSETOF(struct line, bytecode))
 #define PROFILE_BUCKETS  (PROFILE_BUFFER_SIZE/sizeof(struct bucket))
 
 static uint32 profile_shift;  // right shift, line_number to bucket number
@@ -35,27 +35,29 @@ static
 void
 check_line(byte *page, struct line *line)
 {
-    assert(line->line_number != 0xffffffff);
+    assert(line->line_number != -1);
     if (line->line_number) {
         assert(line->length > 0 && line->length <= BASIC_BYTECODE_SIZE);
     } else {
         assert(line->length == 0);
     }
-    assert(line->size == ROUNDUP(line->length, sizeof(int)) + LINESIZE);
+    assert(line->size == ROUNDUP(line->length, sizeof(uint32)) + LINESIZE);
 
     if (page) {
         assert((byte *)line >= page && (byte *)line+line->size <= page+PAGE_SIZE(page));
     }
 }
 
-#if FAST || ! DEBUG
+#if ! DEBUG
 #define check_line(a, b)
 #endif
 
 
 // this function returns the first code line in a page.
 static
+#if ! MCF52259 && ! MC9S08QE128 && ! MC9S12DT256  // 59 BUG
 inline
+#endif
 struct line *
 find_first_line_in_page(byte *page)
 {
@@ -68,7 +70,9 @@ find_first_line_in_page(byte *page)
 
 // this function returns the next code line in a page.
 static
+#if ! MCF52259 && ! MC9S08QE128 && ! MC9S12DT256  // 59 BUG
 inline
+#endif
 struct line *
 find_next_line_in_page(byte *page, struct line *line)
 {
@@ -127,6 +131,7 @@ delete_line_in_page(byte *page, struct line *line)
 
     check_line(page, line);
     assert(line->line_number);
+    assert(page == RAM_CODE_PAGE);
 
     next = (struct line *)((byte *)line + line->size);
 
@@ -161,10 +166,10 @@ insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
     // find the eop
     eop = find_exact_line_in_page(page, 0);
     assert(eop && ! eop->line_number && eop->length == 0 && eop->size == LINESIZE);
-    room = page+PAGE_SIZE(page) - ((byte *)eop+eop->size);
+    room = page+sizeof(RAM_CODE_PAGE) - ((byte *)eop+eop->size);
 
     // check for available memory
-    grow = LINESIZE+ROUNDUP(length, sizeof(int));
+    grow = LINESIZE+ROUNDUP(length, sizeof(uint32));
     if (grow > room) {
         return false;
     }
@@ -172,13 +177,14 @@ insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
     // shift the following lines down
     line = find_following_line_in_page(page, line_number);
     assert(line);
-    assert(((byte *)line+grow) + (((byte *)eop+eop->size) - (byte *)line) <= page+PAGE_SIZE(page));
+    assert(((byte *)line+grow) + (((byte *)eop+eop->size) - (byte *)line) <= page+sizeof(RAM_CODE_PAGE));
     memmove((byte *)line+grow, (byte *)line, ((byte *)eop+eop->size) - (byte *)line);
 
     // insert the new line
     line->line_number = line_number;
     line->size = grow;
     line->length = length;
+    assert((unsigned)length <= BASIC_BYTECODE_SIZE);
     memcpy(line->bytecode, bytecode, length);
 
     // verify
@@ -267,6 +273,7 @@ code_next_line(IN bool deleted_ok, IN OUT int *line_number)
 XXX_DONE_XXX:    
     last_seq_line = line;  // remember this for subsequent sequential accesses
     last_seq_line_number = *line_number;
+    assert(line != (struct line *)-1);
     return line;
 }
 
@@ -487,7 +494,7 @@ code_append_line_to_alternate(const struct line *line)
     // if this is not the special end line...
     if (line->line_number) {
         // we always leave room for the special end line
-        if ((int)(alternate_flash_code_page_offset+size) > (int)(BASIC_LARGE_PAGE_SIZE-sizeof(int)-LINESIZE)) {
+        if ((int)(alternate_flash_code_page_offset+size) > (int)(BASIC_LARGE_PAGE_SIZE-sizeof(uint32)-LINESIZE)) {
             return false;
         }
     }
@@ -515,7 +522,7 @@ void
 code_promote_alternate(void)
 {
     bool boo;
-    int generation;
+    int32 generation;
 
     assert(FLASH_CODE_PAGE != alternate_flash_code_page);
 
@@ -525,7 +532,7 @@ code_promote_alternate(void)
 
     // update the generation of the alternate page, to make it primary!
     generation = LGENERATION(FLASH_CODE_PAGE)+1;
-    flash_write_words((uint32 *)(alternate_flash_code_page+BASIC_LARGE_PAGE_SIZE-sizeof(int)), (uint32 *)&generation, 1);
+    flash_write_words((uint32 *)(alternate_flash_code_page+BASIC_LARGE_PAGE_SIZE-sizeof(uint32)), (uint32 *)&generation, 1);
 
     assert(FLASH_CODE_PAGE == alternate_flash_code_page);
     assert(LGENERATION(FLASH_CODE1_PAGE) != LGENERATION(FLASH_CODE2_PAGE));
@@ -570,7 +577,7 @@ code_save(int renum)
         // if the line is not deleted...
         if (line->length != 1 || line->bytecode[0] != code_deleted) {
             // copy the line to ram
-            assert(line->size <= sizeof(ram_line_buffer));
+            ASSERT((unsigned)line->size <= sizeof(ram_line_buffer));
             memcpy(ram_line, line, line->size);
 
             // if we're renumbering lines...
@@ -593,7 +600,7 @@ code_save(int renum)
         code_promote_alternate();
 
         // clear ram
-        memset(RAM_CODE_PAGE, 0, BASIC_SMALL_PAGE_SIZE);
+        memset(RAM_CODE_PAGE, 0, sizeof(RAM_CODE_PAGE));
         *(struct line *)RAM_CODE_PAGE = empty;
     } else {
         printf("out of code flash\n");
@@ -614,7 +621,7 @@ code_new(void)
     code_promote_alternate();
 
     // clear ram
-    memset(RAM_CODE_PAGE, 0, BASIC_SMALL_PAGE_SIZE);
+    memset(RAM_CODE_PAGE, 0, sizeof(RAM_CODE_PAGE));
     *(struct line *)RAM_CODE_PAGE = empty;
 
     // clear variables
@@ -626,7 +633,7 @@ void
 code_undo()
 {
     // clear ram
-    memset(RAM_CODE_PAGE, 0, BASIC_SMALL_PAGE_SIZE);
+    memset(RAM_CODE_PAGE, 0, sizeof(RAM_CODE_PAGE));
     *(struct line *)RAM_CODE_PAGE = empty;
 }
 
@@ -639,13 +646,13 @@ code_mem(void)
 
     eop = find_exact_line_in_page(RAM_CODE_PAGE, 0);
     assert(eop);
-    n = (byte *)eop+LINESIZE-RAM_CODE_PAGE;
-    printf("%3d%% ram code bytes used%s\n", n*100/BASIC_SMALL_PAGE_SIZE, n>LINESIZE?" (unsaved changes!)":"");
+    n = (byte *)eop-RAM_CODE_PAGE;
+    printf("%3d%% ram code bytes used%s\n", n*100/(sizeof(RAM_CODE_PAGE)-LINESIZE), n?" (unsaved changes!)":"");
 
     eop = find_exact_line_in_page(FLASH_CODE_PAGE, 0);
     assert(eop);
-    n = (byte *)eop+LINESIZE-FLASH_CODE_PAGE;
-    printf("%3d%% flash code bytes used\n", n*100/(BASIC_LARGE_PAGE_SIZE-sizeof(int)));
+    n = (byte *)eop-FLASH_CODE_PAGE;
+    printf("%3d%% flash code bytes used\n", n*100/(BASIC_LARGE_PAGE_SIZE-sizeof(uint32)-LINESIZE));
 }
 
 // *** filesystem ***
@@ -656,6 +663,9 @@ struct catalog {
 };
 
 // this function stores the current program to the filesystem.
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 void
 code_store(char *name)
 {
@@ -664,6 +674,9 @@ code_store(char *name)
     int n;
     struct catalog temp;
     struct catalog *catalog;
+#if MC9S08QE128 || MC9S12DT256
+    int ppage;
+#endif
 
     // update the primary flash
     code_save(0);
@@ -697,8 +710,17 @@ code_store(char *name)
         n = i;
     }
 
+#if MC9S08QE128 || MC9S12DT256
+    // bring the BASIC STORE into the paging window
+    // N.B. all routines below flash_erase_pages() must be non-banked!
+    ppage = PPAGE;
+    PPAGE = FLASH2_PPAGE;
+#endif
     // erase the store flash
     flash_erase_pages((uint32 *)FLASH_STORE_PAGE(n), BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);
+#if MC9S08QE128 || MC9S12DT256
+    PPAGE = ppage;
+#endif
 
     // if the name doesn't yet exist...
     if (i == BASIC_STORES) {
@@ -710,8 +732,17 @@ code_store(char *name)
         flash_write_words((uint32 *)FLASH_CATALOG_PAGE, (uint32 *)&temp, sizeof(temp)/sizeof(uint32));
     }
 
+#if MC9S08QE128 || MC9S12DT256
+    // bring the BASIC STORE into the paging window
+    // N.B. all routines below flash_write_words() must be non-banked!
+    ppage = PPAGE;
+    PPAGE = FLASH2_PPAGE;
+#endif
     // copy the primary flash to the store flash
     flash_write_words((uint32 *)FLASH_STORE_PAGE(n), (uint32 *)FLASH_CODE_PAGE, BASIC_LARGE_PAGE_SIZE/sizeof(uint32));
+#if MC9S08QE128 || MC9S12DT256
+    PPAGE = ppage;
+#endif
 }
 
 // this function loads the current program from the filesystem.
@@ -719,9 +750,12 @@ void
 code_load(char *name)
 {
     int i;
-    int generation;
+    int32 generation;
     byte *code_page;
     struct catalog *catalog;
+#if MC9S08QE128 || MC9S12DT256
+    int ppage;
+#endif
 
     // update the primary flash and clear ram
     code_save(0);
@@ -748,12 +782,24 @@ code_load(char *name)
     // erase the primary flash
     flash_erase_pages((uint32 *)code_page, BASIC_LARGE_PAGE_SIZE/FLASH_PAGE_SIZE);
 
+#if MC9S08QE128 || MC9S12DT256
+    // bring the BASIC STORE into the paging window
+    // N.B. all routines below flash_write_words() must be non-banked!
+    ppage = PPAGE;
+    PPAGE = FLASH2_PPAGE;
+#endif
     // copy the store flash to the primary flash (except the generation)
     flash_write_words((uint32 *)code_page, (uint32 *)FLASH_STORE_PAGE(i), BASIC_LARGE_PAGE_SIZE/sizeof(uint32)-1);
+#if MC9S08QE128 || MC9S12DT256
+    PPAGE = ppage;
+#endif
 
     // then restore the generation
-    flash_write_words((uint32 *)(code_page+BASIC_LARGE_PAGE_SIZE-sizeof(int)), (uint32 *)&generation, 1);
+    flash_write_words((uint32 *)(code_page+BASIC_LARGE_PAGE_SIZE-sizeof(uint32)), (uint32 *)&generation, 1);
 }
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 // this function displays the programs in the filesystem.
 void
@@ -813,7 +859,7 @@ code_timer_poll(void)
     
     // if we can profile...
     // N.B. this works if the code is all in the same page -- i.e., saved
-    if (! ((struct line *)RAM_CODE_PAGE)->line_number && running) {
+    if (! ((struct line *)RAM_CODE_PAGE)->line_number) {
         if (run_line_number == -1) {
             bucket = 0;
         } else {
@@ -867,19 +913,13 @@ code_initialize(void)
     assert(! (BASIC_SMALL_PAGE_SIZE%FLASH_PAGE_SIZE));
     assert(! (BASIC_LARGE_PAGE_SIZE%FLASH_PAGE_SIZE));
 
-#if ! STICK_GUEST
-    if (disable_autorun) {
-        return;
-    }
-#endif
-
     // if this is our first boot since reflash...
-    if (*(int *)FLASH_CODE_PAGE == 0xffffffff) {
+    if (*(int *)FLASH_CODE_PAGE == -1) {
         code_new();
         assert(find_first_line_in_page(FLASH_CODE_PAGE));
     } else {
         // clear ram
-        memset(RAM_CODE_PAGE, 0, BASIC_SMALL_PAGE_SIZE);
+        memset(RAM_CODE_PAGE, 0, sizeof(RAM_CODE_PAGE));
         *(struct line *)RAM_CODE_PAGE = empty;
     }
 

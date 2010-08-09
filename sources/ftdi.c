@@ -1,4 +1,4 @@
-#if MCF52221 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
 // *** ftdi.c *********************************************************
 // this file implements the FTDI transport (on top of the usb driver
 // module).
@@ -97,6 +97,8 @@ static const byte ftdi_string_descriptor[] = {
 #endif
 };
 
+bool ftdi_active;
+
 static ftdi_reset_cbfn reset_cbfn;
 
 static byte tx[PACKET_SIZE];  // packet from host
@@ -108,6 +110,8 @@ static int rx_length[NRX];
 
 static byte rx_in;
 static byte rx_out;
+
+static bool discard;  // true when we don't think anyone is listening
 
 // this function waits for space to be available in the transport
 // buffers and then prints the specified line to the FTDI transport
@@ -121,19 +125,24 @@ ftdi_print(const byte *buffer, int length)
     
     assert(gpl() == 0);
 
-    while (rx_in != rx_out) {
-        delay(1);
+    if (! ftdi_attached || discard) {
+        return;
     }
 
+    m = 0;
+    while (rx_in != rx_out) {
+        delay(1);
+        if (m++ > 1000) {
+            discard = true;
+            return;
+        }
+    }
+    
     if (! length) {
         return;
     }
 
-    if (! ftdi_attached) {
-        return;
-    }
-
-    x = splx(SPL_USB);
+    x = splx(7);
 
     start = rx_in == rx_out;
 
@@ -161,7 +170,7 @@ ftdi_print(const byte *buffer, int length)
     if (start) {
         // start the rx ball rolling
         assert(rx_out != rx_in);
-        assert(rx_length[rx_out] > 2);
+        assert(rx_length[rx_out] >= 2);
         usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
     }
 
@@ -222,13 +231,18 @@ ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
     return length;
 }
 
+static bool waiting;
+
 // this function acknowledges receipt of an FTDI command from upper
 // level code.
 void
 ftdi_command_ack(void)
 {
-    // keep the tx ball rolling
-    usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
+    if (waiting) {
+        // start the tx ball rolling
+        usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
+        waiting = false;
+    }
 }
 
 // this function implements the FTDI usb bulk transfer.
@@ -236,10 +250,17 @@ static int
 ftdi_bulk_transfer(bool in, byte *buffer, int length)
 {
     if (! in) {
+        discard = false;
+    
+        ftdi_active = true;
+        
         // accumulate commands
         if (terminal_receive(buffer, length)) {
             // keep the tx ball rolling
             usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
+        } else {
+            // drop the ball
+            waiting = true;
         }
     } else {
         rx_length[rx_out] = 2;

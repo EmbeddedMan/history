@@ -6,7 +6,7 @@
 
 static bool adc_initialized;
 
-#if MCF51JM128
+#if MCF51JM128 || MCF51QE128 || MC9S08QE128
 static byte adcn = -1;
 #endif
 
@@ -20,7 +20,7 @@ enum {
 #if ! PICTOCRYPT
 static
 #endif
-volatile uint16 adc_result[adc_num_channel];  // 0..32767
+volatile uint16 adc_result[adc_num_channel];  // 0..4095
 
 // updated every "debouncing" tick, the rate is determined by timer_isr()
 static
@@ -36,7 +36,7 @@ void
 adc_timer_poll(bool debouncing)
 {
 #if ! STICK_GUEST
-#if MCF52221 || MCF52233 || PIC32
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MC9S12DT256 || PIC32
     int i;
 #endif
 #endif
@@ -48,12 +48,12 @@ adc_timer_poll(bool debouncing)
     assert(adc_debounce_set < adc_num_debounce_history);
 
 #if ! STICK_GUEST
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // if all channels are ready...
     if ((MCF_ADC_ADSTAT & 0xff) == 0xff) {
         // read all channel results into adc_result[]
         for (i = 0; i < adc_num_channel; i++) {
-            adc_result[i] = MCF_ADC_ADRSLT(i);
+            adc_result[i] = MCF_ADC_ADRSLT(i)>>3;  // 0..4095
             if (debouncing) {
                 adc_debounce[i][adc_debounce_set] = adc_result[i];
             }
@@ -65,16 +65,14 @@ adc_timer_poll(bool debouncing)
 
     // re-start the adc
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_START0;
-#elif MCF51JM128
-    // we can only poll one enabled channel every ms
-    // each channel is read every 12ms.
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128
+    // we can only poll one enabled channel every tick
     
     // if a previous result just completed...
     if (adcn != (byte)-1 && (ADCSC1 & ADCSC1_COCO_MASK)) {
-        // store the result*8 to be compatible with MCF52221/MCF52233
         assert(adcn < adc_num_channel);
-        adc_result[adcn] = ADCRH<<(8+3);
-        adc_result[adcn] |= ADCRL<<3;
+        adc_result[adcn] = (ADCRH<<8)|ADCRL;  // 0..4095
+        // REVISIT -- this assumes we can't keep up with the debounce cycle!
         adc_debounce[adcn][adc_debounce_set] = adc_result[adcn];
     }
     
@@ -87,10 +85,36 @@ adc_timer_poll(bool debouncing)
         debouncing = false;
     }
     ADCSC1 = adcn;
+#elif MC9S12DT256
+    // if all channels are ready...
+    if (ATD0STAT0_SCF) {
+        // read all channel results into adc_result[]
+        adc_result[0] = ATD0DR0<<2;
+        adc_result[1] = ATD0DR1<<2;
+        adc_result[2] = ATD0DR2<<2;
+        adc_result[3] = ATD0DR3<<2;
+        adc_result[4] = ATD0DR4<<2;
+        adc_result[5] = ATD0DR5<<2;
+        adc_result[6] = ATD0DR6<<2;
+        adc_result[7] = ATD0DR7<<2;
+        
+        if (debouncing) {
+            for (i = 0; i < adc_num_channel; i++) {
+                adc_debounce[i][adc_debounce_set] = adc_result[i];
+            }
+        }
+    } else {
+        // prevent debounce increment below because we did not read adc data and to populate the current debounce set.
+        debouncing = false;
+    }
+
+    // re-start the adc
+    /* ATD0CTL5: DJM=1,DSGN=0,SCAN=0,MULT=1,??=0,CC=0,CB=0,CA=0 */
+    ATD0CTL5 = 144;                      /* Start conversions */
 #elif PIC32
     for (i = 0; i < adc_num_channel; i++) {
-        // store the result*32 to be compatible with MCF52221/MCF52233
-        adc_result[i] = ReadADC10(i)<<5;
+        // store the result*4 to be compatible with MCF52221/MCF52233
+        adc_result[i] = ReadADC10(i)<<2;  // 0..4095
     }
 #else
 #error
@@ -109,7 +133,7 @@ void
 adc_sleep()
 {
 #if ! STICK_GUEST
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // power off the adc
     MCF_ADC_POWER = MCF_ADC_POWER_PUDELAY(13)|MCF_ADC_POWER_PD2|MCF_ADC_POWER_PD1|MCF_ADC_POWER_PD0;  // disable adc
 #endif
@@ -124,7 +148,7 @@ adc_get_value(int offset, int pin_qual)
     assert(offset < adc_num_channel);
 
     if (pin_qual & 1<<pin_qual_debounced) {
-        uint32 min, max, sum, i;
+        unsigned int min, max, sum, i;
         min = ~0;
         max = 0;
         sum = 0;
@@ -142,7 +166,7 @@ adc_get_value(int offset, int pin_qual)
         value = adc_result[offset];
     }
 
-    value = value*3300/32768;
+    value = (uint32)value*pin_analog/4096;
 
     return value;
 }
@@ -152,7 +176,7 @@ void
 adc_initialize(void)
 {
 #if ! STICK_GUEST
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // initialize adc to read all channels
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_SMODE(0);  // once sequential
     MCF_ADC_CTRL2 = 0x0005;  // divisor for 48 MHz
@@ -170,9 +194,17 @@ adc_initialize(void)
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_START0;
 
     delay(10);
-#elif MCF51JM128
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128
     // initialize adc to read one channel at a time
     ADCCFG = ADCCFG_ADLPC_MASK|ADCCFG_ADIV_MASK|ADCCFG_ADLSMP_MASK|ADCCFG_MODE0_MASK|ADCCFG_ADICLK0_MASK;
+#elif MC9S12DT256
+    // initialize adc to read all channels
+    /* ATD0CTL4: SRES8=0,SMP1=1,SMP0=1,PRS4=0,PRS3=1,PRS2=0,PRS1=1,PRS0=1 */
+    ATD0CTL4 = 107;                      /* Set resolution, sample time and prescaler */
+    /* ATD0CTL3: ??=0,S8C=1,S4C=0,S2C=0,S1C=0,FIFO=0,FRZ1=0,FRZ0=0 */
+    ATD0CTL3 = 64;                       /* Set ATD control register 3 */
+    /* ATD0CTL2: ADPU=1,AFFC=1,AWAI=0,ETRIGLE=0,ETRIGP=0,ETRIGE=0,ASCIE=0,ASCIF=0 */
+    ATD0CTL2 = 192;                      /* Set ATD control register 2 */
 #elif PIC32
     // initialize adc to read all channels
     AD1CON1 = _AD1CON1_SSRC_MASK|_AD1CON1_ASAM_MASK;

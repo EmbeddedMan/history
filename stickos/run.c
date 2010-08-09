@@ -27,10 +27,12 @@ bool run_condition = true;  // global condition flag
 
 bool run_printf;
 
-static int run_sleep_ticks;
+static int32 run_sleep_ticks;
 static int run_sleep_line_number;
 
-#define MAX_INTS  (UART_INTS+MAX_TIMERS+1)
+// N.B. we assume UART_INTS start at 0!
+
+#define MAX_INTS  (UART_INTS+TIMER_INTS+1)
 
 #define WATCH_INT  (MAX_INTS-1)
 
@@ -49,8 +51,8 @@ static int watch_length;
 static const byte *watch_bytecode;
 
 static struct {
-    int interval_ticks; // ticks/interrupt
-    int last_ticks;
+    int32 interval_ticks; // ticks/interrupt
+    int32 last_ticks;
 } timers[MAX_TIMERS];
 
 static bool run_stop;
@@ -75,15 +77,17 @@ struct open_scope {
     // revisit -- this is a waste just for for!
     const char *for_variable_name;
     int for_variable_index;
-    int for_final_value;
-    int for_step_value;
+    int32 for_final_value;
+    int32 for_step_value;
 
     bool condition;
     bool condition_ever;
     bool condition_initial;
     bool condition_restore;
     
+#if ! MC9S08QE128
     int dummy;  // N.B. shrink code significantly by increasing struct size
+#endif
 } scopes[MAX_SCOPES];
 
 static int cur_scopes;
@@ -105,7 +109,7 @@ static int max_gosubs;
 
 #define MAX_STACK  10
 
-static int stack[MAX_STACK];
+static int32 stack[MAX_STACK];
 
 static int max_stack;
 
@@ -118,7 +122,7 @@ clear_stack(void)
 
 static
 void
-push_stack(int value)
+push_stack(int32 value)
 {
     if (max_stack < MAX_STACK) {
         stack[max_stack] = value;
@@ -130,7 +134,7 @@ push_stack(int value)
 }
 
 static
-int
+int32
 pop_stack()
 {
     assert(max_stack);
@@ -144,10 +148,10 @@ pop_stack()
 
 // this function reads the next piece of data from the program.
 static
-int
+int32
 read_data()
 {
-    int value;
+    int32 value;
     struct line *line;
     int line_number;
 
@@ -174,8 +178,8 @@ read_data()
         data_line_number = line->line_number;
 
         // if we have data left in the line...
-        if (line->length > (int)(1+data_line_offset*(sizeof(int)+1))) {
-            value = read32(line->bytecode+1+data_line_offset*(sizeof(int)+1)+1);
+        if (line->length > (int)(1+data_line_offset*(sizeof(uint32)+1))) {
+            value = read32(line->bytecode+1+data_line_offset*(sizeof(uint32)+1)+1);
             data_line_offset++;
             return value;
         }
@@ -216,10 +220,10 @@ run_evaluate_is_lvalue(const byte *bytecode, int length, const byte *bytecode_in
 //   - set *lvalue_var_name=NULL
 //   - set *value to the expression value
 int
-run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int *value)
+run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int32 *value)
 {
-    int lhs;
-    int rhs;
+    int32 lhs;
+    int32 rhs;
     byte code;
     const byte *bytecode;
 
@@ -272,7 +276,7 @@ run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var
                 case code_load_and_push_immediate:
                 case code_load_and_push_immediate_hex:
                     push_stack(read32(bytecode));
-                    bytecode += sizeof(int);
+                    bytecode += sizeof(uint32);
                     break;
 
                 case code_load_and_push_var:  // variable name, '\0'
@@ -420,7 +424,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
     int i;
     int n;
     int uart;
-    int baud;
+    int32 baud;
     int data;
     byte parity;
     byte loopback;
@@ -428,7 +432,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
     bool end;
     int inter;
     int blen;
-    int value;
+    int32 value;
     byte *p;
     int index;
     int oindex;
@@ -436,10 +440,12 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
     const char *name;
     int size;
     int timer;
-    int interval;
+    int32 interval;
     enum timer_unit_type timer_unit;
     int csiv;
-    int max_index;
+    int32 max_index;
+    int32 max_count;
+    int count;
     int var_type;
     int pin_number;
     int pin_type;
@@ -453,6 +459,8 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
     const byte *sub_bytecode;
     int nodeid;
     struct open_scope *scope;
+    
+    assert(code >= code_deleted && code < code_max_max);
     
     end = false;
 
@@ -484,7 +492,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 // *** timer control ***
                 // get the timer number
                 timer = read32(bytecode + index);
-                index += sizeof(int);
+                index += sizeof(uint32);
                 assert(timer >= 0 && timer < MAX_TIMERS);
 
                 inter = TIMER_INT(timer);
@@ -510,7 +518,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
 
                 // this is the expression to watch
                 watch_length = read32(bytecode + index);
-                index += sizeof(int);
+                index += sizeof(uint32);
                 watch_bytecode = bytecode+index;
                 index += watch_length;
 
@@ -523,7 +531,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
             if (code == code_on) {
                 // this is the handler
                 isr_length = read32(bytecode + index);
-                index += sizeof(int);
+                index += sizeof(uint32);
                 isr_bytecode = bytecode+index;
                 index += isr_length;
             }
@@ -555,9 +563,9 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 // *** timer control ***
                 // get the timer number and interval
                 timer = read32(bytecode+index);
-                index += sizeof(int);
+                index += sizeof(uint32);
                 interval = read32(bytecode+index);
-                index += sizeof(int);
+                index += sizeof(uint32);
                 timer_unit = (enum timer_unit_type)bytecode[index++];
 
                 if (run_condition) {
@@ -579,9 +587,9 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 index++;
                 assert(uart >= 0 && uart < MAX_UARTS);
                 baud = read32(bytecode+index);
-                index += sizeof(int);
+                index += sizeof(uint32);
                 data = read32(bytecode+index);
-                index += sizeof(int);
+                index += sizeof(uint32);
                 parity = *(bytecode+index);
                 index++;
                 loopback = *(bytecode+index);
@@ -595,7 +603,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
             } else if (device == device_qspi) {
                 // get the timer number and interval
                 csiv = read32(bytecode+index);
-                index += sizeof(int);
+                index += sizeof(uint32);
 
                 if (run_condition) {
 #if ! STICK_GUEST
@@ -639,7 +647,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     index++;
 
                     blen = read32(bytecode+index);
-                    index += sizeof(int);
+                    index += sizeof(uint32);
 
                     // evaluate the array index
                     index += run_evaluate(bytecode+index, blen, NULL, &max_index);
@@ -701,7 +709,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     index++;
 
                     blen = read32(bytecode+index);
-                    index += sizeof(int);
+                    index += sizeof(uint32);
 
                     // evaluate the array length
                     index += run_evaluate(bytecode+index, blen, NULL, &max_index);
@@ -715,7 +723,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 size = bytecode[index++];
                 var_type = bytecode[index++];
 
-                assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(int));
+                assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(uint32));
 
                 // if this is a memory variable...
                 if (var_type == code_ram || var_type == code_flash) {
@@ -735,7 +743,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     assert(var_type == code_nodeid);
                     
                     nodeid = read32(bytecode+index);
-                    index += sizeof(int);
+                    index += sizeof(uint32);
                     
                     var_declare(name, max_gosubs, var_type, size, max_index, 0, 0, 0, nodeid);
                 }
@@ -765,7 +773,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     index++;
 
                     blen = read32(bytecode+index);
-                    index += sizeof(int);
+                    index += sizeof(uint32);
 
                     // evaluate the array index
                     index += run_evaluate(bytecode+index, blen, NULL, &max_index);
@@ -826,9 +834,9 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     if (run_condition) {
                         run_printf = true;
                         if (hex) {
-                            printf("0x%x", value);
+                            printf("0x%lx", value);
                         } else {
-                            printf("%d", value);
+                            printf("%ld", value);
                         }
                         run_printf = false;
                     }
@@ -841,7 +849,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 run_printf = false;
             }
             break;
-            
+
         case code_qspi:
             // we'll walk the variable list twice
             oindex = index;
@@ -864,16 +872,18 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                         // use array index 0
                         index++;
                         max_index = 0;
+                        max_count = -1;
                     } else {
                         // we're reading into an array element
                         assert(bytecode[index] == code_load_and_push_var_indexed);
                         index++;
 
                         blen = read32(bytecode+index);
-                        index += sizeof(int);
+                        index += sizeof(uint32);
 
                         // evaluate the array index
                         index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                        max_count = max_index+1;
                     }
 
                     // get the variable name
@@ -881,45 +891,64 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     index += strlen(name)+1;
 
                     // get the variable size
-                    size = var_get_size(name);
+                    size = var_get_size(name, &count);
+                    if (max_count == -1) {
+                        max_count = count;
+                    }
                     
                     if (! pass) {
-                        // get the variable data
-                        value = var_get(name, max_index);
+                        for (i = max_index; i < max_count; i++) {
+                            // get the variable data
+                            value = var_get(name, i);
 
-                        // pack it into the qspi buffer
-                        if (size == sizeof(byte)) {
-                            *(byte *)p = value;
-                            p += sizeof(byte);
-                        } else if (size == sizeof(short)) {
-                            write16(p, value);
-                            p += sizeof(short);
-                        } else {
-                            assert(size == sizeof(int));
-                            write32(p, value);
-                            p += sizeof(int);
+                            // pack it into the qspi buffer
+                            if (size == sizeof(byte)) {
+                                *(byte *)p = value;
+                                p += sizeof(byte);
+                            } else if (size == sizeof(short)) {
+                                write16(p, value);
+                                p += sizeof(short);
+                            } else {
+                                assert(size == sizeof(uint32));
+                                write32(p, value);
+                                p += sizeof(uint32);
+                            }
+                            
+                            if (p > big_buffer+sizeof(big_buffer)-sizeof(uint32)) {
+                                printf("transfer buffer overflow\n");
+                                stop();
+                                break;
+                            }
                         }
                     } else {
-                        // unpack it from the qspi buffer
-                        if (size == sizeof(byte)) {
-                            value = *(byte *)p;
-                            p += sizeof(byte);
-                        } else if (size == sizeof(short)) {
-                            value = read16(p);
-                            p += sizeof(short);
-                        } else {
-                            assert(size == sizeof(int));
-                            value = read32(p);
-                            p += sizeof(int);
-                        }
+                        for (i = max_index; i < max_count; i++) {
+                            // unpack it from the qspi buffer
+                            if (size == sizeof(byte)) {
+                                value = *(byte *)p;
+                                p += sizeof(byte);
+                            } else if (size == sizeof(short)) {
+                                value = read16(p);
+                                p += sizeof(short);
+                            } else {
+                                assert(size == sizeof(uint32));
+                                value = read32(p);
+                                p += sizeof(uint32);
+                            }
                         
-                        // set the variable
-                        var_set(name, max_index, value);
+                            // set the variable
+                            var_set(name, i, value);
+
+                            if (p > big_buffer+sizeof(big_buffer)-sizeof(uint32)) {
+                                printf("transfer buffer overflow\n");
+                                stop();
+                                break;
+                            }
+                        }
                     }
                 } while (index < length && bytecode[index] == code_comma);
 
                 // if this is the first pass...
-                if (! pass) {
+                if (! pass && run_condition) {
                     // perform the qspi transfer
 #if ! STICK_GUEST
                     qspi_transfer(big_buffer, p-big_buffer);
@@ -1021,7 +1050,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                     index++;
 
                     blen = read32(bytecode+index);
-                    index += sizeof(int);
+                    index += sizeof(uint32);
 
                     // evaluate the array index
                     index += run_evaluate(bytecode+index, blen, NULL, &max_index);
@@ -1087,7 +1116,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
         case code_continue:
             // get the break/continue level
             n = read32(bytecode + index);
-            index += sizeof(int);
+            index += sizeof(uint32);
             assert(n);
 
             // find the outermost while loop
@@ -1244,7 +1273,7 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                         var_declare_reference((const char *)sub_bytecode, max_gosubs, name);
                     } else {
                         // the current parameter value is not an lvalue expression, pass it by-value into the sub's parameter.
-                        var_declare((const char *)sub_bytecode, max_gosubs, code_ram, sizeof(int), 1, 0, 0, 0, -1);
+                        var_declare((const char *)sub_bytecode, max_gosubs, code_ram, sizeof(uint32), 1, 0, 0, 0, -1);
                         var_set((const char *)sub_bytecode, 0, value);
                     }
 
@@ -1340,7 +1369,6 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
                 run_sleep_line_number = run_line_number;
             }
             break;
-
         case code_stop:
             if (run_condition) {
                 stop();
@@ -1360,7 +1388,11 @@ run_bytecode_code(byte code, bool immediate, const byte *bytecode, int length)
             break;
     }
 
+#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51QE128 || MCF5211
+    assert_ram(index == length);  // CW bug
+#else
     assert(index == length);
+#endif
     return end;
 
 XXX_SKIP_XXX:
@@ -1406,16 +1438,14 @@ bool
 run(bool cont, int start_line_number)
 {
     int i;
-    int tick;
+    int32 tick;
     bool isr;
     uint32 mask;
     int length;
-    int value;
+    int32 value;
     int line_number;
-    int last_tick;
+    int32 last_tick;
     bool condition;
-    int rx_full;
-    int tx_empty;
     struct line *line;
 
     if (! run_sleep) {
@@ -1504,10 +1534,13 @@ run(bool cont, int start_line_number)
         tick = ticks;
         if (tick != last_tick) {
 #if ! STICK_GUEST
-            // see if the sleep switch was pressed
-            basic_poll();
+            //if (! (tick & 15)) {
+                // see if the sleep switch was pressed
+                basic_poll();
+                
+                led_unknown_progress();
+            //}
             
-            led_unknown_progress();
 #endif
 
             if (run_isr_enabled) {
@@ -1516,7 +1549,7 @@ run(bool cont, int start_line_number)
                     // if the timer is set...
                     if (run_isr_bytecode[TIMER_INT(i)] && timers[i].interval_ticks) {
                         // if its time is due...
-                        if ((int)(tick - timers[i].last_ticks) >= timers[i].interval_ticks) {
+                        if ((int32)(tick - timers[i].last_ticks) >= timers[i].interval_ticks) {
                             // if it is not already pending...
                             if (! (run_isr_pending & (1 << TIMER_INT(i)))) {
                                 // mark the interrupt as pending
@@ -1535,23 +1568,26 @@ run(bool cont, int start_line_number)
 
         // if any uart ints are enabled...
         if (run_isr_enabled & UART_MASK) {
-            // see if any uarts have transferred data
-            pin_uart_pending(&rx_full, &tx_empty);
-            
             for (i = 0; i < MAX_UARTS; i++) {
 #if ! STICK_GUEST
-                // if the uart transmitter is empty...
-                if (run_isr_bytecode[UART_INT(i, true)] && uart_armed[UART_INT(i, true)] && (tx_empty & (1<<UART_INT(i, true)))) {
-                    // mark the interrupt as pending
-                    run_isr_pending |= 1<<UART_INT(i, true);
-                    uart_armed[UART_INT(i, true)] = false;
+                // if the uart transmit int is enabled and armed...
+                if (run_isr_bytecode[UART_INT(i, true)] && uart_armed[UART_INT(i, true)]) {
+                    // if the uart transmitter is empty...
+                    if (pin_uart_tx_empty(i)) {
+                        // mark the interrupt as pending
+                        run_isr_pending |= 1<<UART_INT(i, true);
+                        uart_armed[UART_INT(i, true)] = false;
+                    }
                 }
 
-                // if the uart receiver is full...
-                if (run_isr_bytecode[UART_INT(i, false)] && uart_armed[UART_INT(i, false)] && (rx_full & (1<<UART_INT(i, true)))) {
-                    // mark the interrupt as pending
-                    run_isr_pending |= 1<<UART_INT(i, false);
-                    uart_armed[UART_INT(i, false)] = false;
+                // if the uart receive int is enabled and armed...
+                if (run_isr_bytecode[UART_INT(i, false)] && uart_armed[UART_INT(i, false)]) {
+                    // if the uart receiver is full...
+                    if (pin_uart_rx_ready(i)) {
+                        // mark the interrupt as pending
+                        run_isr_pending |= 1<<UART_INT(i, false);
+                        uart_armed[UART_INT(i, false)] = false;
+                    }
                 }
 #endif
             }
@@ -1652,5 +1688,11 @@ void
 stop()
 {
     run_stop = 0;
+}
+
+void
+run_initialize(void)
+{
+    assert(MAX_INTS < sizeof(run_isr_enabled)*8);
 }
 

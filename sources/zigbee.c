@@ -21,22 +21,27 @@ typedef struct packet {
     byte payload[ZB_PAYLOAD_SIZE];
 } packet_t;
 
-int zb_nodeid;
+int32 zb_nodeid;
 bool zb_present;
 
-bool zb_in_isr;
+#if DEBUG
+volatile bool zb_in_isr;
+volatile int32 zb_in_ticks;
+volatile int32 zb_out_ticks;
+volatile int32 zb_max_ticks;
+#endif
 
 #define NCLASS  4
 #define NSEQ  2
 
-static int recv_cbfns;
+static int32 recv_cbfns;
 static zb_recv_cbfn recv_cbfn[NCLASS];
 
-static int transmits;
-static int receives;
-static int drops;
-static int failures;
-static int retries;
+static int32 transmits;
+static int32 receives;
+static int32 drops;
+static int32 failures;
+static int32 retries;
 
 static uint8 txseq[NSEQ];  // last seq transmitted
 static uint8 txack[NSEQ];  // last transmit seq acked
@@ -44,12 +49,12 @@ static uint8 rxseq[NSEQ];  // last seq received
 static int rxseqid[NSEQ];  // last nodeid received
 
 static bool rxack_bool[NSEQ];  // we need to ack a received seq
-static int rxack_msecs[NSEQ];  // we need to ack a received seq now
+static int32 rxack_msecs[NSEQ];  // we need to ack a received seq now
 
 static bool rxdrop;  // we need to drop zb_class_receive received packets
 
 static bool ready;
-static int active; // ms
+static int32 active; // ms
 
 #define IDLE  0
 #define RX  2
@@ -58,7 +63,7 @@ static int active; // ms
 static int seqid[NSEQ];
 
 static
-int
+uint16
 zb_seq(int nodeid)
 {
     int i;
@@ -77,7 +82,7 @@ zb_seq(int nodeid)
 static void
 zb_rxtxen(bool boo)
 {
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     if (boo) {
         MCF_GPIO_SETAN = (1<<5);
         MCF_GPIO_SETAS = (1<<1);
@@ -85,11 +90,30 @@ zb_rxtxen(bool boo)
         MCF_GPIO_CLRAN = ~(1<<5);
         MCF_GPIO_CLRAS = ~(1<<1);
     }
+#if MCF52259
+    if (boo) {
+        MCF_GPIO_SETTJ = (1<<1);
+    } else {
+        MCF_GPIO_CLRTJ = ~(1<<1);
+    }
+#endif
 #elif MCF51JM128
     if (boo) {
         PTBD |= 0x20;
     } else {
         PTBD &= ~0x20;
+    }
+#elif MCF51QE128 || MC9S08QE128
+    if (boo) {
+        PTFD |= 0x02;
+    } else {
+        PTFD &= ~0x02;
+    }
+#elif MC9S12DT256
+    if (boo) {
+        PORTB |= 0x40;
+    } else {
+        PORTB &= ~0x40;
     }
 #endif
 }
@@ -97,7 +121,7 @@ zb_rxtxen(bool boo)
 static void
 zb_delay(int send)
 {
-    int ms;
+    int32 ms;
     
     for (;;) {
         // if we've recently sent or received a packet...
@@ -202,7 +226,7 @@ zb_packet_transmit(
     packet_t *packet;
     byte buf[2+sizeof(packet_t)];
     
-    assert(rxid != (uint16)-1);
+    assert((uint16)rxid != (uint16)-1);
     assert(gpl() >= SPL_IRQ4);
     
     transmits++;
@@ -301,7 +325,7 @@ zb_packet_receive(
     assert(packet->length <= length);
     assert(packet->length <= sizeof(packet->payload));
     
-    assert(packet->txid != (uint16)-1);
+    assert((uint16)packet->txid != (uint16)-1);
     
     *txid = packet->txid;
     *class = packet->class;
@@ -366,7 +390,7 @@ zb_packet_deliver(
             zb_ready();
         
             // deliver it
-            assert(recv_cbfn)
+            assert(recv_cbfn != NULL)
             recv_cbfn[class](txid, length, payload);
             
             zb_unready();
@@ -374,8 +398,8 @@ zb_packet_deliver(
     }
 }
 
-int zb_isrs;
-int zb_pre_isrs;
+int32 zb_isrs;
+int32 zb_pre_isrs;
 
 // N.B. this is shared by zb_isr() and zb_send()!
 static byte payload[ZB_PAYLOAD_SIZE];
@@ -395,13 +419,22 @@ zb_isr(void)
 #if MCF51JM128
     // cancel zb_isr at level 4
     INTC_CFRC = 0x3B;
+#elif MCF51QE128
+    // cancel zb_isr at level 4
+    INTC_CFRC = 0x23;
+#elif MC9S08QE128
+    // iack
+    IRQSC |= IRQSC_IRQACK_MASK;
+#elif MC9S12DT256
+    // nothing?
 #endif
 
     assert(! zb_in_isr)
-    zb_in_isr = true;
+    assert((zb_in_isr = true) ? true : true);
+    assert((zb_in_ticks = ticks) ? true : true);
     
-#if ! PIC32  // REVISIT?
-    (void)splx(-SPL_IRQ4);
+#if ! MC9S08QE128 && ! MC9S12DT256
+    (void)splx(7);
 #endif
     
     zb_unready();
@@ -422,18 +455,24 @@ zb_isr(void)
     zb_ready();
     
     assert(zb_in_isr);
-    zb_in_isr = false;
+    assert((zb_in_isr = false) ? true : true);
+    assert((zb_out_ticks = ticks) ? true : true);
+    assert((zb_max_ticks = MAX(zb_max_ticks, zb_out_ticks-zb_in_ticks)) ? true : true);
 
     zb_isrs++;
 }
 
-#if MCF51JM128
+#if MCF51JM128 || MCF51QE128
 interrupt
 void
 zb_pre_isr(void)
 {
     // call zb_isr at level 4
+#if MCF51JM128
     INTC_SFRC = 0x3B;
+#else
+    INTC_SFRC = 0x23;
+#endif
     
     // iack
     IRQSC |= IRQSC_IRQACK_MASK;
@@ -455,7 +494,7 @@ zb_send_internal(
     int x;
     int irq;
     int retry;
-    int start;
+    int32 start;
     bool boo;
     uint16 txid;
     uint8 class;
@@ -486,7 +525,8 @@ zb_send_internal(
         zb_delay(retry);
         
         // we hold off receive interrupts while doing a foreground receive
-        x = splx(SPL_IRQ4);
+        x = splx(7);
+        zb_rmw(0x06, ~0x0100, 0x0000);  // disable rx_rcvd_mask irq
         
         zb_unready();
         
@@ -507,7 +547,9 @@ zb_send_internal(
             do {
                 irq = zb_read(0x24);
                 if (! (irq & 0x80)) {
+                    splx(x);
                     zb_poll();
+                    x = splx(7);
                 }
             } while (! (irq & 0x80) && msecs-start <= WAIT_MS);
             
@@ -540,6 +582,8 @@ zb_send_internal(
         }
         
         zb_ready();
+        
+        zb_rmw(0x06, ~0x0000, 0x0100);  // enable rx_rcvd_mask irq
         splx(x);
         
         if (boo) {
@@ -588,13 +632,13 @@ zb_poll(void)
     int x;
     int n;
     
-    //assert(gpl() == 0);
+    assert(gpl() == 0);
 
     for (n = 0; n < NSEQ; n++) {
         if (rxack_bool[n] && msecs-rxack_msecs[n] > 0) {
             zb_delay(0);
         
-            x = splx(SPL_IRQ4);
+            x = splx(7);
         
             zb_unready();
             
@@ -620,22 +664,37 @@ void
 zb_reset(void)
 {
     // assert rst*
-#if MCF52221
+#if MCF52221 || MCF52259
     MCF_GPIO_CLRAN = ~(1<<2);
     MCF_GPIO_CLRAS = ~(1<<0);
-#elif MCF52233
+#if MCF52259
+    MCF_GPIO_CLRTJ = ~(1<<0);
+#endif
+#elif MCF52233 || MCF5211
     MCF_GPIO_CLRTA = ~(1<<0);
 #elif MCF51JM128
     PTED &= ~0x04;
+#elif MCF51QE128 || MC9S08QE128
+    PTCD &= ~0x01;
+#elif MC9S12DT256
+    PTT &= ~0x01;
 #endif
     delay(1);
-#if MCF52221
+    // deassert rst*
+#if MCF52221 || MCF52259
     MCF_GPIO_SETAN = (1<<2);
     MCF_GPIO_SETAS = (1<<0);
-#elif MCF52233
+#if MCF52259
+    MCF_GPIO_SETTJ = (1<<0);
+#endif
+#elif MCF52233 || MCF5211
     MCF_GPIO_SETTA = (1<<0);
 #elif MCF51JM128
     PTED |= 0x04;
+#elif MCF51QE128 || MC9S08QE128
+    PTCD |= 0x01;
+#elif MC9S12DT256
+    PTT |= 0x01;
 #endif
     delay(50);
 }
@@ -659,15 +718,15 @@ zb_diag(bool reset, bool init)
     }
 
     if (! reset && ! init) {
-        printf("receives = %u; transmits = %u\n", receives, transmits);
-        printf("zb_isrs = %u; zb_pre_isrs = %u\n", zb_isrs, zb_pre_isrs);
-        printf("drops = %u; failures = %u; retries = %u\n", drops, failures, retries);
+        printf("receives = %lu; transmits = %lu\n", receives, transmits);
+        printf("zb_isrs = %lu; zb_pre_isrs = %lu\n", zb_isrs, zb_pre_isrs);
+        printf("drops = %lu; failures = %lu; retries = %lu\n", drops, failures, retries);
         printf("                                             ");
         for (i = 0x03; i < 0x32; i++) {
-            x = splx(SPL_IRQ4);
+            x = splx(7);
             v = zb_read(i);
             splx(x);
-            printf("0x%02x = 0x%04x  ", i, v);
+            printf("0x%02x = 0x%04lx  ", i, (int32)(v&0xffff));
             if (i%4 == 3) {
                 printf("\n");
             }
@@ -701,7 +760,7 @@ zb_initialize(void)
     
     memset(rxseqid, -1, sizeof(rxseqid));
     
-#if MCF52221
+#if MCF52221 || MCF52259
     // an2=0 for rst*
     // an3=0 for attn*
     // an5=0 for rxtxen
@@ -712,7 +771,7 @@ zb_initialize(void)
     // sda=0 for rxtxen
     MCF_GPIO_PASPAR = 0x00;
     MCF_GPIO_DDRAS |= (1<<0)|(1<<1);
-#elif MCF52233
+#elif MCF52233 || MCF5211
     // gpt0=0 for rst*
     // gpt1=0 for attn*
     // an5=0 for rxtxen
@@ -726,6 +785,18 @@ zb_initialize(void)
     // b5 for rxtxen
     PTEDD |= 0x0c;
     PTBDD |= 0x20;
+#elif MCF51QE128 || MC9S08QE128
+    // c0 for rst*
+    // c1 for attn*
+    // f1 for rxtxen
+    PTCDD |= 0x03;
+    PTFDD |= 0x02;
+#elif MC9S12DT256
+    // t0 for rst*
+    // t1 for attn*
+    // b6 for rxtxen
+    DDRT |= 0x03;
+    DDRB |= 0x40;
 #elif PIC32
 #else
 #error
@@ -734,19 +805,26 @@ zb_initialize(void)
     qspi_inactive(1);
 
     // deassert rst*
-#if MCF52221
+#if MCF52221 || MCF52259
     MCF_GPIO_SETAN = (1<<2);
     MCF_GPIO_SETAS = (1<<0);
-#elif MCF52233
+#if MCF52259
+    MCF_GPIO_SETTJ = (1<<0);
+#endif
+#elif MCF52233 || MCF5211
     MCF_GPIO_SETTA = (1<<0);
 #elif MCF51JM128
     PTED |= 0x04;
+#elif MCF51QE128 || MC9S08QE128
+    PTCD |= 0x01;
+#elif MC9S12DT256
+    PTT |= 0x01;
 #endif
 
     delay(50);
 
     // if zigbee is present...
-    x = splx(SPL_IRQ4);
+    x = splx(7);
     id = zb_read(0x2c);
     if ((id & 0xfb00) != 0x6000 && (id & 0xfb00) != 0x6400) {
         // no zigbee present
@@ -791,7 +869,6 @@ zb_initialize(void)
 
 #if MCF52221 || MCF52233
     // NQ is primary (irq4)
-    irq4_enable = true;
     MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(4*2))) | (1<<(4*2));  // irq4 is primary
 
     // program irq4 (level 4) for level trigger
@@ -800,11 +877,31 @@ zb_initialize(void)
 
     // enable irq4 interrupt
     MCF_INTC0_ICR04 = MCF_INTC_ICR_IL(SPL_IRQ4)|MCF_INTC_ICR_IP(SPL_IRQ4);
-    //MCF_INTC0_IMRH &= ~0;
+    MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK4;  // irq4
-#elif MCF51JM128
+#elif MCF52259 || MCF5211
+    // NQ is primary (irq1)
+#if MCF52259
+    MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(1*2))) | (1<<(1*2));  // irq1 is primary
+#else
+    MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(0*2))) | (1<<(0*2));  // irq1 is primary
+#endif
+
+    // program irq1 (level 1) for level trigger
+    MCF_EPORT_EPPAR = (MCF_EPORT_EPPAR &~ MCF_EPORT_EPPAR_EPPA1_BOTH) | MCF_EPORT_EPPAR_EPPA1_LEVEL;
+    MCF_EPORT_EPIER |= MCF_EPORT_EPIER_EPIE1;
+
+    // enable irq1 interrupt
+    MCF_INTC0_ICR01 = MCF_INTC_ICR_IL(SPL_IRQ1)|MCF_INTC_ICR_IP(SPL_IRQ1);
+    MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
+    MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK1;  // irq1
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128
     // program irq (level 7) for falling edge trigger
     IRQSC = IRQSC_IRQPE_MASK|IRQSC_IRQIE_MASK;
+#elif MC9S12DT256
+#define setReg8(RegName, val)                                    (RegName = (byte)(val))
+    /* INTCR: IRQE=0,IRQEN=1,??=0,??=0,??=0,??=0,??=0,??=0 */
+    setReg8(INTCR, 64);                   
 #endif
 }
 

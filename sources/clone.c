@@ -5,7 +5,11 @@
 
 #include "main.h"
 
+#if MCF52221 || MCF52259
 #define SLAVE_FSYS    8000000  // frequency of target board
+#elif MCF52233
+#define SLAVE_FSYS    5000000  // frequency of target board
+#endif
 
 #define CLONE_PAGE_SIZE  256
 
@@ -71,7 +75,7 @@ flash_write(byte *buffer, int length)
 void
 clone(bool and_run)
 {
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259
     int i;
     unsigned n;
     byte status;

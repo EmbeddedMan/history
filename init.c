@@ -5,7 +5,7 @@
 
 #include "main.h"
 
-#if ! PIC32
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
 extern unsigned char far __BSS_START[], __BSS_END[];
 extern unsigned char far __DATA_RAM[], __DATA_ROM[], __DATA_END[];
 #endif
@@ -17,11 +17,10 @@ uint32 incompat;
 bool disable_autorun;
 uint16 flash_checksum;
 bool usb_host_mode;
-#if ! PIC32
-bool irq1_enable;
-bool irq4_enable;
 
-#if BADGE_BOARD
+#if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256
+
+#if BADGE_BOARD || DEMO_KIT
 extern void pre_main(void);
 #endif
 extern int main();
@@ -45,6 +44,12 @@ init(void)
     }
 #endif
 
+#if MCF51JM128
+    PTGPE = 0x01;
+#elif MCF51QE128
+    PTAPE = 0x04;
+#endif
+
     // move initialized data from ROM to RAM.
     // N.B. we do this here since these variables will likely change,
     // and we don't want that to result in an incompatible upgrade!
@@ -61,21 +66,47 @@ init(void)
     end_of_static = __DATA_ROM + (__DATA_END - __DATA_RAM);
 
 #if STICKOS || SKELETON
-#if ! MCF51JM128  // REVISIT
-    // NQ is gpio output (irq4, 7) and input (irq1)
+#if MCF52221 || MCF52233
+    // NQ is gpio output (irq7) and input (irq1)
     MCF_GPIO_PNQPAR = 0;
-    MCF_GPIO_DDRNQ = 0xf0;
+    MCF_GPIO_DDRNQ = 0x80;
 
     // if irq1 is asserted on boot, skip autorun
     if (! (MCF_GPIO_SETNQ & 0x02)) {
         disable_autorun = true;
-
-        while (! (MCF_GPIO_SETNQ & 0x02)) {
-            // NULL
-        }
-
-        delay(100);  // debounce
     }
+#elif MCF5211
+    // NQ is gpio output (irq7) and input (irq4)
+    MCF_GPIO_PNQPAR = 0;
+    MCF_GPIO_DDRNQ = 0x80;
+
+    // if irq4 is asserted on boot, skip autorun
+    if (! (MCF_GPIO_SETNQ & 0x10)) {
+        disable_autorun = true;
+    }
+#elif MCF52259
+    // NQ is gpio output (irq7) and input (irq5)
+    MCF_GPIO_PNQPAR = 0;
+    MCF_GPIO_DDRNQ = 0x80;
+
+    // if irq5 is asserted on boot, skip autorun
+    if (! (MCF_GPIO_SETNQ & 0x20)) {
+        disable_autorun = true;
+    }
+#elif MCF51JM128
+    // if ptg0 is asserted on boot, skip autorun
+    // N.B. pull-up was enabled early
+    if (! (PTGD & 0x01)) {
+        disable_autorun = true;
+    }
+#elif MCF51QE128
+    // if pta2 is asserted on boot, skip autorun
+    // N.B. pull-up was enabled early
+    if (! (PTAD & 0x04)) {
+        disable_autorun = true;
+    }
+#else
+#error
 #endif
 #endif
 
@@ -84,7 +115,7 @@ init(void)
         flash_checksum += *p;
     }
 
-#if BADGE_BOARD
+#if BADGE_BOARD || DEMO_KIT
     pre_main();
 #endif
     // finally, call main()

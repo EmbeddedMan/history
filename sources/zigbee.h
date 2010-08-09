@@ -9,7 +9,7 @@ enum {
 
 #define ZB_PAYLOAD_SIZE  114
 
-extern int zb_nodeid;
+extern int32 zb_nodeid;
 extern bool zb_present;
 
 typedef void (*zb_recv_cbfn)(int nodeid, int length, byte *buffer);
@@ -19,7 +19,7 @@ INTERRUPT
 void
 zb_isr(void);
 
-#if MCF51JM128
+#if MCF51JM128 || MCF51QE128
 interrupt
 void
 zb_pre_isr(void);

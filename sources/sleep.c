@@ -3,17 +3,16 @@
 
 #include "main.h"
 
-static volatile int sleep_seconds;
+#if PICTOCRYPT
 
-#if ! STICK_GUEST
+static volatile int sleep_seconds;
 
 // called on sleep entry and exit (sw1 depressed)
 INTERRUPT
 void
 sleep_isr(void)
 {
-#if MCF52221 || MCF52233
-    (void)splx(-SPL_IRQ1);
+    (void)splx(7);
     
     delay(100);  // debounce
     while (! (MCF_EPORT_EPPDR & MCF_EPORT_EPPDR_EPPD1)) {
@@ -26,10 +25,7 @@ sleep_isr(void)
     sleep_delay(0);
     
     MCF_EPORT_EPFR = 0x02;
-#endif
 }
-
-#endif // ! STICK_GUEST
 
 void
 sleep_delay(int secs)
@@ -53,8 +49,6 @@ static short pnqpar, pqspar;
 void
 sleep_poll(void)
 {
-#if ! STICK_GUEST
-#if MCF52221 || MCF52233
     bool wake_mode;
     bool sleep_mode;
     
@@ -121,12 +115,10 @@ sleep_poll(void)
 
         // prepare for stop mode
         MCF_PMM_LPCR = MCF_PMM_LPCR_LPMD_STOP|0x18/*all clocks off*/;
-#if PICTOCRYPT
         if (usb_host_mode && other_attached) {
             // prepare for doze mode to keep USB SOF's alive for other devices
             MCF_PMM_LPCR = MCF_PMM_LPCR_LPMD_DOZE|0x18/*all clocks off*/;
         }
-#endif
             
         // allow us to wake from stop mode
         MCF_PMM_LPICR = MCF_PMM_LPICR_ENBSTOP|MCF_PMM_LPICR_XLPM_IPL(0);
@@ -144,14 +136,6 @@ sleep_poll(void)
     }
 
     if (wake_mode) {
-#if STICKOS
-        // if we need to autoreset...
-        if (var_get_flash(FLASH_AUTORESET) == 1) {
-            MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-            asm_halt();
-        }
-#endif
-
         // restore our data directions and pin assignments
         MCF_GPIO_DDRNQ = ddrnq;
         MCF_GPIO_DDRAN = ddran;
@@ -180,18 +164,13 @@ sleep_poll(void)
         // reinitialize the adc
         adc_initialize();
     }
-#endif
-#endif // ! STICK_GUEST
 }
 
 // this function initializes the sleep module.
 void
 sleep_initialize(void)
 {
-#if ! STICK_GUEST
-#if MCF52221 || MCF52233
     // NQ is primary (irq1)
-    irq1_enable = true;
     MCF_GPIO_PNQPAR = (MCF_GPIO_PNQPAR &~ (3<<(1*2))) | (1<<(1*2));  // irq1 is primary
 
     // we're awake; program irq1 for level trigger
@@ -200,9 +179,8 @@ sleep_initialize(void)
 
     // enable irq1 interrupt
     MCF_INTC0_ICR01 = MCF_INTC_ICR_IL(SPL_IRQ1)|MCF_INTC_ICR_IP(SPL_IRQ1);
-    //MCF_INTC0_IMRH &= ~0;
+    MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_MASKALL;
     MCF_INTC0_IMRL &= ~MCF_INTC_IMRL_INT_MASK1;  // irq1
-#endif
-#endif // ! STICK_GUEST
 }
+#endif
 

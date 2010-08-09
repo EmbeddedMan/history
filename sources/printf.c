@@ -73,9 +73,12 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
     char c;
     char *q;
     bool nl;
+    bool longb;
+    bool shortb;
     int zero;
     int width;
     int prec;
+    int32 value;
     const char *p;
     char temp[1+MAXDIGITS+1];
 
@@ -116,7 +119,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
                 }
             }
             
-            prec = 0x7fffffff;
+            prec = BASIC_LINE_SIZE;
             if (c == '.') {
                 prec = 0;
                 c = *++p;
@@ -126,13 +129,27 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
                 }
             }
             
-            if (c == 'h' || c == 'l') {
+            longb = c == 'l';
+            shortb = c == 'h';
+            if (longb || shortb) {
                 c = *++p;
             }
 
+            if (c == 'b' || c == 'd' || c == 'u' || c == 'o' || c == 'x' || c == 'X') {
+#if MC9S08QE128 || MC9S12DT256
+                if (longb) {
+                    value = va_arg(ap, int32);
+                } else {
+                    value = va_arg(ap, int);
+                }
+#else
+                value = va_arg(ap, int);
+#endif
+            }
+            
             switch (c) {
                 case 'b':
-                    j = convert(va_arg(ap, int), 2, temp);
+                    j = convert(value, 2, temp);
                     break;
                 case 'c':
                     temp[0] = (char)va_arg(ap, int);
@@ -140,13 +157,13 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
                     j = 1;
                     break;
                 case 'd':
-                    j = convert(va_arg(ap, int), -10, temp);
+                    j = convert(value, -10, temp);
                     break;
                 case 'u':
-                    j = convert(va_arg(ap, int), 10, temp);
+                    j = convert(value, 10, temp);
                     break;
                 case 'o':
-                    j = convert(va_arg(ap, int), 8, temp);
+                    j = convert(value, 8, temp);
                     break;
                 case 's':
                     q = va_arg(ap, char *);
@@ -154,7 +171,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
                     break;
                 case 'x':
                 case 'X':
-                    j = convert(va_arg(ap, int) & 0xffffffff, 16, temp);
+                    j = convert(value & 0xffffffff, 16, temp);
                     break;
                 case 'p':
                     j = convert((uintptr)va_arg(ap, void *), 16, temp);
@@ -243,7 +260,7 @@ sprintf(char *buffer, const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    n = vsnprintf(buffer, 0x7fffffff, format, ap);
+    n = vsnprintf(buffer, BASIC_LINE_SIZE, format, ap);
     va_end(ap);
     return n;
 }
@@ -305,6 +322,7 @@ vsprintf(char *outbuf, const char *format, va_list ap)
     return n;
 }
 
+
 #if IN_MEMORY_TRACE
 
 enum { trace_size = 200 };
@@ -326,12 +344,6 @@ trace(const char *fmt, ...)
     s = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
 
-#if TRACE_TO_SERIAL
-    // send message to serial port.
-    serial_send(buf, s);
-    serial_send("\r\n", 2);
-#endif
-
     // if trace_buffer has room for the message...
     if ((trace_buffer.cursor + s + 1) < trace_size) {
         // append the message into trace buffer.
@@ -339,16 +351,6 @@ trace(const char *fmt, ...)
         trace_buffer.cursor += s;
         trace_buffer.buffer[trace_buffer.cursor++] = ' ';
     }
-}
-
-void
-trace_print(void)
-{
-    if (trace_buffer.cursor <= 0) {
-        return;
-    }
-
-    printf("%s\n", trace_buffer.buffer);
 }
 
 void

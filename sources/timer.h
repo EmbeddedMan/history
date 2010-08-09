@@ -6,15 +6,15 @@ void
 timer_isr(void);
 #endif
 
-#if PICTOCRYPT
+#if PICTOCRYPT || MC9S08QE128 || MC9S12DT256
 enum { ticks_per_msec = 1 }; // tunable
 #else
 enum { ticks_per_msec = 4 }; // tunable
 #endif
 
-extern volatile int ticks;  // incremented by pit0 isr every tick
-extern volatile int msecs;  // incremented by pit0 isr every millisecond
-extern volatile int seconds;  // incremented by pit0 isr every second
+extern volatile int32 ticks;  // incremented by pit0 isr every tick
+extern volatile int32 msecs;  // incremented by pit0 isr every millisecond
+extern volatile int32 seconds;  // incremented by pit0 isr every second
 
 extern bool volatile timer_in_isr;
 

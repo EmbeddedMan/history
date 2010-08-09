@@ -1,21 +1,21 @@
 // *** util.h *********************************************************
 
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #define SPL_PIT0  6  // pit0 isr runs at interrupt level 6
-#define SPL_SERIAL 5 // uart0 isr runs at interrupt level 5
-                     //   (should be higher than anything being debugged with serial tracing).
 #define SPL_USB  4  // usb isr runs at interrupt level 4
 #define SPL_IRQ4  4  // irq4 isr runs at interrupt level 4 (fixed, zigbee)
-#define SPL_IRQ1  1  // irq1 isr runs at interrupt level 1 (fixed, sleep)
-#elif MCF51JM128
+#define SPL_SERIAL  4  // uart0 isr runs at interrupt level 4
+#define SPL_IRQ1  1  // irq1 isr runs at interrupt level 1 (fixed, sleep or zigbee)
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256
 #define SPL_PIT0  6  // pit0 isr runs at interrupt level 6
 #define SPL_USB  6  // usb isr runs at interrupt level 6
 #define SPL_IRQ4  4  // irq isr runs at interrupt level 4 (zigbee)
-//#define SPL_IRQ1  1  // irq1 isr runs at interrupt level 1 (fixed, sleep)
+#define SPL_SERIAL  3  // uart0 isr runs at interrupt level 3
 #elif PIC32
 #define SPL_PIT0  6  // pit0 isr runs at interrupt level 6
 #define SPL_USB  6  // usb isr runs at interrupt level 6
 #define SPL_IRQ4  4  // irq isr runs at interrupt level 4 (zigbee)
+#define SPL_SERIAL  4
 #else
 #error
 #endif
@@ -53,6 +53,9 @@ read16(const byte *addr);
 uint32
 byteswap(uint32 x, uint32 size);
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 // return the current interrupt mask level
 int
 gpl(void);
@@ -63,7 +66,10 @@ splx(int level);
 
 // delay for the specified number of milliseconds
 void
-delay(int ms);
+delay(int32 ms);
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 int
 gethex(char *p);
@@ -74,8 +80,14 @@ get2hex(char **p);
 void
 tailtrim(char *p);
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 void *
 memcpy(void *d,  const void *s, size_t n);
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 void *
 memmove(void *d,  const void *s, size_t n);
@@ -107,8 +119,14 @@ strcmp(const char *s1, const char *s2);
 int
 strncmp(const char *s1, const char *s2, size_t n);
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+#endif
 char *
 strchr(const char *s, int c);
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 int
 isdigit(int c);

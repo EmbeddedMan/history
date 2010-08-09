@@ -1,9 +1,10 @@
 
 ### platform MCF52221 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 for more information:
   help about
   help commands
@@ -20,9 +21,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave CPUStick [and run]
 cls                           -- clear terminal screen
@@ -47,7 +50,7 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-autoreset [on|off]            -- autoreset (on wake) mode
+analog [<millivolts>]         -- set analog voltage scale
 autorun [on|off]              -- autorun (on reset) mode
 echo [on|off]                 -- terminal echo mode
 indent [on|off]               -- listing indent mode
@@ -172,7 +175,7 @@ pin names:
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
-dtin? = potential analog output (PWM actually) pins (mV)
+dtin? = potential analog output (PWM) pins (mV)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
@@ -190,8 +193,8 @@ utxd? = potential uart output pins (transmit byte)
 6  qspi_din
 7  qspi_dout
 8  qspi_clk
-9  qspi_cs0         d  d  d  d
-10 rcon*/irq4*      t  t  t  t
+9  qspi_cs0           d  d  d  d
+10 rcon*/irq4*        t  t  t  t
                 g  +  i  i  i  i  a  a  a  a  a  a  a  a
                 n  3  n  n  n  n  n  n  n  n  n  n  n  n
                 d  V  3  2  1  0  0  1  2  3  4  5  6  7
@@ -227,9 +230,10 @@ zigbee cable:
   vss            vss
   vdd            vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -241,24 +245,27 @@ http://www.cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF52221 v1.42!
+Welcome to StickOS for Freescale MCF52221 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 
 ### platform MCF52233 ###
 ... testing help
-Welcome to StickOS for Freescale MCF52233 v1.42!
+Welcome to StickOS for Freescale MCF52233 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 for more information:
   help about
   help commands
@@ -274,9 +281,11 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52233 v1.42!
+Welcome to StickOS for Freescale MCF52233 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave CPUStick [and run]
 cls                           -- clear terminal screen
@@ -301,7 +310,7 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-autoreset [on|off]            -- autoreset (on wake) mode
+analog [<millivolts>]         -- set analog voltage scale
 autorun [on|off]              -- autorun (on reset) mode
 echo [on|off]                 -- terminal echo mode
 indent [on|off]               -- listing indent mode
@@ -419,8 +428,9 @@ pin names:
   -------- -------- -------- --------- ----- ----- ----- ------+
   an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
   scl      sda                                                 | PORT AS
-  gpt0     gpt1     gpt2     irq11*                            | PORT GP
+  gpt0     gpt1     gpt2     gpt3                              | PORT TA
            irq1*                       irq4*             irq7* | PORT NQ
+                             irq11*                            | PORT GP
   qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
   dtin0    dtin1    dtin2    dtin3                             | PORT TC
   utxd0    urxd0    urts0*   ucts0*                            | PORT UA
@@ -428,7 +438,7 @@ pin names:
 
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
-dtin? = potential analog output (PWM actually) pins (mV)
+dtin?, gpt? = potential analog output (PWM) pins (mV)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
@@ -463,9 +473,10 @@ zigbee cable:
   vss            vss
   vdd            vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF52233 v1.42!
+Welcome to StickOS for Freescale MCF52233 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -477,22 +488,267 @@ http://www.cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF52233 v1.42!
+Welcome to StickOS for Freescale MCF52233 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 dhcp
 1.2.3.4
 dhcp
 ... testing reset
-Welcome to StickOS for Freescale MCF52233 v1.42!
+Welcome to StickOS for Freescale MCF52233 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 
-### platform MCF51JM128 ###
+### platform MCF52259 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF52252 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help variables
+  help pins
+  help clone
+  help zigbee
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Freescale MCF52252 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+clone [run]                   -- clone flash to slave CPUStick [and run]
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete [<line>][-][<line>]    -- delete program lines or <subname>
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list [<line>][-][<line>]      -- list program lines or <subname>
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile [<line>][-][<line>]   -- like list, but display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the CPUStick!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]         -- set analog voltage scale
+autorun [on|off]              -- autorun (on reset) mode
+echo [on|off]                 -- terminal echo mode
+indent [on|off]               -- listing indent mode
+prompt [on|off]               -- terminal prompt mode
+sleep [on|off]                -- debugger sleep mode
+step [on|off]                 -- debugger single-step mode
+trace [on|off]                -- debugger trace mode
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+end                                    -- end program
+label <label>                          -- read/data label
+let <variable> = <expression> [, ...]  -- assign variable
+print ("string"|<expression>) [, ...]  -- print strings/expressions
+qspi <variable> [, ...]                -- perform qspi I/O by reference
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+qspi:
+  configure qspi for <n> csiv
+
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference
+array variable indices start at 0; v[0] is the same as v
+
+ram variables:
+  dim <var>[[n]]
+  dim <var>[[n]] as (byte|short)
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables:
+  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+
+for more information:
+  help pins
+pin names:
+    0        1        2        3        4     5     6     7
+  -------- -------- -------- --------- ----- ----- ----- ------+
+  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
+  scl      sda                                                 | PORT AS
+  gpt0     gpt1     gpt2     gpt3                              | PORT TA
+           irq1*             irq3*           irq5*       irq7* | PORT NQ
+  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
+  dtin0    dtin1    dtin2    dtin3                             | PORT TC
+  utxd0    urxd0    urts0*   ucts0*                            | PORT UA
+  utxd1    urxd1    urts1*   ucts1*                            | PORT UB
+  utxd2    urxd2    urts2*   ucts2*                            | PORT UC
+
+all pins support general purpose digital input/output
+an? = potential analog input pins (mV)
+dtin?, gpt? = potential analog output (PWM) pins (mV)
+dtin? = potential frequency output pins (Hz)
+urxd? = potential uart input pins (received byte)
+utxd? = potential uart output pins (transmit byte)
+       ^ - error
+clone cable:
+  master     slave
+  ---------  ----------------
+  qspi_clk   qspi_clk (ezpck)
+  qspi_din   qspi_dout (ezpq)
+  qspi_dout  qspi_din (ezpd)
+  qspi_cs0   rcon* (ezpcs*)
+  scl        rsti*
+  vss        vss
+  vdd        vdd
+nodeid (<nodeid>|none)        -- set/display zigbee nodeid
+
+connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigbee cable:
+  MCU            MC1320X
+  -------------  -----------
+  qspi_clk       spiclk
+  qspi_din       miso
+  qspi_dout      mosi
+  qspi_cs0       ce*
+  irq1*          irq*
+  scl            rst*
+  sda            rxtxen
+  vss            vss
+  vdd            vdd
+... testing jm commands
+Welcome to StickOS for Freescale MCF52252 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Freescale MCF52252 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Freescale MCF52252 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+
+### platform MCF5211 ###
+... testing help
+Welcome to StickOS for Freescale MCF5211 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 for more information:
   help about
   help commands
@@ -507,9 +763,242 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF5211 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+clone [run]                   -- clone flash to slave CPUStick [and run]
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete [<line>][-][<line>]    -- delete program lines or <subname>
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list [<line>][-][<line>]      -- list program lines or <subname>
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile [<line>][-][<line>]   -- like list, but display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the CPUStick!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]         -- set analog voltage scale
+autorun [on|off]              -- autorun (on reset) mode
+echo [on|off]                 -- terminal echo mode
+indent [on|off]               -- listing indent mode
+prompt [on|off]               -- terminal prompt mode
+sleep [on|off]                -- debugger sleep mode
+step [on|off]                 -- debugger single-step mode
+trace [on|off]                -- debugger trace mode
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+end                                    -- end program
+label <label>                          -- read/data label
+let <variable> = <expression> [, ...]  -- assign variable
+print ("string"|<expression>) [, ...]  -- print strings/expressions
+qspi <variable> [, ...]                -- perform qspi I/O by reference
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+qspi:
+  configure qspi for <n> csiv
+
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference
+array variable indices start at 0; v[0] is the same as v
+
+ram variables:
+  dim <var>[[n]]
+  dim <var>[[n]] as (byte|short)
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables:
+  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+
+for more information:
+  help pins
+pin names:
+    0        1        2        3        4     5     6     7
+  -------- -------- -------- --------- ----- ----- ----- ------+
+  an0      an1      an2      an3       an4   an5   an6   an7   | PORT AN
+  scl      sda                                                 | PORT AS
+  gpt0     gpt1     gpt2     gpt3                              | PORT TA
+           irq1*                       irq4*             irq7* | PORT NQ
+  qspi_cs0 qspi_clk qspi_din qspi_dout                         | PORT QS
+  dtin0    dtin1    dtin2    dtin3                             | PORT TC
+  utxd0    urxd0    urts0*   ucts0*                            | PORT UA
+  utxd1    urxd1    urts1*   ucts1*                            | PORT UB
+
+all pins support general purpose digital input/output
+an? = potential analog input pins (mV)
+dtin?, gpt? = potential analog output (PWM) pins (mV)
+dtin? = potential frequency output pins (Hz)
+urxd? = potential uart input pins (received byte)
+utxd? = potential uart output pins (transmit byte)
+       ^ - error
+       ^ - error
+nodeid (<nodeid>|none)        -- set/display zigbee nodeid
+
+connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigbee cable:
+  MCU            MC1320X
+  -------------  -----------
+  qspi_clk       spiclk
+  qspi_din       miso
+  qspi_dout      mosi
+  qspi_cs0       ce*
+  irq4*          irq*
+  scl            rst*
+  sda            rxtxen
+  vss            vss
+  vdd            vdd
+... testing jm commands
+Welcome to StickOS for Freescale MCF5211 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Freescale MCF5211 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Freescale MCF5211 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+
+### platform MCF51JM128 ###
+... testing help
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help variables
+  help pins
+  help zigbee
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
@@ -533,7 +1022,7 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-autoreset [on|off]            -- autoreset (on wake) mode
+analog [<millivolts>]         -- set analog voltage scale
 autorun [on|off]              -- autorun (on reset) mode
 echo [on|off]                 -- terminal echo mode
 indent [on|off]               -- listing indent mode
@@ -658,7 +1147,7 @@ pin names:
 
 all pins support general purpose digital input/output
 ptb?, ptd[0134] = potential analog input pins (mV)
-pte[23], ptf[0-5] = potential analog output (PWM actually) pins (mV)
+pte[23], ptf[0-5] = potential analog output (PWM) pins (mV)
 pte[23], ptf[0-5] = potential frequency output pins (Hz)
 pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)
 pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)
@@ -684,9 +1173,10 @@ zigbee cable:
   vss            vss
   vdd            vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
     ^ - error
      ^ - error
      ^ - error
@@ -698,24 +1188,27 @@ http://www.cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 
-### platform BADGE_BOARD ###
+### platform MCF51QE128 ###
 ... testing help
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF51QE128 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 for more information:
   help about
   help commands
@@ -730,9 +1223,240 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF51QE128 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete [<line>][-][<line>]    -- delete program lines or <subname>
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list [<line>][-][<line>]      -- list program lines or <subname>
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile [<line>][-][<line>]   -- like list, but display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the CPUStick!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]         -- set analog voltage scale
+autorun [on|off]              -- autorun (on reset) mode
+echo [on|off]                 -- terminal echo mode
+indent [on|off]               -- listing indent mode
+prompt [on|off]               -- terminal prompt mode
+sleep [on|off]                -- debugger sleep mode
+step [on|off]                 -- debugger single-step mode
+trace [on|off]                -- debugger trace mode
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+end                                    -- end program
+label <label>                          -- read/data label
+let <variable> = <expression> [, ...]  -- assign variable
+print ("string"|<expression>) [, ...]  -- print strings/expressions
+qspi <variable> [, ...]                -- perform qspi I/O by reference
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+qspi:
+  configure qspi for <n> csiv
+
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference
+array variable indices start at 0; v[0] is the same as v
+
+ram variables:
+  dim <var>[[n]]
+  dim <var>[[n]] as (byte|short)
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables:
+  nodeid    msecs     seconds   ticks     ticks_per_msec      (read-only)
+
+for more information:
+  help pins
+pin names:
+    0       1       2       3       4       5       6       7
+  ------- ------- ------- ------- ------- ------- ------- --------+
+  pta0    pta1    pta2    pta3    pta4    pta5    pta6    pta7    | PORT A
+  ptb0    ptb1    ptb2    ptb3    ptb4    ptb5    ptb6    ptb7    | PORT B
+  ptc0    ptc1    ptc2    ptc3    ptc4    ptc5    ptc6    ptc7    | PORT C
+  ptd0    ptd1    ptd2    ptd3    ptd4    ptd5    ptd6    ptd7    | PORT D
+  pte0    pte1    pte2    pte3    pte4    pte5    pte6    pte7    | PORT E
+  ptf0    ptf1    ptf2    ptf3    ptf4    ptf5    ptf6    ptf7    | PORT F
+  ptg0    ptg1    ptg2    ptg3                                    | PORT G
+
+all pins support general purpose digital input/output
+pta[0-367], ptb[0-3], ptf[0-7], ptg[23] = potential analog input pins (mV)
+pta[0167], ptb[45], ptc[0-5] = potential analog output (PWM) pins (mV)
+pta[0167], ptb[45], ptc[0-5] = potential frequency output pins (Hz)
+ptb0 (u1), ptc6 (u2) = potential uart input pins (received byte)
+ptb1 (u1), ptc7 (u2) = potential uart output pins (transmit byte)
+       ^ - error
+       ^ - error
+nodeid (<nodeid>|none)        -- set/display zigbee nodeid
+
+connect <nodeid>              -- connect to CPUStick <nodeid> via zigbee
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigbee cable:
+  MCU            MC1320X
+  -------------  -----------
+  spsck1 (ptb2)  spiclk
+  miso1 (ptb4)   miso
+  mosi1 (ptb3)   mosi
+  ss1* (ptb5)    ce*
+  irq*           irq*
+  ptc0           rst*
+  ptf1           rxtxen
+  vss            vss
+  vdd            vdd
+... testing jm commands
+Welcome to StickOS for Freescale MCF51QE128 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Freescale MCF51QE128 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Freescale MCF51QE128 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+
+### platform BADGE_BOARD ###
+... testing help
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help variables
+  help pins
+  help zigbee
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
+Copyright (c) 2008; all rights reserved.
+info: http://www.cpustick.com
+bugs: support@cpustick.com
+auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
@@ -755,7 +1479,7 @@ uptime                        -- print time since last reset
 
 for more information:
   help modes
-autoreset [on|off]            -- autoreset (on wake) mode
+analog [<millivolts>]         -- set analog voltage scale
 autorun [on|off]              -- autorun (on reset) mode
 echo [on|off]                 -- terminal echo mode
 indent [on|off]               -- listing indent mode
@@ -882,7 +1606,7 @@ pin names:
 
 all pins support general purpose digital input/output
 ptb?, ptd[0134] = potential analog input pins (mV)
-pte[23], ptf[0-5] = potential analog output (PWM actually) pins (mV)
+pte[23], ptf[0-5] = potential analog output (PWM) pins (mV)
 pte[23], ptf[0-5] = potential frequency output pins (Hz)
 pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)
 pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)
@@ -908,9 +1632,10 @@ zigbee cable:
   vss            vss
   vdd            vdd
 ... testing jm commands
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
 error -     ^
 error -               ^
 error -      ^
@@ -923,15 +1648,17 @@ error -         ^
 end
 hello
 ... testing ipaddress
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com
   ^ - error
   ^ - error
   ^ - error
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Freescale MCF51JM128 v1.42!
+Welcome to StickOS for Freescale MCF51JM128 v1.50!
 Copyright (c) 2008; all rights reserved.
-http://www.cpustick.com
+info: http://www.cpustick.com
+bugs: support@cpustick.com

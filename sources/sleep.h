@@ -1,5 +1,6 @@
 // *** sleep.h ********************************************************
 
+#if PICTOCRYPT
 INTERRUPT
 void
 sleep_isr(void);
@@ -15,4 +16,5 @@ sleep_poll(void);
 
 void
 sleep_initialize(void);
+#endif
 

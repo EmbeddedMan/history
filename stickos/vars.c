@@ -9,7 +9,7 @@
 #include "main.h"
 
 // the last word of each flash bank is the generation number
-#define SGENERATION(p)  *(int *)((p)+BASIC_SMALL_PAGE_SIZE-sizeof(int))
+#define SGENERATION(p)  *(int32 *)((p)+BASIC_SMALL_PAGE_SIZE-sizeof(uint32))
 
 // we always pick the newer flash bank
 #define FLASH_PARAM_PAGE  ((SGENERATION(FLASH_PARAM1_PAGE)+1 > SGENERATION(FLASH_PARAM2_PAGE)+1) ? FLASH_PARAM1_PAGE : FLASH_PARAM2_PAGE)
@@ -20,22 +20,20 @@ static byte *alternate_flash_param_page;
 
 static struct system_var {
     char *name;
-    int *integer;  // if NULL, then variable is constant.
-    int constant;
-    void (*set_cbfn)(int value);  // if NULL, then the var is read-only.
+    volatile int32 *integer;  // if NULL, then variable is constant.
+    int32 constant;
+    void (*set_cbfn)(int32 value);  // if NULL, then the var is read-only.
 } systems[] = {
 #if ! STICK_GUEST
     "nodeid", &zb_nodeid, 0, NULL,
 #endif
-    "msecs", (int *)&msecs, 0, NULL,
-    "seconds", (int *)&seconds, 0, NULL,
-    "ticks", (int *)&ticks, 0, NULL,
+    "msecs", &msecs, 0, NULL,
+    "seconds", &seconds, 0, NULL,
+    "ticks", &ticks, 0, NULL,
     "ticks_per_msec", NULL, ticks_per_msec, NULL
 };
 
 bool var_trace;
-
-#define MAX_VARS  100
 
 #define VAR_NAME_SIZE  15
 
@@ -56,7 +54,7 @@ struct var {
         struct var *target_var; // type=code_var_reference
     } u;
     int nodeid;  // for remote variable sets
-} vars[MAX_VARS];
+} vars[BASIC_VARS];
 
 static int max_vars;  // allocated
 
@@ -84,20 +82,20 @@ flash_erase_alternate(void)
 // this function updates the alternate parameter page in flash memory.
 static
 void
-flash_update_alternate(IN uint32 offset, IN int value)
+flash_update_alternate(IN uint32 offset, IN int32 value)
 {
-    assert(! (offset & (sizeof(int)-1)));
+    assert(! (offset & (sizeof(uint32)-1)));
 
     assert(FLASH_PARAM_PAGE != alternate_flash_param_page);
 
     // copy the initial words from the primary page to the alternate page
-    flash_write_words((uint32 *)alternate_flash_param_page, (uint32 *)FLASH_PARAM_PAGE, offset/sizeof(int));
+    flash_write_words((uint32 *)alternate_flash_param_page, (uint32 *)FLASH_PARAM_PAGE, offset/sizeof(uint32));
 
     // copy the updated word value at the specified offset to the alternate page
     flash_write_words((uint32 *)(alternate_flash_param_page+offset), (uint32 *)&value, 1);
 
     // copy the final words from the primary page to the alternate page
-    flash_write_words((uint32 *)(alternate_flash_param_page+offset+sizeof(int)), (uint32 *)(FLASH_PARAM_PAGE+offset+sizeof(int)), (BASIC_SMALL_PAGE_SIZE-sizeof(int)-(offset+sizeof(int)))/sizeof(int));
+    flash_write_words((uint32 *)(alternate_flash_param_page+offset+sizeof(uint32)), (uint32 *)(FLASH_PARAM_PAGE+offset+sizeof(uint32)), (BASIC_SMALL_PAGE_SIZE-sizeof(uint32)-(offset+sizeof(uint32)))/sizeof(uint32));
 }
 
 // this function clears the alternate parameter page in flash memory.
@@ -105,7 +103,7 @@ static
 void
 flash_clear_alternate(void)
 {
-    int value;
+    int32 value;
     uint32 offset;
 
     assert(FLASH_PARAM_PAGE != alternate_flash_param_page);
@@ -113,8 +111,8 @@ flash_clear_alternate(void)
     value = 0;
 
     // for all user variable offsets...
-    for (offset = 0; offset < FLASH_OFFSET(0); offset += sizeof(int)) {
-        assert(! (offset & (sizeof(int)-1)));
+    for (offset = 0; offset < FLASH_OFFSET(0); offset += sizeof(uint32)) {
+        assert(! (offset & (sizeof(uint32)-1)));
 
         // copy the zero word to the alternate page
         flash_write_words((uint32 *)(alternate_flash_param_page+offset), (uint32 *)&value, 1);
@@ -130,13 +128,13 @@ static
 void
 flash_promote_alternate(void)
 {
-    int generation;
+    int32 generation;
 
     assert(FLASH_PARAM_PAGE != alternate_flash_param_page);
 
     // update the generation of the alternate page, to make it primary!
     generation = SGENERATION(FLASH_PARAM_PAGE)+1;
-    flash_write_words((uint32 *)(alternate_flash_param_page+BASIC_SMALL_PAGE_SIZE-sizeof(int)), (uint32 *)&generation, 1);
+    flash_write_words((uint32 *)(alternate_flash_param_page+BASIC_SMALL_PAGE_SIZE-sizeof(uint32)), (uint32 *)&generation, 1);
 
     assert(FLASH_PARAM_PAGE == alternate_flash_param_page);
     assert(SGENERATION(FLASH_PARAM1_PAGE) != SGENERATION(FLASH_PARAM2_PAGE));
@@ -264,7 +262,7 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
     }
 
     // if we're out of vars...
-    if (max_vars >= MAX_VARS) {
+    if (max_vars >= BASIC_VARS) {
         printf("too many variables\n");
         stop();
         return;
@@ -275,7 +273,7 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
     assert(vars[max_vars].name[sizeof(vars[max_vars].name)-1] == '\0');
     vars[max_vars].gosubs = gosubs;
     vars[max_vars].type = type;
-    assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(int));
+    assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(uint32));
     vars[max_vars].size = size;
     assert(max_index > 0);
     vars[max_vars].max_index = max_index;
@@ -287,7 +285,7 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
         case code_ram:
             assert(! pin_number);
             // if we're out of ram space...
-            if (ram_offset+max_index*vars[max_vars].size > BASIC_SMALL_PAGE_SIZE) {
+            if (ram_offset+max_index*vars[max_vars].size > sizeof(RAM_VARIABLE_PAGE)) {
                 vars[max_vars].max_index = 0;
                 printf("out of variable ram\n");
                 stop();
@@ -303,7 +301,7 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
             assert(! pin_number);
             assert(size == 4);  // integer only
             // if we're out of flash space...
-            if (param_offset+max_index*vars[max_vars].size > BASIC_SMALL_PAGE_SIZE-(FLASH_LAST+1)*sizeof(int)) {
+            if (param_offset+max_index*vars[max_vars].size > BASIC_SMALL_PAGE_SIZE-(FLASH_LAST+1)*sizeof(uint32)) {
                 vars[max_vars].max_index = 0;
                 printf("out of parameter flash\n");
                 stop();
@@ -311,9 +309,9 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN int siz
             }
             // *** flash control and access ***
             // allocate the flash var
-            assert(! (param_offset & (sizeof(int)-1)));  // integer only
+            assert(! (param_offset & (sizeof(uint32)-1)));  // integer only
             vars[max_vars].u.page_offset = param_offset;
-            assert(vars[max_vars].size == sizeof(int));  // integer only
+            assert(vars[max_vars].size == sizeof(uint32));  // integer only
             param_offset += max_index*vars[max_vars].size;
             break;
 
@@ -372,8 +370,9 @@ var_declare_reference(const char *name, int gosubs, const char *target_name)
 
 typedef struct remote_set {
     char name[VAR_NAME_SIZE];  // 14 char max variable name
-    int index;
-    int value;
+    char pad;
+    int32 index;
+    int32 value;
 } remote_set_t;
 
 static remote_set_t set;
@@ -413,7 +412,7 @@ var_poll(void)
 
 // this function sets the value of a ram, flash, or pin variable!
 void
-var_set(IN const char *name, IN int index, IN int value)
+var_set(IN const char *name, IN int index, IN int32 value)
 {
 #if 0  // unused for now
     int i;
@@ -483,8 +482,8 @@ var_set(IN const char *name, IN int index, IN int value)
             case code_ram:
                 // *** RAM control and access ***
                 // set the ram variable to value
-                if (var->size == sizeof(int)) {
-                    write32(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(int), value);
+                if (var->size == sizeof(uint32)) {
+                    write32(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(uint32), value);
                 } else if (var->size == sizeof(short)) {
                     write16(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short), value);
                 } else {
@@ -496,31 +495,31 @@ var_set(IN const char *name, IN int index, IN int value)
                 // if debug tracing is enabled...
                 if (var_trace) {
                     if (var->max_index > 1) {
-                        printf("%4d let %s[%d] = %d\n", run_line_number, name, index, value);
+                        printf("%4d let %s[%d] = %ld\n", run_line_number, name, index, value);
                     } else {
-                        printf("%4d let %s = %d\n", run_line_number, name, value);
+                        printf("%4d let %s = %ld\n", run_line_number, name, value);
                     }
                 }
                 break;
 
             case code_flash:
-                assert(var->size == sizeof(int));
+                assert(var->size == sizeof(uint32));
 
                 // *** flash control and access ***
                 // if the flash variable is not already equal to value
-                if (*(int *)(FLASH_PARAM_PAGE+var->u.page_offset+index*sizeof(int)) != value) {
+                if (*(int32 *)(FLASH_PARAM_PAGE+var->u.page_offset+index*sizeof(uint32)) != value) {
                     // set the flash variable to value
                     flash_erase_alternate();
-                    flash_update_alternate(var->u.page_offset+index*sizeof(int), value);
+                    flash_update_alternate(var->u.page_offset+index*sizeof(uint32), value);
                     flash_promote_alternate();
 
                     // *** interactive debugger ***
                     // if debug tracing is enabled...
                     if (var_trace) {
                         if (var->max_index > 1) {
-                            printf("%4d let %s[%d] = %d\n", run_line_number, name, index, value);
+                            printf("%4d let %s[%d] = %ld\n", run_line_number, name, index, value);
                         } else {
-                            printf("%4d let %s = %d\n", run_line_number, name, value);
+                            printf("%4d let %s = %ld\n", run_line_number, name, value);
                         }
                     }
                 }
@@ -535,7 +534,7 @@ var_set(IN const char *name, IN int index, IN int value)
                     // *** interactive debugger ***
                     // if debug tracing is enabled...
                     if (var_trace) {
-                        printf("%4d let %s = %d\n", run_line_number, name, value);
+                        printf("%4d let %s = %ld\n", run_line_number, name, value);
                     }
 
                 }
@@ -553,11 +552,11 @@ var_set(IN const char *name, IN int index, IN int value)
 }
 
 // this function gets the value of a ram, flash, or pin variable!
-int
+int32
 var_get(IN const char *name, IN int index)
 {
     int i;
-    int value;
+    int32 value;
     int var_gosubs;
     struct var *var;
 
@@ -588,8 +587,8 @@ var_get(IN const char *name, IN int index)
             case code_ram:
                 // *** RAM control and access ***
                 // get the value of the ram variable
-                if (var->size == sizeof(int)) {
-                    value = read32(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(int));
+                if (var->size == sizeof(uint32)) {
+                    value = read32(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(uint32));
                 } else if (var->size == sizeof(short)) {
                     value = read16(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short));
                 } else {
@@ -599,11 +598,11 @@ var_get(IN const char *name, IN int index)
                 break;
 
             case code_flash:
-                assert(var->size == sizeof(int));
+                assert(var->size == sizeof(uint32));
 
                 // *** flash control and access ***
                 // get the value of the flash variable
-                value = *(int *)(FLASH_PARAM_PAGE+var->u.page_offset+index*sizeof(int));
+                value = *(int32 *)(FLASH_PARAM_PAGE+var->u.page_offset+index*sizeof(uint32));
                 break;
 
             case code_pin:
@@ -624,7 +623,7 @@ var_get(IN const char *name, IN int index)
 
 // this function gets the size of a ram, flash, or pin variable!
 int
-var_get_size(IN const char *name)
+var_get_size(IN const char *name, OUT int *max_index)
 {
     int size;
     int var_gosubs;
@@ -638,6 +637,7 @@ var_get_size(IN const char *name)
         stop();
     } else {
         size = var->size;
+        *max_index = var->max_index;
     }
     
     return size;
@@ -647,7 +647,7 @@ var_get_size(IN const char *name)
 
 // this function sets the value of a flash mode parameter
 void
-var_set_flash(IN int var, IN int value)
+var_set_flash(IN int var, IN int32 value)
 {
     assert(var >= 0 && var < FLASH_LAST);
 
@@ -659,12 +659,12 @@ var_set_flash(IN int var, IN int value)
 }
 
 // this function gets the value of a flash mode parameter.
-int
+int32
 var_get_flash(IN int var)
 {
     assert(var >= 0 && var < FLASH_LAST);
 
-    return *(int *)(FLASH_PARAM_PAGE+FLASH_OFFSET(var));
+    return *(int32 *)(FLASH_PARAM_PAGE+FLASH_OFFSET(var));
 }
 
 // this function clears variables before a BASIC program run.
@@ -689,9 +689,9 @@ var_clear(IN bool flash)
 void
 var_mem(void)
 {
-    printf("%3d%% ram variable bytes used\n", ram_offset*100/(BASIC_SMALL_PAGE_SIZE-sizeof(int)));
-    printf("%3d%% flash parameter bytes used\n", param_offset*100/(BASIC_SMALL_PAGE_SIZE-(FLASH_LAST+1)*sizeof(int)));
-    printf("%3d%% variables used\n", max_vars*100/MAX_VARS);
+    printf("%3d%% ram variable bytes used\n", ram_offset*100/sizeof(RAM_CODE_PAGE));
+    printf("%3d%% flash parameter bytes used\n", param_offset*100/(BASIC_SMALL_PAGE_SIZE-(FLASH_LAST+1)*sizeof(uint32)));
+    printf("%3d%% variables used\n", max_vars*100/BASIC_VARS);
 }
 
 void
@@ -700,4 +700,8 @@ var_initialize(void)
 #if ! STICK_GUEST
     zb_register(zb_class_remote_set, class_remote_set);
 #endif
+
+    if (var_get_flash(FLASH_ANALOG) != -1) {
+        pin_analog = var_get_flash(FLASH_ANALOG);
+    }
 }

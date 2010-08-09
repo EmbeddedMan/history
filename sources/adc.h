@@ -1,10 +1,14 @@
 // *** adc.h **********************************************************
 
 enum {
-#if MCF52221 || MCF52233
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     adc_num_channel = 8
 #elif MCF51JM128
     adc_num_channel = 12
+#elif MCF51QE128 || MC9S08QE128
+    adc_num_channel = 20
+#elif MC9S12DT256
+    adc_num_channel = 8  // there are 8 more on larger parts!
 #elif PIC32
     adc_num_channel = 16
 #else

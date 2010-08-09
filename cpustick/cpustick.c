@@ -10,6 +10,7 @@ char *volatile main_command;
 
 bool main_edit;
 bool main_prompt = true;
+uint32 main_auto;
 
 // this function is called by the FTDI transport when a new command
 // command line has been received from the user.
@@ -29,12 +30,14 @@ main_ctrlc_cbfn(void)
     stop();
 }
 
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
 // this function is called by the FTDI transport when the USB device
 // is reset.
 static void
 main_reset_cbfn(void)
 {
 }
+#endif
 
 static int autoran;
 
@@ -46,6 +49,7 @@ main_run(void)
     bool ready;
     bool autoend;
     static int first;
+    char buffer[16];
 
     // we just poll here waiting for commands
     for (;;) {
@@ -63,6 +67,13 @@ main_run(void)
             }
             basic_run(main_command);
             ready = 1;
+            
+            if (main_auto) {
+                sprintf(buffer, "%ld ", main_auto);
+                terminal_edit(buffer);
+                main_edit = true;
+                main_auto += 10;
+            }
         }
         autoran = true;
 
@@ -70,6 +81,9 @@ main_run(void)
             if (! first) {
                 printf(" \n"); delay(1);  // revisit -- why???
                 basic_run("help about");
+                if (disable_autorun) {
+                    printf("AUTORUN DISABLED!\n");
+                }
                 first = 1;
             }
             if (main_prompt) {
@@ -113,7 +127,7 @@ main_initialize(void)
     if (! usb_host_mode) {
         // register device mode callbacks
         terminal_register(main_command_cbfn, main_ctrlc_cbfn);
-#if MCF52221 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
         ftdi_register(main_reset_cbfn);
 #endif
     }

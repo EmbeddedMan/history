@@ -24,7 +24,15 @@ extern char *help_about;
 extern char *help_about_short;
 #endif
 
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG HELP_CODE
+#endif
+
 void basic2_help(IN char *text_in);
+
+#if MC9S08QE128 || MC9S12DT256
+#pragma CODE_SEG DEFAULT
+#endif
 
 bool basic2_run(char *text_in);
 
