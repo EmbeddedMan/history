@@ -328,13 +328,13 @@ open_log_file(void)
         return false;
     }
     
-    // unlink the log file
-    (void)DFS_UnlinkFile(&vi, (unsigned char *)"stickos.log", big_buffer);
-    
     // open the log file
     if (DFS_OpenFile(&vi, (unsigned char *)"stickos.log", DFS_WRITE, big_buffer, &wfi)) {
         return false;
     }
+    
+    // seek to the end
+    DFS_Seek(&wfi, (uint32)-1, big_buffer);
     
     return true;        
 }

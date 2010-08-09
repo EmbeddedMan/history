@@ -33,7 +33,7 @@
 #if PIC32
 void _general_exception_context(void)
 {
-    led_line(_CP0_GET_CAUSE());
+    led_hex(_CP0_GET_CAUSE());
 }
 #endif
 
@@ -53,6 +53,7 @@ main()  // we're called directly by startup.c
     SYSTEMConfig(80000000L, SYS_CFG_WAIT_STATES | SYS_CFG_PCACHE);
     INTEnableSystemMultiVectoredInt();
     (void)splx(7);
+    DDPCON = 0;  // disable JTAG
     
 #if DEBUG
     debugger_attached = true;
@@ -205,7 +206,7 @@ main()  // we're called directly by startup.c
         usb_host_mode = true;
     }
 #elif STICKOS
-    usb_host_mode = var_get_flash(FLASH_USBHOST) == 1;
+    usb_host_mode = (var_get_flash(FLASH_USBHOST) == 1) && ! disable_autorun;
 #endif
 
 #if PICTOCRYPT

@@ -18,6 +18,7 @@
 // add minimum flash requirements for pic32 and 5225x to mcu details
 // document "conflicting timer usage"
 // remove 52221 examples from help reference section
+// MCU details says "autorun disable", but we are inconsistent in docs with use of "safemode*"
 
 // prior 2
 // =======
