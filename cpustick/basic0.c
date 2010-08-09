@@ -435,8 +435,8 @@ static char *const help_pins =
 "rd[0-4] = potential analog output (PWM) pins (mV)\n"
 "rd[0-4] = potential servo output (PWM) pins (cms)\n"
 "rd[0-4] = potential frequency output pins (Hz)\n"
-"rf2 (u1), rf4 (u2) = potential uart input pins (received byte)\n"
-"rf8 (u1), rf5 (u2) = potential uart output pins (transmit byte)\n"
+"rf4 (u2) = potential uart input pins (received byte)\n"
+"rf5 (u2) = potential uart output pins (transmit byte)\n"
 #else
 #error
 #endif

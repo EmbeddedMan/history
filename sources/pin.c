@@ -61,7 +61,7 @@ byte pin_assignments[pin_assignment_max] = {
 #elif MCF52259
     PIN_FEC_CRS, PIN_FEC_COL, PIN_QSPI_CS0, PIN_QSPI_CS2, PIN_FEC_RXER, PIN_UNASSIGNED, PIN_FEC_TXCLK
 #elif PIC32
-    PIN_RE0, PIN_RE6, PIN_RG8, PIN_UNASSIGNED, PIN_RG6, PIN_RG9, PIN_RG7
+    PIN_RE0, PIN_RE6, PIN_RE1, PIN_UNASSIGNED, PIN_RE2, PIN_RE3, PIN_RE4
 #else
 #error
 #endif
@@ -2235,10 +2235,10 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             if (pin_type == pin_type_uart_input || pin_type == pin_type_uart_output) {
                 if (offset == 2 || offset == 8) {
                     U1MODE |= _U1MODE_UARTEN_MASK;
-                    serial_disable();
                 } else {
                     assert(offset == 4 || offset == 5);
                     U2MODE |= _U2MODE_UARTEN_MASK;
+                    serial_disable();
                 }
             } else {
                 if (offset == 2 || offset == 8) {

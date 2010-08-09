@@ -196,10 +196,10 @@ volatile CANIDMR4STR _CANIDMR4;                            /* MSCAN Identifier M
 volatile CANIDMR5STR _CANIDMR5;                            /* MSCAN Identifier Mask Register 5; 0xFFFF989D */
 volatile CANIDMR6STR _CANIDMR6;                            /* MSCAN Identifier Mask Register 6; 0xFFFF989E */
 volatile CANIDMR7STR _CANIDMR7;                            /* MSCAN Identifier Mask Register 7; 0xFFFF989F */
-volatile CANRIDR0STR _CANRIDR0;                            /* MSCAN 0 Receive Identifier Register 0; 0xFFFF98A0 */
-volatile CANRIDR1STR _CANRIDR1;                            /* MSCAN 0 Receive Identifier Register 1; 0xFFFF98A1 */
-volatile CANRIDR2STR _CANRIDR2;                            /* MSCAN 0 Receive Identifier Register 2; 0xFFFF98A2 */
-volatile CANRIDR3STR _CANRIDR3;                            /* MSCAN 0 Receive Identifier Register 3; 0xFFFF98A3 */
+//volatile CANRIDR0STR _CANRIDR0;                            /* MSCAN 0 Receive Identifier Register 0; 0xFFFF98A0 */
+//volatile CANRIDR1STR _CANRIDR1;                            /* MSCAN 0 Receive Identifier Register 1; 0xFFFF98A1 */
+//volatile CANRIDR2STR _CANRIDR2;                            /* MSCAN 0 Receive Identifier Register 2; 0xFFFF98A2 */
+//volatile CANRIDR3STR _CANRIDR3;                            /* MSCAN 0 Receive Identifier Register 3; 0xFFFF98A3 */
 volatile CANRDSR0STR _CANRDSR0;                            /* MSCAN Receive Data Segment Register 0; 0xFFFF98A4 */
 volatile CANRDSR1STR _CANRDSR1;                            /* MSCAN Receive Data Segment Register 1; 0xFFFF98A5 */
 volatile CANRDSR2STR _CANRDSR2;                            /* MSCAN Receive Data Segment Register 2; 0xFFFF98A6 */
@@ -209,10 +209,10 @@ volatile CANRDSR5STR _CANRDSR5;                            /* MSCAN Receive Data
 volatile CANRDSR6STR _CANRDSR6;                            /* MSCAN Receive Data Segment Register 6; 0xFFFF98AA */
 volatile CANRDSR7STR _CANRDSR7;                            /* MSCAN Receive Data Segment Register 7; 0xFFFF98AB */
 volatile CANRDLRSTR _CANRDLR;                              /* MSCAN Receive Data Length Register; 0xFFFF98AC */
-volatile CANTIDR0STR _CANTIDR0;                            /* MSCAN 0 Transmit Identifier Register 0; 0xFFFF98B0 */
-volatile CANTIDR1STR _CANTIDR1;                            /* MSCAN 0 Transmit Identifier Register 1; 0xFFFF98B1 */
-volatile CANTIDR2STR _CANTIDR2;                            /* MSCAN 0 Transmit Identifier Register 2; 0xFFFF98B2 */
-volatile CANTIDR3STR _CANTIDR3;                            /* MSCAN 0 Transmit Identifier Register 3; 0xFFFF98B3 */
+//volatile CANTIDR0STR _CANTIDR0;                            /* MSCAN 0 Transmit Identifier Register 0; 0xFFFF98B0 */
+//volatile CANTIDR1STR _CANTIDR1;                            /* MSCAN 0 Transmit Identifier Register 1; 0xFFFF98B1 */
+//volatile CANTIDR2STR _CANTIDR2;                            /* MSCAN 0 Transmit Identifier Register 2; 0xFFFF98B2 */
+//volatile CANTIDR3STR _CANTIDR3;                            /* MSCAN 0 Transmit Identifier Register 3; 0xFFFF98B3 */
 volatile CANTDSR0STR _CANTDSR0;                            /* MSCAN Transmit Data Segment Register 0; 0xFFFF98B4 */
 volatile CANTDSR1STR _CANTDSR1;                            /* MSCAN Transmit Data Segment Register 1; 0xFFFF98B5 */
 volatile CANTDSR2STR _CANTDSR2;                            /* MSCAN Transmit Data Segment Register 2; 0xFFFF98B6 */

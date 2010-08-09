@@ -3,15 +3,6 @@
 
 #include "main.h"
 
-#if PIC32
-#ifndef _SPI1STAT_w_MASK
-#define SPI1BUF  SPI2BUF
-#define SPI1STATbits  SPI2STATbits
-#define SPI1CON  SPI2CON
-#define SPI1BRG  SPI2BRG
-#endif
-#endif
-
 #define QSPI_BAUD_FAST  800000  // zigflea
 #define QSPI_BAUD_SLOW  200000  // default
 
@@ -100,19 +91,19 @@ qspi_transfer(bool cs, byte *buffer, int length)
     }
 #elif PIC32
     while (length) {
-        assert(! (SPI1STATbits.SPIBUSY));
-        assert(! (SPI1STATbits.SPIRBF));
-        assert(SPI1STATbits.SPITBE);
-        SPI1BUF = *buffer;
+        assert(! (SPI2STATbits.SPIBUSY));
+        assert(! (SPI2STATbits.SPIRBF));
+        assert(SPI2STATbits.SPITBE);
+        SPI2BUF = *buffer;
         
-        while (! SPI1STATbits.SPIRBF) {
+        while (! SPI2STATbits.SPIRBF) {
             // NULL
         }
         
-        assert(! (SPI1STATbits.SPIBUSY));
-        assert(SPI1STATbits.SPIRBF);
-        assert(SPI1STATbits.SPITBE);
-        *buffer = SPI1BUF;
+        assert(! (SPI2STATbits.SPIBUSY));
+        assert(SPI2STATbits.SPIRBF);
+        assert(SPI2STATbits.SPITBE);
+        *buffer = SPI2BUF;
         
         buffer++;
         length--;
@@ -149,12 +140,12 @@ qspi_baud_fast(void)
     SPI1BRX_SPPR = divisor-1;
 #elif PIC32
     // initialize qspi master at 800k baud
-    SPI1CON = 0;
+    SPI2CON = 0;
 
     assert(bus_frequency/QSPI_BAUD_FAST/2 - 1 < 512);
-    SPI1BRG = bus_frequency/QSPI_BAUD_FAST/2 - 1;
+    SPI2BRG = bus_frequency/QSPI_BAUD_FAST/2 - 1;
     
-    SPI1CON = _SPI2CON_ON_MASK|_SPI2CON_CKE_MASK|_SPI2CON_MSTEN_MASK;
+    SPI2CON = _SPI2CON_ON_MASK|_SPI2CON_CKE_MASK|_SPI2CON_MSTEN_MASK;
 #endif
 }
 
@@ -191,12 +182,12 @@ qspi_initialize(void)
     MODRR |= 0x10;
 #endif
 #elif PIC32
-    SPI1CON = 0;
+    SPI2CON = 0;
 
     assert(bus_frequency/QSPI_BAUD_SLOW/2 - 1 < 512);
-    SPI1BRG = bus_frequency/QSPI_BAUD_SLOW/2 - 1;
+    SPI2BRG = bus_frequency/QSPI_BAUD_SLOW/2 - 1;
     
-    SPI1CON = _SPI2CON_ON_MASK|_SPI2CON_CKE_MASK|_SPI2CON_MSTEN_MASK;
+    SPI2CON = _SPI2CON_ON_MASK|_SPI2CON_CKE_MASK|_SPI2CON_MSTEN_MASK;
 #endif
 
     // cs inactive

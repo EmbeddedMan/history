@@ -3,6 +3,12 @@
 
 #include "main.h"
 
+#if PIC32
+#define UART  1
+#else
+#define UART  0
+#endif
+
 #define BAUDRATE  9600
 
 #define BUFFERSIZE  64
@@ -39,7 +45,7 @@ serial_disable(void)
     SCI1C2X &= ~SCI1C2_RIE_MASK;
 #elif PIC32
     // Unconfigure UART1 RX Interrupt
-    ConfigIntUART1(0);
+    ConfigIntUART2(0);
 #endif
     // don't allow the rx ball to start rolling
     waiting = false;
@@ -77,9 +83,9 @@ serial_command_ack(void)
         waiting = false;
         
         // if the tx is ready...
-        if (pin_uart_tx_ready(0)) {
+        if (pin_uart_tx_ready(UART)) {
             // stuff a resume
-            pin_uart_tx(0, CTRLQ);
+            pin_uart_tx(UART, CTRLQ);
         } else {
             // record we need a resume
             suspend = false;
@@ -95,7 +101,7 @@ XXX_SKIP_XXX:
 INTERRUPT
 void
 #if PIC32
-__ISR(24, ipl2) // REVISIT -- ipl?
+__ISR(32, ipl2) // REVISIT -- ipl?
 #endif
 serial_isr(void)
 {
@@ -112,13 +118,13 @@ serial_isr(void)
 
 #if PIC32
     // Clear the RX interrupt Flag
-    mU1RXClearIntFlag();
+    mU2RXClearIntFlag();
 #endif
 
     do {
         // process the receive fifo
-        while (pin_uart_rx_ready(0)) {
-            c = pin_uart_rx(0);
+        while (pin_uart_rx_ready(UART)) {
+            c = pin_uart_rx(UART);
             if (c && c != CTRLS && c != CTRLQ) {
                 if (c == '\r') {
                     serial_active = true;
@@ -138,9 +144,9 @@ serial_isr(void)
             // if a full command was accumulated...
             if (! boo) {
                 // if the tx is ready...
-                if (pin_uart_tx_ready(0)) {
+                if (pin_uart_tx_ready(UART)) {
                     // stuff a suspend
-                    pin_uart_tx(0, CTRLS);
+                    pin_uart_tx(UART, CTRLS);
                 } else {
                     // record we need a suspend
                     suspend = true;
@@ -152,7 +158,7 @@ serial_isr(void)
                 waiting = true;
             }
         }
-    } while (pin_uart_rx_ready(0));
+    } while (pin_uart_rx_ready(UART));
     
     assert(serial_in_isr);
     assert((serial_in_isr = false) ? true : true);
@@ -168,7 +174,7 @@ serial_send(const byte *buffer, int length)
     assert(! busy);
     busy = true;
     
-    while (! pin_uart_tx_ready(0)) {
+    while (! pin_uart_tx_ready(UART)) {
         // revisit -- poll?
     }
     
@@ -176,11 +182,11 @@ serial_send(const byte *buffer, int length)
     for (;;) {
         // if we have a suspend or resume to send, they take precedence
         if (suspend) {
-            pin_uart_tx(0, CTRLS);
+            pin_uart_tx(UART, CTRLS);
             suspend = false;
             assert(! resume);
         } else if (resume) {
-            pin_uart_tx(0, CTRLQ);
+            pin_uart_tx(UART, CTRLQ);
             resume = false;
             assert(! suspend);
         } else {
@@ -188,12 +194,12 @@ serial_send(const byte *buffer, int length)
                 break;
             }
             
-            pin_uart_tx(0, *buffer);
+            pin_uart_tx(UART, *buffer);
             buffer++;
             length--;
         }
         
-        while (! pin_uart_tx_ready(0)) {
+        while (! pin_uart_tx_ready(UART)) {
             // revisit -- poll?
         }
     }
@@ -206,10 +212,10 @@ void
 serial_initialize(void)
 {
     // configure the first uart for serial terminal by default
-    pin_uart_configure(0, BAUDRATE, 8, 2, false);
+    pin_uart_configure(UART, BAUDRATE, 8, 2, false);
     
     // start us out with a CTRLQ
-    pin_uart_tx(0, CTRLQ);
+    pin_uart_tx(UART, CTRLQ);
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // UART 0
@@ -231,10 +237,10 @@ serial_initialize(void)
     // configure uart1 receive interrupts
     SCI1C2X |= SCI1C2_RIE_MASK;
 #elif PIC32
-    U1MODE |= _U1MODE_UARTEN_MASK;
+    U2MODE |= _U2MODE_UARTEN_MASK;
 
     // Configure UART1 RX Interrupt
-    ConfigIntUART1(UART_INT_PR2 | UART_RX_INT_EN);
+    ConfigIntUART2(UART_INT_PR2 | UART_RX_INT_EN);
 #else
 #error
 #endif

@@ -1,13 +1,14 @@
 // prior 1
 // =======
-// change pic32 to use uart2 for serial.c (#define UART_NUMBER)
 // move block.c and fat32.c from pict-o-crypt to sources (include in skeleton)
 // have usb host mode append to file on boot, rather than truncate.
 // on/off/mask/unmask should move to parse2.c/run2.c
 // 9s12 and others need to reset timer counter when increasing frequency output -- see "wrap"
 // add qspi pin assignments to online help (data, clk, cs)
 // ";" at end of print statement to supress crlf?
-// "input" BASIC statement?
+// "input" BASIC statement?  "get" statement to get a character
+// print raw ... to print raw bytes
+// configure usb "uart" for interrupt driven I/O???  or have get return 0 if no character available?
 // Ctrl-E to dump all variables while basic program is running?
 
 // doc
@@ -20,6 +21,8 @@
 
 // prior 2
 // =======
+// consider doing servos in sw w/ lightweight isr rather than using hw timers
+// add "modes" to turn off USB and QSPI and get their pins back for gpio
 // saw bug changing pic32 pin from servo to freq mode on fly?
 // add demokit skeleton
 // attempt to decouple servo pwm from frequency -- 256 should be 2.56ms independent of Hz!
