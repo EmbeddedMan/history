@@ -2,7 +2,8 @@
 
 enum devices {
     device_timer,
-    device_uart
+    device_uart,
+    device_qspi
 };
 
 // bytecodes
@@ -22,14 +23,16 @@ enum bytecode {
       code_restore,
     code_dim,
       code_comma,  // used for dim and print
-      code_as,
       code_ram,  // page_offset in RAM_VARIABLE_PAGE (allocated internally)
       code_flash,  // page_offset in FLASH_PARAM_PAGE (allocated internally)
       code_pin,  // pin_number, pin_type
     code_let,
     code_print,
       code_string,
+      code_hex,
+      code_dec,
       code_expression,
+    code_qspi,
     code_if,
       code_elseif,
       code_else,

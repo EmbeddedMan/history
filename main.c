@@ -1,7 +1,7 @@
 // *** main.c *********************************************************
-// this is the main program that is launched by startup.c; it just
-// initializes all of the modules of the os and then runs the main
-// application program loop.
+// this is the main program that is launched by startup.c and init.c;
+// it just initializes all of the modules of the os and then runs the
+// main application program loop.
 
 #include "main.h"
 
@@ -12,22 +12,27 @@ main2()  // the tasking system is called by startup.c, before us
 main()  // we're called directly by startup.c
 #endif
 {
-    // initialize timer
-    timer_initialize();
-
 #if ! FLASHER
     // configure leds
     led_initialize();
+#endif
 
+    // initialize timer
+    timer_initialize();
+    
+    // initialize qspi
+    qspi_initialize();
+
+#if ! FLASHER
     // initialize adc
     adc_initialize();
 
 #if PICTOCRYPT
     // determine if we're in host or device mode
     if (adc_result[0] < 10000) {
-        host_mode = false;
+        usb_host_mode = false;
     } else {
-        host_mode = true;
+        usb_host_mode = true;
     }
 
 #endif

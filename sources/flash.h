@@ -1,14 +1,5 @@
 // *** flash.h ********************************************************
 
-#define FLASH_PAGE_SIZE  2048
-#if MCF52233
-#define FLASH_BYTES  (256*1024)
-#elif MCF52221
-#define FLASH_BYTES  (128*1024)
-#else
-#error
-#endif
-
 void
 flash_erase_pages(uint32 *addr, uint32 npages);
 

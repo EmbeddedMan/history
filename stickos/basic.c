@@ -3,6 +3,8 @@
 
 #include "main.h"
 
+#define SHRINK  0  // turn on when building unoptimized code
+
 #if _WIN32
 byte FLASH_CODE1_PAGE[BASIC_LARGE_PAGE_SIZE];
 byte FLASH_CODE2_PAGE[BASIC_LARGE_PAGE_SIZE];
@@ -22,8 +24,11 @@ byte *end_of_dynamic;
 
 // phase #2
 // features:
+//  auto line number (for paste)
+//  allow qspi baud rate configuration
 //  short circuit && and || operators
 //  add character constants 'c', '\n'; do we want a way to print in character or hex?
+//  add "label" statement for use by restore
 //  allow interrupts on all digital input pins!
 //  add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
 //  add sub parameter mappings? sub return values?
@@ -34,9 +39,11 @@ byte *end_of_dynamic;
 // perf:
 //  mave var one slot towards "last in gosub scope" on usage rand()%16?
 //  code optimization for advancing to the next program line; remember backwards loops (10)?
+// user guide:
+//  add "restore" to UG; add print hex/dec; add "short"; add "qspi"; change operator precedence order
+//  multiple let assignments
+//  list/delete by sub names
 // bugs:
-//  add "restore" to UG
-//  help expressions should be in order of decreasing precenence
 //  dim in sub eventually runs out of memory!!! (unit test!)
 //  renumber won't work on restore line numbers! (unit test!)
 //  sleep switch power draw is too high!
@@ -44,7 +51,6 @@ byte *end_of_dynamic;
 //  allow "digital input debounce" for pin type!  also "digital|analog input|output invert"!
 //  debug watchpoints (break on expression true)
 //  ?: operator!
-//  should "," be supported for *all* statements?  i.e., let a=b,c=0
 //  add support for comments at the end of lines '?  //?
 //  switch statement (on xxx goto...?)
 //  re-dim pin should allow pin_type change (and reconfigure)?  or verify it has not!
@@ -76,7 +82,7 @@ enum cmdcode {
     command_clear,  // [flash]
     command_clone,  // [run]
     command_cont,  // [nnn]
-    command_delete,  // [nnn] [-] [nnn]
+    command_delete,  // ([nnn] [-] [nnn]|<subname>)
     command_demo,  // [n [nnn]]
     command_dir,
     command_echo,  // [on|off]
@@ -86,7 +92,7 @@ enum cmdcode {
 #if MCF52233
     command_ipaddress,  // [dhcp|<ipaddress>]
 #endif
-    command_list,  // [nnn] [-] [nnn]
+    command_list,  // ([nnn] [-] [nnn]|<subname>)
     command_load,  // <name>
     command_memory,
     command_new,
@@ -210,18 +216,25 @@ basic_const(IN OUT char **text, OUT int *value_out)
 
 static char *help_about =
 #if MCF52233
-"Welcome to StickOS for Freescale MCF52233 v1.03!\n"
+"Welcome to StickOS for Freescale MCF52233 v1.05!\n"
 #elif MCF52221
-"Welcome to StickOS for Freescale MCF52221 v1.03!\n"
+"Welcome to StickOS for Freescale MCF52221 v1.05!\n"
 #else
 #error
 #endif
 "Copyright (c) 2008; all rights reserved.\n"
 "http://www.cpustick.com\n"
+#if INCOMPAT
+"incompatible\n"
+#endif
+#if COMPAT
+"compatible\n"
+#endif
 ;
 
 static char *help_general =
 "for more information:\n"
+#if ! SHRINK
 "  help about\n"
 "  help commands\n"
 "  help modes\n"
@@ -236,17 +249,19 @@ static char *help_general =
 "\n"
 "see also:\n"
 "  http://www.cpustick.com\n"
+#endif
 ;
 
 static char *help_commands =
 "clear [flash]               -- clear ram [and flash] variables\n"
+#if ! SHRINK
 "clone [run]                 -- clone flash to slave CPUStick [and run]\n"
 "cont [<line>]               -- continue program from stop\n"
-"delete [<line>][-][<line>]  -- delete program lines\n"
+"delete [<line>][-][<line>]  -- delete program lines or <subname>\n"
 "dir                         -- list saved programs\n"
 "edit <line>                 -- edit program line\n"
 "help [<topic>]              -- online help\n"
-"list [<line>][-][<line>]    -- list program lines\n"
+"list [<line>][-][<line>]    -- list program lines or <subname>\n"
 "load <name>                 -- load saved program\n"
 "memory                      -- print memory usage\n"
 "new                         -- erase code ram and flash memories\n"
@@ -261,10 +276,12 @@ static char *help_commands =
 "\n"
 "for more information:\n"
 "  help modes\n"
+#endif
 ;
 
 static char *help_modes =
 "autoreset [on|off]            -- autoreset (on wake) mode\n"
+#if ! SHRINK
 "autorun [on|off]              -- autorun (on reset) mode\n"
 "echo [on|off]                 -- terminal echo mode\n"
 "indent [on|off]               -- listing indent mode\n"
@@ -274,17 +291,20 @@ static char *help_modes =
 "prompt [on|off]               -- terminal prompt mode\n"
 "step [on|off]                 -- debugger single-step mode\n"
 "trace [on|off]                -- debugger trace mode\n"
+#endif
 ;
 
 static char *help_statements =
 "<line> <statement>                     -- enter program line into code ram\n"
+#if ! SHRINK
 "\n"
 "assert <expression>                    -- break if expression is false\n"
 "data <n> [, ...]                       -- read-only data\n"
 "dim <variable>[[n]] [as ...] [, ...]   -- dimension variables\n"
 "end                                    -- end program\n"
-"let <variable> = <expression>          -- assign variable\n"
+"let <variable> = <expression> [, ...]  -- assign variable\n"
 "print (\"string\"|<expression>) [, ...]  -- print strings/expressions\n"
+"qspi <variable> [, ...]                -- perform qspi I/O by reference\n"
 "read <variable> [, ...]                -- read read-only data into variables\n"
 "rem <remark>                           -- remark\n"
 "restore [<line>]                       -- restore read-only data pointer\n"
@@ -296,10 +316,12 @@ static char *help_statements =
 "  help devices\n"
 "  help expressions\n"
 "  help variables\n"
+#endif
 ;
 
 static char *help_blocks =
 "if <expression> then\n"
+#if ! SHRINK
 "[elseif <expression> then]\n"
 "[else]\n"
 "endif\n"
@@ -317,9 +339,14 @@ static char *help_blocks =
 "sub <subname>\n"
 "  [return]\n"
 "endsub\n"
+#endif
 ;
 
 static char *help_devices =
+"qspi:\n"
+#if ! SHRINK
+"  configure qspi for <n> csiv\n"
+"\n"
 "timers:\n"
 "  configure timer <n> for <n> ms\n"
 "  on timer <n> <statement>                -- on timer execute <statement>\n"
@@ -333,36 +360,40 @@ static char *help_devices =
 "  off uart <n> (input|output)             -- disable uart interrupt\n"
 "  mask uart <n> (input|output)            -- mask (hold) uart interrupt\n"
 "  unmask uart <n> (input|output)          -- unmask uart interrupt\n"
+#endif
 ;
 
 static char *help_expressions =
 "the following operators are supported as in C,\n"
-"in order of increasing precedence:\n"
-"  ||  ^^  &&                -- logical or, xor, and\n"
-"  |   ^   &                 -- bitwise or, xor, and\n"
-"  ==  !=                    -- equal, not equal\n"
-"  <=  <  >=  >              -- inequalities\n"
-"  >>  <<                    -- shift right, left\n"
-"  +   -                     -- plus, minus\n"
-"  *   /   %                 -- times, divide, mod\n"
-"  !   ~                     -- logical not, bitwise not\n"
-"  (   )                     -- grouping\n"
-"  <variable>                -- simple variable\n"
-"  <variable>[<expression>]  -- array variable element\n"
+#if ! SHRINK
+"in order of decreasing precedence:\n"
 "  <n>                       -- decimal constant\n"
 "  0x<n>                     -- hexadecimal constant\n"
+"  <variable>                -- simple variable\n"
+"  <variable>[<expression>]  -- array variable element\n"
+"  (   )                     -- grouping\n"
+"  !   ~                     -- logical not, bitwise not\n"
+"  *   /   %                 -- times, divide, mod\n"
+"  +   -                     -- plus, minus\n"
+"  >>  <<                    -- shift right, left\n"
+"  <=  <  >=  >              -- inequalities\n"
+"  ==  !=                    -- equal, not equal\n"
+"  |   ^   &                 -- bitwise or, xor, and\n"
+"  ||  ^^  &&                -- logical or, xor, and\n"
 "for more information:\n"
 "  help variables\n"
+#endif
 ;
 
 static char *help_variables =
 "all variables must be dimensioned!\n"
+#if ! SHRINK
 "variables dimensioned in a sub are local to that sub\n"
 "array variable indices start at 0; v[0] is the same as v\n"
 "\n"
 "ram variables:\n"
 "  dim <var>[[n]]\n"
-"  dim <var>[[n]] as (byte|integer)\n"
+"  dim <var>[[n]] as (byte|short|integer)\n"
 "\n"
 "flash parameter variables:\n"
 "  dim <varflash>[[n]] as flash\n"
@@ -373,10 +404,12 @@ static char *help_variables =
 "\n"
 "for more information:\n"
 "  help pins\n"
+#endif
 ;
 
 static char *help_pins =
 "pin names:\n"
+#if ! SHRINK
 "  dtin3     dtin2     dtin1     dtin0\n"
 "  an0       an1       an2       an3\n"
 "  an4       an5       an6       an7\n"
@@ -401,10 +434,12 @@ static char *help_pins =
 "dtin? = potential frequency output pins (Hz)\n"
 "urxd? = potential uart input pins (received byte)\n"
 "utxd? = potential uart output pins (transmit byte)\n"
+#endif
 ;
 
 static char *help_board =
 "              1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
+#if ! SHRINK
 "\n"
 "              g  +  u  u  u  u  u  u  u  u  i  i  i  +\n"
 "              n  3  c  r  r  t  c  r  r  t  r  r  r  5\n"
@@ -425,10 +460,12 @@ static char *help_board =
 "              d  V  3  2  1  0  0  1  2  3  4  5  6  7\n"
 "\n"
 "              1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
+#endif
 ;
 
 static char *help_clone =
 "clone cable:\n"
+#if ! SHRINK
 "  master     slave\n"
 "  ---------  ----------------\n"
 "  qspi_clk   qspi_clk (ezpck)\n"
@@ -438,6 +475,7 @@ static char *help_clone =
 "  scl        rsti*\n"
 "  vss        vss\n"
 "  vdd        vdd\n"
+#endif
 ;
 
 static
@@ -465,11 +503,15 @@ help(IN char *text_in)
 #if ! _WIN32
     if (text_in == help_about) {
         printf("(checksum 0x%x)\n", flash_checksum);
+#if 0
+        printf("MCF_RCM_RSR = 0x%x\n", MCF_RCM_RSR);
+#endif
     }
 #endif
 }
 
 static const char * const demo0[] = {
+#if ! SHRINK
   "rem ### blinky ###",
   "dim i",
   "dim led as pin irq4* for digital output",
@@ -480,11 +522,13 @@ static const char * const demo0[] = {
   "  next",
   "  sleep 800",
   "endwhile",
+#endif
   "end"
 };
 
 
 static const char *const demo1[] = {
+#if ! SHRINK
   "rem ### uart isr ###",
   "dim data",
   "data 1, 1, 2, 3, 5, 8, 13, 21, 0",
@@ -506,10 +550,12 @@ static const char *const demo1[] = {
   "  assert !tx",
   "  print \"sending\", data",
   "  let tx = data",
+#endif
   "endsub"
 };
 
 static const char *const demo2[] = {
+#if ! SHRINK
   "rem ### uart pio ###",
   "configure uart 0 for 9600 baud 7 data even parity loopback",
   "dim tx as pin utxd0 for uart output",
@@ -521,10 +567,12 @@ static const char *const demo2[] = {
   "print rx",
   "print rx",
   "print rx",
+#endif
   "end"
 };
 
 static const char *const demo3[] = {
+#if ! SHRINK
   "rem ### toaster ###",
   "dim target, secs",
   "dim thermocouple as pin an0 for analog input",
@@ -545,6 +593,7 @@ static const char *const demo3[] = {
   "  else",
   "    let relay = 1",
   "  endif",
+#endif
   "endsub",
 };
 
@@ -704,16 +753,24 @@ basic_run(char *text_in)
         case command_delete:
         case command_list:
             if (*text) {
-                (void)basic_const(&text, &number1);
+                boo = basic_const(&text, &number1);
                 number2 = number1;
                 if (*text) {
-                    (void)basic_char(&text, '-');
+                    boo |= basic_char(&text, '-');
                     number2 = 0;
-                    (void)basic_const(&text, &number2);
-                    if (*text) {
+                    boo |= basic_const(&text, &number2);
+                }
+                if (! boo) {
+                    number1 = code_sub_line((byte *)text);
+                    if (! number1) {
                         goto XXX_ERROR_XXX;
                     }
+                    text += strlen(text);
+                    number2 = 0x7fffffff;  // endsub
                 }
+            }
+            if (*text) {
+                goto XXX_ERROR_XXX;
             }
 
             if (cmd == command_delete) {

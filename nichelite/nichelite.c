@@ -8,6 +8,8 @@ extern int TCPTV_MSL;
 
 volatile unsigned long cticks = 0;
 
+uint8 powerup_config_flags;
+
 int main (void)
 {
     int i;

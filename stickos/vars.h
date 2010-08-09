@@ -92,6 +92,7 @@ void var_close_scope(int scope);
 void var_declare(char *name, int gosubs, int type, int size, int max_index, int pin_number, int pin_type);
 void var_set(char *name, int index, int value);
 int var_get(char *name, int index);
+int var_get_size(char *name);
 
 void var_set_flash(enum flash_var var, int value);
 int var_get_flash(enum flash_var var);

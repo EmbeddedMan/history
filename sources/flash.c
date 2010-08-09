@@ -97,9 +97,8 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 }
 
 // this function performs the final step of a firmware flash upgrade.
-static
 void
-flash_upgrade_begin(void)
+flash_upgrade_ram_begin(bool compatible)
 {
     uint32 *addr;
     uint32 *data;
@@ -110,9 +109,14 @@ flash_upgrade_begin(void)
     // N.B. this code generates no relocations so we can run it from RAM!!!
 
     // erase the firmware code
-    // flash_erase_pages(NULL, FLASH_BYTES/2/FLASH_PAGE_SIZE)
+    // flash_erase_pages()
     addr = NULL;
     npages = FLASH_BYTES/2/FLASH_PAGE_SIZE;
+    if (compatible) {
+        // N.B. we skip page0
+        npages--;
+        addr += FLASH_PAGE_SIZE/sizeof(uint32);
+    }
     while (npages) {
         assert(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
         assert(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
@@ -135,6 +139,12 @@ flash_upgrade_begin(void)
     addr = NULL;
     data = (uint32 *)(FLASH_BYTES/2);
     nwords = FLASH_BYTES/2/sizeof(uint32);
+    if (compatible) {
+        // N.B. we skip page0
+        nwords -= FLASH_PAGE_SIZE/sizeof(uint32);
+        addr += FLASH_PAGE_SIZE/sizeof(uint32);
+        data += FLASH_PAGE_SIZE/sizeof(uint32);
+    }
     while (nwords) {
         assert(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
         assert(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
@@ -179,17 +189,16 @@ flash_upgrade_begin(void)
     asm { halt }
 }
 
-// this function just demarcates the end of flash_upgrade_begin().
-static
+// this function just demarcates the end of flash_upgrade_ram_begin().
 void
-flash_upgrade_end(void)
+flash_upgrade_ram_end(void)
 {
     // NULL
 }
 
 // this function downloads a new s19 firmware file to a staging
 // area, and then installs it by calling a RAM copy of
-// flash_upgrade_begin().
+// flash_upgrade_ram_begin().
 void
 flash_upgrade()
 {
@@ -206,7 +215,8 @@ flash_upgrade()
     bool done;
     uint32 data;
     bool s0_found;
-    void (*fn)(void);
+    bool compatible;
+    flash_upgrade_ram_begin_f fn;
     uint32 buffer[16];
 
     if ((int)end_of_static > FLASH_BYTES/2) {
@@ -390,7 +400,10 @@ flash_upgrade()
 #endif
     } else {
         printf("\npaste done!\n");
-        printf("programming flash...\n");
+        
+        compatible = ! memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE);
+        
+        printf("programming flash for %s upgrade...\n", compatible?"compatible":"incompatible");
 #if STICKOS
         printf("wait for CPUStick LED e1 to blink!\n");
 #else
@@ -398,19 +411,29 @@ flash_upgrade()
 #endif
         delay(100);
 
-        // disable interrupts
-        x = splx(7);
+        // if this is a compatible upgrade...
+        if (compatible) {
+            // reset the MCU; init() will take care of the rest
+            MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
+            asm { halt }
+        } else {
+            // N.B. this is an incompatible upgrade; we have to get at least
+            // page0 copied before we crash.
+            
+            // disable interrupts
+            x = splx(7);
+            
+            // copy our new flash upgrade routine to RAM
+            assert((int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN <= sizeof(big_buffer));
+            memcpy(big_buffer, (void *)(FLASH_BYTES/2+VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN), (int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN);
 
-        // copy our flash upgrade routine to RAM
-        assert((int)flash_upgrade_end - (int)flash_upgrade_begin <= sizeof(big_buffer));
-        memcpy(big_buffer, flash_upgrade_begin, (int)flash_upgrade_end - (int)flash_upgrade_begin);
+            // and run it!
+            fn = (void *)big_buffer;
+            fn(false);
 
-        // and run it!
-        fn = (void *)big_buffer;
-        fn();
-
-        // we should not come back!
-        ASSERT(0);  // stop!
+            // we should not come back!
+            ASSERT(0);  // stop!
+        }
     }
 }
 
@@ -418,6 +441,8 @@ flash_upgrade()
 void
 flash_initialize(void)
 {
+    assert((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer));
+
     if (fsys_frequency > 25600000) {
         MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((fsys_frequency-1)/2/8/200000);
     } else {

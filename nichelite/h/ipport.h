@@ -277,7 +277,7 @@ void dtrap(void); 			/* routine with permanent breakpoint */
 #define MAXPACKETS   (MAXLILPKTS+MAXBIGPKTS)
 
 /* FEC buffer descriptors */
-#define NUM_RXBDS    1
+#define NUM_RXBDS    2
 #define NUM_TXBDS    2
 
 #ifdef NATIVE_PRINTF

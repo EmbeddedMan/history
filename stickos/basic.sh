@@ -37,6 +37,28 @@ run
 new
 EOF
 
+echo then we test format specifiers
+debug/basic -q <<EOF
+print hex 20, 30, "dec", dec 20, 30
+print dec 0x100, 0x200, "hex", hex 0x100, 0x200
+print "hex", hex 20, 30, "dec", dec 20, 30
+print "dec", dec 0x100, 0x200, "hex", hex 0x100, 0x200
+print "default", 0x200
+print "default", 30
+EOF
+
+echo then we unparse them
+debug/basic -q <<EOF
+10 print hex 20, 30, "dec", dec 20, 30
+20 print dec 0x100, 0x200, "hex", hex 0x100, 0x200
+30 print "hex", hex 20, 30, "dec", dec 20, 30
+40 print "dec", dec 0x100, 0x200, "hex", hex 0x100, 0x200
+50 print "default", 0x200
+60 print "default", 30
+list
+run
+EOF
+
 echo then we test operators
 debug/basic -q <<EOF
 print 1+2, 3+2
@@ -164,6 +186,32 @@ list
 run
 EOF
 
+echo test multiple assignments
+debug/basic -q <<EOF
+10 dim a,b , c
+20 let a=5,b=5+5 ,   c=a+b
+30 print a,b ,  c
+list
+run
+EOF
+
+echo test some variable types
+debug/basic -q <<EOF
+1dim a as byte
+2dim b as short
+3dim c as integer
+4let c=-1
+5let b=c
+6let a=b
+7print hex a,b,c
+8let c=0x10011
+9let b=0x10022
+10let a=0x10033
+11print hex a,b,c
+list
+run
+EOF
+
 echo test some assertions
 debug/basic -q <<EOF
 10 assert 1
@@ -286,6 +334,18 @@ cont
 
 cont
 step off
+print "outer"
+list outer
+print "inner"
+list inner
+print "delete inner"
+delete inner
+list
+print "delete outer"
+delete outer
+list
+list neither
+delete neither
 EOF
 
 echo test some ifs and whiles
@@ -646,6 +706,8 @@ debug/basic -q <<EOF
 30 configure uart 1 for 1200 baud 6 data odd parity loopback
 40 configure timer 0 for 1000 ms
 50 configure timer 1 for 10 ms
+60 configure qspi for 1 csiv
+70 qspi a,b,c,d
 list
 new
 demo2

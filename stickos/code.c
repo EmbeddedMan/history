@@ -270,6 +270,7 @@ code_insert(int line_number, char *text_in, IN int text_offset)
 void
 code_delete(int start_line_number, int end_line_number)
 {
+    int code;
     int line_number;
     struct line *line;
 
@@ -281,10 +282,14 @@ code_delete(int start_line_number, int end_line_number)
     for (;;) {
         line = code_next_line(false, &line_number);
         if (line) {
+            code = line->bytecode[0];
             if (end_line_number && line_number > end_line_number) {
                 break;
             }
             code_insert(line_number, NULL, 0);
+            if (line_number > start_line_number && end_line_number == 0x7fffffff && code == code_endsub) {
+                break;
+            }
         } else {
             break;
         }
@@ -320,6 +325,9 @@ code_list(int start_line_number, int end_line_number)
                 printf("%4d %s\n", line_number, text);
             }
             if (end_line_number && line_number > end_line_number) {
+                break;
+            }
+            if (line_number > start_line_number && end_line_number == 0x7fffffff && code == code_endsub) {
                 break;
             }
             if (code == code_if || code == code_else || code == code_elseif || code == code_while || code == code_for || code == code_sub) {

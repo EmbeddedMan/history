@@ -74,6 +74,15 @@ static const byte ftdi_string_descriptor[] = {
     0x03, // string descriptor
     0x09, 0x04,  // english (usa)
 
+#if PICTOCRYPT
+    26,  // length
+    0x03,  // string descriptor
+    'P', 0, 'i', 0, 'c', 0, 't', 0, '-', 0, 'o', 0, '-', 0, 'C', 0, 'r', 0, 'y', 0, 'p', 0, 't', 0,
+
+    26,  // length
+    0x03,  // string descriptor
+    'P', 0, 'i', 0, 'c', 0, 't', 0, '-', 0, 'o', 0, '-', 0, 'C', 0, 'r', 0, 'y', 0, 'p', 0, 't', 0,
+#else
     28,  // length
     0x03,  // string descriptor
     'R', 0, 'i', 0, 'c', 0, 'h', 0, ' ', 0, 'T', 0, 'e', 0, 's', 0, 't', 0, 'a', 0, 'r', 0, 'd', 0, 'i', 0,
@@ -81,6 +90,7 @@ static const byte ftdi_string_descriptor[] = {
     18,  // length
     0x03,  // string descriptor
     'C', 0, 'P', 0, 'U', 0, 'S', 0, 't', 0, 'i', 0, 'c', 0, 'k', 0,
+#endif
 };
 
 static ftdi_reset_cbfn reset_cbfn;

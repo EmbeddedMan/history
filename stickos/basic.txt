@@ -40,6 +40,27 @@ end
 3
 2
 8
+then we test format specifiers
+0x14 0x1e dec 20 30
+256 512 hex 0x100 0x200
+hex 0x14 0x1e dec 20 30
+dec 256 512 hex 0x100 0x200
+default 512
+default 30
+then we unparse them
+  10 print hex 20, 30, "dec", dec 20, 30
+  20 print dec 0x100, 0x200, "hex", hex 0x100, 0x200
+  30 print "hex", hex 20, 30, "dec", dec 20, 30
+  40 print "dec", dec 0x100, 0x200, "hex", hex 0x100, 0x200
+  50 print "default", 0x200
+  60 print "default", 30
+end
+0x14 0x1e dec 20 30
+256 512 hex 0x100 0x200
+hex 0x14 0x1e dec 20 30
+dec 256 512 hex 0x100 0x200
+default 512
+default 30
 then we test operators
 3 5
 -1 1
@@ -207,6 +228,27 @@ end
 33 2 1
 33
 18 1738
+test multiple assignments
+  10 dim a, b, c
+  20 let a = 5, b = 5+5, c = a+b
+  30 print a, b, c
+end
+5 10 15
+test some variable types
+   1 dim a as byte
+   2 dim b as short
+   3 dim c
+   4 let c = -1
+   5 let b = c
+   6 let a = b
+   7 print hex a, b, c
+   8 let c = 0x10011
+   9 let b = 0x10022
+  10 let a = 0x10033
+  11 print hex a, b, c
+end
+0xff 0xffff 0xffffffff
+0x33 0x22 0x10011
 test some assertions
 assertion failed
 STOP at line 20!
@@ -378,6 +420,64 @@ STOP at line 20!
 STOP at line 30!
 0 0 0
 STOP at line 40!
+outer
+ 190 sub outer
+ 200   gosub inner
+ 210   return 
+ 220 endsub 
+inner
+ 290 sub inner
+ 300   print "here"
+ 310   return 
+ 320 endsub 
+delete inner
+  10 dim a
+  20 let a = 0
+  30 while a<10 do
+  40   print a, a/2*2, a%2
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
+  70   endif 
+  80   let a = a+1
+  90 endwhile 
+  91 gosub outer
+  92 gosub outer
+ 100 end 
+ 110 print "not reached"
+ 190 sub outer
+ 200   gosub inner
+ 210   return 
+ 220 endsub 
+ 400 on timer 1 gosub timer
+ 410 end 
+ 490 sub timer
+ 500   print "timer"
+ 510   return 
+ 520 endsub 
+end
+delete outer
+  10 dim a
+  20 let a = 0
+  30 while a<10 do
+  40   print a, a/2*2, a%2
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
+  70   endif 
+  80   let a = a+1
+  90 endwhile 
+  91 gosub outer
+  92 gosub outer
+ 100 end 
+ 110 print "not reached"
+ 400 on timer 1 gosub timer
+ 410 end 
+ 490 sub timer
+ 500   print "timer"
+ 510   return 
+ 520 endsub 
+end
+       ^ - error
+         ^ - error
 test some ifs and whiles
   10 if 0 then
   20   print 0
@@ -471,17 +571,17 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.03!
+Welcome to StickOS for Freescale MCF52221 v1.05!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 clear [flash]               -- clear ram [and flash] variables
 clone [run]                 -- clone flash to slave CPUStick [and run]
 cont [<line>]               -- continue program from stop
-delete [<line>][-][<line>]  -- delete program lines
+delete [<line>][-][<line>]  -- delete program lines or <subname>
 dir                         -- list saved programs
 edit <line>                 -- edit program line
 help [<topic>]              -- online help
-list [<line>][-][<line>]    -- list program lines
+list [<line>][-][<line>]    -- list program lines or <subname>
 load <name>                 -- load saved program
 memory                      -- print memory usage
 new                         -- erase code ram and flash memories
@@ -509,8 +609,9 @@ assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
 end                                    -- end program
-let <variable> = <expression>          -- assign variable
+let <variable> = <expression> [, ...]  -- assign variable
 print ("string"|<expression>) [, ...]  -- print strings/expressions
+qspi <variable> [, ...]                -- perform qspi I/O by reference
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<line>]                       -- restore read-only data pointer
@@ -540,6 +641,9 @@ gosub <subname>
 sub <subname>
   [return]
 endsub
+qspi:
+  configure qspi for <n> csiv
+
 timers:
   configure timer <n> for <n> ms
   on timer <n> <statement>                -- on timer execute <statement>
@@ -554,20 +658,20 @@ uarts:
   mask uart <n> (input|output)            -- mask (hold) uart interrupt
   unmask uart <n> (input|output)          -- unmask uart interrupt
 the following operators are supported as in C,
-in order of increasing precedence:
-  ||  ^^  &&                -- logical or, xor, and
-  |   ^   &                 -- bitwise or, xor, and
-  ==  !=                    -- equal, not equal
-  <=  <  >=  >              -- inequalities
-  >>  <<                    -- shift right, left
-  +   -                     -- plus, minus
-  *   /   %                 -- times, divide, mod
-  !   ~                     -- logical not, bitwise not
-  (   )                     -- grouping
-  <variable>                -- simple variable
-  <variable>[<expression>]  -- array variable element
+in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
 for more information:
   help variables
 all variables must be dimensioned!
@@ -576,7 +680,7 @@ array variable indices start at 0; v[0] is the same as v
 
 ram variables:
   dim <var>[[n]]
-  dim <var>[[n]] as (byte|integer)
+  dim <var>[[n]] as (byte|short|integer)
 
 flash parameter variables:
   dim <varflash>[[n]] as flash
@@ -728,7 +832,7 @@ test array parsing
   30 dim a[3+4*2]
   40 dim a[(3+4)*2]
   50 dim a[(3+4)*2]
-  60 dim a[(3+4)*2] as byte ram
+  60 dim a[(3+4)*2] as byte
   70 dim a[(3+4)*2] as flash
   80 dim a[3+4-3]
  110 let a[3] = b[3]
@@ -754,9 +858,9 @@ test long variable names
   60 let evenlonger = 2
   70 let muchmuchmuchmuchlonger = 3
   80 print long, evenlonger, muchmuchmuchmuchlonger
-  90 dim long2 as byte ram
- 100 dim evenlonger2 as byte ram
- 110 dim muchmuchmuchmuchlonger2 as byte ram
+  90 dim long2 as byte
+ 100 dim evenlonger2 as byte
+ 110 dim muchmuchmuchmuchlonger2 as byte
  120 print long2, evenlonger2, muchmuchmuchmuchlonger2
  130 print long, evenlonger, muchmuchmuchmuchlonger
 end
@@ -1028,7 +1132,7 @@ end
 STOP at line 23!
 257
    1 dim i, j
-   2 dim a[256] as byte ram
+   2 dim a[256] as byte
    3 while 1 do
   20   let i = (i*13+7)%256
   21   let j = j+1
@@ -1040,12 +1144,12 @@ STOP at line 23!
 end
 STOP at line 23!
 257
- 11% ram code bytes used (unsaved changes!)
+ 12% ram code bytes used (unsaved changes!)
   0% flash code bytes used
  12% ram variable bytes used
   0% flash parameter bytes used
   3% variables used
- 11% ram code bytes used (unsaved changes!)
+ 12% ram code bytes used (unsaved changes!)
   0% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -1854,6 +1958,8 @@ test configures
   30 configure uart 1 for 1200 baud 6 data odd parity loopback
   40 configure timer 0 for 1000 ms
   50 configure timer 1 for 10 ms
+  60 configure qspi for 1 csiv
+  70 qspi a, b, c, d
 end
   10 rem ### uart pio ###
   20 configure uart 0 for 9600 baud 7 data even parity loopback
@@ -1925,11 +2031,11 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.03!
+Welcome to StickOS for Freescale MCF52221 v1.05!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.03!
+Welcome to StickOS for Freescale MCF52221 v1.05!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 cloning...
@@ -2123,7 +2229,6 @@ dim
       ^ - error
         ^ - error
         ^ - error
-        ^ - error
 error -    ^
 error -         ^
       ^ - error
@@ -2150,7 +2255,7 @@ let
          ^ - error
         ^ - error
   ^ - error
-         ^ - error
+error -   ^
 print
        ^ - error
          ^ - error
@@ -2250,7 +2355,7 @@ dir
       ^ - error
 help
        ^ - error
-Welcome to StickOS for Freescale MCF52221 v1.03!
+Welcome to StickOS for Freescale MCF52221 v1.05!
 Copyright (c) 2008; all rights reserved.
 http://www.cpustick.com
 list

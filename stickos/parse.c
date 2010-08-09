@@ -64,6 +64,7 @@ const struct keyword {
     "off", code_off,
     "on", code_on,
     "print", code_print,
+    "qspi", code_qspi,
     "read", code_read,
     "rem", code_rem,
     "restore", code_restore,
@@ -698,7 +699,24 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                 } else {
                     bytecode[length++] = 0;
                 }
+            } else if (parse_word(&text, "qspi")) {
+                bytecode[length++] = device_qspi;
+            
+                if (! parse_word(&text, "for")) {
+                    goto XXX_ERROR_XXX;
+                }
+
+                // parse the chip select initial value
+                if (! parse_const(&text, &length, bytecode)) {
+                    goto XXX_ERROR_XXX;
+                }
+                if (! parse_word(&text, "csiv")) {
+                    goto XXX_ERROR_XXX;
+                }
             } else {
+                goto XXX_ERROR_XXX;
+            }
+            if (*text) {
                 goto XXX_ERROR_XXX;
             }
             break;
@@ -795,16 +813,14 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                     goto XXX_ERROR_XXX;
                 }
 
-                // if the user did not specify an "as" format...
-                if (! parse_word(&text, "as")) {
-                    continue;
-                }
-
-                bytecode[length++] = code_as;
+                // parse the "as"
+                (void)parse_word(&text, "as");
 
                 // parse the size specifier
                 if (parse_word(&text, "byte")) {
                     size = sizeof(byte);
+                } else if (parse_word(&text, "short")) {
+                    size = sizeof(short);
                 } else if (parse_word(&text, "integer")) {
                     size = sizeof(int);
                 } else {
@@ -899,19 +915,32 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             break;
 
         case code_let:
-            // parse the variable
-            if (! parse_var(true, 0, &text, &length, bytecode)) {
+            if (! *text) {
                 goto XXX_ERROR_XXX;
             }
+            // while there are more items to assign...
+            while (*text) {
+                if (length > 1) {
+                    if (! parse_char(&text, ',')) {
+                        goto XXX_ERROR_XXX;
+                    }
+                    bytecode[length++] = code_comma;
+                }
 
-            // parse the assignment
-            if (! parse_char(&text, '=')) {
-                goto XXX_ERROR_XXX;
-            }
+                // parse the variable
+                if (! parse_var(true, 0, &text, &length, bytecode)) {
+                    goto XXX_ERROR_XXX;
+                }
 
-            // parse the assignment expression
-            if (! parse_expression(0, &text, &length, bytecode)) {
-                goto XXX_ERROR_XXX;
+                // parse the assignment
+                if (! parse_char(&text, '=')) {
+                    goto XXX_ERROR_XXX;
+                }
+
+                // parse the assignment expression
+                if (! parse_expression(0, &text, &length, bytecode)) {
+                    goto XXX_ERROR_XXX;
+                }
             }
             break;
 
@@ -928,6 +957,12 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                     bytecode[length++] = code_comma;
                 }
 
+                if (parse_word(&text, "hex")) {
+                    bytecode[length++] = code_hex;
+                } else if (parse_word(&text, "dec")) {
+                    bytecode[length++] = code_dec;
+                }
+                
                 // if the next item is a string...
                 if (*text == '"') {
                     bytecode[length++] = code_string;
@@ -960,6 +995,26 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
                     if (! parse_expression(0, &text, &length, bytecode)) {
                         goto XXX_ERROR_XXX;
                     }
+                }
+            }
+            break;
+
+        case code_qspi:
+            if (! *text) {
+                goto XXX_ERROR_XXX;
+            }
+            // while there are more variables to parse...
+            while (*text) {
+                if (length > 1) {
+                    if (! parse_char(&text, ',')) {
+                        goto XXX_ERROR_XXX;
+                    }
+                    bytecode[length++] = code_comma;
+                }
+
+                // parse the variable
+                if (! parse_var(true, 0, &text, &length, bytecode)) {
+                    goto XXX_ERROR_XXX;
                 }
             }
             break;
@@ -1303,6 +1358,7 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
     byte parity;
     byte loopback;
     int interval;
+    int csiv;
     byte device;
     byte code;
     byte code2;
@@ -1417,6 +1473,15 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
 
                 // and decompile it
                 out += sprintf(out, "for %d baud %d data %s parity%s", baud, data, parity==0?"even":(parity==1?"odd":"no"), loopback?" loopback":"");
+            } else if (device == device_qspi) {
+                // decompile the qspi
+                out += sprintf(out, "qspi ");
+
+                // and the chip select initial value
+                csiv = *(int *)bytecode;
+                bytecode += sizeof(int);
+                out += sprintf(out, "for %d csiv", csiv);
+
             } else {
                 assert(0);
             }
@@ -1487,31 +1552,31 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                 // decompile the variable
                 bytecode += unparse_var_lvalue(bytecode, &out);
 
-                // if the user did not specify an "as" format...
-                if (*bytecode != code_as) {
-                    continue;
-                }
+                size = *bytecode++;
+                code2 = *bytecode++;
 
                 // decompile the "as"
-                out += sprintf(out, " as ");
-                bytecode++;
+                if (size != sizeof(int) || code2 != code_ram) {
+                    out += sprintf(out, " as ");
+                }
 
                 // decompile the size specifier
-                size = *bytecode++;
                 if (size == sizeof(byte)) {
-                    out += sprintf(out, "byte ");
+                    out += sprintf(out, "byte");
+                } else if (size == sizeof(short)) {
+                    out += sprintf(out, "short");
                 } else {
                     assert(size == sizeof(int));
                 }
 
+                if (size != sizeof(int) && code2 != code_ram) {
+                    out += sprintf(out, " ");
+                }
+
                 // decompile the type specifier
-                code2 = *bytecode++;
-                if (code2 == code_ram) {
-                    out += sprintf(out, "ram");
-                } else if (code2 == code_flash) {
+                if (code2 == code_flash) {
                     out += sprintf(out, "flash");
-                } else {
-                    assert(code2 == code_pin);
+                } else if (code2 == code_pin) {
                     out += sprintf(out, "pin ");
 
                     pin = *bytecode++;
@@ -1540,21 +1605,31 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                         assert(type == pin_type_digital_output);
                         out += sprintf(out, "%s", "digital output");
                     }
+                } else {
+                    assert(code2 == code_ram);
                 }
             }
             break;
 
         case code_let:
-            assert(bytecode < bytecode_in+length);
+            // while there are more items...
+            while (bytecode < bytecode_in+length) {
+                if (bytecode > bytecode_in+1) {
+                    // separate items with a comma
+                    out += sprintf(out, ", ");
+                    assert(*bytecode == code_comma);
+                    bytecode++;
+                }
 
-            // decompile the variable
-            bytecode += unparse_var_lvalue(bytecode, &out);
+                // decompile the variable
+                bytecode += unparse_var_lvalue(bytecode, &out);
 
-            // decompile the assignment
-            out += sprintf(out, " = ");
+                // decompile the assignment
+                out += sprintf(out, " = ");
 
-            // decompile the expression
-            bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+                // decompile the expression
+                bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+            }
             break;
 
         case code_print:
@@ -1567,6 +1642,14 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                     bytecode++;
                 }
 
+                if (*bytecode == code_hex) {
+                    bytecode++;
+                    out += sprintf(out, "hex ");
+                } else if (*bytecode == code_dec) {
+                    bytecode++;
+                    out += sprintf(out, "dec ");
+                }
+                
                 // if the next item is a string...
                 if (*bytecode == code_string) {
                     bytecode++;
@@ -1582,6 +1665,21 @@ unparse_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
                     // decompile the expression
                     bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
                 }
+            }
+            break;
+
+        case code_qspi:
+            // while there are more variables...
+            while (bytecode < bytecode_in+length) {
+                if (bytecode > bytecode_in+1) {
+                    // separate variables with a comma
+                    out += sprintf(out, ", ");
+                    assert(*bytecode == code_comma);
+                    bytecode++;
+                }
+
+                // decompile the variable
+                bytecode += unparse_var_lvalue(bytecode, &out);
             }
             break;
 

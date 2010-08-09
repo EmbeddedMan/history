@@ -20,62 +20,6 @@
 #define WRITE_ENABLE_STATUS  0x02
 #define WRITE_IN_PROGRESS  0x01
 
-
-// perform both output and input qspi i/o
-static
-void
-flash_qspi(byte *buffer, int length)
-{
-    int i;
-    int request;
-
-    // while there is data remaining...
-    while (length) {
-        // process up to 16 bytes at a time
-        request = MIN(length, 16);
-
-        // for all bytes...
-        for (i = 0; i < request; i++) {
-            // set up the command
-            MCF_QSPI_QAR = MCF_QSPI_QAR_CMD+i;
-            MCF_QSPI_QDR = MCF_QSPI_QDR_CONT;
-
-            // copy tx data to qspi ram
-            MCF_QSPI_QAR = MCF_QSPI_QAR_TRANS+i;
-            MCF_QSPI_QDR = buffer[i];
-        }
-
-        // set the queue pointers
-        assert(request);
-        MCF_QSPI_QWR = MCF_QSPI_QWR_ENDQP(request-1)|MCF_QSPI_QWR_NEWQP(0);
-
-        // start the transfer
-        MCF_QSPI_QDLYR = MCF_QSPI_QDLYR_SPE;
-
-        // wait for transfer complete
-        assert(! (MCF_QSPI_QIR & MCF_QSPI_QIR_SPIF));
-        while (! (MCF_QSPI_QIR & MCF_QSPI_QIR_SPIF)) {
-        }
-        MCF_QSPI_QIR = MCF_QSPI_QIR_SPIF;
-
-        assert((MCF_QSPI_QWR & 0xf0) >> 4 == request-1);
-        assert(! (MCF_QSPI_QDLYR & MCF_QSPI_QDLYR_SPE));
-
-        // for all bytes...
-        for (i = 0; i < request; i++) {
-            // copy rx data from qspi ram
-            MCF_QSPI_QAR = MCF_QSPI_QAR_RECV+i;
-            buffer[i] = MCF_QSPI_QDR;
-        }
-
-        buffer += request;
-        length -= request;
-    }
-
-    // transfer complete
-    MCF_QSPI_QWR = MCF_QSPI_QWR_CSIV;
-}
-
 static
 int
 flash_status(void)
@@ -84,7 +28,7 @@ flash_status(void)
 
     // read the status register
     buffer[0] = READ_STATUS_REGISTER;
-    flash_qspi(buffer, 1+1);
+    qspi_transfer(buffer, 1+1);
 
     return buffer[1];
 }
@@ -103,7 +47,7 @@ flash_write(byte *buffer, int length)
 
     // enable the write
     command = WRITE_ENABLE;
-    flash_qspi(&command, 1);
+    qspi_transfer(&command, 1);
 
     status = flash_status();
     if (! (status & WRITE_ENABLE_STATUS)) {
@@ -111,7 +55,7 @@ flash_write(byte *buffer, int length)
     }
 
     // do the write
-    flash_qspi(buffer, length);
+    qspi_transfer(buffer, length);
 
     // wait for the write to complete
     do {
@@ -136,23 +80,14 @@ clone(bool and_run)
     // AS is gpio output; bit 0 is slave rsti*
     MCF_GPIO_PASPAR = 0;
     MCF_GPIO_DDRAS = 0x3;
-
-    // QS is primary
-    MCF_GPIO_PQSPAR = 0x1555;
-
-    // request the target enter serial flash programming mode
-    MCF_QSPI_QWR = 0;
+    
+    qspi_inactive(0);
 
     // pulse slave rsti* low
     MCF_GPIO_CLRAS = ~1;
     delay(1);
     MCF_GPIO_SETAS = 1;
     delay(1);
-
-    // initialize qspi master at 150k baud
-    assert(fsys_frequency/2/150000 < 256);
-    MCF_QSPI_QMR = MCF_QSPI_QMR_MSTR|/*MCF_QSPI_QMR_CPOL|MCF_QSPI_QMR_CPHA|*/fsys_frequency/2/150000;
-    MCF_QSPI_QWR = MCF_QSPI_QWR_CSIV;
 
     status = flash_status();
     if (status & (WRITE_ERROR|WRITE_IN_PROGRESS)) {
@@ -206,7 +141,7 @@ clone(bool and_run)
         big_buffer[1] = n/0x10000;
         big_buffer[2] = n/0x100;
         big_buffer[3] = n;
-        flash_qspi(big_buffer, 4+CLONE_PAGE_SIZE);
+        qspi_transfer(big_buffer, 4+CLONE_PAGE_SIZE);
 
         // verify the data
         if (SECURE && n >= FLASH_BYTES/2) {
@@ -225,9 +160,13 @@ clone(bool and_run)
             }
         }
 
+#if ! FLASHER
         printf(".");
-#if FLASHER
-        if (n/CLONE_PAGE_SIZE % 80 == 79) {
+#else
+        if (n/CLONE_PAGE_SIZE % 2) {
+            printf(".");
+        }
+        if (n/CLONE_PAGE_SIZE % 160 == 159) {
             printf("\n");
         }
 #endif
@@ -235,7 +174,7 @@ clone(bool and_run)
 
     if (and_run) {
         // allow the target to run!
-        MCF_QSPI_QWR = MCF_QSPI_QWR_CSIV;
+        qspi_inactive(1);
 
         // pulse slave rsti* low
         MCF_GPIO_CLRAS = ~1;

@@ -1,21 +1,18 @@
 # Sample Linker Command File for CodeWarrior for ColdFire
 
-
 # Memory ranges	
 
 MEMORY {
-   vectorrom   (RX)  : ORIGIN = 0x20000000, LENGTH = 0x00000400
-   cfmprotrom  (RX)  : ORIGIN = 0x20000400, LENGTH = 0x00000020   
-   code        (RX)  : ORIGIN = 0x20000500, LENGTH = 0x00001B00
-   userram     (RWX) : ORIGIN = 0x20002000, LENGTH = 0x00002000
+   page0       (RX)  : ORIGIN = 0x20000000, LENGTH = 0x00000800
+   page1       (RX)  : ORIGIN = 0x20000800, LENGTH = 0x00000800
+   code        (RX)  : ORIGIN = 0x20001000, LENGTH = 0x00001800
+   userram     (RWX) : ORIGIN = 0x20002800, LENGTH = 0x00001800
 }
 
 SECTIONS {
 
 # Heap and Stack sizes definition
 	___stack_size     = 0x0800;
-
-
 
 # MCF52221 Derivative Memory map definitions from linker command files:
 # __IPSBAR, __RAMBAR, __RAMBAR_SIZE, __FLASHBAR, __FLASHBAR_SIZE linker
@@ -37,17 +34,17 @@ SECTIONS {
   .userram	  : {} > userram		
   .code	    : {} > code		
 	
-	.vectors :
+	.page0 :
 	{
-		startup.c(.vectortable)
+		*(.page0)
 		. = ALIGN (0x4); 
-	} > vectorrom
+	} > page0
 
-	.cfmprotect :
+	.page1 :
 	{
-		*(.cfmconfig)
-		. = ALIGN (0x4);
-	} > cfmprotrom
+		*(.page1)
+		. = ALIGN (0x4); 
+	} > page1
 
 	.text :
 	{
@@ -61,6 +58,8 @@ SECTIONS {
 
 	.data : AT(___ROM_AT) 
 	{  
+		__SDA_BASE = .;
+		
 		___DATA_RAM = .;
 		. = ALIGN(0x4);
 		___sinit__ = .;
@@ -77,7 +76,6 @@ SECTIONS {
 		__END_SDATA = .;
 
 		___DATA_END = .;
-		__SDA_BASE = .;
 		. = ALIGN (0x4);
 	} >> userram
 

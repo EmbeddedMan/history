@@ -75,7 +75,7 @@ struct var {
     char name[15];  // 14 char max variable name
     byte gosubs;
     byte type;
-    byte size;  // 4 bytes per integer, vs. 1 byte per byte
+    byte size;  // 4 bytes per integer, 2 bytes per short, 1 byte per byte
     short max_index;
     union {
         int page_offset;
@@ -254,7 +254,7 @@ var_declare(IN char *name, IN int gosubs, IN int type, IN int size, IN int max_i
     strncpy(vars[max_vars].name, name, sizeof(vars[max_vars].name)-1);
     vars[max_vars].gosubs = gosubs;
     vars[max_vars].type = type;
-    assert(size == 1 || size == sizeof(int));
+    assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(int));
     vars[max_vars].size = size;
     vars[max_vars].max_index = max_index;
 
@@ -489,8 +489,10 @@ var_set(IN char *name, IN int index, IN int value)
                 // set the ram variable to value
                 if (var->size == sizeof(int)) {
                     *(int *)(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(int)) = value;
+                } else if (var->size == sizeof(short)) {
+                    *(short *)(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short)) = value;
                 } else {
-                    assert(var->size == 1);
+                    assert(var->size == sizeof(byte));
                     *(byte *)(RAM_VARIABLE_PAGE+var->u.page_offset+index) = (byte)value;
                 }
                 // *** interactive debugger ***
@@ -726,8 +728,10 @@ var_get(IN char *name, IN int index)
                 // get the value of the ram variable
                 if (var->size == sizeof(int)) {
                     value = *(int *)(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(int));
+                } else if (var->size == sizeof(short)) {
+                    value = *(unsigned short *)(RAM_VARIABLE_PAGE+var->u.page_offset+index*sizeof(short));
                 } else {
-                    assert(var->size == 1);
+                    assert(var->size == sizeof(byte));
                     value = *(byte *)(RAM_VARIABLE_PAGE+var->u.page_offset+index);
                 }
                 break;
@@ -855,6 +859,26 @@ var_get(IN char *name, IN int index)
     }
 
     return value;
+}
+
+// this function gets the size of a ram, flash, or pin variable!
+int
+var_get_size(IN char *name)
+{
+    int size;
+    struct var *var;
+    
+    size = 1;
+    
+    var = var_find(name);
+    if (! var) {
+        printf("var '%s' undefined\n", name);
+        stop();
+    } else {
+        size = var->size;
+    }
+    
+    return size;
 }
 
 // *** flash control and access ***

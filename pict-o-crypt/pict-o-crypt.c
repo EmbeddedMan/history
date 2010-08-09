@@ -111,7 +111,7 @@ main_initialize()
     params_t params;
     
     // if we're in device mode...
-    if (! host_mode) {
+    if (! usb_host_mode) {
         // register device mode callbacks
         terminal_register(main_command_cbfn, main_ctrlc_cbfn);
     #if MCF52221

@@ -137,13 +137,19 @@ static char *help_general =
 
 static char *help_about =
 #if MCF52233
-"Welcome to Skeleton for Freescale MCF52233 v0.9!\n"
+"Welcome to Skeleton for Freescale MCF52233 v1.05!\n"
 #elif MCF52221
-"Welcome to Skeleton for Freescale MCF52221 v0.9!\n"
+"Welcome to Skeleton for Freescale MCF52221 v1.05!\n"
 #else
 #error
 #endif
 "http://www.cpustick.com\n"
+#if INCOMPAT
+"incompatible\n"
+#endif
+#if COMPAT
+"compatible\n"
+#endif
 ;
 
 static char *help_clone =
@@ -386,7 +392,7 @@ extern void
 main_initialize()
 {
     // if we're in device mode...
-    if (! host_mode) {
+    if (! usb_host_mode) {
         // register device mode callbacks
         terminal_register(main_command_cbfn, main_ctrlc_cbfn);
     #if MCF52221

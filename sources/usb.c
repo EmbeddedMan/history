@@ -109,11 +109,12 @@ parse_configuration(const byte *configuration, int size)
 
 // *** host ***
 
+#if ! STICKOS
 // initialize a setup data0 buffer
 void
 usb_setup(int in, int type, int recip, byte request, short value, short index, short length, struct setup *setup)
 {
-    assert(host_mode);
+    assert(usb_host_mode);
 
     setup->requesttype = (byte)((in<<7)|(type << 5)|recip);
     setup->request = request;
@@ -138,7 +139,7 @@ transaction(int endpoint, int token, void *buffer, int length)
     int int_stat;
     struct bdt *bdt;
 
-    assert(host_mode);
+    assert(usb_host_mode);
 
     if (token == TOKEN_SETUP) {
         tx = 1;
@@ -268,7 +269,7 @@ usb_control_transfer(struct setup *setup, byte *buffer, int length)
     int total;
     int request;
 
-    assert(host_mode);
+    assert(usb_host_mode);
 
     rv = transaction(0, TOKEN_SETUP, setup, SETUP_SIZE);
     if (rv < 0) {
@@ -313,7 +314,7 @@ usb_bulk_transfer(int in, byte *buffer, int length, bool null_or_short)
     int endpoint;
     uint8 endpt0;
 
-    assert(host_mode);
+    assert(usb_host_mode);
 
     endpt0 = MCF_USB_OTG_ENDPT0;
     if (in == -1 || ! HWRETRIES) {
@@ -362,7 +363,7 @@ usb_bulk_transfer(int in, byte *buffer, int length, bool null_or_short)
 void
 usb_host_detach()
 {
-    assert(host_mode);
+    assert(usb_host_mode);
 
     delay(100);  // debounce
 
@@ -382,6 +383,7 @@ usb_host_detach()
     MCF_USB_OTG_INT_STAT = 0xff;
     MCF_USB_OTG_INT_ENB |= MCF_USB_OTG_INT_ENB_ATTACH_EN;
 }
+#endif
 
 // *** device ***
 
@@ -404,7 +406,7 @@ static
 void
 usb_device_wait()
 {
-    assert(! host_mode);
+    assert(! usb_host_mode);
 
     // enable usb device mode
     MCF_USB_OTG_CTL = MCF_USB_OTG_CTL_USB_EN_SOF_EN;
@@ -423,7 +425,7 @@ static
 void
 usb_device_default()
 {
-    assert(! host_mode);
+    assert(! usb_host_mode);
 
     // default to address 0 on reset
     MCF_USB_OTG_ADDR = (uint8)0;
@@ -456,7 +458,7 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
     int flags;
     struct bdt *bdt;
 
-    assert(! host_mode);
+    assert(! usb_host_mode);
 
     // transfer up to one packet at a time
     assert(device_descriptor[7]);
@@ -495,7 +497,9 @@ __declspec(interrupt)
 void
 usb_isr(void)
 {
+#if ! STICKOS
     int e;
+#endif
     int rv;
 
     assert(! usb_in_isr);
@@ -503,11 +507,12 @@ usb_isr(void)
     
     // *** host ***
     
+#if ! STICKOS
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_ATTACH) {
         int size;
         struct setup setup;
 
-        assert(host_mode);
+        assert(usb_host_mode);
         
         delay(100);  // debounce
 
@@ -618,6 +623,7 @@ usb_isr(void)
             scsi_attached = 0;
         }
     }
+#endif
     
     // *** device ***
     
@@ -637,7 +643,7 @@ usb_isr(void)
         struct bdt *bdt;
         struct setup *setup;
         
-        assert(! host_mode);
+        assert(! usb_host_mode);
 
         // we just completed a packet transfer
         stat = MCF_USB_OTG_STAT;
@@ -852,7 +858,7 @@ usb_isr(void)
 
     // if we just got reset by the host...
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_USB_RST) {
-        assert(! host_mode);
+        assert(! usb_host_mode);
     
         ftdi_attached = 0;
 
@@ -875,7 +881,7 @@ usb_isr(void)
 
     // if we just went idle...
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_SLEEP) {
-        assert(! host_mode);
+        assert(! usb_host_mode);
     
         ftdi_attached = 0;
 
@@ -894,7 +900,7 @@ XXX_SKIP_XXX:
 void
 usb_register(usb_reset_cbfn reset, usb_control_cbfn control_transfer, usb_bulk_cbfn bulk_transfer)
 {
-    assert(! host_mode);
+    assert(! usb_host_mode);
     reset_cbfn = reset;
     control_transfer_cbfn = control_transfer;
     bulk_transfer_cbfn = bulk_transfer;
@@ -905,7 +911,7 @@ usb_register(usb_reset_cbfn reset, usb_control_cbfn control_transfer, usb_bulk_c
 void
 usb_device_descriptor(const byte *descriptor, int length)
 {
-    assert(! host_mode);
+    assert(! usb_host_mode);
     device_descriptor = descriptor;
     device_descriptor_length = length;
 }
@@ -915,7 +921,7 @@ usb_device_descriptor(const byte *descriptor, int length)
 void
 usb_configuration_descriptor(const byte *descriptor, int length)
 {
-    assert(! host_mode);
+    assert(! usb_host_mode);
     configuration_descriptor = descriptor;
     configuration_descriptor_length = length;
 }
@@ -925,7 +931,7 @@ usb_configuration_descriptor(const byte *descriptor, int length)
 void
 usb_string_descriptor(const byte *descriptor, int length)
 {
-    assert(! host_mode);
+    assert(! usb_host_mode);
     string_descriptor = descriptor;
     string_descriptor_length = length;
 }
@@ -957,7 +963,7 @@ usb_initialize(void)
     MCF_USB_OTG_BDT_PAGE_03 = (uint8)((unsigned int)bdts >> 24);
 
     // if we are in host mode...
-    if (host_mode) {
+    if (usb_host_mode) {
 #if DEMO
         // usb power on
         MCF_GPIO_PUAPAR = 0;
@@ -965,8 +971,12 @@ usb_initialize(void)
         MCF_GPIO_CLRUA = (uint8)~0x08;
 #endif
 
+#if ! STICKOS
         // enable usb to interrupt on attach
         usb_host_detach();
+#else
+        ASSERT(0);
+#endif
     } else {
         // enable usb to interrupt on reset
         usb_device_wait();

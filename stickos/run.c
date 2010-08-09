@@ -361,16 +361,20 @@ run_bytecode(bool immediate, byte *bytecode, int length)
     int interrupt;
     int blen;
     int value;
+    byte *p;
     int index;
+    int oindex;
     char *name;
     int size;
     int timer;
     int interval;
+    int csiv;
     int max_index;
     int var_type;
     int pin_number;
     int pin_type;
     int line_number;
+    bool hex;
     bool output;
     int isr_length;
     byte *isr_bytecode;
@@ -511,6 +515,17 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     MCF_UART_UCR(uart) = MCF_UART_UCR_TX_ENABLED|MCF_UART_UCR_RX_ENABLED;
                 }
 #endif
+            } else if (device == device_qspi) {
+                // get the timer number and interval
+                csiv = *(int *)(bytecode+index);
+                index += sizeof(int);
+
+                if (run_condition) {
+#if ! _WIN32
+                    qspi_inactive(csiv);
+#endif
+                }
+                
             } else {
                 assert(0);
             }
@@ -606,71 +621,72 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                 name = (char *)bytecode+index;
                 index += strlen(name)+1;
 
-                // if the user specified an "as" format...
-                if (bytecode[index] == code_as) {
-                    index++;
+                // get the size and type specifier
+                size = bytecode[index++];
+                var_type = bytecode[index++];
 
-                    // get the size and type specifier
-                    size = bytecode[index++];
-                    var_type = bytecode[index++];
+                assert(size == sizeof(byte) || size == sizeof(short) || size == sizeof(int));
 
-                    assert(size == sizeof(byte) || size == sizeof(int));
-
-                    // if this is a memory variable...
-                    if (var_type == code_ram || var_type == code_flash) {
-                        var_declare(name, max_gosubs, var_type, size, max_index, 0, 0);
-                    } else {
-                        // this is a pin variable
-                        assert(var_type == code_pin);
-
-                        // get the pin number (from the pin name) and pin type (from the pin usage)
-                        pin_number = bytecode[index++];
-                        pin_type = bytecode[index++];
-
-                        assert(pin_number >= 0 && pin_number < PIN_LAST);
-
-                        var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type);
-                    }
+                // if this is a memory variable...
+                if (var_type == code_ram || var_type == code_flash) {
+                    var_declare(name, max_gosubs, var_type, size, max_index, 0, 0);
                 } else {
-                    // default to ram variables
-                    var_type = code_ram;
-                    var_declare(name, max_gosubs, var_type, sizeof(int), max_index, 0, 0);
+                    // this is a pin variable
+                    assert(var_type == code_pin);
+
+                    // get the pin number (from the pin name) and pin type (from the pin usage)
+                    pin_number = bytecode[index++];
+                    pin_type = bytecode[index++];
+
+                    assert(pin_number >= 0 && pin_number < PIN_LAST);
+
+                    var_declare(name, max_gosubs, var_type, size, max_index, pin_number, pin_type);
                 }
             } while (index < length && bytecode[index] == code_comma);
             break;
 
         case code_let:
-            // revisit -- share with code_for!
-            // if we're assigning a simple variable...
-            if (bytecode[index] == code_load_and_push_var) {
-                // use array index 0
-                index++;
-                max_index = 0;
-            } else {
-                // we're assigning an array element
-                assert(bytecode[index] == code_load_and_push_var_indexed);
-                index++;
+            cw7bug++;  // CW7 BUG
+            // while there are more items to print...
+            do {
+                // skip commas
+                if (bytecode[index] == code_comma) {
+                    index++;
+                }
 
-                blen = *(int *)(bytecode+index);
-                index += sizeof(int);
+                // revisit -- share with code_for!
+                // if we're assigning a simple variable...
+                if (bytecode[index] == code_load_and_push_var) {
+                    // use array index 0
+                    index++;
+                    max_index = 0;
+                } else {
+                    // we're assigning an array element
+                    assert(bytecode[index] == code_load_and_push_var_indexed);
+                    index++;
 
-                // evaluate the array index
-                index += evaluate(bytecode+index, blen, &max_index);
-            }
+                    blen = *(int *)(bytecode+index);
+                    index += sizeof(int);
 
-            // get the variable name
-            name = (char *)bytecode+index;
-            index += strlen(name)+1;
+                    // evaluate the array index
+                    index += evaluate(bytecode+index, blen, &max_index);
+                }
 
-            // evaluate the assignment expression
-            index += evaluate(bytecode+index, length-index, &value);
+                // get the variable name
+                name = (char *)bytecode+index;
+                index += strlen(name)+1;
 
-            // assign the variable with the assignment expression
-            var_set(name, max_index, value);
+                // evaluate the assignment expression
+                index += evaluate(bytecode+index, length-index, &value);
+
+                // assign the variable with the assignment expression
+                var_set(name, max_index, value);
+            } while (index < length && bytecode[index] == code_comma);
             break;
 
         case code_print:
             cw7bug++;  // CW7 BUG
+            hex = false;
             // while there are more items to print...
             do {
                 // skip commas
@@ -681,6 +697,12 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     index++;
                 }
 
+                // if we're changing format specifiers...
+                if (bytecode[index] == code_hex || bytecode[index] == code_dec) {
+                    hex = bytecode[index] == code_hex;
+                    index++;
+                }
+                
                 // if we're printing a string...
                 if (bytecode[index] == code_string) {
                     index++;
@@ -697,13 +719,126 @@ run_bytecode(bool immediate, byte *bytecode, int length)
                     // evaluate the expression
                     index += evaluate(bytecode+index, length-index, &value);
                     if (run_condition) {
-                        printf("%d", value);
+                        if (hex) {
+                            printf("0x%x", value);
+                        } else {
+                            printf("%d", value);
+                        }
                     }
                 }
             } while (index < length && bytecode[index] == code_comma);
             if (run_condition) {
                 printf("\n");
             }
+            break;
+#endif
+            
+        case code_qspi:
+            // we'll walk the variable list twice
+            oindex = index;
+            
+            // while there are more variables to qspi from...
+            p = big_buffer;
+            do {
+                // skip commas
+                if (bytecode[index] == code_comma) {
+                    index++;
+                }
+
+                // if we're reading into a simple variable...
+                if (bytecode[index] == code_load_and_push_var) {
+                    // use array index 0
+                    index++;
+                    max_index = 0;
+                } else {
+                    // we're reading into an array element
+                    assert(bytecode[index] == code_load_and_push_var_indexed);
+                    index++;
+
+                    blen = *(int *)(bytecode+index);
+                    index += sizeof(int);
+
+                    // evaluate the array index
+                    index += evaluate(bytecode+index, blen, &max_index);
+                }
+
+                // get the variable name
+                name = (char *)bytecode+index;
+                index += strlen(name)+1;
+
+                // get the variable data and size
+                value = var_get(name, max_index);
+                size = var_get_size(name);
+                
+                // pack it into the qspi buffer
+                if (size == sizeof(byte)) {
+                    *(byte *)p = value;
+                    p += sizeof(byte);
+                } else if (size == sizeof(short)) {
+                    *(short *)p = value;
+                    p += sizeof(short);
+                } else {
+                    assert(size == sizeof(int));
+                    *(int *)p = value;
+                    p += sizeof(int);
+                }
+            } while (index < length && bytecode[index] == code_comma);
+            
+            // perform the qspi transfer
+#if ! _WIN32
+            qspi_transfer(big_buffer, p-big_buffer);
+#endif
+
+            // now update the variables
+            index = oindex;
+            
+            // while there are more variables to qspi to...
+            p = big_buffer;
+            do {
+                // skip commas
+                if (bytecode[index] == code_comma) {
+                    index++;
+                }
+
+                // if we're reading into a simple variable...
+                if (bytecode[index] == code_load_and_push_var) {
+                    // use array index 0
+                    index++;
+                    max_index = 0;
+                } else {
+                    // we're reading into an array element
+                    assert(bytecode[index] == code_load_and_push_var_indexed);
+                    index++;
+
+                    blen = *(int *)(bytecode+index);
+                    index += sizeof(int);
+
+                    // evaluate the array index
+                    index += evaluate(bytecode+index, blen, &max_index);
+                }
+
+                // get the variable name
+                name = (char *)bytecode+index;
+                index += strlen(name)+1;
+
+                // get the variable size
+                size = var_get_size(name);
+                
+                // unpack it from the qspi buffer
+                if (size == sizeof(byte)) {
+                    value = *(byte *)p;
+                    p += sizeof(byte);
+                } else if (size == sizeof(short)) {
+                    value = *(short *)p;
+                    p += sizeof(short);
+                } else {
+                    assert(size == sizeof(int));
+                    value = *(int *)p;
+                    p += sizeof(int);
+                }
+                
+                // set the variable
+                var_set(name, max_index, value);
             } while (index < length && bytecode[index] == code_comma);
             break;
 

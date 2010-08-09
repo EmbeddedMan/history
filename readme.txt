@@ -3,7 +3,7 @@ This project contains the following targets:
 * Skeleton 52221 -- skeleton code to run on an MCF52221, with USB host
                     and device drivers (source code)
 * Skeleton 52233 -- skeleton code to run on an MCF52233, with Niche Lite
-                    TCP/IP drivers (binary)
+                    TCP/IP drivers (binary form)
 * Flasher (RAM)  -- RAM target to clone firmware to another MCU via
                     QSPI/EzPort
 * Empty          -- empty project to hold places for header files, etc.,
@@ -53,10 +53,11 @@ Putty is an excellent alternative to HyperTerminal, and is available
 from http://www.putty.org.  Be sure to use a raw connection and to force
 local echo and line feeds off when talking to the MCF52233.
 
-The code starts at startup.c.  For the MCF52221 bits, it continues to
-main.c.  For the MCF52233 bits, on the other hand, it continues to the
-Niche Lite code which starts a tasking system, and then resumes to
-main.c.  From there code continues to the project-specific skeleton.c.
+The code starts at startup.c which calls init.c.  For the MCF52221 bits,
+it continues to main.c.  For the MCF52233 bits, on the other hand, it
+continues to the Niche Lite code which starts a tasking system, and then
+resumes to main.c.  From there code continues to the project-specific
+skeleton.c.
 
 The general purpose sources files are as follows:
 

@@ -1,12 +1,11 @@
 # Sample Linker Command File for CodeWarrior for ColdFire
 
-
 # Memory ranges	
 
 MEMORY {
-   vectorrom   (RX)  : ORIGIN = 0x00000000, LENGTH = 0x00000400
-   cfmprotrom  (RX)  : ORIGIN = 0x00000400, LENGTH = 0x00000020   
-   code        (RX)  : ORIGIN = 0x00000500, LENGTH = 0x0003FB00
+   page0       (RX)  : ORIGIN = 0x00000000, LENGTH = 0x00000800
+   page1       (RX)  : ORIGIN = 0x00000800, LENGTH = 0x00000800
+   code        (RX)  : ORIGIN = 0x00001000, LENGTH = 0x0003f000
    userram     (RWX) : ORIGIN = 0x20000000, LENGTH = 0x00008000
 }
 
@@ -14,8 +13,6 @@ SECTIONS {
 
 # Heap and Stack sizes definition
 	___stack_size     = 0x0800;
-
-
 
 # MCF52233 Derivative Memory map definitions from linker command files:
 # __IPSBAR, __RAMBAR, __RAMBAR_SIZE, __FLASHBAR, __FLASHBAR_SIZE linker
@@ -32,22 +29,23 @@ SECTIONS {
    ___FLASHBAR       = 0x00000000;
    ___FLASHBAR_SIZE  = 0x00040000;
 
+   # N.B. this is here so it doesn't change and cause an incompatible upgrade
    ___SP_AFTER_RESET = ___RAMBAR + ___RAMBAR_SIZE - 4;
    
   .userram	  : {} > userram		
   .code	    : {} > code		
 	
-	.vectors :
+	.page0 :
 	{
-		startup.c(.vectortable)
+		*(.page0)
 		. = ALIGN (0x4); 
-	} > vectorrom
+	} > page0
 
-	.cfmprotect :
+	.page1 :
 	{
-		*(.cfmconfig)
-		. = ALIGN (0x4);
-	} > cfmprotrom
+		*(.page1)
+		. = ALIGN (0x4); 
+	} > page1
 
 	.text :
 	{
@@ -61,6 +59,9 @@ SECTIONS {
 
 	.data : AT(___ROM_AT) 
 	{  
+	    # N.B. this is here so it doesn't change and cause an incompatible upgrade
+		__SDA_BASE = .;
+
 		___DATA_RAM = .;
 		. = ALIGN(0x4);
 		___sinit__ = .;
@@ -77,7 +78,6 @@ SECTIONS {
 		__END_SDATA = .;
 
 		___DATA_END = .;
-		__SDA_BASE = .;
 		. = ALIGN (0x4);
 	} >> userram
 

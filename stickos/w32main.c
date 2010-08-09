@@ -6,6 +6,8 @@ extern int isatty(int);
 bool main_prompt = true;
 bool terminal_echo = true;
 
+byte big_buffer[2048];
+
 void
 delay(int ms)
 {

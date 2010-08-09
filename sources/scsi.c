@@ -1,4 +1,5 @@
 #if MCF52221
+#if ! STICKOS
 // *** scsi *****************************************************************
 
 #include "main.h"
@@ -57,5 +58,6 @@ scsi_bulk_transfer(int in, byte *cdb, int cdb_length, byte *buffer, int length)
 
     return total;
 }
+#endif
 #endif
 
