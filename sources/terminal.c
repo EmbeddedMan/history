@@ -593,11 +593,6 @@ terminal_poll(void)
         }
     }
     
-#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
-    // avoid usb timeouts
-    //ftdi_poll();
-#endif
-
 #if ! FLASHER && ! PICTOCRYPT
     zb_poll();
 #endif

@@ -537,7 +537,7 @@ p0_c_startup(void)
 
 #if ! FLASHER
     // ******** COMPATIBLE UPGRADE ********
-    
+
     // if we're in the middle of a compatible upgrade...
     if (! memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE) && ! *((uint32 *)FLASH_BYTES - 1)) {
         // initialize the flash module

@@ -22,6 +22,7 @@
 #define MCF_USB_OTG_ENDPT_EP_HSHK  _U1EP0_EPHSHK_MASK
 #define MCF_USB_OTG_ENDPT_EP_TX_EN  _U1EP0_EPTXEN_MASK
 #define MCF_USB_OTG_ENDPT_EP_RX_EN  _U1EP0_EPRXEN_MASK
+#define MCF_USB_OTG_ENDPT_EP_CTL_DIS  _U1EP0_EPCONDIS_MASK
 #define MCF_USB_OTG_INT_STAT_TOK_DNE  _U1IR_TRNIF_MASK
 #define MCF_USB_OTG_STAT  U1STAT
 #define MCF_USB_OTG_STAT_TX  _U1STAT_DIR_MASK
@@ -109,7 +110,7 @@ static struct bdt {
 #if PICTOCRYPT || STICKOSPLUS
 #define ENDPOINTS  6
 #else
-#define ENDPOINTS  3
+#define ENDPOINTS  4
 #endif
 
 struct endpoint {
@@ -121,7 +122,7 @@ struct endpoint {
     byte data_pid;  // TOKEN_IN -> data to host; TOKEN_OUT -> data from host
     int data_offset;  // current offset in data stream
     int data_length;  // max offset in data stream
-    byte data_buffer[64];  // data to or from host
+    byte data_buffer[80];  // data to or from host
 } endpoints[ENDPOINTS];
 
 byte bulk_in_ep;
@@ -519,8 +520,8 @@ usb_device_default()
 
     assert(configuration_descriptor);
 
-    // extract the maximum packet size from the configuration descriptor
-    endpoints[0].packetsize = configuration_descriptor[7];
+    // extract the maximum packet size from the device descriptor
+    endpoints[0].packetsize = device_descriptor[7];
 
     // parse the configuration descriptor
     parse_configuration(configuration_descriptor, configuration_descriptor_length);
@@ -534,6 +535,7 @@ usb_device_default()
 void
 usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
 {
+    int ep;
     bool odd;
     int flags;
     struct bdt *bdt;
@@ -541,42 +543,46 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
     assert(! usb_host_mode);
     assert(endpoint < LENGTHOF(endpoints));
 
-    // transfer up to one packet at a time
-    assert(device_descriptor[7]);
-    length = MIN(length, device_descriptor[7]);
+    if (tx != (bool)-1) {
+        // transfer up to one packet at a time
+        assert(endpoints[endpoint].packetsize);
+        length = MIN(length, endpoints[endpoint].packetsize);
 
-    // find the next bdt entry to use
-    odd = endpoints[endpoint].bdtodd[tx];
+        // find the next bdt entry to use
+        odd = endpoints[endpoint].bdtodd[tx];
 
-    // initialize the bdt entry
-    bdt = MYBDT(endpoint, tx, odd);
-    bdt->buffer = (byte *)TF_LITTLE(KVA_TO_PA((int)buffer));
-    flags = TF_LITTLE(bdt->flags);
-    assert(! (flags & BD_FLAGS_OWN));
-    assert(length <= endpoints[endpoint].packetsize);
-    bdt->flags = TF_LITTLE(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|endpoints[endpoint].toggle[tx]|BD_FLAGS_DTS);
+        // initialize the bdt entry
+        bdt = MYBDT(endpoint, tx, odd);
+        bdt->buffer = (byte *)TF_LITTLE(KVA_TO_PA((int)buffer));
+        flags = TF_LITTLE(bdt->flags);
+        assert(! (flags & BD_FLAGS_OWN));
+        assert(length <= endpoints[endpoint].packetsize);
+        bdt->flags = TF_LITTLE(BD_FLAGS_BC_ENC(length)|BD_FLAGS_OWN|endpoints[endpoint].toggle[tx]|BD_FLAGS_DTS);
+    }
 
+    ep = MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN;
+    ep |= endpoint?MCF_USB_OTG_ENDPT_EP_CTL_DIS:0;
     // enable the packet transfer
 #if PIC32
     switch (endpoint) {
         case 0:
-            U1EP0 = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+            U1EP0 = (uint8)(ep);
             break;
         case 1:
-            U1EP1 = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+            U1EP1 = (uint8)(ep);
             break;
         case 2:
-            U1EP2 = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+            U1EP2 = (uint8)(ep);
             break;
         case 3:
-            U1EP3 = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+            U1EP3 = (uint8)(ep);
             break;
         default:
             ASSERT(0);
             break;
     }
 #else
-    MCF_USB_OTG_ENDPT(endpoint) = (uint8)(MCF_USB_OTG_ENDPT_EP_HSHK|MCF_USB_OTG_ENDPT_EP_TX_EN|MCF_USB_OTG_ENDPT_EP_RX_EN);
+    MCF_USB_OTG_ENDPT(endpoint) = (uint8)(ep);
 #endif
 }
 
@@ -835,13 +841,15 @@ usb_isr(void)
                             endpoints[endpoint].data_length = MIN(string_descriptor[j], length);
                             memcpy(endpoints[endpoint].data_buffer, string_descriptor+j, endpoints[endpoint].data_length);
                         }
+                    } else if ((value >> 8) == DEVICE_QUALIFIER_DESCRIPTOR) {
+                        endpoints[endpoint].data_length = 0;
                     } else {
                         assert(0);
                     }
 
                     // data phase starts with data1
                     assert(endpoints[endpoint].toggle[1] == BD_FLAGS_DATA);
-                    usb_device_enqueue(0, 1, endpoints[endpoint].data_buffer, endpoints[endpoint].data_length);
+                    usb_device_enqueue(0, 1, endpoints[endpoint].data_buffer, MIN(endpoints[endpoint].data_length, endpoints[endpoint].packetsize));
                 } else {
                     if (setup->request == REQUEST_CLEAR_FEATURE) {
                         assert(! length);
@@ -887,7 +895,7 @@ usb_isr(void)
                     if (length) {
                         // we will receive data, TOKEN_OUT(s) will follow
                         endpoints[endpoint].data_length = length;
-                        usb_device_enqueue(0, 0, endpoints[endpoint].data_buffer, sizeof(endpoints[endpoint].data_buffer));
+                        usb_device_enqueue(0, 0, endpoints[endpoint].data_buffer, endpoints[endpoint].packetsize);
                     } else {
                         // data transfer is done; put it to our caller!
                         assert(control_transfer_cbfn);
@@ -902,6 +910,7 @@ usb_isr(void)
                     }
                 }
             }
+            assert((unsigned)endpoint < LENGTHOF(endpoints));
             assert(endpoints[endpoint].data_length <= sizeof(endpoints[endpoint].data_buffer));
         } else if (! endpoint) {
             assert(pid == TOKEN_IN || pid == TOKEN_OUT);
@@ -967,7 +976,7 @@ usb_isr(void)
                 // prepare to receive setup token
                 usb_device_enqueue(0, 0, setup_buffer, sizeof(setup_buffer));
             }
-        } else {
+        } else if (endpoint != int_ep) {
             assert(pid == TOKEN_IN || pid == TOKEN_OUT);
             data = (byte *)TF_LITTLE((int)PA_TO_KVA1((int)bdt->buffer));
 

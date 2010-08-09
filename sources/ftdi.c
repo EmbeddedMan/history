@@ -8,30 +8,19 @@
 #define PACKET_SIZE  64
 
 #define FTDI_VID  0x0403
-#define FTDI_PID  0x6001
+#define FTDI_PID  0xA660
 #define FTDI_RID  0x0400
-
-#define FTDI_RESET  0
-#define FTDI_MODEM_CTRL  1
-#define FTDI_SET_FLOW_CTRL  2
-#define FTDI_SET_BAUD_RATE  3
-#define FTDI_SET_DATA  4
-#define FTDI_GET_MODEM_STATUS  5
-#define FTDI_SET_EVENT_CHAR  6
-#define FTDI_SET_ERROR_CHAR  7
-#define FTDI_SET_LATENCY 9
-#define FTDI_GET_LATENCY 10
 
 static const byte ftdi_device_descriptor[] = {
     18,  // length
     0x01,  // device descriptor
-    0x10, 0x01,  // 1.1
-    0x00, 0x00, 0x00,  // class, subclass, protocol
+    0x01, 0x01,  // 1.1
+    0x02, 0x00, 0x00,  // class (cdc), subclass, protocol
     PACKET_SIZE,  // packet size
     FTDI_VID%0x100, FTDI_VID/0x100, FTDI_PID%0x100, FTDI_PID/0x100,
     FTDI_RID%0x100, FTDI_RID/0x100,
-    0x01,  // manufacturer (string)
-    0x02,  // product (string)
+    0x00,  // manufacturer (string)  // 01
+    0x00,  // product (string)  // 02
     0x00,  // sn (string)
     0x01  // num configurations
 };
@@ -39,8 +28,8 @@ static const byte ftdi_device_descriptor[] = {
 static const byte ftdi_configuration_descriptor[] = {
     9,  // length
     0x02,  // configuration descriptor
-    32, 0,  // total length
-    0x01,  // num interfaces
+    67, 0,  // total length
+    0x02,  // num interfaces
     0x01,  // configuration value
     0x00,  // configuration (string)
     0x80,  // attributes
@@ -50,22 +39,61 @@ static const byte ftdi_configuration_descriptor[] = {
     0x04,  // interface descriptor
     0x00,  // interface number
     0x00,  // alternate
+    0x01,  // num endpoints
+    0x02,  // interface class (comm)
+    0x02,  // subclass (acm)
+    0x01,  // protocol (at)
+    0x00,  // interface (string)
+
+    5,  // length
+    0x24,  // header functional descriptor
+    0x00,
+    0x10, 0x01,
+
+    4,  // length
+    0x24,  // abstract control model descriptor
+    0x02,
+    0x00,  // 02? 06 for mac? 00 cmx
+    
+    5,  // length
+    0x24,  // union functional descriptor
+    0x06,
+    0x00,  // comm
+    0x01,  // data
+    
+    5,  // length
+    0x24,  // call management functional descriptor
+    0x01,
+    0x00,  // 01 for mac?
+    0x01,
+    
+    7,  // length
+    0x05,  // endpoint descriptor
+    0x81,  // endpoint IN address
+    0x03,  // attributes: interrupt
+    0x08, 0x00,  // packet size
+    0x10,  // interval (ms)
+    
+    9,  // length
+    0x04,  // interface descriptor
+    0x01,  // interface number
+    0x00,  // alternate
     0x02,  // num endpoints
-    0xff,  // vendor
-    0xff,  // subclass
-    0xff,  // protocol
+    0x0a,  // interface class (data)
+    0x00,  // subclass
+    0x00,  // protocol
     0x00,  // interface (string)
 
     7,  // length
     0x05,  // endpoint descriptor
-    0x81,  // endpoint IN address
+    0x82,  // endpoint IN address
     0x02,  // attributes: bulk
     0x40, 0x00,  // packet size
     0x00,  // interval (ms)
 
     7,  // length
     0x05,  // endpoint descriptor
-    0x02,  // endpoint OUT address
+    0x03,  // endpoint OUT address
     0x02,  // attributes: bulk
     0x40, 0x00,  // packet size
     0x00,  // interval (ms)
@@ -103,7 +131,8 @@ static byte tx[PACKET_SIZE];  // packet from host
 
 #define NRX  4
 
-static byte rx[NRX][PACKET_SIZE]; // packets to host, including 2 byte headers
+// N.B. -1 forces short packets
+static byte rx[NRX][PACKET_SIZE-1]; // packets to host
 static int rx_length[NRX];
 
 static byte rx_in;
@@ -111,7 +140,20 @@ static byte rx_out;
 
 static bool discard;  // true when we don't think anyone is listening
 
-//static int print_msecs;
+
+static byte serial_state[] = {
+    0xA1,                        //   bmRequestType
+    0x20,  // SERIAL_STATE;      //   bNotification
+    0x00,                        //   wValue
+    0x00,
+    0x00,                        //   wIndex
+    0x00,
+    0x02,                        //   wLength
+    0x00,
+    0x03,                        //   UART state bitmap
+    0x00
+};
+
 
 // this function waits for space to be available in the transport
 // buffers and then prints the specified line to the FTDI transport
@@ -121,13 +163,10 @@ ftdi_print(const byte *buffer, int length)
 {
     int m;
     int x;
-    bool start;
     static uint32 attached_count;
     
     assert(gpl() == 0);
     
-    //print_msecs = msecs;
-
     if (! ftdi_attached || discard) {
         return;
     }
@@ -152,12 +191,12 @@ ftdi_print(const byte *buffer, int length)
     }
 
     x = splx(7);
-
-    start = rx_in == rx_out;
+    
+    ASSERT(rx_in == rx_out);
 
     // append to next rx_in(s)
     do {
-        m = MIN(length, PACKET_SIZE-rx_length[rx_in]);
+        m = MIN(length, sizeof(rx[rx_in])-rx_length[rx_in]);
 
         assert(rx_length[rx_in]+m <= sizeof(rx[rx_in]));
         memcpy(rx[rx_in]+rx_length[rx_in], buffer, m);
@@ -166,81 +205,88 @@ ftdi_print(const byte *buffer, int length)
         buffer += m;
         length -= m;
 
-        if (start || length) {
-            if (length) {
-                assert(rx_length[rx_in] == sizeof(rx[rx_in]));
-            }
-            rx_in = (rx_in+1)%NRX;
-            assert(rx_in != rx_out);
-            assert(rx_length[rx_in] == 2);
+        if (length) {
+            assert(rx_length[rx_in] == sizeof(rx[rx_in]));
         }
+        
+        rx_in = (rx_in+1)%NRX;
+        assert(rx_in != rx_out);
+        assert(! rx_length[rx_in]);
     } while (length);
 
-    if (start) {
-        // start the rx ball rolling
-        assert(rx_out != rx_in);
-        assert(rx_length[rx_out] >= 2);
-        usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
-    }
+    // start the rx ball rolling
+    assert(rx_out != rx_in);
+    assert(rx_length[rx_out] > 0 && rx_length[rx_out] < PACKET_SIZE);
+    usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
 
     splx(x);
 }
+
+/* Mandatory class specific requests. */
+#define CDCRQ_SEND_ENCAPSULATED_COMMAND 0x0
+#define CDCRQ_GET_ENCAPSULATED_RESPONSE 0x1
+
+/* Optional class specific requests. Windows usbser.sys depends on these. */
+#define CDCRQ_SET_LINE_CODING           0x20
+#define CDCRQ_GET_LINE_CODING           0x21
+#define CDCRQ_SET_CONTROL_LINE_STATE    0x22
+#define CDCRQ_SEND_BREAK                0x23
+
+#define FILL_LINE_CODING(bps, stops, parity, data_bits) \
+  (bps) & 0xff, ((bps)>>8) & 0xff, ((bps)>>16) & 0xff, ((bps)>>24) & 0xff, (uint8)(stops), (uint8)(parity), (uint8)(data_bits)
+
+static uint8 line_coding[7] = {
+  FILL_LINE_CODING(115200, 0, 0, 8) /* Default is 115200 BPS and 8N1 format. */
+};
 
 // this function implements the FTDI usb setup control transfer.
 static int
 ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
 {
+    if ((setup->requesttype & 0x60) != (SETUP_TYPE_CLASS<<5)) {
+        return 0;
+    }
+    if ((setup->requesttype & 0x1f) != (SETUP_RECIP_INTERFACE<<0)) {
+        return 0;
+    }
+    if (setup->index != 0 /*comm*/) {
+        return 0;
+    }
+
     switch(setup->request) {
-        case FTDI_RESET:
-            // revisit -- what to do?
+        case CDCRQ_SEND_ENCAPSULATED_COMMAND:
+            assert(! (setup->requesttype & 0x80));
             length = 0;
             break;
-        case FTDI_MODEM_CTRL:
+        case CDCRQ_GET_ENCAPSULATED_RESPONSE:
+            assert(setup->requesttype & 0x80);
+            assert(length <= 64);
+            memset(buffer, 0, length);
+            break;
+        case CDCRQ_SET_LINE_CODING:
+            assert(! (setup->requesttype & 0x80));
+            assert(length == sizeof(line_coding));
+            memcpy(line_coding, buffer, sizeof(line_coding));
             length = 0;
             break;
-        case FTDI_SET_FLOW_CTRL:
+        case CDCRQ_GET_LINE_CODING:
+            assert(setup->requesttype & 0x80);
+            assert(length == sizeof(line_coding));
+            memcpy(buffer, line_coding, sizeof(line_coding));
+            break;
+        case CDCRQ_SET_CONTROL_LINE_STATE:
+            assert(! (setup->requesttype & 0x80));
             length = 0;
             break;
-        case FTDI_SET_BAUD_RATE:
+        case CDCRQ_SEND_BREAK:
             length = 0;
-            break;
-        case FTDI_SET_DATA:
-            length = 0;
-            break;
-        case FTDI_GET_MODEM_STATUS:
-            assert(length == 2);
-            buffer[0] = 0xf0;  // RLSD, RI, DSR, CTS asserted
-            buffer[1] = 0;
-            break;
-        case FTDI_SET_EVENT_CHAR:
-            length = 0;
-            break;
-        case FTDI_SET_ERROR_CHAR:
-            length = 0;
-            break;
-        case FTDI_SET_LATENCY:
-            length = 0;
-            break;
-        case FTDI_GET_LATENCY:
-            assert(length == 1);
-            buffer[0] = 1; // XXX: just a guess
-            break;
-        case 0x90:  // read eeprom?
-            assert(length == 2);
-            buffer[0] = 0;
-            buffer[1] = 0;
-            break;
-        case 0x91:  // write eeprom?
-            assert(length == 0);
-            break;
-        case 0x92:  // erase eeprom?
-            assert(length == 0);
             break;
         default:
             assert(0);
             length = 0;
             break;
     }
+    
     return length;
 }
 
@@ -264,18 +310,6 @@ ftdi_command_ack(void)
     splx(x);
 }
 
-//void
-//ftdi_poll(void)
-//{
-//    char buffer[2];
-//    if ((msecs - print_msecs) >= 2000) {
-//    buffer[0] = '.';
-//    buffer[1] = ('Q'-'@');  // resume
-//        ftdi_print((byte *)".", 2);
-//        print_msecs = msecs;
-//    }
-//}
-
 // this function implements the FTDI usb bulk transfer.
 static int
 ftdi_bulk_transfer(bool in, byte *buffer, int length)
@@ -294,21 +328,22 @@ ftdi_bulk_transfer(bool in, byte *buffer, int length)
             waiting = true;            
         }
     } else {
-        rx_length[rx_out] = 2;
+        rx_length[rx_out] = 0;
         rx_out = (rx_out+1)%NRX;
 
         // if there is more data to transfer...
-        if (rx_length[rx_out] > 2) {
+        if (rx_length[rx_out] > 0) {
             if (rx_in == rx_out) {
                 rx_in = (rx_in+1)%NRX;
                 assert(rx_in != rx_out);
-                assert(rx_length[rx_in] == 2);
+                assert(rx_length[rx_in] == 0);
             }
 
             // keep the rx ball rolling
             assert(rx_out != rx_in);
-            assert(rx_length[rx_out] > 2);
+            assert(rx_length[rx_out] > 0 && rx_length[rx_out] < PACKET_SIZE);
             usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
+            // XXX -- do we need zero length packet if this one is full size?
         }
     }
 
@@ -323,14 +358,16 @@ ftdi_reset(void)
     int i;
 
     for (i = 0; i < NRX; i++) {
-        rx[i][0] = 0xf1;  // ftdi header
-        rx[i][1] = 0x61;
-        rx_length[i] = 2;
+        rx_length[i] = 0;
     }
 
+    // prepare for rx
+    usb_device_enqueue(bulk_in_ep, -1, NULL, 0);
+    usb_device_enqueue(int_ep, -1, NULL, 0);
+    
     // start the tx ball rolling
     usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
-
+    
     assert(reset_cbfn);
     reset_cbfn();
 }
@@ -359,9 +396,7 @@ ftdi_register(ftdi_reset_cbfn reset)
     int i;
 
     for (i = 0; i < NRX; i++) {
-        rx[i][0] = 0xf1;  // ftdi header
-        rx[i][1] = 0x61;
-        rx_length[i] = 2;
+        rx_length[i] = 0;
     }
 
     reset_cbfn = reset;
@@ -371,7 +406,7 @@ ftdi_register(ftdi_reset_cbfn reset)
     assert(check(ftdi_device_descriptor, sizeof(ftdi_device_descriptor)) == 1);
     usb_device_descriptor(ftdi_device_descriptor, sizeof(ftdi_device_descriptor));
 
-    assert(check(ftdi_configuration_descriptor, sizeof(ftdi_configuration_descriptor)) == 4);
+    assert(check(ftdi_configuration_descriptor, sizeof(ftdi_configuration_descriptor)) == 10);
     usb_configuration_descriptor(ftdi_configuration_descriptor, sizeof(ftdi_configuration_descriptor));
 
     assert(check(ftdi_string_descriptor, sizeof(ftdi_string_descriptor)) == 3);

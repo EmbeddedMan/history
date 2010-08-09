@@ -10,9 +10,6 @@ ftdi_print(const byte *line, int length);
 void
 ftdi_command_ack(void);
 
-//void
-//ftdi_poll(void);
-
 void
 ftdi_register(ftdi_reset_cbfn reset);  // revisit -- register receive upcall!
 

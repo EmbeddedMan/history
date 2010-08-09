@@ -19,6 +19,7 @@
 #define CONFIGURATION_DESCRIPTOR  2
 #define STRING_DESCRIPTOR  3
 #define ENDPOINT_DESCRIPTOR  5
+#define DEVICE_QUALIFIER_DESCRIPTOR  6
 
 #define TOKEN_STALL  0x0e  // for mst stall disaster
 
