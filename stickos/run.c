@@ -135,6 +135,9 @@ static
 void
 push_stack(int32 value)
 {
+    if (! run_condition) {
+        return;
+    }
     if (max_stack < MAX_STACK) {
         stack[max_stack] = value;
     } else if (max_stack == MAX_STACK) {
@@ -148,6 +151,9 @@ static
 int32
 pop_stack()
 {
+    if (! run_condition) {
+        return 0;
+    }
     assert(max_stack);
     --max_stack;
     if (max_stack < MAX_STACK) {
@@ -236,6 +242,7 @@ run_evaluate_watchpoint(const byte *bytecode_in, int length, IN uint32 running_w
     int32 lhs;
     int32 rhs;
     uint code;
+    int32 push;
     const byte *bytecode;
 
     bytecode = bytecode_in;
@@ -247,185 +254,178 @@ run_evaluate_watchpoint(const byte *bytecode_in, int length, IN uint32 running_w
 
     clear_stack();
     
-    if (! run_condition) {
-        push_stack(0);
-        // revisit - bug here: if the code_comma value appears in a
-        // integer constant, then this will not skip as much byte code as
-        // desired.
-        while (bytecode < bytecode_in+length && *bytecode != code_comma) {
-            bytecode++;
+    while (bytecode < bytecode_in+length && *bytecode != code_comma) {
+        code = *bytecode++;
+        switch (code) {
+            case code_add:
+            case code_subtract:
+            case code_multiply:
+            case code_divide:
+            case code_mod:
+            case code_shift_right:
+            case code_shift_left:
+            case code_bitwise_and:
+            case code_bitwise_or:
+            case code_bitwise_xor:
+            case code_logical_and:
+            case code_logical_or:
+            case code_logical_xor:
+            case code_greater:
+            case code_less:
+            case code_equal:
+            case code_greater_or_equal:
+            case code_less_or_equal:
+            case code_not_equal:
+                // get our sides in a deterministic order!
+                rhs = pop_stack();
+                lhs = pop_stack();
         }
-    } else {
-        while (bytecode < bytecode_in+length && *bytecode != code_comma) {
-            code = *bytecode++;
-            switch (code) {
-                case code_add:
-                case code_subtract:
-                case code_multiply:
-                case code_divide:
-                case code_mod:
-                case code_shift_right:
-                case code_shift_left:
-                case code_bitwise_and:
-                case code_bitwise_or:
-                case code_bitwise_xor:
-                case code_logical_and:
-                case code_logical_or:
-                case code_logical_xor:
-                case code_greater:
-                case code_less:
-                case code_equal:
-                case code_greater_or_equal:
-                case code_less_or_equal:
-                case code_not_equal:
-                    // get our sides in a deterministic order!
-                    rhs = pop_stack();
-                    lhs = pop_stack();
-            }
 
-            switch (code) {
-                case code_load_and_push_immediate:
-                case code_load_and_push_immediate_hex:
-                case code_load_and_push_immediate_ascii:
-                    push_stack(read32(bytecode));
-                    bytecode += sizeof(uint32);
-                    break;
+        switch (code) {
+            case code_load_and_push_immediate:
+            case code_load_and_push_immediate_hex:
+            case code_load_and_push_immediate_ascii:
+                push = read32(bytecode);
+                bytecode += sizeof(uint32);
+                break;
 
-                case code_load_and_push_var:  // variable name, '\0'
-                    if (lvalue_var_name && run_evaluate_is_lvalue(bytecode, length, bytecode_in)) {
-                        // lvalue found, return reference to var name.
-                        push_stack(-1); // var index - give pop_stack() at end of this routine something to consume.
-                        *lvalue_var_name = (const char *)bytecode;
-                    } else {
-                        // do not want lvalue, or non-lvalue found, evaluate.
-                        push_stack(var_get((char *)bytecode, 0, running_watchpoint_mask));
+            case code_load_and_push_var:  // variable name, '\0'
+                if (lvalue_var_name && run_evaluate_is_lvalue(bytecode, length, bytecode_in)) {
+                    // lvalue found, return reference to var name.
+                    push = -1; // var index - give pop_stack() at end of this routine something to consume.
+                    *lvalue_var_name = (const char *)bytecode;
+                } else {
+                    // do not want lvalue, or non-lvalue found, evaluate.
+                    push = var_get((char *)bytecode, 0, running_watchpoint_mask);
+                }
+                bytecode += strlen((char *)bytecode)+1;
+                break;
+
+            case code_load_and_push_var_length:  // variable name, '\0'
+                push = var_get_length((char *)bytecode);
+                bytecode += strlen((char *)bytecode)+1;
+                break;
+
+            case code_load_and_push_var_indexed:  // index on stack; variable name, '\0'
+                push = var_get((char *)bytecode, pop_stack(), running_watchpoint_mask);
+                bytecode += strlen((char *)bytecode)+1;
+                break;
+
+            case code_logical_not:
+                push = ! pop_stack();
+                break;
+
+            case code_bitwise_not:
+                push = ~ pop_stack();
+                break;
+
+            case code_unary_plus:
+                push = pop_stack();
+                break;
+
+            case code_unary_minus:
+                push = -pop_stack();
+                break;
+
+            case code_add:
+                push = lhs + rhs;
+                break;
+
+            case code_subtract:
+                push = lhs - rhs;
+                break;
+
+            case code_multiply:
+                push = lhs * rhs;
+                break;
+
+            case code_divide:
+                if (! rhs) {
+                    if (run_condition) {
+                        printf("divide by 0\n");
+                        stop();
                     }
-                    bytecode += strlen((char *)bytecode)+1;
-                    break;
+                    push = 0;
+                } else {
+                    push = lhs / rhs;
+                }
+                break;
 
-                case code_load_and_push_var_length:  // variable name, '\0'
-                    push_stack(var_get_length((char *)bytecode));
-                    bytecode += strlen((char *)bytecode)+1;
-                    break;
-
-                case code_load_and_push_var_indexed:  // index on stack; variable name, '\0'
-                    push_stack(var_get((char *)bytecode, pop_stack(), running_watchpoint_mask));
-                    bytecode += strlen((char *)bytecode)+1;
-                    break;
-
-                case code_logical_not:
-                    push_stack(! pop_stack());
-                    break;
-
-                case code_bitwise_not:
-                    push_stack(~ pop_stack());
-                    break;
-
-                case code_unary_plus:
-                    push_stack(pop_stack());
-                    break;
-
-                case code_unary_minus:
-                    push_stack(-pop_stack());
-                    break;
-
-                case code_add:
-                    push_stack(lhs + rhs);
-                    break;
-
-                case code_subtract:
-                    push_stack(lhs - rhs);
-                    break;
-
-                case code_multiply:
-                    push_stack(lhs * rhs);
-                    break;
-
-                case code_divide:
-                    if (! rhs) {
-                        if (run_condition) {
-                            printf("divide by 0\n");
-                            stop();
-                        }
-                        push_stack(0);
-                    } else {
-                        push_stack(lhs / rhs);
+            case code_mod:
+                if (! rhs) {
+                    if (run_condition) {
+                        printf("divide by 0\n");
+                        stop();
                     }
-                    break;
+                    push = 0;
+                } else {
+                    push = lhs % rhs;
+                }
+                break;
 
-                case code_mod:
-                    if (! rhs) {
-                        if (run_condition) {
-                            printf("divide by 0\n");
-                            stop();
-                        }
-                        push_stack(0);
-                    } else {
-                        push_stack(lhs % rhs);
-                    }
-                    break;
+            case code_shift_right:
+                push = lhs >> rhs;
+                break;
 
-                case code_shift_right:
-                    push_stack(lhs >> rhs);
-                    break;
+            case code_shift_left:
+                push = lhs << rhs;
+                break;
 
-                case code_shift_left:
-                    push_stack(lhs << rhs);
-                    break;
+            case code_bitwise_and:
+                push = lhs & rhs;
+                break;
 
-                case code_bitwise_and:
-                    push_stack(lhs & rhs);
-                    break;
+            case code_bitwise_or:
+                push = lhs | rhs;
+                break;
 
-                case code_bitwise_or:
-                    push_stack(lhs | rhs);
-                    break;
+            case code_bitwise_xor:
+                push = lhs ^ rhs;
+                break;
 
-                case code_bitwise_xor:
-                    push_stack(lhs ^ rhs);
-                    break;
+            case code_logical_and:
+                push = lhs && rhs;
+                break;
 
-                case code_logical_and:
-                    push_stack(lhs && rhs);
-                    break;
+            case code_logical_or:
+                push = lhs || rhs;
+                break;
 
-                case code_logical_or:
-                    push_stack(lhs || rhs);
-                    break;
+            case code_logical_xor:
+                push = !!lhs != !!rhs;
+                break;
 
-                case code_logical_xor:
-                    push_stack(!!lhs != !!rhs);
-                    break;
+            case code_greater:
+                push = lhs > rhs;
+                break;
 
-                case code_greater:
-                    push_stack(lhs > rhs);
-                    break;
+            case code_less:
+                push = lhs < rhs;
+                break;
 
-                case code_less:
-                    push_stack(lhs < rhs);
-                    break;
+            case code_equal:
+                push = lhs == rhs;
+                break;
 
-                case code_equal:
-                    push_stack(lhs == rhs);
-                    break;
+            case code_greater_or_equal:
+                push = lhs >= rhs;
+                break;
 
-                case code_greater_or_equal:
-                    push_stack(lhs >= rhs);
-                    break;
+            case code_less_or_equal:
+                push = lhs <= rhs;
+                break;
 
-                case code_less_or_equal:
-                    push_stack(lhs <= rhs);
-                    break;
+            case code_not_equal:
+                push = lhs != rhs;
+                break;
 
-                case code_not_equal:
-                    push_stack(lhs != rhs);
-                    break;
-
-                default:
-                    assert(0);
-                    break;
-            }
+            default:
+                push = 0;
+                assert(0);
+                break;
         }
+
+        push_stack(push);
     }
 
     *value = pop_stack();
