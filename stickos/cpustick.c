@@ -90,6 +90,14 @@ main_run(void)
     }
 }
 
+#if MCF52233
+int
+main_ip_address()
+{
+    return var_get_flash(FLASH_IPADDRESS);
+}
+#endif
+
 // this function is called by upper level code to register callback
 // functions.
 extern void

@@ -144,9 +144,4 @@ void fec_mii_reg_printf(void);
 
 /********************************************************************/
 
-void FEC_ICR_init(void);				//FSL added function prototype
-void FEC_IMR_init(void);				//FSL added function prototype
-
-void mcf5223x_ePHY_init(void);
-
 #endif /* _MII_H_ */

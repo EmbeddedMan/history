@@ -58,8 +58,7 @@
 #endif
 
 /* the TK_ function macros: */
-//#define  tk_yield()     {  tk_wake(tk_cur);  tk_block(); }
-extern void tk_yield(void);
+#define  tk_yield()     {  tk_wake(tk_cur);  tk_block(); }
 #define  TK_APP_WAKE(ev)   tk_ev_wake(ev)
 #define  TK_WAKE(task)     tk_wake(*task)
 #define  TK_BLOCK()        tk_block()

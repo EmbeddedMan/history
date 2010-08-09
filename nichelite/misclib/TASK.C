@@ -196,20 +196,6 @@ tk_new(task * prev_tk,  	/* predecessor (sp?) to the new task */
 }
 
 
-#define assert(x)  if (! (x)) { asm { halt } }
-
-int
-get_sr(void){
-    unsigned short rv;
-
-    asm {
-        move.w sr,d0
-        move.w d0,rv
-    }
-    return rv;
-}
-
-extern int ticks;
 
 /* FUNCTION: tk_block ()
  *
@@ -226,8 +212,6 @@ extern int ticks;
 void
 tk_block () 
 {
-int sr;
-static int last = 0;
    task * tk = tk_cur;     /* the next task to run */
 
    /* check if the guard word is still intact */
@@ -236,10 +220,6 @@ static int last = 0;
       panic("tk_block stack");
       return;
    }
-
-   sr = get_sr();
-   assert((sr & 0xf00) == 0);
-   //assert(ticks <3000 || ! last || ticks<last+10);
 
 #ifdef NPDEBUG
    if (TDEBUG)
@@ -261,7 +241,6 @@ static int last = 0;
 
    tk->tk_flags &= ~TF_AWAKE;	/* clear wake flag before it runs */
    tk_switch (tk);      		/* Run the next task. */
-   last = ticks;
 
 #ifdef NPDEBUG
    if (TDEBUG)
@@ -508,11 +487,6 @@ tk_ev_wake(void * event)
          tk->tk_flags |= TF_AWAKE;  /* wake the task */
       }
    }
-}
-
-void tk_yield(void)
-{
-    tk_wake(tk_cur);  tk_block();
 }
 
 #endif   /* INICHE_TASKS -  whole file can be ifdeffed out */

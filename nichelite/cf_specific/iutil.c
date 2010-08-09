@@ -102,6 +102,7 @@ extern  void  nv_defaults(void);    			/* set default NV parameters */
 extern  int   prep_fec(int ifaces_found);
 extern  int   ppplogcons();
 extern	int	  uart_putc(int, unsigned char);	//FSL added function prototype
+extern	void  processor_PIT_Timer_Init(void);	//FSL added function prototype
 
 
 //FSL dputchar() makes call to uart_putc() using this global value "evbuart" (i.e. uart_putc(evbuart, uchar)
@@ -318,6 +319,7 @@ prep_evb(int ifaces_found)
 char *
 pre_task_setup()
 {
+   processor_PIT_Timer_Init();		// processor specific PIT config for 1 msec interrupt
    return NULL;
 }
 
@@ -399,7 +401,9 @@ typedef struct
 #define DEST_CONSOLE          (1)
 #define DEST_STRING           (2)
 
-#if 0
+#if 0  // we use our own vprintf() and vsprintf()
+#include "io.h"
+
 int
 vprintf(const char * fmt,
         va_list ap)
@@ -430,6 +434,7 @@ vsprintf(char * outbuf,
 
    return rvalue;    
 }
+
 #endif
 
 /* Wrappers for heap calls, with memory clearing and counters */

@@ -74,24 +74,6 @@ init(void)
         flash_checksum += *p;
     }
 
-#if MCF52233
-	// clear mask all bit to allow interrupts
-    MCF_INTC0_IMRL &= ~(MCF_INTC_IMRL_MASKALL);
-
-	// Initialize PLDPAR to enable Ethernet LEDs
-	MCF_GPIO_PLDPAR = (0
-					| MCF_GPIO_PORTLD_PORTLD0 // ACTLED
-					| MCF_GPIO_PORTLD_PORTLD1 // LNKLED
-					| MCF_GPIO_PORTLD_PORTLD2 // SPDLED
-					| MCF_GPIO_PORTLD_PORTLD3 // DUPLED
-					| MCF_GPIO_PORTLD_PORTLD4 // COLLED
-					| MCF_GPIO_PORTLD_PORTLD5 // RXLED
-					| MCF_GPIO_PORTLD_PORTLD6 // TXLED
-					);
-	
-    mcf5223x_ePHY_init();
-#endif
-
     // finally, call main()
     main();
 }

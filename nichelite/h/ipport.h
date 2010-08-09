@@ -79,6 +79,11 @@ extern uint8 powerup_config_flags;
  * externals.  
  */
 
+extern int fsys_frequency;
+#define SYS_CLK_MHZ  (fsys_frequency/1000000)
+#define __interrupt__  __declspec(interrupt)
+
+
 #define INCLUDE_ARP     1  /* use Ethernet ARP */
 #define FULL_ICMP       1  /* use all ICMP || ping only */
 #define OMIT_IPV4       1  /* not IPV4, use with MINI_IP */
@@ -158,6 +163,9 @@ extern int iniche_net_ready;
 #endif /* VFS_FILES */
 
 extern volatile unsigned long cticks;  			/* clock ticks since startup */
+
+extern void PIT_Timer_Init(uint8, uint16);   	/* start clock tick counting; called at init time */ //FSL added the "extern" reference
+void clock_c(void);      /* undo effects of clock_init (i.e. restore ISR vector */
 
 #define TPS                200					//FSL 5ms=1/200 per tick
 

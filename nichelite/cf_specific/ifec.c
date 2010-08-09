@@ -21,9 +21,6 @@
 #include "ether.h"
 #include "fecport.h"
 
-extern int fsys_frequency;
-#define SYS_CLK_MHZ  (fsys_frequency/1000000)
-
 /* Buffer descriptors must be aligned on 8-byte boundary */
 BD * RxBDs;    /* RX buffer descriptors */
 BD * TxBDs;    /* TX buffer descriptors */
@@ -1091,7 +1088,7 @@ start_transmit:
 
 static   u_long   events;     /* make static so we can use for debugging */
 
-__declspec(interrupt)
+__interrupt__
 void
 fec_isr(void)
 {

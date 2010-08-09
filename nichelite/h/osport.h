@@ -24,7 +24,7 @@
 /* task stack sizes */
 #define  NET_STACK_SIZE 	2048
 #define  APP_STACK_SIZE 	2048
-#define  CLOCK_STACK_SIZE 	1536
+#define  CLOCK_STACK_SIZE 	2048
 
 #define  IO_STACK_SIZE     2048
 #define  WEB_STACK_SIZE    APP_STACK_SIZE

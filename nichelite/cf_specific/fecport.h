@@ -23,6 +23,7 @@ void  fec_stats(void *, int);
 int   fec_close(int);
 int   fec_tx(PACKET);
 int   fectx_internal(void);
+void  fec_isr(void);
 int   input_ippkt(PACKET, int);
 void  FEC_reset(void);
 // int   FECInit(int);						//FSL declared in ifec.c

@@ -21,7 +21,7 @@
 //
 // N.B. changing flash SECURITY state is always an incompatible upgrade.
 
-#define EXTRACT  0  // 1 uses extracted headers rather than Freescale
+#define EXTRACT  1  // 1 uses extracted headers rather than Freescale
 
 #if EXTRACT
 #include "extract.h"

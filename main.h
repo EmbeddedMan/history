@@ -6,7 +6,7 @@
 #define DEBUG  1  // 0 is fastest but riskiest (removes all assert()s)
 #define RELEASE  1  // 1 disables expensive check functions
 #define SECURE  0  // 1 sets flash security
-#define EXTRACT  0  // 1 uses extracted headers rather than Freescale
+#define EXTRACT  1  // 1 uses extracted headers rather than Freescale
 
 #if EXTRACT
 #include "extract.h"
@@ -115,8 +115,7 @@ enum {
 #if MCF52221
 #define os_yield()  // NULL
 #elif MCF52233
-extern void tk_yield(void);
-#define os_yield()  tk_yield()
+extern void os_yield(void);
 #else
 #error
 #endif
@@ -135,7 +134,11 @@ extern void tk_yield(void);
 #define ticks (int)(GetTickCount())
 #define seconds  (ticks/1000)
 
+#if PICTOCRYPT
+extern byte big_buffer[8192];
+#else
 extern byte big_buffer[2048];
+#endif
 
 #endif  // ! _WIN32
 

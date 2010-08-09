@@ -20,9 +20,7 @@
 #define UINT32HALT  (HALT<<16|RTE)
 
 #if MCF52233
-__declspec(interrupt)
-void
-fec_isr(void);
+extern __declspec(interrupt) void fec_isr(void);
 #endif
 
 // this is the software interrupt vector table, in page1.

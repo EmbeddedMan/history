@@ -135,10 +135,6 @@ long     nettick_wakes  =  0;
 #endif   /* NO_INET_TICK */
 
 /* per-application thread definitions */
-TK_OBJECT(to_rich);
-TK_ENTRY(tk_rich);
-TK_OBJECT(to_rich2);
-TK_ENTRY(tk_rich2);
 
 #ifdef PING_APP
 TK_OBJECT(to_pingcheck);
@@ -185,21 +181,6 @@ struct inet_taskinfo nettasks[]  =  {
    },
 #endif   /* NO_INET_TICK */
    /************** optional application threads ***************/
-{
-    &to_rich,
-    "rich",
-    tk_rich,
-    NET_PRIORITY,
-    2304
-},
-{
-    &to_rich2,
-    "rich2",
-    tk_rich2,
-    NET_PRIORITY,
-    2304
-},
-
 #ifdef PING_APP
    {
       &to_pingcheck,
@@ -274,15 +255,15 @@ netmain(void)
       }
    }
 
-   //e = create_apptasks();
-   //if (e != 0) 
-   //{
-   //   dprintf("task create error\n");
-   //   panic("netmain");
-   //   return -1;  /* compiler warnings */
-   //}
+   e = create_apptasks();
+   if (e != 0) 
+   {
+      dprintf("task create error\n");
+      panic("netmain");
+      return -1;  /* compiler warnings */
+   }
 
-   //uart_yield = 1;
+   uart_yield = 1;
 
 #ifndef NO_INET_STACK
 #ifdef MAIN_TASK_IS_NET
@@ -595,97 +576,4 @@ tcp_wakeup(void * event)
 
 #endif   /* SUPERLOOP - whole file can be ifdeffed out */
 
-#include "tcpapp.h"
-
-#define assert(x)  if (! (x)) { asm { halt } }
-
-M_SOCK rich_so;
-
-int rich_callback(int code, M_SOCK so, void * data)
-{
-	int e = 0;
-
-	switch(code)
-	{
-		// socket open complete
-		case M_OPENOK:
-   		    if (rich_so) {
-   		        m_close(rich_so);
-   		    }
-		    rich_so = so;
-			break;
-      
-		// socket has closed      
-   		case M_CLOSED:  
-	        m_close(rich_so);
-   		    rich_so = NULL;
-     		break;
-      
-		// passing received data
-		// blocked transmit now ready
-		case M_RXDATA:          				// received data packet, let recv() handle it 
-		case M_TXDATA:          				// ready to send more, loop will do it
-			e = -1;        						// return nonzero code to indicate we don't want it 
-			break;
-      
-   		default:
-      		dtrap();             				// not a legal case
-      		return 0;
-   }
-
-   USE_VOID(data);
-   return e;
-}
-
-TK_ENTRY(tk_rich)
-{
-   main2();
-
-   USE_ARG(parm);  /* TK_ENTRY macro defines tk_nettick with 1 arg parm */
-   TK_RETURN_UNREACHABLE();
-   return 0;
-}
-
-int rich2_wakes;
-
-TK_ENTRY(tk_rich2)
-{
-    int n;
-      M_SOCK so;
-      int error;
-      static char buffer[1];
-      static struct sockaddr_in addr;
-      void terminal_receive(unsigned char *buffer, int length);
-
-      
-   /* wait till the stack is initialized */
-   while (!iniche_net_ready)
-   {
-      TK_SLEEP(1);
-   }
-
-printf("listen\n");
-   addr.sin_addr.s_addr 	= (INADDR_ANY);
-   addr.sin_port        	= (1234);
-   so = m_listen(&addr, rich_callback, &error);
-   assert(so);
-   TK_SLEEP(200);
-   
-   for (;;)
-   {
-        if (rich_so) {
-            n = m_recv(rich_so, buffer, sizeof(buffer));
-            assert(n >= 0);
-            if (n) {
-                terminal_receive((unsigned char *)buffer, n);
-            }
-            tk_yield();
-        } else {
-            tk_sleep(1);
-        }
-        rich2_wakes++;
-   }
-   USE_ARG(parm);  /* TK_ENTRY macro defines tk_nettick with 1 arg parm */
-   TK_RETURN_UNREACHABLE();
-}
 

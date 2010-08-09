@@ -137,9 +137,9 @@ static char *help_general =
 
 static char *help_about =
 #if MCF52233
-"Welcome to Skeleton for Freescale MCF52233 v1.05!\n"
+"Welcome to Skeleton for Freescale MCF52233 v1.06!\n"
 #elif MCF52221
-"Welcome to Skeleton for Freescale MCF52221 v1.05!\n"
+"Welcome to Skeleton for Freescale MCF52221 v1.06!\n"
 #else
 #error
 #endif
@@ -386,6 +386,13 @@ main_run(void)
 #error
 #endif
     }
+}
+
+int
+main_ip_address()
+{
+    // use dhcp
+    return 0;
 }
 
 extern void

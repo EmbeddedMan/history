@@ -269,8 +269,6 @@ extern   struct net  netstatic[STATIC_NETS];
  *
  * RETURNS: 
  */
-extern unsigned   mt_deftxwin;      /* default send window */
-extern unsigned   mt_defrxwin;      /* default receive window */
 
 void 
 netmain_init(void)
@@ -281,9 +279,6 @@ netmain_init(void)
 #ifdef IP_V6
    ip6_addr host;
 #endif
-
-mt_defrxwin = 64;
-mt_deftxwin = 2048;
 
    printf("\n%s\n", name);
    printf("Copyright 1997-2006 by InterNiche Technologies. All rights reserved. \n");
