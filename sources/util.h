@@ -128,6 +128,9 @@ strcmp(const char *s1, const char *s2);
 int
 strncmp(const char *s1, const char *s2, size_t n);
 
+char *
+strstr(const char *s1, const char *s2);
+
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif

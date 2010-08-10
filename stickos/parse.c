@@ -219,7 +219,6 @@ parse_find_keyword(IN OUT char *text, IN char *word)
     return NULL;
 }
 
-static
 bool
 parse_find_tail(IN OUT char *text, IN char *tail)
 {
@@ -684,7 +683,6 @@ parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT by
     return true;
 }
 
-static
 bool
 parse_string(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
@@ -782,7 +780,6 @@ parse_relation(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
     return true;
 }
 
-static
 bool
 parse_class(IN char *text, IN OUT int *length, IN OUT byte *bytecode)
 {
@@ -803,7 +800,6 @@ parse_class(IN char *text, IN OUT int *length, IN OUT byte *bytecode)
     return false;
 }
 
-static
 bool
 parse_string_or_expression(IN bool string, IN char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
@@ -1776,7 +1772,6 @@ unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
     return bytecode - bytecode_in;
 }
 
-static
 int
 unparse_string(byte *bytecode_in, int length, char **out)
 {
@@ -1821,7 +1816,6 @@ unparse_string(byte *bytecode_in, int length, char **out)
 }
 
 // this function unparses (de-compiles) a string relation to bytecode.
-static
 int
 unparse_relation(byte *bytecode_in, int length, char **out)
 {
@@ -1850,7 +1844,6 @@ unparse_relation(byte *bytecode_in, int length, char **out)
     return bytecode-bytecode_in;
 }
 
-static
 int
 unparse_class(byte *bytecode, OUT bool *string)
 {
@@ -1863,7 +1856,6 @@ unparse_class(byte *bytecode, OUT bool *string)
     return 1;
 }
 
-static
 int
 unparse_string_or_expression(IN bool string, byte *bytecode, int length, char **out)
 {

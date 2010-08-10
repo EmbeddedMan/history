@@ -625,7 +625,6 @@ subprintarray(
     return i;
 }
 
-static
 int
 run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *string, OUT int *actual_out)
 {
@@ -755,7 +754,6 @@ run_relation(const byte *bytecode_in, int length, OUT int32 *value)
     return bytecode - bytecode_in;
 }
 
-static
 int
 run_relation_or_expression(const byte *bytecode_in, int length, OUT int32 *value)
 {
