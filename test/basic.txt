@@ -1630,7 +1630,7 @@ STOP at line 23!
   0% flash parameter bytes used
   0% variables used
 test large flash program
- 84% ram code bytes used (unsaved changes!)
+ 86% ram code bytes used (unsaved changes!)
   0% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -1768,7 +1768,7 @@ end
 3190   endif 
 3200 endsub 
 end
- 84% ram code bytes used (unsaved changes!)
+ 86% ram code bytes used (unsaved changes!)
  14% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -2032,7 +2032,7 @@ end
 6190   endif 
 6200 endsub 
 end
- 84% ram code bytes used (unsaved changes!)
+ 86% ram code bytes used (unsaved changes!)
  28% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -3229,7 +3229,7 @@ out of variable ram
 STOP at line 60!
 auto save
 auto save
- 69% ram code bytes used (unsaved changes!)
+ 72% ram code bytes used (unsaved changes!)
  35% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
@@ -3446,31 +3446,26 @@ auto save
 9200 endsub 
 end
   0% ram code bytes used
- 46% flash code bytes used
+ 47% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 auto save
 auto save
 auto save
- 12% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 16% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
- 40% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 45% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 out of code flash
- 68% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
-  0% ram variable bytes used
-  0% flash parameter bytes used
-  0% variables used
- 97% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 73% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3483,56 +3478,8 @@ out of code ram
 auto save
 out of code flash
 out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-auto save
-out of code flash
-out of code ram
-100% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 99% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -3599,8 +3546,76 @@ out of code ram
 auto save
 out of code flash
 out of code ram
-100% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 99% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
+  0% ram variable bytes used
+  0% flash parameter bytes used
+  0% variables used
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+auto save
+out of code flash
+out of code ram
+ 99% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
@@ -4105,48 +4120,47 @@ out of code ram
 23150   if thermocouple>=target then
 23160     let relay = 0
 23170   else 
-23180     let relay = 1
-23190   endif 
-23200 endsub 
-24000 rem ### toaster ###
-24030 dim relay as pin an1 for digital output
+missing block ends?
 end
 delete line 10
 auto save
 out of code flash
 out of code ram
-100% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 99% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 24000
+auto save
+out of code flash
+out of code ram
  99% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 24000-
- 98% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 99% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line 22000-
  75% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 delete line -1000
- 92% ram code bytes used (unsaved changes!)
- 96% flash code bytes used
+ 93% ram code bytes used (unsaved changes!)
+ 97% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used
 save
   0% ram code bytes used
- 98% flash code bytes used
+ 99% flash code bytes used
   0% ram variable bytes used
   0% flash parameter bytes used
   0% variables used

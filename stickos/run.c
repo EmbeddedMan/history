@@ -268,7 +268,7 @@ run_input_const(IN OUT char **text, OUT int32 *value_out)
 }
 
 static bool
-run_evaluate_is_lvalue(const byte *bytecode, int length, const byte *bytecode_in)
+run_expression_is_lvalue(const byte *bytecode, int length, const byte *bytecode_in)
 {
     int var_len;
 
@@ -298,7 +298,7 @@ run_evaluate_is_lvalue(const byte *bytecode, int length, const byte *bytecode_in
 //   - set *lvalue_var_name=NULL
 //   - set *value to the expression value
 static int
-run_evaluate_watchpoint(const byte *bytecode_in, int length, IN uint32 running_watchpoint_mask, IN OUT const char **lvalue_var_name, OUT int32 *value)
+run_expression_watchpoint(const byte *bytecode_in, int length, IN uint32 running_watchpoint_mask, IN OUT const char **lvalue_var_name, OUT int32 *value)
 {
     int32 lhs;
     int32 rhs;
@@ -351,7 +351,7 @@ run_evaluate_watchpoint(const byte *bytecode_in, int length, IN uint32 running_w
                 break;
 
             case code_load_and_push_var:  // variable name, '\0'
-                if (lvalue_var_name && run_evaluate_is_lvalue(bytecode, length, bytecode_in)) {
+                if (lvalue_var_name && run_expression_is_lvalue(bytecode, length, bytecode_in)) {
                     // lvalue found, return reference to var name.
                     push = -1; // var index - give pop_stack() at end of this routine something to consume.
                     *lvalue_var_name = (const char *)bytecode;
@@ -495,9 +495,9 @@ run_evaluate_watchpoint(const byte *bytecode_in, int length, IN uint32 running_w
 }
 
 int
-run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int32 *value)
+run_expression(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int32 *value)
 {
-    return run_evaluate_watchpoint(bytecode_in, length, 0, lvalue_var_name, value);
+    return run_expression_watchpoint(bytecode_in, length, 0, lvalue_var_name, value);
 }
 
 // read the next value from main_command
@@ -664,10 +664,10 @@ run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *str
                     bytecode += sizeof(uint32);
                     blen2 = read32(bytecode);
                     bytecode += sizeof(uint32);
-                    len = run_evaluate(bytecode, blen, NULL, &value1);
+                    len = run_expression(bytecode, blen, NULL, &value1);
                     assert(len == blen);
                     bytecode += blen;
-                    len = run_evaluate(bytecode, blen2, NULL, &value2);
+                    len = run_expression(bytecode, blen2, NULL, &value2);
                     assert(len == blen2);
                     bytecode += blen2;
                 }
@@ -755,6 +755,32 @@ run_relation(const byte *bytecode_in, int length, OUT int32 *value)
     return bytecode - bytecode_in;
 }
 
+static
+int
+run_relation_or_expression(const byte *bytecode_in, int length, OUT int32 *value)
+{
+    const byte *bytecode;
+
+    bytecode = bytecode_in;
+
+    // if we're comparing strings...
+    if (*bytecode == code_string) {
+        bytecode++;
+        length--;
+
+        // evaluate the string relation
+        bytecode += run_relation(bytecode, length, value);
+    } else {
+        assert(*bytecode == code_expression);
+        bytecode++;
+        length--;
+
+        // evaluate the condition
+        bytecode += run_expression(bytecode, length, NULL, value);
+    }
+
+    return bytecode - bytecode_in;
+}
 
 // this function executes a bytecode statement, with an independent keyword
 // bytecode.
@@ -992,7 +1018,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
         case code_assert:
             // *** interactive debugger ***
             // evaluate the assertion expression
-            index += run_evaluate(bytecode+index, length-index, NULL, &value);
+            index += run_expression(bytecode+index, length-index, NULL, &value);
             if (run_condition && ! value) {
                 printf("assertion failed\n");
                 stop();
@@ -1024,7 +1050,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index += sizeof(uint32);
 
                     // evaluate the array index
-                    index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                    index += run_expression(bytecode+index, blen, NULL, &max_index);
                 }
 
                 // get the variable name
@@ -1097,7 +1123,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index += sizeof(uint32);
 
                     // evaluate the array length
-                    index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                    index += run_expression(bytecode+index, blen, NULL, &max_index);
                 }
 
                 // get the variable name
@@ -1124,7 +1150,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                         break;
 
                     case code_absolute:
-                        index += run_evaluate(bytecode+index, length-index, NULL, &abs_addr);
+                        index += run_expression(bytecode+index, length-index, NULL, &abs_addr);
                         break;
 
                     case code_pin:
@@ -1208,7 +1234,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                         index += sizeof(uint32);
 
                         // evaluate the array index
-                        index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                        index += run_expression(bytecode+index, blen, NULL, &max_index);
                     }
 
                     // get the variable name
@@ -1216,7 +1242,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index += strlen(name)+1;
 
                     // evaluate the assignment expression
-                    index += run_evaluate(bytecode+index, length-index, NULL, &value);
+                    index += run_expression(bytecode+index, length-index, NULL, &value);
 
                     // assign the variable with the assignment expression
                     var_set(name, max_index, value);
@@ -1305,7 +1331,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index += sizeof(uint32);
 
                     // evaluate the array index
-                    index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                    index += run_expression(bytecode+index, blen, NULL, &max_index);
                     max_count = max_index+1;
                 }
 
@@ -1386,7 +1412,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index++;
 
                     // evaluate the expression
-                    index += run_evaluate(bytecode+index, length-index, &name, &value);
+                    index += run_expression(bytecode+index, length-index, &name, &value);
                     if (name) {
                         // print an array of values
                         i = subprintarray(s, n, name, -1, -1, format, false);
@@ -1457,7 +1483,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                         index += sizeof(uint32);
 
                         // evaluate the array index
-                        index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                        index += run_expression(bytecode+index, blen, NULL, &max_index);
                         max_count = max_index+1;
                     }
 
@@ -1550,19 +1576,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             scope->line_number = run_line_number;
             scope->type = open_if;
 
-            // if we're comparing strings...
-            if (bytecode[index] == code_string) {
-                index++;
-
-                // evaluate the string relation
-                index += run_relation(bytecode+index, length-index, &value);
-            } else {
-                assert(bytecode[index] == code_expression);
-                index++;
-
-                // evaluate the condition
-                index += run_evaluate(bytecode+index, length-index, NULL, &value);
-            }
+            // evaluate the condition
+            index += run_relation_or_expression(bytecode+index, length-index, &value);
 
             // incorporate the condition
             scope->condition = !! value;
@@ -1579,7 +1594,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
             // reevaluate the condition
             run_condition = scope->condition_initial;
-            index += run_evaluate(bytecode+index, length-index, NULL, &value);
+            index += run_relation_or_expression(bytecode+index, length-index, &value);
 
             // if the condition has ever been true...
             if (scope->condition_ever) {
@@ -1648,7 +1663,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index += sizeof(uint32);
 
                     // evaluate the array index
-                    index += run_evaluate(bytecode+index, blen, NULL, &max_index);
+                    index += run_expression(bytecode+index, blen, NULL, &max_index);
                 }
 
                 // get the variable name
@@ -1656,7 +1671,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 index += strlen(name)+1;
 
                 // evaluate and set the initial value
-                index += run_evaluate(bytecode+index, length-index, NULL, &value);
+                index += run_expression(bytecode+index, length-index, NULL, &value);
                 var_set(name, max_index, value);
 
                 assert(name);
@@ -1667,7 +1682,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 index++;
 
                 // evaluate the final value
-                index += run_evaluate(bytecode+index, length-index, NULL, &scope->for_final_value);
+                index += run_expression(bytecode+index, length-index, NULL, &scope->for_final_value);
 
                 // if there is a step value...
                 if (index < length) {
@@ -1675,7 +1690,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index++;
 
                     // evaluate the step value
-                    index += run_evaluate(bytecode+index, length-index, NULL, &scope->for_step_value);
+                    index += run_expression(bytecode+index, length-index, NULL, &scope->for_step_value);
                 } else {
                     scope->for_step_value = 1;
                 }
@@ -1688,7 +1703,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 }
             } else if (code == code_while) {
                 // evaluate the condition
-                index += run_evaluate(bytecode+index, length-index, NULL, &value);
+                index += run_relation_or_expression(bytecode+index, length-index, &value);
             } else {
                 assert(code == code_do);
 
@@ -1764,7 +1779,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             // if this is an until loop...
             if (code == code_until) {
                 // evaluate the condition
-                index += run_evaluate(bytecode+index, length-index, NULL, &value);
+                index += run_relation_or_expression(bytecode+index, length-index, &value);
             }
 
             if (run_condition) {
@@ -1858,7 +1873,7 @@ XXX_PERF_XXX:
                         goto XXX_SKIP_XXX;
                     }
 
-                    index += run_evaluate(bytecode+index, length-index, &name, &value);
+                    index += run_expression(bytecode+index, length-index, &name, &value);
 
                     // if the param is an lvalue, then just get its name and index (if its an array element).
                     if (name) {
@@ -1944,7 +1959,7 @@ XXX_PERF_XXX:
             timer_unit = (enum timer_unit_type)bytecode[index++];
             
             // evaluate the sleep time
-            index += run_evaluate(bytecode+index, length-index, NULL, &value);
+            index += run_expression(bytecode+index, length-index, NULL, &value);
 
             if (run_condition && run_sleep) {
                 // scale the timer interval
@@ -2007,7 +2022,6 @@ run_bytecode(bool immediate, const byte *bytecode, int length)
     assert(length);
     return run_bytecode_code(*bytecode, immediate, bytecode+1, length-1);
 }
-
 
 void
 run_clear(bool flash)
@@ -2210,7 +2224,7 @@ run(bool cont, int start_line_number)
                 // evaluation watchpoint condition.  tell evaluator to decorate each evaluated pin/var with the current
                 // watchpoint num so changes to these pins/vars set the watchpoint as possible.
                 run_condition = true;
-                length = run_evaluate_watchpoint(watchpoints[i].bytecode, watchpoints[i].length, 1 << i, NULL, &value);
+                length = run_expression_watchpoint(watchpoints[i].bytecode, watchpoints[i].length, 1 << i, NULL, &value);
                 assert(length == watchpoints[i].length);
 
                 // if the watch is non-0...
