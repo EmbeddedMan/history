@@ -1352,17 +1352,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 run_printf = false;
             }
             break;
-#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
-        default:
-            goto XXX_MORE_XXX;  // N.B. CW compiler bug
-            break;
-    }
-    
-    goto XXX_DONE_XXX;
 
-XXX_MORE_XXX:  // N.B. CW compiler bug
-    switch (code) {
-#endif
         case code_qspi:
             // we'll walk the variable list twice
             oindex = index;
@@ -1915,10 +1905,6 @@ XXX_PERF_XXX:
             break;
     }
     
-#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
-XXX_DONE_XXX:
-#endif
-
 #if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
     assert_ram(index == length);  // CW bug
 #else
