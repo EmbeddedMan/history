@@ -56,9 +56,11 @@ static struct {
 } watchpoints[num_watchpoints];
 
 #if ! STICK_GUEST
-static char run_printf_buffer[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
+static char run_buffer1[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
+static char run_buffer2[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
 #else
-static char run_printf_buffer[BASIC_OUTPUT_LINE_SIZE+1];  // 1 for \n
+static char run_buffer1[BASIC_OUTPUT_LINE_SIZE+1];  // 1 for \n
+static char run_buffer2[BASIC_OUTPUT_LINE_SIZE+1];  // 1 for \n
 #endif
 
 static struct {
@@ -204,6 +206,65 @@ read_data()
         // on to the next line
         data_line_offset = 0;
     }
+}
+
+int32
+run_bytecode_const(IN const byte *bytecode, IN OUT int *index)
+{
+    byte code;
+    int32 value;
+
+    // skip the format
+    code = bytecode[*index];
+    assert(code == code_load_and_push_immediate || code == code_load_and_push_immediate_hex || code == code_load_and_push_immediate_ascii);
+    (*index)++;
+
+    // read the const
+    value = read32(bytecode + *index);
+    (*index) += sizeof(int32);
+
+    return value;
+}
+
+// revisit -- merge this with basic.c/parse.c???
+
+static
+bool
+run_input_const(IN OUT char **text, OUT int32 *value_out)
+{
+    char c;
+    int32 value;
+
+    if ((*text)[0] && ! isdigit((*text)[0])) {
+        return false;
+    }
+
+    // parse constant value and advance *text past constant
+    value = 0;
+    if ((*text)[0] == '0' && (*text)[1] == 'x') {
+        (*text) += 2;
+        for (;;) {
+            c = (*text)[0];
+            if (c >= 'a' && c <= 'f') {
+                value = value*16 + 10 + c - 'a';
+                (*text)++;
+            } else if (isdigit(c)) {
+                value = value*16 + c - '0';
+                (*text)++;
+            } else {
+                break;
+            }
+        }
+    } else {
+        while (isdigit((*text)[0])) {
+            value = value*10 + (*text)[0] - '0';
+            (*text)++;
+        }
+    }
+
+    *value_out = value;
+    parse_trim(text);
+    return true;
 }
 
 static bool
@@ -439,47 +500,6 @@ run_evaluate(const byte *bytecode_in, int length, IN OUT const char **lvalue_var
     return run_evaluate_watchpoint(bytecode_in, length, 0, lvalue_var_name, value);
 }
 
-// revisit -- merge this with basic.c/parse.c???
-
-static
-bool
-run_input_const(IN OUT char **text, OUT int32 *value_out)
-{
-    char c;
-    int32 value;
-
-    if ((*text)[0] && ! isdigit((*text)[0])) {
-        return false;
-    }
-
-    // parse constant value and advance *text past constant
-    value = 0;
-    if ((*text)[0] == '0' && (*text)[1] == 'x') {
-        (*text) += 2;
-        for (;;) {
-            c = (*text)[0];
-            if (c >= 'a' && c <= 'f') {
-                value = value*16 + 10 + c - 'a';
-                (*text)++;
-            } else if (isdigit(c)) {
-                value = value*16 + c - '0';
-                (*text)++;
-            } else {
-                break;
-            }
-        }
-    } else {
-        while (isdigit((*text)[0])) {
-            value = value*10 + (*text)[0] - '0';
-            (*text)++;
-        }
-    }
-
-    *value_out = value;
-    parse_trim(text);
-    return true;
-}
-
 // read the next value from main_command
 static
 int32
@@ -605,25 +625,6 @@ subprintarray(
     return i;
 }
 
-
-int32
-run_bytecode_const(IN const byte *bytecode, IN OUT int *index)
-{
-    byte code;
-    int32 value;
-
-    // skip the format
-    code = bytecode[*index];
-    assert(code == code_load_and_push_immediate || code == code_load_and_push_immediate_hex || code == code_load_and_push_immediate_ascii);
-    (*index)++;
-
-    // read the const
-    value = read32(bytecode + *index);
-    (*index) += sizeof(int32);
-
-    return value;
-}
-
 static
 int
 run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *string, OUT int *actual_out)
@@ -681,8 +682,79 @@ run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *str
     }
 
     *actual_out = actual;
+    assert(strlen(string) < (size_t)size);
     return bytecode-bytecode_in;
 }
+
+int
+run_relation(const byte *bytecode_in, int length, OUT int32 *value)
+{
+    int i;
+    char *p;
+    int len;
+    byte code;
+    int actual;
+    const byte *bytecode;
+
+    bytecode = bytecode_in;
+
+    // get the left hand string
+    *run_buffer1 = '\0';
+    len = run_string(bytecode, length, sizeof(run_buffer1), run_buffer1, &actual);
+    bytecode += len;
+    length -= len;
+    assert(*bytecode == code_comma);
+    bytecode++;
+    length--;
+
+    // get the relation
+    code = *bytecode;
+    bytecode++;
+    length--;
+
+    // get the right hand string
+    *run_buffer2 = '\0';
+    len = run_string(bytecode, length, sizeof(run_buffer2), run_buffer2, &actual);
+    bytecode += len;
+    length -= len;
+    assert(*bytecode == code_comma);
+    bytecode++;
+
+    // evaluate the relation
+    i = strcmp(run_buffer1, run_buffer2);
+    p = strstr(run_buffer1, run_buffer2);
+    switch (code) {
+        case code_greater:
+            *value = i > 0;
+            break;
+        case code_less:
+            *value = i < 0;
+            break;
+        case code_equal:
+            *value = i == 0;
+            break;
+        case code_greater_or_equal:
+            *value = i >= 0;
+            break;
+        case code_less_or_equal:
+            *value = i <= 0;
+            break;
+        case code_not_equal:
+            *value = i != 0;
+            break;
+        case code_contains:
+            *value = !! p;
+            break;
+        case code_not_contains:
+            *value = ! p;
+            break;
+        default:
+            assert(0);
+    }
+
+    return bytecode - bytecode_in;
+}
+
 
 // this function executes a bytecode statement, with an independent keyword
 // bytecode.
@@ -1105,15 +1177,15 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index += strlen(name)+1;
 
                     // evaluate the assignment string
-                    index += run_string(bytecode+index, length-index, sizeof(run_printf_buffer), run_printf_buffer, &k);
+                    index += run_string(bytecode+index, length-index, sizeof(run_buffer1), run_buffer1, &k);
 
                     // this is how many characetrs we actually printed
-                    k = MIN(k, sizeof(run_printf_buffer)-1);
+                    k = MIN(k, sizeof(run_buffer1)-1);
 
                     // assign an array of values
                     size = var_get_size(name, &count);
                     for (j = 0; j < count; j++) {
-                        var_set(name, j, j<k?(byte)(run_printf_buffer[j]):0);
+                        var_set(name, j, j<k?(byte)(run_buffer1[j]):0);
                     }
 
                 } else {
@@ -1272,8 +1344,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 #if ! GCC
             cw7bug++;  // CW7 BUG
 #endif
-            s = run_printf_buffer;
-            n = sizeof(run_printf_buffer);
+            s = run_buffer1;
+            n = sizeof(run_buffer1);
 
             // if we're not printing a newline...
             semi = false;
@@ -1334,21 +1406,21 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             }
 
             // this is how many characetrs we actually printed
-            k = MIN(s - run_printf_buffer, sizeof(run_printf_buffer)-1);
+            k = MIN(s - run_buffer1, sizeof(run_buffer1)-1);
 
-            // make sure the run_printf_buffer has a trailing \r\n or \n
-            assert(! run_printf_buffer[sizeof(run_printf_buffer)-1]);
-            if (k == sizeof(run_printf_buffer)-1) {
+            // make sure the run_buffer1 has a trailing \r\n or \n
+            assert(! run_buffer1[sizeof(run_buffer1)-1]);
+            if (k == sizeof(run_buffer1)-1) {
 #if ! STICK_GUEST
-                strcpy(run_printf_buffer+sizeof(run_printf_buffer)-3, "\r\n");
+                strcpy(run_buffer1+sizeof(run_buffer1)-3, "\r\n");
 #else
-                strcpy(run_printf_buffer+sizeof(run_printf_buffer)-2, "\n");
+                strcpy(run_buffer1+sizeof(run_buffer1)-2, "\n");
 #endif
             }
 
             if (run_condition) {
                 run_printf = true;
-                printf_write(run_printf_buffer, k);
+                printf_write(run_buffer1, k);
                 run_printf = false;
             }
             break;
@@ -1478,8 +1550,19 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             scope->line_number = run_line_number;
             scope->type = open_if;
 
-            // evaluate the condition
-            index += run_evaluate(bytecode+index, length-index, NULL, &value);
+            // if we're comparing strings...
+            if (bytecode[index] == code_string) {
+                index++;
+
+                // evaluate the string relation
+                index += run_relation(bytecode+index, length-index, &value);
+            } else {
+                assert(bytecode[index] == code_expression);
+                index++;
+
+                // evaluate the condition
+                index += run_evaluate(bytecode+index, length-index, NULL, &value);
+            }
 
             // incorporate the condition
             scope->condition = !! value;

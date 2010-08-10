@@ -512,6 +512,21 @@ strncmp(const char *s1, const char *s2, size_t n)
     }
 }
 
+char *
+strstr(const char *s1, const char *s2)
+{
+    int len;
+
+    len = strlen(s2);
+    while (*s1) {
+        if (! strncmp(s1, s2, len)) {
+            return (char *)s1;
+        }
+        s1++;
+    }
+    return NULL;
+}
+
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif

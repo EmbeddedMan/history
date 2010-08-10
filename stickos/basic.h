@@ -77,6 +77,7 @@ enum bytecode {
     code_logical_and, code_logical_or, code_logical_xor,
     code_greater, code_less, code_equal,
     code_greater_or_equal, code_less_or_equal, code_not_equal,
+    code_contains, code_not_contains,
 
     // strings
     code_text,  // literal, '\0'

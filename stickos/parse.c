@@ -43,6 +43,24 @@ const struct op {
 };
 
 static
+const struct rel {
+    char *rel;
+    enum bytecode code;
+} rels[] = {
+    // double character
+    "==", code_equal,
+    "!=", code_not_equal,
+    "!~", code_not_contains,
+    "<=", code_less_or_equal,
+    ">=", code_greater_or_equal,
+
+    // single character (follow double character)
+    "~", code_contains,
+    "<", code_less,
+    ">", code_greater,
+};
+
+static
 const struct keyword {
     char *keyword;
     enum bytecode code;
@@ -677,12 +695,6 @@ parse_string(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
     string = true;
     for (;;) {
         c = **text;
-        if (! c || c == ',') {
-            if (string) {
-                return false;
-            }
-            break;
-        }
 
         // if this is the start of a string literal
         if (c == '"') {
@@ -723,16 +735,50 @@ parse_string(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
             }
 
         // otherwise, this should be an operator...
-        } else {
-            if (string || c != '+') {
+        } else if (c == '+') {
+            if (string) {
                 return false;
             }
             (*text)++;
+        } else {
+            break;
         }
 
         string = ! string;
         parse_trim(text);
     }
+    if (string) {
+        return false;
+    }
+    return true;
+}
+
+// this function parses (compiles) a string relation to bytecode.
+bool
+parse_relation(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
+{
+    int i;
+
+    if (! parse_string(text, length, bytecode)) {
+        return false;
+    }
+    bytecode[(*length)++] = code_comma;
+
+    for (i = 0; i < LENGTHOF(rels); i++) {
+        if (parse_word(text, rels[i].rel)) {
+            bytecode[(*length)++] = rels[i].code;
+            break;
+        }
+    }
+    if (i == LENGTHOF(rels)) {
+        return false;
+    }
+
+    if (! parse_string(text, length, bytecode)) {
+        return false;
+    }
+    bytecode[(*length)++] = code_comma;
+
     return true;
 }
 
@@ -1230,6 +1276,8 @@ XXX_AGAIN_XXX:
         case code_elseif:
         case code_while:
         case code_until:
+            string = parse_class(text, &length, bytecode);
+
             if (code == code_if || code == code_elseif) {
                 // make sure we have a "then"
                 if (! parse_find_tail(text, "then")) {
@@ -1244,9 +1292,16 @@ XXX_AGAIN_XXX:
                 }
             }
 
-            // parse the conditional expression
-            if (! parse_expression(0, &text, &length, bytecode)) {
-                goto XXX_ERROR_XXX;
+            if (string) {
+                // parse the string relation
+                if (! parse_relation(&text, &length, bytecode)) {
+                    goto XXX_ERROR_XXX;
+                }
+            } else {
+                // parse the conditional expression
+                if (! parse_expression(0, &text, &length, bytecode)) {
+                    goto XXX_ERROR_XXX;
+                }
             }
             break;
 
@@ -1723,19 +1778,6 @@ unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
 
 static
 int
-unparse_class(byte *bytecode, OUT bool *string)
-{
-    if (*bytecode == code_string) {
-        *string = true;
-    } else {
-        assert(*bytecode == code_expression);
-        *string = false;
-    }
-    return 1;
-}
-
-static
-int
 unparse_string(byte *bytecode_in, int length, char **out)
 {
     int len;
@@ -1776,6 +1818,49 @@ unparse_string(byte *bytecode_in, int length, char **out)
     }
 
     return bytecode-bytecode_in;
+}
+
+// this function unparses (de-compiles) a string relation to bytecode.
+static
+int
+unparse_relation(byte *bytecode_in, int length, char **out)
+{
+    int i;
+    byte *bytecode;
+
+    bytecode = bytecode_in;
+
+    bytecode += unparse_string(bytecode, length, out);
+    assert(*bytecode == code_comma);
+    bytecode++;
+
+    for (i = 0; i < LENGTHOF(rels); i++) {
+        if (*bytecode == rels[i].code) {
+            break;
+        }
+    }
+    assert(i < LENGTHOF(rels));
+    *out += sprintf(*out, " %s ", rels[i].rel);
+    bytecode++;
+
+    bytecode += unparse_string(bytecode, length, out);
+    assert(*bytecode == code_comma);
+    bytecode++;
+
+    return bytecode-bytecode_in;
+}
+
+static
+int
+unparse_class(byte *bytecode, OUT bool *string)
+{
+    if (*bytecode == code_string) {
+        *string = true;
+    } else {
+        assert(*bytecode == code_expression);
+        *string = false;
+    }
+    return 1;
 }
 
 static
@@ -2098,8 +2183,15 @@ XXX_AGAIN_XXX:
         case code_elseif:
         case code_while:
         case code_until:
-            // decompile the conditional expression
-            bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+            bytecode += unparse_class(bytecode, &string);
+
+            if (string) {
+                // decompile the string relation
+                bytecode += unparse_relation(bytecode, bytecode_in+length-bytecode, &out);
+            } else {
+                // decompile the conditional expression
+                bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+            }
             // decompile the "then" or "do"
             if (code == code_if || code == code_elseif) {
                 out += sprintf(out, " then");
