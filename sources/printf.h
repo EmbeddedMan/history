@@ -25,6 +25,8 @@ sprintf(char *buffer, const char *format, ...);
 int
 printf(const char *format, ...);
 
+int
+vprintf(const char *format, va_list ap);
 
 #if IN_MEMORY_TRACE
 

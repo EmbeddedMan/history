@@ -309,7 +309,7 @@ extern void os_yield(void);
 #if PICTOCRYPT
 extern byte big_buffer[8192];
 #else
-extern byte big_buffer[1024];
+extern byte big_buffer[512];
 #endif
 
 #endif  // ! STICK_GUEST

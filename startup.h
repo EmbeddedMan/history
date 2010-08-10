@@ -146,7 +146,7 @@ extern bool debugger_attached;
 #if PICTOCRYPT
 extern byte big_buffer[8192];
 #else
-extern byte big_buffer[1024];
+extern byte big_buffer[512];
 #endif
 
 // make cw and gcc assemblers compatible

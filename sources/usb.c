@@ -446,7 +446,7 @@ usb_host_detach()
     // usb power on
     MCF_USB_OTG_OTG_CTRL |= _U1OTGCON_VBUSON_MASK;
 #endif
-#if DEMO
+#if DEMO && MCF52259
     MCF_GPIO_PQSPAR |= MCF_GPIO_PQSPAR_QSPI_CS2_USB_DM_PDOWN | MCF_GPIO_PQSPAR_QSPI_CS3_USB_DP_PDOWN;
 #endif
 

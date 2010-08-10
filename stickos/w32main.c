@@ -11,7 +11,7 @@ bool terminal_echo = true;
 volatile int32 terminal_getchar;
 char *volatile main_command;
 
-byte big_buffer[1024];
+byte big_buffer[512];
 
 void
 flash_erase_pages(uint32 *addr, uint32 npages)

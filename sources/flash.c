@@ -173,6 +173,7 @@ flash_command(uint8 cmd, uint32 *addr, uint32 data)
     assert(! (MCF_CFM_CFMUSTAT & (MCF_CFM_CFMUSTAT_PVIOL|MCF_CFM_CFMUSTAT_ACCERR)));
     
     fn = (void *)(((uint32)big_buffer+3)&~3);
+    assert((uint32)flash_command-(uint32)flash_command_ram <= sizeof(big_buffer));
     memcpy(fn, flash_command_ram, (uint32)flash_command-(uint32)flash_command_ram);
     ((void (* near)(uint8, uint32 *, uint32))fn)(cmd, addr, data);
 }

@@ -319,6 +319,20 @@ printf_write(char *buffer, int n)
 }
 
 int
+vprintf(const char *format, va_list ap)
+{
+    uint n;
+
+    assert(gpl() == 0);
+
+    n = vsnprintf(printf_buffer, sizeof(printf_buffer), format, ap);
+    assert(! printf_buffer[sizeof(printf_buffer)-1]);
+    n = printf_write(printf_buffer, MIN(n, sizeof(printf_buffer)-1));
+
+    return n;
+}
+
+int
 printf(const char *format, ...)
 {
     uint n;
@@ -344,6 +358,8 @@ bool
 open_log_file(void)
 {
     uint32 pstart;
+
+    assert(sizeof(big_buffer) >= SECTOR_SIZE);
 
     // open the filesystem
     memset(big_buffer, -1, SECTOR_SIZE);  // remove

@@ -56,6 +56,7 @@ static struct {
 } watchpoints[num_watchpoints];
 
 #if ! STICK_GUEST
+// XXX -- use big_buffer???
 static char run_buffer1[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
 static char run_buffer2[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
 #else
