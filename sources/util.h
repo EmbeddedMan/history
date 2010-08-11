@@ -20,7 +20,7 @@
 #error
 #endif
 
-// REVISIT -- align all bytecode values and eliminate these (except for qspi)?
+// REVISIT -- align all bytecode values and eliminate these (except for qspi/i2c)?
 #if PIC32
 void
 write32(byte *addr, uint32 data);

@@ -26,10 +26,12 @@ static
 void
 i2c_start_real(bool write)
 {
-XXX_AGAIN_XXX:
+    i2c_stop();
+
+//XXX_AGAIN_XXX:
     // wait for i2c idle
     while (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB) {
-        // NULL
+        assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
     }
     
     // enable transmit
@@ -41,17 +43,18 @@ XXX_AGAIN_XXX:
     // send address and read/write flag
     MCF_I2C0_I2DR = (address<<1)|(! write);
     
+    // XXX -- why doesn't this work?
     // if we did not get the bus...
     //if (! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB)) {
         //while (! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB)) {
-            // NULL
+            //assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
         //}
         //goto XXX_AGAIN_XXX;
     //}
     
     // wait for byte transmitted
     while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-        // NULL
+        assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
     }
     MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
     
@@ -76,7 +79,7 @@ i2c_repeat_start_real(bool write)
     
     // wait for byte transmitted
     while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-        // NULL
+        assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
     }
     MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
 
@@ -89,17 +92,23 @@ i2c_repeat_start_real(bool write)
 void
 i2c_stop(void)
 {
+    // enable receive
+    MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_MTX;
+
     // generate stop
     MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_MSTA;
-    
+
     started = false;
+
+    // wait for i2c idle
+    while (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB) {
+        assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
+    }
 }
 
 void
 i2c_read_write(bool write, byte *buffer, int length)
 {
-    assert(length);
-
     // if we need a start...
     if (! started) {
         i2c_start_real(write);
@@ -116,12 +125,13 @@ i2c_read_write(bool write, byte *buffer, int length)
             
             // wait for byte transmitted
             while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-                // NULL
+                assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
             }
             MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
             
             // if no ack...
             if (MCF_I2C0_I2SR & MCF_I2C_I2SR_RXAK) {
+                assert(0);
                 break;
             }
         }        
@@ -130,9 +140,11 @@ i2c_read_write(bool write, byte *buffer, int length)
         if (length > 1) {
             // ack
             MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_TXAK;
-        } else {
+        } else if (length == 1) {
             // no ack
             MCF_I2C0_I2CR |= MCF_I2C_I2CR_TXAK;
+        } else {
+            assert(0);
         }
 
         // dummy read starts the read process from the slave
@@ -141,7 +153,7 @@ i2c_read_write(bool write, byte *buffer, int length)
         while (length--) {
             // wait for byte received
             while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-                // NULL
+                assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
             }
             MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
 
@@ -149,9 +161,12 @@ i2c_read_write(bool write, byte *buffer, int length)
             if (length > 1) {
                 // ack
                 MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_TXAK;
-            } else {
+            } else if (length == 1) {
                 // no ack
                 MCF_I2C0_I2CR |= MCF_I2C_I2CR_TXAK;
+            } else {
+                // stop before we accidentally initiate a new read process from the slave
+                i2c_stop();
             }
 
             // get the data

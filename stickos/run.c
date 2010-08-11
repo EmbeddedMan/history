@@ -1532,7 +1532,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                             // get the variable data
                             value = var_get(name, i, 0);
 
-                            // pack it into the qspi buffer
+                            // pack it into the qspi/i2c buffer
                             if (size == sizeof(byte)) {
                                 *(byte *)p = value;
                                 p += sizeof(byte);
@@ -1555,7 +1555,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                         // on the second pass, we update the variables
                         // for all variables...
                         for (i = max_index; i < max_count; i++) {
-                            // unpack it from the qspi buffer
+                            // unpack it from the qspi/i2c buffer
                             if (size == sizeof(byte)) {
                                 value = *(byte *)p;
                                 p += sizeof(byte);

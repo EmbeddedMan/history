@@ -304,7 +304,7 @@ static char *const help_variables =
 "variables dimensioned in a sub are local to that sub\n"
 "simple variables are passed to sub params by reference\n"
 "array variable indices start at 0\n"
-"v is the same as v[0], except for print and qspi statements\n"
+"v is the same as v[0], except for print and qspi/i2c statements\n"
 "\n"
 "ram variables:\n"
 "  dim <var>[[n]]\n"

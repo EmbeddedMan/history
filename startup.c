@@ -130,7 +130,7 @@ bool debugger_attached;
 #if PICTOCRYPT
 byte big_buffer[8192];
 #else
-byte big_buffer[512];
+byte big_buffer[768];
 #endif
 
 #if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
