@@ -98,7 +98,9 @@ i2c_stop(void)
 void
 i2c_read_write(bool write, byte *buffer, int length)
 {
-// if we need a start...
+    assert(length);
+
+    // if we need a start...
     if (! started) {
         i2c_start_real(write);
         started = true;
@@ -124,12 +126,27 @@ i2c_read_write(bool write, byte *buffer, int length)
             }
         }        
     } else {
+        // if this is not the (second to the) last byte...
+        if (length > 1) {
+            // ack
+            MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_TXAK;
+        } else {
+            // no ack
+            MCF_I2C0_I2CR |= MCF_I2C_I2CR_TXAK;
+        }
+
         // dummy read starts the read process from the slave
         (void)MCF_I2C0_I2DR;
         
         while (length--) {
-            // if this is not the last byte...
-            if (length) {
+            // wait for byte received
+            while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
+                // NULL
+            }
+            MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
+
+            // if this is not the (second to the) last byte...
+            if (length > 1) {
                 // ack
                 MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_TXAK;
             } else {
@@ -137,21 +154,9 @@ i2c_read_write(bool write, byte *buffer, int length)
                 MCF_I2C0_I2CR |= MCF_I2C_I2CR_TXAK;
             }
 
-            // wait for byte received
-            while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-                // NULL
-            }
-            MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
-            
             // get the data
             *buffer++ = (byte)MCF_I2C0_I2DR;
         }
-        
-        // wait for byte received
-        while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-            // NULL
-        }
-        MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
     }    
 }
 
