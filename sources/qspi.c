@@ -1,5 +1,5 @@
 // *** qspi.c *********************************************************
-// this file performs qspi i/o transfers.
+// this file performs qspi master i/o transfers.
 
 #include "main.h"
 

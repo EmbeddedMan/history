@@ -81,6 +81,7 @@ const struct keyword {
     "for", code_for,
     "gosub", code_gosub,
     "halt", code_halt,
+    "i2c", code_i2c,
     "if", code_if,
     "input", code_input,
     "label", code_label,
@@ -1260,6 +1261,26 @@ XXX_AGAIN_XXX:
             break;
 
         case code_qspi:
+        case code_i2c:
+            if (code == code_i2c && ! length) {
+                if (parse_word(&text, "start")) {
+                    bytecode[length++] = code_i2c_start;
+                    if (! parse_const(&text, &length, bytecode)) {
+                        goto XXX_ERROR_XXX;
+                    }
+                    break;
+                } else if (parse_word(&text, "stop")) {
+                    bytecode[length++] = code_i2c_stop;
+                    break;
+                } else if (parse_word(&text, "read")) {
+                    bytecode[length++] = code_i2c_read;
+                } else if (parse_word(&text, "write")) {
+                    bytecode[length++] = code_i2c_write;
+                } else {
+                    goto XXX_ERROR_XXX;
+                }
+            }
+
             // parse the variable
             if (! parse_var(false, true, 1, 0, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
@@ -2165,6 +2186,27 @@ XXX_AGAIN_XXX:
             break;
 
         case code_qspi:
+        case code_i2c:
+            if (code == code_i2c && bytecode == bytecode_in) {
+                if (*bytecode == code_i2c_start) {
+                    bytecode++;
+                    out += sprintf(out, "start ");
+                    bytecode += unparse_const(0, bytecode, &out);
+                    break;
+                } else if (*bytecode == code_i2c_stop) {
+                    bytecode++;
+                    out += sprintf(out, "stop");
+                    break;
+                } else if (*bytecode == code_i2c_read) {
+                    bytecode++;
+                    out += sprintf(out, "read ");
+                } else {
+                    assert(*bytecode == code_i2c_write);
+                    bytecode++;
+                    out += sprintf(out, "write ");
+                }
+            }
+
             // decompile the variable
             bytecode += unparse_var(false, true, 1, bytecode, &out);
 

@@ -796,6 +796,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
     byte parity;
     byte loopback;
     byte device;
+    byte code2;
     int inter;
     int blen;
     int32 value;
@@ -1451,13 +1452,41 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             break;
 
         case code_qspi:
+        case code_i2c:
+            if (code == code_i2c && ! index) {
+                code2 = bytecode[index];
+                if (code2 == code_i2c_start) {
+                    index++;
+                    value = run_bytecode_const(bytecode, &index);
+                    if (run_condition) {
+#if ! STICK_GUEST
+                        i2c_start(value);
+#endif
+                    }
+                    break;
+                } else if (code2 == code_i2c_stop) {
+                    index++;
+                    if (run_condition) {
+#if ! STICK_GUEST
+                        i2c_stop();
+#endif
+                    }
+                    break;
+                } else if (code2 == code_i2c_read) {
+                    index++;
+                } else {
+                    assert(code2 == code_i2c_write);
+                    index++;
+                }
+            }
+
             // we'll walk the variable list twice
             oindex = index;
             
             // N.B. on the first pass we send variables out;
             //      on the second pass we read them in
 
-            // while there are more variables to qspi from or to...
+            // while there are more variables to qspi/i2c from or to...
             for (pass = 0; pass < 2; pass++) {
                 p = big_buffer;
                 
@@ -1497,6 +1526,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     }
                     
                     if (! pass) {
+                        // on the first pass, we get the variables size and data
                         // for all variables...
                         for (i = max_index; i < max_count; i++) {
                             // get the variable data
@@ -1522,6 +1552,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                             }
                         }
                     } else {
+                        // on the second pass, we update the variables
                         // for all variables...
                         for (i = max_index; i < max_count; i++) {
                             // unpack it from the qspi buffer
@@ -1536,7 +1567,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                                 value = read32(p);
                                 p += sizeof(uint32);
                             }
-                        
+
                             // set the variable
                             var_set(name, i, value);
 
@@ -1549,13 +1580,31 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     }
                 } while (index < length && bytecode[index] == code_comma);
 
-                // if this is the first pass...
                 if (! pass) {
+                    // we do the real work between the first and second passes
                     if (run_condition) {
-                        // perform the qspi transfer
+                        if (code == code_qspi) {
+                            // perform the qspi transfer
 #if ! STICK_GUEST
-                        qspi_transfer(false, big_buffer, p-big_buffer);
+                            qspi_transfer(false, big_buffer, p-big_buffer);
 #endif
+                        } else {
+                            assert(code == code_i2c);
+                            if (code2 == code_i2c_read) {
+                                // perform the i2c read
+#if ! STICK_GUEST
+                                i2c_read_write(false, big_buffer, p-big_buffer);
+#endif
+                            } else {
+                                assert(code2 == code_i2c_write);
+                                // perform the i2c write
+#if ! STICK_GUEST
+                                i2c_read_write(true, big_buffer, p-big_buffer);
+#endif
+                                // N.B. no need for the next pass for a write
+                                break;
+                            }
+                        }
                     }
 
                     // now update the variables for the next pass
@@ -2058,6 +2107,8 @@ run_clear(bool flash)
 
     code_clear2();
     var_clear(flash);
+
+    i2c_stop();
 }
 
 

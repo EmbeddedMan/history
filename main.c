@@ -186,6 +186,9 @@ main()  // we're called directly by startup.c
 #if ! PICTOCRYPT
     // initialize qspi
     qspi_initialize();
+
+    // initialize i2c
+    i2c_initialize();
 #endif
 
 #if ! FLASHER

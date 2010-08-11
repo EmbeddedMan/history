@@ -213,6 +213,7 @@ enum {
 #include "pin.h"
 #include "printf.h"
 #include "qspi.h"
+#include "i2c.h"
 #include "zigflea.h"
 #include "terminal.h"
 #include "timer.h"
