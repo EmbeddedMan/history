@@ -192,6 +192,8 @@ qspi_initialize(void)
     SPI2BRG = bus_frequency/QSPI_BAUD_SLOW/2 - 1;
     
     SPI2CON = _SPI2CON_ON_MASK|_SPI2CON_CKE_MASK|_SPI2CON_MSTEN_MASK;
+#else
+#error
 #endif
 
     // cs inactive
