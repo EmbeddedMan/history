@@ -2108,7 +2108,9 @@ run_clear(bool flash)
     code_clear2();
     var_clear(flash);
 
+#if ! STICK_GUEST
     i2c_stop();
+#endif
 }
 
 

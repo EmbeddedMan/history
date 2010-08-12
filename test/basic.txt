@@ -827,7 +827,7 @@ all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference
 array variable indices start at 0
-v is the same as v[0], except for print and qspi statements
+v is the same as v[0], except for print and qspi/i2c statements
 
 ram variables:
   dim <var>[[n]]
