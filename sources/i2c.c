@@ -131,7 +131,6 @@ i2c_read_write(bool write, byte *buffer, int length)
             
             // if no ack...
             if (MCF_I2C0_I2SR & MCF_I2C_I2SR_RXAK) {
-                assert(0);
                 break;
             }
         }        
