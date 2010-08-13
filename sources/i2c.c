@@ -23,16 +23,27 @@ i2c_start(int address_in)
 }
 
 static
-void
+bool
 i2c_start_real(bool write)
 {
+    int32 now;
+
     i2c_stop();
+
+    now = seconds;
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 //XXX_AGAIN_XXX:
     // wait for i2c idle
     while (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB) {
         assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
+        if (seconds-now > 10) {
+            printf("i2c idle timeout\n");
+#if STICKOS
+            stop();
+#endif
+            return started;
+        }
     }
     
     // enable transmit
@@ -70,6 +81,13 @@ i2c_start_real(bool write)
         // wait for i2c idle
         while (! I2CBusIsIdle(I2C1)) {
             assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+            if (seconds-now > 10) {
+                printf("i2c idle timeout\n");
+#if STICKOS
+                stop();
+#endif
+                return started;
+            }
         }
 
         // generate start
@@ -105,6 +123,7 @@ i2c_start_real(bool write)
 #endif
 
     started = true;
+    return started;
 }
 
 static
@@ -205,7 +224,10 @@ i2c_read_write(bool write, byte *buffer, int length)
 {
     // if we need a start...
     if (! started) {
-        i2c_start_real(write);
+        // if we timed out...
+        if (! i2c_start_real(write)) {
+            return;
+        }
     } else {
         // we need a restart
         i2c_repeat_start_real(write);

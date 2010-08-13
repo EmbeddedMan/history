@@ -123,7 +123,7 @@ static char *const help_general =
 "  help expressions\n"
 "  help variables\n"
 "  help pins\n"
-#if MCF52221 || MCF52259
+#if MCF52259
 "  help board\n"
 #endif
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
@@ -480,32 +480,7 @@ static char *const help_pins =
 #endif
 ;
 
-#if MCF52221
-static char *const help_board =
-"                1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
-
-"\n"
-"                g  +  u  u  u  u  u  u  u  u  i  i  i  +\n"
-"                n  3  c  r  r  t  c  r  r  t  r  r  r  5\n"
-"                d  V  t  t  x  x  t  t  x  x  q  q  q  V\n"
-"                      s  s  d  d  s  s  d  d  7  4  1\n"
-"1  gnd                0  0  0  0  1  1  1  1  *  *  *\n"
-"2  +3V                *  *        *  *\n"
-"3  rsti*\n"
-"4  scl\n"
-"5  sda\n"
-"6  qspi_din\n"
-"7  qspi_dout\n"
-"8  qspi_clk\n"
-"9  qspi_cs0           d  d  d  d\n"
-"10 rcon*/irq4*        t  t  t  t\n"
-"                g  +  i  i  i  i  a  a  a  a  a  a  a  a\n"
-"                n  3  n  n  n  n  n  n  n  n  n  n  n  n\n"
-"                d  V  3  2  1  0  0  1  2  3  4  5  6  7\n"
-"\n"
-"                1  2  3  4  5  6  7  8  9  10 11 12 13 14\n"
-;
-#elif MCF52259
+#if MCF52259
 static char *const help_board =
 "1  2  3  4  5  6  7  8  9  10 11 12    1  2  3  4  5  6  7  8  9  10 11 12\n"
 "\n"
@@ -971,7 +946,7 @@ basic0_run(char *text_in)
                 p = help_variables;
             } else if (parse_word(&text, "pins")) {
                 p = help_pins;
-#if MCF52221 || MCF52259
+#if MCF52259
             } else if (parse_word(&text, "board")) {
                 p = help_board;
 #endif
