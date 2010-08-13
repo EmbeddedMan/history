@@ -324,6 +324,9 @@ i2c_read_write(bool write, byte *buffer, int length)
                 if (length) {
                     // ack
                     I2CAcknowledgeByte(I2C1, true);
+                    while (! I2CAcknowledgeHasCompleted(I2C1)) {
+                        assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+                    }
 
                     // enable receive
                     while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
@@ -332,6 +335,9 @@ i2c_read_write(bool write, byte *buffer, int length)
                 } else if (length == 1) {
                     // no ack
                     I2CAcknowledgeByte(I2C1, false);
+                    while (! I2CAcknowledgeHasCompleted(I2C1)) {
+                        assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+                    }
                 }
 
                 // get the data
