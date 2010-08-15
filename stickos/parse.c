@@ -7,7 +7,6 @@
 
 #include "main.h"
 
-
 static
 const struct op {
     char *op;
@@ -99,6 +98,7 @@ const struct keyword {
     "sleep", code_sleep,
     "stop", code_stop,
     "sub", code_sub,
+    "uart", code_uart,
     "unmask", code_unmask,
     "until", code_until,
     "while", code_while
@@ -821,6 +821,25 @@ parse_string_or_expression(IN bool string, IN char **text, IN OUT int *length, I
 }
 
 static
+bool
+parse_uart(IN char **text, IN OUT int *length, IN OUT byte *bytecode)
+{
+    int uart;
+
+    // parse the uart name
+    for (uart = 0; uart < MAX_UARTS; uart++) {
+        if (parse_word(text, uart_names[uart])) {
+            break;
+        }
+    }
+    if (uart == MAX_UARTS) {
+        return false;
+    }
+    bytecode[(*length)++] = uart;
+    return true;
+}
+
+static
 void
 parse_format(IN char **text, IN OUT int *length, IN OUT byte *bytecode)
 {
@@ -849,7 +868,6 @@ parse_line_code(IN byte code, IN char *text_in, OUT int *length_out, OUT byte *b
     char *text;
     char *text_ok;
     char *text_err;
-    int uart;
     int pin_type;
     int pin_qual;
     int pin_number;
@@ -889,7 +907,7 @@ XXX_AGAIN_XXX:
         case code_unmask:
             // parse the device type
             if (parse_word(&text, "timer")) {
-                bytecode[length++] = device_timer;
+                bytecode[length++] = code_timer;
 
                 // parse the timer number
                 text_ok = text;
@@ -903,18 +921,12 @@ XXX_AGAIN_XXX:
                 }
 
             } else if (parse_word(&text, "uart")) {
-                bytecode[length++] = device_uart;
+                bytecode[length++] = code_uart;
 
                 // parse the uart name
-                for (uart = 0; uart < MAX_UARTS; uart++) {
-                    if (parse_word(&text, uart_names[uart])) {
-                        break;
-                    }
-                }
-                if (uart == MAX_UARTS) {
+                if (! parse_uart(&text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
-                bytecode[length++] = uart;
 
                 // parse the uart data direction
                 if (parse_word(&text, "output")) {
@@ -930,7 +942,7 @@ XXX_AGAIN_XXX:
                 // find the "do"
                 d = parse_find_keyword(text, "do");
 
-                bytecode[length++] = device_watch;
+                bytecode[length++] = code_watch;
                 
                 // parse the expression
                 if (d) {
@@ -972,7 +984,7 @@ XXX_AGAIN_XXX:
         case code_configure:
             // parse the device type
             if (parse_word(&text, "timer")) {
-                bytecode[length++] = device_timer;
+                bytecode[length++] = code_timer;
 
                 // parse the timer number
                 text_ok = text;
@@ -1006,18 +1018,12 @@ XXX_AGAIN_XXX:
                 }
 
             } else if (parse_word(&text, "uart")) {
-                bytecode[length++] = device_uart;
+                bytecode[length++] = code_uart;
 
                 // parse the uart name
-                for (uart = 0; uart < MAX_UARTS; uart++) {
-                    if (parse_word(&text, uart_names[uart])) {
-                        break;
-                    }
-                }
-                if (uart == MAX_UARTS) {
+                if (! parse_uart(&text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
-                bytecode[length++] = uart;
 
                 // parse the baud rate
                 if (! parse_word_const_word("for", "baud", &text, &length, bytecode)) {
@@ -1260,23 +1266,32 @@ XXX_AGAIN_XXX:
             multi = true;
             break;
 
+        case code_uart:
         case code_qspi:
         case code_i2c:
-            if (code == code_i2c && ! length) {
-                if (parse_word(&text, "start")) {
-                    bytecode[length++] = code_i2c_start;
-                    if (! parse_const(&text, &length, bytecode)) {
+            if (! length) {
+                if (code == code_uart) {
+                    // parse the uart name
+                    if (! parse_uart(&text, &length, bytecode)) {
+                        goto XXX_ERROR_XXX;
+                    }
+                }
+
+                if (code == code_i2c && parse_word(&text, "start")) {
+                    bytecode[length++] = code_device_start;
+                    // parse the address
+                    if (! parse_expression(0, &text, &length, bytecode)) {
                         goto XXX_ERROR_XXX;
                     }
                     break;
-                } else if (parse_word(&text, "stop")) {
-                    bytecode[length++] = code_i2c_stop;
+                } else if (code == code_i2c && parse_word(&text, "stop")) {
+                    bytecode[length++] = code_device_stop;
                     break;
-                } else if (parse_word(&text, "read")) {
-                    bytecode[length++] = code_i2c_read;
-                } else if (parse_word(&text, "write")) {
-                    bytecode[length++] = code_i2c_write;
-                } else {
+                } else if ((code == code_uart || code == code_i2c) && parse_word(&text, "read")) {
+                    bytecode[length++] = code_device_read;
+                } else if ((code == code_uart || code == code_i2c) && parse_word(&text, "write")) {
+                    bytecode[length++] = code_device_write;
+                } else if (code == code_uart || code == code_i2c) {
                     goto XXX_ERROR_XXX;
                 }
             }
@@ -1895,6 +1910,20 @@ unparse_string_or_expression(IN bool string, byte *bytecode, int length, char **
 
 static
 int
+unparse_uart(byte *bytecode, char **out)
+{
+    int uart;
+
+    // unparse the uart name
+    uart = *bytecode++;
+    assert(uart >= 0 && uart < MAX_UARTS);
+    *out += sprintf(*out, "%s ", uart_names[uart]);
+
+    return 1;
+}
+
+static
+int
 unparse_format(byte *bytecode, char **out)
 {
 
@@ -1923,7 +1952,6 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
     int pin;
     int type;
     int qual;
-    int uart;
     bool semi;
     bool multi;
     byte parity;
@@ -1965,23 +1993,21 @@ XXX_AGAIN_XXX:
         case code_unmask:
             // find the device type
             device = *bytecode++;
-            if (device == device_timer) {
+            if (device == code_timer) {
                 // decompile the timer and the timer number
                 bytecode += unparse_word_const_word("timer", NULL, bytecode, &out);
 
-            } else if (device == device_uart) {
+            } else if (device == code_uart) {
                 // decompile the uart
                 out += sprintf(out, "uart ");
 
                 // and the uart name
-                uart = *bytecode++;
-                assert(uart >= 0 && uart < MAX_UARTS);
-                out += sprintf(out, "%s ", uart_names[uart]);
+                bytecode += unparse_uart(bytecode, &out);
 
                 // and the uart data direction
                 output = *bytecode++;
                 out += sprintf(out, "%s", output?"output":"input");
-            } else if (device == device_watch) {
+            } else if (device == code_watch) {
 
                 // this is an expression
                 len = read32(bytecode);
@@ -2011,7 +2037,7 @@ XXX_AGAIN_XXX:
         case code_configure:
             // find the device type
             device = *bytecode++;
-            if (device == device_timer) {
+            if (device == code_timer) {
                 // decompile the timer and the timer number
                 bytecode += unparse_word_const_word("timer", "for ", bytecode, &out);
 
@@ -2022,17 +2048,15 @@ XXX_AGAIN_XXX:
                 timer_unit = (enum timer_unit_type)*(bytecode++);
                 out += sprintf(out, " %s", timer_units[timer_unit].name);
 
-            } else if (device == device_uart) {
+            } else if (device == code_uart) {
                 // decompile the uart
                 out += sprintf(out, "uart ");
 
                 // and the uart name
-                uart = *bytecode++;
-                assert(uart >= 0 && uart < MAX_UARTS);
-                out += sprintf(out, "%s", uart_names[uart]);
+                bytecode += unparse_uart(bytecode, &out);
 
                 // decompile the baud rate and data bits
-                bytecode += unparse_word_const_word(" for", "baud ", bytecode, &out);
+                bytecode += unparse_word_const_word("for", "baud ", bytecode, &out);
                 bytecode += unparse_word_const_word(NULL, "data ", bytecode, &out);
 
                 // find the uart protocol and optional loopback specifier
@@ -2185,23 +2209,30 @@ XXX_AGAIN_XXX:
             multi = true;
             break;
 
+        case code_uart:
         case code_qspi:
         case code_i2c:
-            if (code == code_i2c && bytecode == bytecode_in) {
-                if (*bytecode == code_i2c_start) {
+            if (bytecode == bytecode_in) {
+                if (code == code_uart) {
+                    // and the uart name
+                    bytecode += unparse_uart(bytecode, &out);
+                }
+
+                if (code == code_i2c && *bytecode == code_device_start) {
                     bytecode++;
                     out += sprintf(out, "start ");
-                    bytecode += unparse_const(0, bytecode, &out);
+                    // unparse the address
+                    bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
                     break;
-                } else if (*bytecode == code_i2c_stop) {
+                } else if (code == code_i2c && *bytecode == code_device_stop) {
                     bytecode++;
                     out += sprintf(out, "stop");
                     break;
-                } else if (*bytecode == code_i2c_read) {
+                } else if ((code == code_uart || code == code_i2c) && *bytecode == code_device_read) {
                     bytecode++;
                     out += sprintf(out, "read ");
-                } else {
-                    assert(*bytecode == code_i2c_write);
+                } else if (code == code_uart || code == code_i2c) {
+                    assert(*bytecode == code_device_write);
                     bytecode++;
                     out += sprintf(out, "write ");
                 }

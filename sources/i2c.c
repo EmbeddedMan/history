@@ -22,6 +22,10 @@ i2c_start(int address_in)
     started = false;
 }
 
+#if PIC32
+int ss;
+#endif
+
 static
 bool
 i2c_start_real(bool write)
@@ -80,7 +84,7 @@ i2c_start_real(bool write)
 
         // wait for i2c idle
         while (! I2CBusIsIdle(I2C1)) {
-            assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
             if (seconds-now > 10) {
                 printf("i2c idle timeout\n");
 #if STICKOS
@@ -99,7 +103,7 @@ i2c_start_real(bool write)
 
         // wait for transmitter ready
         while (! I2CTransmitterIsReady(I2C1)) {
-            assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
         }
 
         // send address and read/write flag
@@ -108,7 +112,7 @@ i2c_start_real(bool write)
 
         // wait for byte transmitted
         while (! I2CTransmissionHasCompleted(I2C1)) {
-            assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
         }
 
         while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
@@ -165,7 +169,7 @@ i2c_repeat_start_real(bool write)
     
         // wait for transmitter ready
         while (! I2CTransmitterIsReady(I2C1)) {
-            assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
         }
 
         // send address and read/write flag
@@ -174,7 +178,7 @@ i2c_repeat_start_real(bool write)
 
         // wait for byte transmitted
         while (! I2CTransmissionHasCompleted(I2C1)) {
-            assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
         }
 
         while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
@@ -298,7 +302,7 @@ i2c_read_write(bool write, byte *buffer, int length)
             while (length--) {
                 // wait for transmitter ready
                 while (! I2CTransmitterIsReady(I2C1)) {
-                    assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+                    assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
                 }
 
                 // send data
@@ -307,7 +311,7 @@ i2c_read_write(bool write, byte *buffer, int length)
 
                 // wait for byte transmitted
                 while (! I2CTransmissionHasCompleted(I2C1)) {
-                    assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+                    assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
                 }
 
                 // if no ack...
@@ -319,7 +323,7 @@ i2c_read_write(bool write, byte *buffer, int length)
             while (length--) {
                 // wait for byte received and previous acknowledge
                 while(! I2CReceivedDataIsAvailable(I2C1)) {
-                    assert(! (I2CGetStatus(I2C1) & I2C_ARBITRATION_LOSS));
+                    assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
                 }
 
                 // if this is not the last byte...

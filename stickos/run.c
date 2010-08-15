@@ -781,6 +781,20 @@ run_relation_or_expression(const byte *bytecode_in, int length, OUT int32 *value
     return bytecode - bytecode_in;
 }
 
+static
+void
+uart_read_write(IN int uart, IN bool write, byte *buffer, int length)
+{
+    while (length--) {
+        if (write) {
+            pin_uart_tx(uart, *buffer);
+        } else {
+            // while (! pin_uart_rx_ready(int uart)) ;
+            *buffer = pin_uart_rx(uart);
+        }
+    }
+}
+
 // this function executes a bytecode statement, with an independent keyword
 // bytecode.
 bool  // end
@@ -859,7 +873,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             device = bytecode[index];
             index++;
 
-            if (device == device_timer) {
+            if (device == code_timer) {
                 // *** timer control ***
                 // get the timer number
                 timer = run_bytecode_const(bytecode, &index);
@@ -871,11 +885,10 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 if (code == code_on) {
                     timers[timer].last_ticks = ticks;
                 }
-            } else if (device == device_uart) {
+            } else if (device == code_uart) {
                 // *** uart control ***
                 // get the uart number
-                uart = bytecode[index];
-                index++;
+                uart = bytecode[index++];
                 assert(uart >= 0 && uart < MAX_UARTS);
 
                 // get the input/output flag
@@ -883,7 +896,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 index++;
 
                 inter = UART_INT(uart, output);
-            } else if (device == device_watch) {
+            } else if (device == code_watch) {
                 // this is the expression to watch
                 watch_length = read32(bytecode + index);
                 index += sizeof(uint32);
@@ -946,7 +959,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 } else if (code == code_unmask) {
                     run_isr_masked &= ~(1<<inter);
                 
-                    if (device == device_watch) {
+                    if (device == code_watch) {
                         // schedule watchpoint for evaluation.
                         possible_watchpoints_mask |= 1 << n;
                     }
@@ -960,7 +973,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     run_isr_length[inter] = isr_length;
                     run_isr_bytecode[inter] = isr_bytecode;
 
-                    if (device == device_watch) {
+                    if (device == code_watch) {
                         // schedule watchpoint for evaluation.
                         possible_watchpoints_mask |= 1 << n;
                     }
@@ -973,7 +986,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             device = bytecode[index];
             index++;
 
-            if (device == device_timer) {
+            if (device == code_timer) {
                 // *** timer control ***
                 // get the timer number, interval, and unit specifier
                 timer = run_bytecode_const(bytecode, &index);
@@ -992,12 +1005,13 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     // set the timer
                     timers[timer].interval_ticks = interval;
                 }
-            } else if (device == device_uart) {
+            } else if (device == code_uart) {
                 // *** uart control ***
-                // get the uart number and protocol and optional loopback specifier
-                uart = bytecode[index];
-                index++;
+                // get the uart number
+                uart = bytecode[index++];
                 assert(uart >= 0 && uart < MAX_UARTS);
+
+                // get the protocol and optional loopback specifier
                 baud = run_bytecode_const(bytecode, &index);
                 data = run_bytecode_const(bytecode, &index);
                 parity = bytecode[index];
@@ -1124,6 +1138,10 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
                     // evaluate the array length
                     index += run_expression(bytecode+index, blen, NULL, &max_index);
+                    if (string && max_index > BASIC_OUTPUT_LINE_SIZE) {
+                        printf("string buffer overflow\n");
+                        goto XXX_SKIP_XXX;
+                    }
                 }
 
                 // get the variable name
@@ -1451,20 +1469,29 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             }
             break;
 
+        case code_uart:
         case code_qspi:
         case code_i2c:
-            if (code == code_i2c && ! index) {
+            if (! index) {
+                if (code == code_uart) {
+                    // get the uart number
+                    uart = bytecode[index++];
+                }
+
                 code2 = bytecode[index];
-                if (code2 == code_i2c_start) {
+                if (code2 == code_device_start) {
+                    assert(code == code_i2c);
                     index++;
-                    value = run_bytecode_const(bytecode, &index);
+                    // get the address
+                    index += run_expression(bytecode+index, length-index, &name, &value);
                     if (run_condition) {
 #if ! STICK_GUEST
                         i2c_start(value);
 #endif
                     }
                     break;
-                } else if (code2 == code_i2c_stop) {
+                } else if (code2 == code_device_stop) {
+                    assert(code == code_i2c);
                     index++;
                     if (run_condition) {
 #if ! STICK_GUEST
@@ -1472,10 +1499,12 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 #endif
                     }
                     break;
-                } else if (code2 == code_i2c_read) {
+                } else if (code2 == code_device_read) {
+                    assert(code == code_i2c || code == code_uart);
                     index++;
                 } else {
-                    assert(code2 == code_i2c_write);
+                    assert(code == code_i2c || code == code_uart);
+                    assert(code2 == code_device_write);
                     index++;
                 }
             }
@@ -1583,20 +1612,35 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 if (! pass) {
                     // we do the real work between the first and second passes
                     if (run_condition) {
-                        if (code == code_qspi) {
+                        if (code == code_uart) {
+                            if (code2 == code_device_read) {
+                                // perform the uart read
+#if ! STICK_GUEST
+                                uart_read_write(false, big_buffer, p-big_buffer);
+#endif
+                            } else {
+                                assert(code2 == code_device_write);
+                                // perform the uart write
+#if ! STICK_GUEST
+                                uart_read_write(true, big_buffer, p-big_buffer);
+#endif
+                                // N.B. no need for the next pass for a write
+                                break;
+                            }
+                        } else if (code == code_qspi) {
                             // perform the qspi transfer
 #if ! STICK_GUEST
                             qspi_transfer(false, big_buffer, p-big_buffer);
 #endif
                         } else {
                             assert(code == code_i2c);
-                            if (code2 == code_i2c_read) {
+                            if (code2 == code_device_read) {
                                 // perform the i2c read
 #if ! STICK_GUEST
                                 i2c_read_write(false, big_buffer, p-big_buffer);
 #endif
                             } else {
-                                assert(code2 == code_i2c_write);
+                                assert(code2 == code_device_write);
                                 // perform the i2c write
 #if ! STICK_GUEST
                                 i2c_read_write(true, big_buffer, p-big_buffer);

@@ -1,19 +1,10 @@
 // *** basic.h ********************************************************
 
-enum devices {
-    device_timer = 0x10,
-    device_uart,
-    device_qspi,
-    device_watch
-};
-
 // bytecodes
 enum bytecode {
     code_deleted = 0x80,  // used to indicate a deleted line in ram
     code_rem,
     code_on,
-      code_timer,  // used for on and configure
-      code_uart,  // used for on and configure
     code_off,
     code_mask,
     code_unmask,
@@ -40,12 +31,15 @@ enum bytecode {
       code_string,
       code_expression,
       code_semi,
+    code_timer,
+    code_uart,
     code_qspi,
     code_i2c,
-      code_i2c_start,
-      code_i2c_stop,
-      code_i2c_read,
-      code_i2c_write,
+    code_watch,
+      code_device_start,
+      code_device_stop,
+      code_device_read,
+      code_device_write,
     code_if,
       code_elseif,
       code_else,

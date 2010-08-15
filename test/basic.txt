@@ -685,7 +685,6 @@ for more information:
   help expressions
   help variables
   help pins
-  help board
   help clone
   help zigflea
 
@@ -867,27 +866,7 @@ dtin? = potential servo output (PWM) pins (cms)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
-                1  2  3  4  5  6  7  8  9  10 11 12 13 14
-
-                g  +  u  u  u  u  u  u  u  u  i  i  i  +
-                n  3  c  r  r  t  c  r  r  t  r  r  r  5
-                d  V  t  t  x  x  t  t  x  x  q  q  q  V
-                      s  s  d  d  s  s  d  d  7  4  1
-1  gnd                0  0  0  0  1  1  1  1  *  *  *
-2  +3V                *  *        *  *
-3  rsti*
-4  scl
-5  sda
-6  qspi_din
-7  qspi_dout
-8  qspi_clk
-9  qspi_cs0           d  d  d  d
-10 rcon*/irq4*        t  t  t  t
-                g  +  i  i  i  i  a  a  a  a  a  a  a  a
-                n  3  n  n  n  n  n  n  n  n  n  n  n  n
-                d  V  3  2  1  0  0  1  2  3  4  5  6  7
-
-                1  2  3  4  5  6  7  8  9  10 11 12 13 14
+       ^ - error
 clone cable:
   master           slave
   ---------        ----------------
