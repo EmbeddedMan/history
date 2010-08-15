@@ -24,6 +24,7 @@ extern bool run_condition;
 extern bool run_printf;
 
 extern bool running;  // for profiler
+extern int run_breaks;
 
 extern uint32 possible_watchpoints_mask;
 extern bool watch_mode_smart;

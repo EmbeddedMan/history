@@ -72,6 +72,7 @@ static struct {
 
 static bool run_stop;
 bool running;  // for profiler
+int run_breaks;
 
 // these are the conditional scopes
 
@@ -1567,11 +1568,11 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                                 *(byte *)p = value;
                                 p += sizeof(byte);
                             } else if (size == sizeof(short)) {
-                                write16(p, value);
+                                write16(p, TF_BIG((uint16)value));
                                 p += sizeof(short);
                             } else {
                                 assert(size == sizeof(uint32));
-                                write32(p, value);
+                                write32(p, TF_BIG((uint32)value));
                                 p += sizeof(uint32);
                             }
                             
@@ -1590,11 +1591,11 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                                 value = *(byte *)p;
                                 p += sizeof(byte);
                             } else if (size == sizeof(short)) {
-                                value = read16(p);
+                                value = TF_BIG(read16(p));
                                 p += sizeof(short);
                             } else {
                                 assert(size == sizeof(uint32));
-                                value = read32(p);
+                                value = TF_BIG(read32(p));
                                 p += sizeof(uint32);
                             }
 
@@ -2425,6 +2426,7 @@ void
 stop()
 {
     run_stop = 0;
+    run_breaks++;
 }
 
 void

@@ -14,6 +14,45 @@
 
 static byte address;
 static bool started;
+static int breaks;
+
+static
+void
+i2c_broke(void)
+{
+    i2c_initialize();
+    printf("i2c reset\n");
+#if STICKOS
+    stop();
+#endif
+}
+
+static
+bool  // indicates things are awry
+i2c_break(void)
+{
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+    if (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL) {
+        i2c_broke();
+        return true;
+    }
+#elif PIC32
+    I2C_STATUS status;
+
+    status = I2CGetStatus(I2C1);
+    if (status & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)) {
+        i2c_broke();
+        return true;
+    }
+#else
+#error
+#endif
+    if (run_breaks != breaks) {
+        i2c_broke();
+        return true;
+    }
+    return false;
+}
 
 void
 i2c_start(int address_in)
@@ -30,50 +69,35 @@ static
 bool
 i2c_start_real(bool write)
 {
-    int32 now;
+    breaks = run_breaks;
 
     i2c_stop();
 
-    now = seconds;
-
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-//XXX_AGAIN_XXX:
     // wait for i2c idle
     while (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB) {
-        assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
-        if (seconds-now > 10) {
-            printf("i2c idle timeout\n");
-#if STICKOS
-            stop();
-#endif
+        if (i2c_break()) {
             return started;
         }
     }
-    
+
     // enable transmit
     MCF_I2C0_I2CR |= MCF_I2C_I2CR_MTX;
-    
+
     // set master mode and generate start
     MCF_I2C0_I2CR |= MCF_I2C_I2CR_MSTA;
-    
+
     // send address and read/write flag
     MCF_I2C0_I2DR = (address<<1)|(! write);
-    
-    // XXX -- why doesn't this work?
-    // if we did not get the bus...
-    //if (! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB)) {
-        //while (! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB)) {
-            //assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
-        //}
-        //goto XXX_AGAIN_XXX;
-    //}
-    
+
     // wait for byte transmitted
-    while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-        assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
+    while (! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
+        if (i2c_break()) {
+            return started;
+        }
     }
     MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
-    
+
     if (! write) {
         // enable receive
         MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_MTX;
@@ -84,26 +108,31 @@ i2c_start_real(bool write)
 
         // wait for i2c idle
         while (! I2CBusIsIdle(I2C1)) {
-            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
-            if (seconds-now > 10) {
-                printf("i2c idle timeout\n");
-#if STICKOS
-                stop();
-#endif
+            if (i2c_break()) {
                 return started;
             }
         }
 
         // generate start
         rv = I2CStart(I2C1);
+        if (rv != I2C_SUCCESS) {
+            i2c_broke();
+            return started;
+        }
         assert(rv == I2C_SUCCESS);
 
         // wait for start
-        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
+        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT) {
+            if (i2c_break()) {
+                return started;
+            }
+        }
 
         // wait for transmitter ready
         while (! I2CTransmitterIsReady(I2C1)) {
-            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
+            if (i2c_break()) {
+                return started;
+            }
         }
 
         // send address and read/write flag
@@ -112,10 +141,16 @@ i2c_start_real(bool write)
 
         // wait for byte transmitted
         while (! I2CTransmissionHasCompleted(I2C1)) {
-            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
+            if (i2c_break()) {
+                return started;
+            }
         }
 
-        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
+        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT) {
+            if (i2c_break()) {
+                return started;
+            }
+        }
 
         if (! write) {
             // enable receive
@@ -135,6 +170,8 @@ static
 void
 i2c_repeat_start_real(bool write)
 {
+    breaks = run_breaks;
+
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // enable transmit
     MCF_I2C0_I2CR |= MCF_I2C_I2CR_MTX;
@@ -147,7 +184,9 @@ i2c_repeat_start_real(bool write)
 
     // wait for byte transmitted
     while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-        assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
+        if (i2c_break()) {
+            return;
+        }
     }
     MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
 
@@ -165,11 +204,17 @@ i2c_repeat_start_real(bool write)
         assert(rv == I2C_SUCCESS);
 
         // wait for repeat start
-        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
-    
+        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT) {
+            if (i2c_break()) {
+                return;
+            }
+        }
+
         // wait for transmitter ready
         while (! I2CTransmitterIsReady(I2C1)) {
-            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
+            if (i2c_break()) {
+                return;
+            }
         }
 
         // send address and read/write flag
@@ -178,10 +223,16 @@ i2c_repeat_start_real(bool write)
 
         // wait for byte transmitted
         while (! I2CTransmissionHasCompleted(I2C1)) {
-            assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
+            if (i2c_break()) {
+                return;
+            }
         }
 
-        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
+        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT) {
+            if (i2c_break()) {
+                return;
+            }
+        }
 
         if (! write) {
             // enable receive
@@ -197,6 +248,8 @@ i2c_repeat_start_real(bool write)
 void
 i2c_stop(void)
 {
+    breaks = run_breaks;
+
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // enable receive
     MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_MTX;
@@ -206,7 +259,9 @@ i2c_stop(void)
 
     // wait for i2c idle
     while (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB) {
-        assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
+        if (i2c_break()) {
+            return;
+        }
     }
 #elif PIC32
     {
@@ -216,7 +271,11 @@ i2c_stop(void)
         I2CStop(I2C1);
 
         // wait for stop
-        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
+        while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT) {
+            if (i2c_break()) {
+                return;
+            }
+        }
     }
 #else
 #error
@@ -228,6 +287,8 @@ i2c_stop(void)
 void
 i2c_read_write(bool write, byte *buffer, int length)
 {
+    breaks = run_breaks;
+
     // if we need a start...
     if (! started) {
         // if we timed out...
@@ -244,18 +305,20 @@ i2c_read_write(bool write, byte *buffer, int length)
         while (length--) {
             // send data
             MCF_I2C0_I2DR = *buffer++;
-            
+
             // wait for byte transmitted
             while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-                assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
+                if (i2c_break()) {
+                    return;
+                }
             }
             MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
-            
+
             // if no ack...
             if (MCF_I2C0_I2SR & MCF_I2C_I2SR_RXAK) {
                 break;
             }
-        }        
+        }
     } else {
         // if this is not the (second to the) last byte...
         if (length > 1) {
@@ -270,11 +333,13 @@ i2c_read_write(bool write, byte *buffer, int length)
 
         // dummy read starts the read process from the slave
         (void)MCF_I2C0_I2DR;
-        
+
         while (length--) {
             // wait for byte received
             while( ! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IIF)) {
-                assert(! (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL));
+                if (i2c_break()) {
+                    return;
+                }
             }
             MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
 
@@ -293,7 +358,7 @@ i2c_read_write(bool write, byte *buffer, int length)
             // get the data
             *buffer++ = (byte)MCF_I2C0_I2DR;
         }
-    }    
+    }
 #elif PIC32
     {
         I2C_RESULT rv;
@@ -302,7 +367,9 @@ i2c_read_write(bool write, byte *buffer, int length)
             while (length--) {
                 // wait for transmitter ready
                 while (! I2CTransmitterIsReady(I2C1)) {
-                    assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
+                    if (i2c_break()) {
+                        return;
+                    }
                 }
 
                 // send data
@@ -311,7 +378,9 @@ i2c_read_write(bool write, byte *buffer, int length)
 
                 // wait for byte transmitted
                 while (! I2CTransmissionHasCompleted(I2C1)) {
-                    assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
+                    if (i2c_break()) {
+                        return;
+                    }
                 }
 
                 // if no ack...
@@ -323,14 +392,20 @@ i2c_read_write(bool write, byte *buffer, int length)
             while (length--) {
                 // wait for byte received and previous acknowledge
                 while(! I2CReceivedDataIsAvailable(I2C1)) {
-                    assert(! ((ss = I2CGetStatus(I2C1)) & (I2C_ARBITRATION_LOSS|I2C_TRANSMITTER_OVERFLOW|I2C_RECEIVER_OVERFLOW)));
+                    if (i2c_break()) {
+                        return;
+                    }
                 }
 
                 // if this is not the last byte...
                 if (length) {
                     // ack
                     I2CAcknowledgeByte(I2C1, true);
-                    while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
+                    while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT) {
+                        if (i2c_break()) {
+                            return;
+                        }
+                    }
 
                     // enable receive
                     rv = I2CReceiverEnable(I2C1, true);
@@ -338,7 +413,11 @@ i2c_read_write(bool write, byte *buffer, int length)
                 } else if (length == 1) {
                     // no ack
                     I2CAcknowledgeByte(I2C1, false);
-                    while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT);
+                    while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT) {
+                        if (i2c_break()) {
+                            return;
+                        }
+                    }
                 }
 
                 // get the data
@@ -354,6 +433,8 @@ i2c_read_write(bool write, byte *buffer, int length)
 bool
 i2c_ack()
 {
+    breaks = run_breaks;
+
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     return !!(MCF_I2C0_I2SR & MCF_I2C_I2SR_RXAK);
 #elif PIC32
@@ -369,9 +450,12 @@ i2c_initialize(void)
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     int ic;
     int div;
-    
+
     // AS is primary
     MCF_GPIO_PASPAR = 0x05;
+
+    // stop i2c
+    MCF_I2C0_I2CR = 0;
 
     // find a baud rate less than 100kHz
     ic = 0x23;
@@ -383,7 +467,7 @@ i2c_initialize(void)
     assert(ic <= 0x3f);
     MCF_I2C0_I2FDR = MCF_I2C_I2FDR_IC(ic);
 
-    // start i2c    
+    // start i2c
     MCF_I2C0_I2CR = MCF_I2C_I2CR_IEN;
 
     // if i2c needs a whack on the head...
@@ -394,12 +478,12 @@ i2c_initialize(void)
         MCF_I2C0_I2SR = 0;
         MCF_I2C0_I2CR = 0;
         MCF_I2C0_I2CR = MCF_I2C_I2CR_IEN;
-    }   
+    }
 #elif PIC32
     I2CEnable(I2C1, false);
 
     I2CSetFrequency(I2C1, bus_frequency, I2C_BAUD);
-    
+
     I2CEnable(I2C1, true);
 #else
 #error
