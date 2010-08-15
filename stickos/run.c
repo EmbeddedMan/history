@@ -1617,13 +1617,13 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                             if (code2 == code_device_read) {
                                 // perform the uart read
 #if ! STICK_GUEST
-                                uart_read_write(false, big_buffer, p-big_buffer);
+                                uart_read_write(uart, false, big_buffer, p-big_buffer);
 #endif
                             } else {
                                 assert(code2 == code_device_write);
                                 // perform the uart write
 #if ! STICK_GUEST
-                                uart_read_write(true, big_buffer, p-big_buffer);
+                                uart_read_write(uart, true, big_buffer, p-big_buffer);
 #endif
                                 // N.B. no need for the next pass for a write
                                 break;
