@@ -112,7 +112,7 @@ static const struct mode modes[] = {
     { "prompt",     &main_prompt,      FLASH_LAST         },
     { "sleep",      &run_sleep,        FLASH_LAST         },
     { "step",       &run_step,         FLASH_LAST         },
-    { "trace",      &var_trace,        FLASH_LAST         },
+    { "trace",      &run_trace,        FLASH_LAST         },
 #if MCF52259 || PIC32
     { "usbhost",    NULL,              FLASH_USBHOST      },
 #endif

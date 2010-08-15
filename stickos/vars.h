@@ -1,7 +1,5 @@
 // *** vars.h *********************************************************
 
-extern bool var_trace;
-
 // variables at end of flash page
 enum flash_var {
     FLASH_AUTORUN,

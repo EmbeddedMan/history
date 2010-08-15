@@ -15,6 +15,7 @@ int cw7bug;
 
 bool run_step;
 bool run_sleep = true;
+bool run_trace;
 
 int run_line_number;
 
@@ -2212,8 +2213,15 @@ run(bool cont, int start_line_number)
                 break;
             }
 
-            // run the statement's bytecodes
             line_number = run_line_number;
+
+            // if we're in trace mode...
+            if (run_trace) {
+                // trace every line
+                code_list(false, line_number, line_number);
+            }
+
+            // run the statement's bytecodes
             if (run_bytecode_code(*line->bytecode, false, line->bytecode+1, line->length-1)) {
                 // we explicitly ended
                 stop();

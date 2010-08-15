@@ -34,8 +34,6 @@ static struct system_var {
     "ticks_per_msec", NULL, ticks_per_msec, NULL
 };
 
-bool var_trace;
-
 #define VAR_NAME_SIZE  14
 
 static
@@ -631,13 +629,13 @@ XXX_PERF_XXX:
                     break;
             }
             
-            if (var_trace) {
+            if (run_trace) {
                 // *** interactive debugger ***
                 // if debug tracing is enabled...
                 if (var->max_index > 1) {
-                    printf("%4d let %s[%d] = %ld\n", run_line_number, name, index, value);
+                    printf("    let %s[%d] = %ld\n", name, index, value);
                 } else {
-                    printf("%4d let %s = %ld\n", run_line_number, name, value);
+                    printf("    let %s = %ld\n", name, value);
                 }
             }
         }
