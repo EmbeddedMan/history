@@ -454,34 +454,128 @@ here
 here
 off
 on
+  10 dim a
   20 let a = 0
+    let a = 0
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 0 0 0
-  80 let a = 1
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
+  70   endif 
+  80   let a = a+1
+    let a = 1
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 1 0 1
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
 1 odd 2 odd
-  80 let a = 2
+  70   endif 
+  80   let a = a+1
+    let a = 2
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 2 2 0
-  80 let a = 3
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
+  70   endif 
+  80   let a = a+1
+    let a = 3
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 3 2 1
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
 1 odd 2 odd
-  80 let a = 4
+  70   endif 
+  80   let a = a+1
+    let a = 4
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 4 4 0
-  80 let a = 5
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
+  70   endif 
+  80   let a = a+1
+    let a = 5
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 5 4 1
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
 1 odd 2 odd
-  80 let a = 6
+  70   endif 
+  80   let a = a+1
+    let a = 6
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 6 6 0
-  80 let a = 7
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
+  70   endif 
+  80   let a = a+1
+    let a = 7
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 7 6 1
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
 1 odd 2 odd
-  80 let a = 8
+  70   endif 
+  80   let a = a+1
+    let a = 8
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 8 8 0
-  80 let a = 9
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
+  70   endif 
+  80   let a = a+1
+    let a = 9
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
 9 8 1
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
 1 odd 2 odd
-  80 let a = 10
+  70   endif 
+  80   let a = a+1
+    let a = 10
+  90 endwhile 
+  30 while a<10 do
+  40   print a, a/2*2, a%2
+  50   if a%2 then
+  60     print 1, "odd", 2, "odd"
+  70   endif 
+  80   let a = a+1
+  90 endwhile 
+  91 gosub outer
+ 190 sub outer
+ 200   gosub inner
+ 290 sub inner
+ 300   print "here"
 here
+ 310   return 
+ 210   return 
+  92 gosub outer
+ 190 sub outer
+ 200   gosub inner
+ 290 sub inner
+ 300   print "here"
 here
+ 310   return 
+ 210   return 
+ 100 end 
 off
 on
 STOP at line 10!
@@ -1053,58 +1147,121 @@ on
   70 print a, b[a]
   80 next 
 end
+  10 dim a as flash
+  20 dim b[4] as flash
+  25 print a
 0
-  30 let a = 0
-  40 let b[0] = 0
-  50 let a = 1
-  40 let b[1] = 1
-  50 let a = 2
-  40 let b[2] = 4
-  50 let a = 3
-  40 let b[3] = 9
-  60 let a = 0
+  30 for a = 0 to 3
+    let a = 0
+  40 let b[a] = b[a]+a*a
+    let b[0] = 0
+  50 next 
+    let a = 1
+  40 let b[a] = b[a]+a*a
+    let b[1] = 1
+  50 next 
+    let a = 2
+  40 let b[a] = b[a]+a*a
+    let b[2] = 4
+  50 next 
+    let a = 3
+  40 let b[a] = b[a]+a*a
+    let b[3] = 9
+  50 next 
+  60 for a = 0 to 3
+    let a = 0
+  70 print a, b[a]
 0 0
-  80 let a = 1
+  80 next 
+    let a = 1
+  70 print a, b[a]
 1 1
-  80 let a = 2
+  80 next 
+    let a = 2
+  70 print a, b[a]
 2 4
-  80 let a = 3
+  80 next 
+    let a = 3
+  70 print a, b[a]
 3 9
+  80 next 
+  10 dim a as flash
+  20 dim b[4] as flash
+  25 print a
 3
-  30 let a = 0
-  40 let b[0] = 0
-  50 let a = 1
-  40 let b[1] = 2
-  50 let a = 2
-  40 let b[2] = 8
-  50 let a = 3
-  40 let b[3] = 18
-  60 let a = 0
+  30 for a = 0 to 3
+    let a = 0
+  40 let b[a] = b[a]+a*a
+    let b[0] = 0
+  50 next 
+    let a = 1
+  40 let b[a] = b[a]+a*a
+    let b[1] = 2
+  50 next 
+    let a = 2
+  40 let b[a] = b[a]+a*a
+    let b[2] = 8
+  50 next 
+    let a = 3
+  40 let b[a] = b[a]+a*a
+    let b[3] = 18
+  50 next 
+  60 for a = 0 to 3
+    let a = 0
+  70 print a, b[a]
 0 0
-  80 let a = 1
+  80 next 
+    let a = 1
+  70 print a, b[a]
 1 2
-  80 let a = 2
+  80 next 
+    let a = 2
+  70 print a, b[a]
 2 8
-  80 let a = 3
+  80 next 
+    let a = 3
+  70 print a, b[a]
 3 18
+  80 next 
 off
+  10 dim a as flash
+  20 dim b[4] as flash
+  25 print a
 0
-  30 let a = 0
-  40 let b[0] = 0
-  50 let a = 1
-  40 let b[1] = 1
-  50 let a = 2
-  40 let b[2] = 4
-  50 let a = 3
-  40 let b[3] = 9
-  60 let a = 0
+  30 for a = 0 to 3
+    let a = 0
+  40 let b[a] = b[a]+a*a
+    let b[0] = 0
+  50 next 
+    let a = 1
+  40 let b[a] = b[a]+a*a
+    let b[1] = 1
+  50 next 
+    let a = 2
+  40 let b[a] = b[a]+a*a
+    let b[2] = 4
+  50 next 
+    let a = 3
+  40 let b[a] = b[a]+a*a
+    let b[3] = 9
+  50 next 
+  60 for a = 0 to 3
+    let a = 0
+  70 print a, b[a]
 0 0
-  80 let a = 1
+  80 next 
+    let a = 1
+  70 print a, b[a]
 1 1
-  80 let a = 2
+  80 next 
+    let a = 2
+  70 print a, b[a]
 2 4
-  80 let a = 3
+  80 next 
+    let a = 3
+  70 print a, b[a]
 3 9
+  80 next 
 off
 on
 on
@@ -5013,30 +5170,187 @@ end
  200   endif 
  210 endsub 
 end
- 110 let target = 5124
- 110 let secs = 6
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 110 let target = 7460
- 110 let secs = 9
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 110 let target = 8940
- 110 let secs = 3
- 190 let relay = 1
- 190 let relay = 1
- 190 let relay = 1
- 110 let target = -1
- 110 let secs = -1
+  10 rem ### toaster ###
+  20 dim target, secs
+  30 dim thermocouple as pin an0 for analog input
+  40 dim relay as pin an1 for digital output
+  50 data 5124, 6, 7460, 9, 8940, 3, -1, -1
+  60 configure timer 0 for 1000 ms
+  70 on timer 0 do gosub adjust
+  75 sleep 500 ms
+  80 rem ---------------
+  90 while target!=-1 do
+ 100   sleep secs s
+ 110   read target, secs
+    let target = 5124
+    let secs = 6
+ 120 endwhile 
+  90 while target!=-1 do
+ 100   sleep secs s
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 110   read target, secs
+    let target = 7460
+    let secs = 9
+ 120 endwhile 
+  90 while target!=-1 do
+ 100   sleep secs s
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 110   read target, secs
+    let target = 8940
+    let secs = 3
+ 120 endwhile 
+  90 while target!=-1 do
+ 100   sleep secs s
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 150 sub adjust
+ 160   if thermocouple>=target then
+ 170     let relay = 0
+ 180   else 
+ 190     let relay = 1
+    let relay = 1
+ 200   endif 
+ 210 endsub 
+ 110   read target, secs
+    let target = -1
+    let secs = -1
+ 120 endwhile 
+  90 while target!=-1 do
+ 100   sleep secs s
+ 110   read target, secs
+ 120 endwhile 
  130 let relay = 0
+    let relay = 0
+ 140 end 

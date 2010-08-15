@@ -436,7 +436,7 @@ code_list(bool profile, int start_line_number, int end_line_number)
                 indent++;
             }
         } else {
-            if (start_line_number != end_line_number) {
+            if (! start_line_number || start_line_number != end_line_number) {
                 if (indent) {
                     printf("missing block ends?\n");
                 }
