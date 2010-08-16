@@ -315,7 +315,6 @@ tailtrim(char *text)
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
-DECLSPEC_PAGE0_CODE
 void *
 memcpy(void *d,  const void *s, size_t n)
 {
@@ -361,7 +360,6 @@ memmove(void *d,  const void *s, size_t n)
     }
 }
 
-DECLSPEC_PAGE0_CODE
 void *
 memset(void *p,  int d, size_t n)
 {
@@ -390,7 +388,6 @@ memset(void *p,  int d, size_t n)
     return p;
 }
 
-DECLSPEC_PAGE0_CODE
 int
 memcmp(const void *d,  const void *s, size_t n)
 {

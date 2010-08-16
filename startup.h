@@ -7,18 +7,12 @@
 #endif
 
 #if !MCU_HAS_PAGE0 || STICK_GUEST
-#define DECLSPEC_PAGE0_CODE
 #define DECLSPEC_PAGE0_DATA
-#define DECLSPEC_PAGE1
 #elif GCC
-#define DECLSPEC_PAGE0_CODE __attribute__((section(".page0_code")))
 #define DECLSPEC_PAGE0_DATA __attribute__((section(".page0_data")))
-#define DECLSPEC_PAGE1 __attribute__((section(".page1")))
 #else
 #pragma define_section page0 ".page0" far_absolute R
-#define DECLSPEC_PAGE0_CODE  __declspec(page0)
 #define DECLSPEC_PAGE0_DATA  __declspec(page0)
-#define DECLSPEC_PAGE1 __declspec(page1)
 #endif
 
 #if MCF52233
@@ -135,6 +129,10 @@
 
 #define INCOMPAT  0  // for testing
 #define COMPAT  0  // for testing
+
+extern bool disable_autorun;
+extern uint16 flash_checksum;
+extern bool usb_host_mode;
 
 extern byte *end_of_static;
 

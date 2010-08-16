@@ -101,15 +101,12 @@ typedef uint32 size_t;
 #elif MC9S08QE128
 #define INTERRUPT
 #define asm_halt()  asm("bgnd");
-#define DECLSPEC_PAGE1
 #elif MC9S12DT256 || MC9S12DP512
 #define INTERRUPT
 #define asm_halt()  asm("bgnd");
-#define DECLSPEC_PAGE1
 #elif PIC32
 #define INTERRUPT
 #define asm_halt()  asm("SDBBP");
-#define DECLSPEC_PAGE1
 #else
 #error
 #endif
@@ -225,7 +222,6 @@ enum {
 
 #if ! STICK_GUEST
 
-#include "init.h"
 #include "vectors.h"
 
 #include "serial.h"
