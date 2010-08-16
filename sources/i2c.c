@@ -61,10 +61,6 @@ i2c_start(int address_in)
     started = false;
 }
 
-#if PIC32
-int ss;
-#endif
-
 static
 bool
 i2c_start_real(bool write)
