@@ -75,6 +75,7 @@ const char * const commands[] = {
     "undo",
 };
 
+// revisit -- merge this with run.c/basic.c/parse.c???
 bool
 basic_const(IN OUT char **text, OUT int *value_out)
 {

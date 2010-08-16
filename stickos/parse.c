@@ -306,6 +306,7 @@ parse_match_quote(char *p)
 
 // *** bytecode compiler ***
 
+// revisit -- merge this with run.c/basic.c/parse.c???
 bool
 parse_const(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
 {

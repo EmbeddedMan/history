@@ -229,8 +229,7 @@ run_bytecode_const(IN const byte *bytecode, IN OUT int *index)
     return value;
 }
 
-// revisit -- merge this with basic.c/parse.c???
-
+// revisit -- merge this with run.c/basic.c/parse.c???
 static
 bool
 run_input_const(IN OUT char **text, OUT int32 *value_out)
