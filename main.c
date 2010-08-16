@@ -1,7 +1,7 @@
 // *** main.c *********************************************************
-// this is the main program that is launched by startup.c and init.c;
-// it just initializes all of the modules of the os and then runs the
-// main application program loop.
+// this is the main program that is launched by startup.c; it just
+// initializes all of the modules of the os and then runs the main
+// application program loop.
 
 #include "main.h"
 
