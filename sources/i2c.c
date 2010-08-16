@@ -133,6 +133,10 @@ i2c_start_real(bool write)
 
         // send address and read/write flag
         rv = I2CSendByte(I2C1, (address<<1)|(! write));
+        if (rv != I2C_SUCCESS) {
+            i2c_broke();
+            return started;
+        }
         assert(rv == I2C_SUCCESS);
 
         // wait for byte transmitted
@@ -197,6 +201,10 @@ i2c_repeat_start_real(bool write)
 
         // generate repeat start
         rv = I2CRepeatStart(I2C1);
+        if (rv != I2C_SUCCESS) {
+            i2c_broke();
+            return;
+        }
         assert(rv == I2C_SUCCESS);
 
         // wait for repeat start
@@ -215,6 +223,10 @@ i2c_repeat_start_real(bool write)
 
         // send address and read/write flag
         rv = I2CSendByte(I2C1, (address<<1)|(! write));
+        if (rv != I2C_SUCCESS) {
+            i2c_broke();
+            return;
+        }
         assert(rv == I2C_SUCCESS);
 
         // wait for byte transmitted
@@ -261,8 +273,6 @@ i2c_stop(void)
     }
 #elif PIC32
     {
-        I2C_RESULT rv;
-
         if (! I2CBusIsIdle(I2C1)) {
             // generate stop
             I2CStop(I2C1);
@@ -372,6 +382,10 @@ i2c_read_write(bool write, byte *buffer, int length)
 
                 // send data
                 rv = I2CSendByte(I2C1, *buffer++);
+                if (rv != I2C_SUCCESS) {
+                    i2c_broke();
+                    return;
+                }
                 assert(rv == I2C_SUCCESS);
 
                 // wait for byte transmitted
