@@ -184,7 +184,7 @@ void
 __longramfunc__
 __attribute__((nomips16))
 #endif
-flash_upgrade_ram_begin(bool compatible);
+flash_upgrade_ram_begin(void);
 
 void
 flash_upgrade_ram_end(void);

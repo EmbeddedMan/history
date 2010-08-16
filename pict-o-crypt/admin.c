@@ -121,12 +121,6 @@ static char *help_about =
 "Welcome to Pict-o-Crypt v" VERSION "!\n"
 "Copyright (c) 2008; all rights reserved.\n"
 "pict.o.crypt@gmail.com\n"
-#if INCOMPAT
-"incompatible\n"
-#endif
-#if COMPAT
-"compatible\n"
-#endif
 ;
 
 static

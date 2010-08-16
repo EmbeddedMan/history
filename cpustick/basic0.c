@@ -95,12 +95,6 @@ char * const help_about =
 "Copyright (c) 2008-2010; all rights reserved.\n"
 "http://www.cpustick.com\n"
 "support@cpustick.com\n"
-#if INCOMPAT
-"incompatible\n"
-#endif
-#if COMPAT
-"compatible\n"
-#endif
 ;
 
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512

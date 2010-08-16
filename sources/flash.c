@@ -417,7 +417,7 @@ void
 __longramfunc__
 __attribute__((nomips16))
 #endif
-flash_upgrade_ram_begin(bool compatible)
+flash_upgrade_ram_begin(void)
 {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #if ! DEMO_KIT
@@ -433,11 +433,6 @@ flash_upgrade_ram_begin(bool compatible)
     // flash_erase_pages()
     addr = NULL;
     npages = FLASH_BYTES/2/FLASH_PAGE_SIZE;
-    if (compatible) {
-        // N.B. we skip page0
-        npages--;
-        addr += FLASH_PAGE_SIZE/sizeof(uint32);
-    }
     while (npages) {
         assert_ram(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
         assert_ram(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
@@ -461,12 +456,6 @@ flash_upgrade_ram_begin(bool compatible)
     addr = NULL;
     data = (uint32 *)(FLASH_BYTES/2);
     nwords = FLASH_BYTES/2/sizeof(uint32) - 1;
-    if (compatible) {
-        // N.B. we skip page0
-        nwords -= FLASH_PAGE_SIZE/sizeof(uint32);
-        addr += FLASH_PAGE_SIZE/sizeof(uint32);
-        data += FLASH_PAGE_SIZE/sizeof(uint32);
-    }
     while (nwords) {
         assert_ram(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
         assert_ram(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
@@ -526,11 +515,6 @@ flash_upgrade_ram_begin(bool compatible)
     // flash_erase_pages()
     addr = NULL;
     npages = FLASH_BYTES/2/FLASH_PAGE_SIZE;
-    if (compatible) {
-        // N.B. we skip page0
-        npages--;
-        addr += FLASH_PAGE_SIZE/sizeof(uint32);
-    }
     while (npages) {
         assert_ram(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
         assert_ram(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
@@ -553,12 +537,6 @@ flash_upgrade_ram_begin(bool compatible)
     addr = NULL;
     data = (uint32 *)(FLASH_BYTES/2);
     nwords = FLASH_BYTES/2/sizeof(uint32) - 1;
-    if (compatible) {
-        // N.B. we skip page0
-        nwords -= FLASH_PAGE_SIZE/sizeof(uint32);
-        addr += FLASH_PAGE_SIZE/sizeof(uint32);
-        data += FLASH_PAGE_SIZE/sizeof(uint32);
-    }
     while (nwords) {
         assert_ram(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
         assert_ram(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
@@ -621,11 +599,6 @@ flash_upgrade_ram_begin(bool compatible)
     // flash_erase_pages()
     addr = (uint32 *)FLASH_START;
     npages = FLASH_BYTES/2/FLASH_PAGE_SIZE;
-    if (compatible) {
-        // N.B. we skip page0
-        npages--;
-        addr += FLASH_PAGE_SIZE/sizeof(uint32);
-    }
     while (npages) {
         NVMADDR = KVA_TO_PA((unsigned int)addr);
         NVMCON = NVMCON_WREN | NVMOP_PAGE_ERASE;
@@ -646,12 +619,6 @@ flash_upgrade_ram_begin(bool compatible)
     addr = (uint32 *)FLASH_START;
     data = (uint32 *)(FLASH_START+FLASH_BYTES/2);
     nwords = (FLASH_BYTES/2 - FLASH2_BYTES)/sizeof(uint32) - 1;
-    if (compatible) {
-        // N.B. we skip page0
-        nwords -= FLASH_PAGE_SIZE/sizeof(uint32);
-        addr += FLASH_PAGE_SIZE/sizeof(uint32);
-        data += FLASH_PAGE_SIZE/sizeof(uint32);
-    }
     while (nwords) {
         NVMADDR = KVA_TO_PA((unsigned int)addr);
         NVMDATA = *data;
@@ -674,11 +641,6 @@ flash_upgrade_ram_begin(bool compatible)
     // flash_erase_pages()
     addr = (uint32 *)FLASH2_START;
     npages = FLASH2_BYTES/FLASH_PAGE_SIZE;
-    if (compatible) {
-        // N.B. we skip page0
-        npages--;
-        addr += FLASH_PAGE_SIZE/sizeof(uint32);
-    }
     while (npages) {
         NVMADDR = KVA_TO_PA((unsigned int)addr);
         NVMCON = NVMCON_WREN | NVMOP_PAGE_ERASE;
@@ -699,12 +661,6 @@ flash_upgrade_ram_begin(bool compatible)
     addr = (uint32 *)FLASH2_START;
     data = (uint32 *)(FLASH_START+FLASH_BYTES-FLASH2_BYTES);
     nwords = FLASH2_BYTES/sizeof(uint32) - 1;
-    if (compatible) {
-        // N.B. we skip page0
-        nwords -= FLASH_PAGE_SIZE/sizeof(uint32);
-        addr += FLASH_PAGE_SIZE/sizeof(uint32);
-        data += FLASH_PAGE_SIZE/sizeof(uint32);
-    }
     while (nwords) {
         NVMADDR = KVA_TO_PA((unsigned int)addr);
         NVMDATA = *data;
@@ -783,9 +739,7 @@ flash_upgrade(uint32 fsys_frequency)
     bool done;
     bool error;
     uint32 data;
-    uint32 zero;
     bool begun;
-    bool compatible;
     flash_upgrade_ram_begin_f fn;
 
     if (fsys_frequency) {
@@ -998,35 +952,9 @@ flash_upgrade(uint32 fsys_frequency)
         return;
     }
     
-    compatible = ! memcmp((void *)0, (void *)(FLASH_BYTES/2), FLASH_PAGE_SIZE);
-        
-    printf("programming flash for %s upgrade...\n", compatible?"compatible":"incompatible");
+    printf("programming flash for upgrade...\n");
     printf("wait for heartbeat LED to blink!\n");
     delay(100);
-
-    // if this is a compatible upgrade...
-    if (compatible) {
-        ASSERT((int)VECTOR_NEW_FLASH_UPGRADE_RAM_END - (int)VECTOR_NEW_FLASH_UPGRADE_RAM_BEGIN <= sizeof(big_buffer)-4);
-        
-        // we have to zero one more byte!
-        zero = 0;
-        flash_write_words((uint32 *)FLASH_BYTES - 1, &zero, 1);
-
-        // reset the MCU; init() will take care of the rest
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-        MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128
-        asm {
-            move.l  #0x00000000,d0
-            movec   d0,CPUCR
-            trap    #0
-        };
-#else
-#error
-#endif
-        // we should not come back!
-        ASSERT(0);  // stop!
-    }
 
     // N.B. this is an incompatible upgrade; if we crash before we are through,
     // we might be in trouble.
@@ -1070,7 +998,6 @@ flash_upgrade(uint32 fsys_frequency)
     uint32 data;
     uint32 zero;
     bool begun;
-    bool compatible;
 
     if ((int)end_of_static > FLASH_START+FLASH_BYTES/2) {
         printf("code exceeds half of flash\n");
@@ -1276,7 +1203,7 @@ flash_upgrade(uint32 fsys_frequency)
     // we're committed to upgrade!
     printf("\npaste done!\n");
     
-    printf("programming flash for incompatible upgrade...\n");
+    printf("programming flash for upgrade...\n");
     printf("wait for heartbeat LED to blink!\n");
     delay(100);
 
