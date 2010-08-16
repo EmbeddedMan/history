@@ -968,7 +968,7 @@ flash_upgrade(uint32 fsys_frequency)
     memcpy(fn, (void *)flash_upgrade_ram_begin, (int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin);
 
     // and run it!
-    fn(false);
+    fn();
 
     // we should not come back!
     ASSERT(0);  // stop!

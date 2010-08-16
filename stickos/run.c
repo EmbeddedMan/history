@@ -1461,7 +1461,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     assert(code == code_i2c);
                     index++;
                     // get the address
-                    index += run_expression(bytecode+index, length-index, &name, &value);
+                    index += run_expression(bytecode+index, length-index, NULL, &value);
                     if (run_condition) {
 #if ! STICK_GUEST
                         i2c_start(value);
