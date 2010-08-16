@@ -1,116 +1,8 @@
 // *** startup.c ******************************************************
 // this file is where hardware starts execution, at _startup in page0;
-// then we call p0_c_startup(), also in page0; finally we call init(),
-// outside of page0; init() is responsible for calling main().
-
-// IF YOU EDIT THIS FILE, YOU WILL CHANGE PAGE0 CODE AND FORCE AN
-// INCOMPATIBLE UPGRADE!!!  WHENEVER POSSIBLE, MAKE YOUR CHANGES IN
-// INIT.C OR SOMEWHERE ELSE.
-
-// N.B. if page0 code changes during an upgrade, the upgrade is said
-// to be "incompatible" and we overwrite page0, et. al., while running
-// from RAM prior to the upgrade reset; a failure to overwrite results
-// in a brick.  this corresponds to essentially "upgrading the
-// bootloader", and is more risky but should occur infrequently.
-//
-// if page0 code has not changed, on the other hand, the upgrade is
-// said to be "compatible" (i.e., the "bootloader" has not changed),
-// and we never overwrite page0, and page0 will retry the overwrite
-// of the remainder of flash from the staging area as many times as
-// needed; hence, we are immune to overwrite failures.
-//
-// N.B. changing flash SECURITY state is always an incompatible upgrade.
+// then we call init(); init() is responsible for calling main().
 
 #include "main.h"
-
-#ifndef MAIN_INCLUDED
-
-#if EXTRACT && ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
-#include "extract.h"
-#else
-#if MCF52233
-#include "MCF52235.h"
-#elif MCF52221
-#include "MCF52221.h"
-#elif MCF52259
-#include "MCF52259.h"
-#elif MCF5211
-#include "MCF5211.h"
-#elif MCF51JM128
-#include "MCF51JM128.h"
-#include "compat.h"
-#elif MCF51CN128
-#include "MCF51CN128.h"
-#include "compat.h"
-#elif MCF51QE128
-#include "MCF51QE128.h"
-#include "compat.h"
-#elif MC9S08QE128
-#include "MC9S08QE128.h"
-#include "compat.h"
-#elif MC9S12DT256
-#include "MC9S12DT256.h"
-#include "compat.h"
-#elif MC9S12DP512
-#include "MC9S12DP512.h"
-#include "compat.h"
-#elif PIC32
-#include <plib.h>
-typedef unsigned char uint8;
-typedef unsigned short uint16;
-typedef unsigned int uint32;
-#else
-#error
-#endif
-#endif
-
-#if GCC
-#define far
-#define __IPSBAR ((volatile uint8 *)0x40000000)
-extern uint8 __RAMBAR[];
-#define RAMBAR_ADDRESS ((uint32)__RAMBAR)
-#define asm_halt() __asm__("halt")
-#else
-#define asm_halt() asm { halt }
-#endif
-
-typedef unsigned char bool;
-#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
-typedef unsigned char byte;
-#endif
-
-#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
-typedef uint16 size_t;
-#else
-#if ! PIC32
-typedef uint32 size_t;
-#endif
-#endif
-
-enum {
-    false,
-    true
-};
-
-#if SODEBUG
-#define assert(x)  if (! (x)) { asm_halt(); }
-#else
-#define assert(x)
-#endif
-#define ASSERT(x)  if (! (x)) { asm_halt(); }
-
-#endif  // MAIN_INCLUDED
-
-// N.B. we tightly control the headers used by this file so we can't
-// inadvertently call out of page0 until we have completed compatible
-// upgrade
-#include "startup.h"
-#include "vectors.h"
-
-// routines defined in util.c
-extern int memcmp(const void *d, const void *s, size_t n);
-extern void *memcpy(void *d, const void *s, size_t n);
-extern void *memset(void *p, int d, size_t n);
 
 #if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 extern unsigned char far _SP_INIT[], _SDA_BASE[];
@@ -139,10 +31,14 @@ byte big_buffer[768];
 
 #if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 
+static
 void
-p0_c_startup(void);
+init(void);
 
-extern void init(void);
+#if BADGE_BOARD || DEMO_KIT
+extern void pre_main(void);
+#endif
+extern int main();
 
 extern
 BEGIN_NAKED(_startup);
@@ -179,8 +75,7 @@ BEGIN_NAKED(_startup)
     Q3(movec,   d0,CPUCR)
 #endif
 
-    // set up the fixed stack pointer
-    //Q3(lea,     __SP_AFTER_RESET,a7)
+    // set up the real stack pointer
     Q3(lea,     _SP_INIT,a7)
 
     // set up short data base A5
@@ -190,27 +85,17 @@ BEGIN_NAKED(_startup)
     Q3(movea.l, #0,a6)
     Q3(link,    a6,#0)
 
-    // early C initialization, and compatible upgrade (page0)
-    Q2(jsr,     p0_c_startup)
+    // C initialization, links to main
+    Q2(jsr,     init)
 
-    // set up the real stack pointer
-
-    //Q2(jsr,     init)
-    
     Q1(nop)
     Q1(halt)
 }
 END_NAKED
 
-#if BADGE_BOARD || DEMO_KIT
-extern void pre_main(void);
-#endif
-extern int main();
-
-
 // this function performs C initialization before main() runs.
 void
-p0_c_startup(void)
+init(void)
 {
     byte *p;
     uint32 n;
@@ -228,7 +113,6 @@ p0_c_startup(void)
             *dp++ = *sp++;
         }
     }
-
 
     // disable Software Watchdog Timer
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211

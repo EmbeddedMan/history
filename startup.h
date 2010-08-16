@@ -127,9 +127,6 @@
 
 #define BASIC_SMALL_PAGE_SIZE  FLASH_PAGE_SIZE
 
-#define INCOMPAT  0  // for testing
-#define COMPAT  0  // for testing
-
 extern bool disable_autorun;
 extern uint16 flash_checksum;
 extern bool usb_host_mode;

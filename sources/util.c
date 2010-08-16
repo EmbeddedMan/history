@@ -305,20 +305,13 @@ tailtrim(char *text)
     *p = '\0';
 }
 
-// without compiler optimizations 32 bit optimizations make mem*() routines too big for precious page0.
-#if (MCU_CORE_BITS >= 32) && (!MCU_HAS_PAGE0 || !SODEBUG)
-#define MEM_32_BIT_ROUTINES 1
-#else
-#define MEM_32_BIT_ROUTINES 0
-#endif
-
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 #endif
 void *
 memcpy(void *d,  const void *s, size_t n)
 {
-#if MEM_32_BIT_ROUTINES
+#if MCU_CORE_BITS >= 32
     if (((uintptr)d&3)+((uintptr)s&3)+(n&3) == 0) {
         uint32 *dtemp = d;
         const uint32 *stemp = s;
@@ -335,7 +328,7 @@ memcpy(void *d,  const void *s, size_t n)
         while (n--) {
             *(dtemp++) = *(stemp++);
         }
-#if MEM_32_BIT_ROUTINES
+#if MCU_CORE_BITS >= 32
     }
 #endif
     return d;
@@ -363,7 +356,7 @@ memmove(void *d,  const void *s, size_t n)
 void *
 memset(void *p,  int d, size_t n)
 {
-#if MEM_32_BIT_ROUTINES
+#if MCU_CORE_BITS >= 32
     int dd;
     
     if (((uintptr)p&3)+(n&3) == 0) {
@@ -382,7 +375,7 @@ memset(void *p,  int d, size_t n)
         while (n--) {
             *(ptemp++) = d;
         }
-#if MEM_32_BIT_ROUTINES
+#if MCU_CORE_BITS >= 32
     }
 #endif
     return p;
