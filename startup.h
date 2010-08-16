@@ -174,7 +174,7 @@ extern byte big_buffer[768];
 #define Q3_NON_NAKED(a,b,c)  asm(a b,c)
 #endif  // GCC
 
-typedef void (*flash_upgrade_ram_begin_f)(bool);
+typedef void (*flash_upgrade_ram_begin_f)(void);
 
 void
 #if PIC32

@@ -270,6 +270,39 @@ run_input_const(IN OUT char **text, OUT int32 *value_out)
     return true;
 }
 
+static
+int
+run_var(const byte *bytecode_in, int length, OUT const char **name, OUT int32 *max_index)
+{
+    int blen;
+    const byte *bytecode;
+
+    bytecode = bytecode_in;
+
+    // if we're reading into a simple variable...
+    if (*bytecode == code_load_and_push_var || *bytecode == code_load_string) {
+        // use array index 0
+        bytecode++;
+        *max_index = 0;
+    } else {
+        // we're reading into an array element
+        assert(*bytecode == code_load_and_push_var_indexed || *bytecode == code_load_string_indexed);
+        bytecode++;
+
+        blen = read32(bytecode);
+        bytecode += sizeof(uint32);
+
+        // evaluate the array index
+        bytecode += run_expression(bytecode, blen, NULL, max_index);
+    }
+
+    // get the variable name
+    *name = (char *)bytecode;
+    bytecode += strlen(*name)+1;
+
+    return bytecode-bytecode_in;
+}
+
 static bool
 run_expression_is_lvalue(const byte *bytecode, int length, const byte *bytecode_in)
 {
@@ -814,7 +847,6 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
     byte device;
     byte code2;
     int inter;
-    int blen;
     int32 value;
     byte *p;
     char *s;
@@ -1052,26 +1084,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index++;
                 }
 
-                // if we're reading into a simple variable...
-                if (bytecode[index] == code_load_and_push_var) {
-                    // use array index 0
-                    index++;
-                    max_index = 0;
-                } else {
-                    // we're reading into an array element
-                    assert(bytecode[index] == code_load_and_push_var_indexed);
-                    index++;
-
-                    blen = read32(bytecode+index);
-                    index += sizeof(uint32);
-
-                    // evaluate the array index
-                    index += run_expression(bytecode+index, blen, NULL, &max_index);
-                }
-
-                // get the variable name
-                name = (char *)bytecode+index;
-                index += strlen(name)+1;
+                // get the variable
+                index += run_var(bytecode+index, length-index, &name, &max_index);
 
                 // get the next data
                 value = read_data();
@@ -1124,31 +1138,24 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 index++;
 
                 // if we're dimensioning a simple variable
+                simple_var = false;
                 if (bytecode[index] == code_load_and_push_var || bytecode[index] == code_load_string) {
                     // set the array length to 1
                     simple_var = true;
-                    index++;
-                    max_index = 1;
-                } else {
-                    // we're dimensioning an array
-                    assert(bytecode[index] == code_load_and_push_var_indexed || bytecode[index] == code_load_string_indexed);
-                    simple_var = false;
-                    index++;
-
-                    blen = read32(bytecode+index);
-                    index += sizeof(uint32);
-
-                    // evaluate the array length
-                    index += run_expression(bytecode+index, blen, NULL, &max_index);
-                    if (string && max_index > BASIC_OUTPUT_LINE_SIZE) {
-                        printf("string buffer overflow\n");
-                        goto XXX_SKIP_XXX;
-                    }
                 }
 
-                // get the variable name
-                name = (char *)bytecode+index;
-                index += strlen(name)+1;
+                // get the variable
+                index += run_var(bytecode+index, length-index, &name, &max_index);
+
+                if (simple_var) {
+                    max_index = 1;
+                }
+
+                // if the string is larger than run.c can handle...
+                if (string && max_index > BASIC_OUTPUT_LINE_SIZE) {
+                    printf("string buffer overflow\n");
+                    goto XXX_SKIP_XXX;
+                }
 
                 // get the size and type specifier
                 size = bytecode[index++];
@@ -1239,27 +1246,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     assert(bytecode[index] == code_expression);
                     index++;
 
-                    // revisit -- share with code_for!
-                    // if we're assigning a simple variable...
-                    if (bytecode[index] == code_load_and_push_var) {
-                        // use array index 0
-                        index++;
-                        max_index = 0;
-                    } else {
-                        // we're assigning an array element
-                        assert(bytecode[index] == code_load_and_push_var_indexed);
-                        index++;
-
-                        blen = read32(bytecode+index);
-                        index += sizeof(uint32);
-
-                        // evaluate the array index
-                        index += run_expression(bytecode+index, blen, NULL, &max_index);
-                    }
-
-                    // get the variable name
-                    name = (char *)bytecode+index;
-                    index += strlen(name)+1;
+                    // get the variable
+                    index += run_var(bytecode+index, length-index, &name, &max_index);
 
                     // evaluate the assignment expression
                     index += run_expression(bytecode+index, length-index, NULL, &value);
@@ -1337,32 +1325,21 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 index++;
 
                 // if we're reading into a simple variable...
+                max_count = 0;
                 if (bytecode[index] == code_load_and_push_var || bytecode[index] == code_load_string) {
-                    // use array index 0
-                    index++;
-                    max_index = 0;
                     max_count = -1;
-                } else {
-                    // we're reading into an array element
-                    assert(bytecode[index] == code_load_and_push_var_indexed);
-                    index++;
-
-                    blen = read32(bytecode+index);
-                    index += sizeof(uint32);
-
-                    // evaluate the array index
-                    index += run_expression(bytecode+index, blen, NULL, &max_index);
-                    max_count = max_index+1;
                 }
 
-                // get the variable name
-                name = (char *)bytecode+index;
-                index += strlen(name)+1;
+                // get the variable
+                index += run_var(bytecode+index, length-index, &name, &max_index);
 
                 // get the variable size
                 size = var_get_size(name, &count);
                 if (max_count == -1) {
                     max_count = count;
+                } else {
+                    assert(! max_count);
+                    max_count = max_index+1;
                 }
 
                 // for all variables...
@@ -1528,32 +1505,21 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     }
 
                     // if we're reading into a simple variable...
+                    max_count = 0;
                     if (bytecode[index] == code_load_and_push_var) {
-                        // use array index 0
-                        index++;
-                        max_index = 0;
                         max_count = -1;
-                    } else {
-                        // we're reading into an array element
-                        assert(bytecode[index] == code_load_and_push_var_indexed);
-                        index++;
-
-                        blen = read32(bytecode+index);
-                        index += sizeof(uint32);
-
-                        // evaluate the array index
-                        index += run_expression(bytecode+index, blen, NULL, &max_index);
-                        max_count = max_index+1;
                     }
 
-                    // get the variable name
-                    name = (char *)bytecode+index;
-                    index += strlen(name)+1;
+                    // get the variable
+                    index += run_var(bytecode+index, length-index, &name, &max_index);
 
                     // get the variable size
                     size = var_get_size(name, &count);
                     if (max_count == -1) {
                         max_count = count;
+                    } else {
+                        assert(! max_count);
+                        max_count = max_index+1;
                     }
                     
                     if (! pass) {
@@ -1742,27 +1708,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
             // if this is a for loop...
             if (code == code_for) {
-                // revisit -- share with code_let!
-                // if we're assigning a simple variable...
-                if (bytecode[index] == code_load_and_push_var) {
-                    // we use array index 0
-                    index++;
-                    max_index = 0;
-                } else {
-                    // we're assigning an array element
-                    assert(bytecode[index] == code_load_and_push_var_indexed);
-                    index++;
-
-                    blen = read32(bytecode+index);
-                    index += sizeof(uint32);
-
-                    // evaluate the array index
-                    index += run_expression(bytecode+index, blen, NULL, &max_index);
-                }
-
-                // get the variable name
-                name = (char *)bytecode+index;
-                index += strlen(name)+1;
+                // get the variable
+                index += run_var(bytecode+index, length-index, &name, &max_index);
 
                 // evaluate and set the initial value
                 index += run_expression(bytecode+index, length-index, NULL, &value);

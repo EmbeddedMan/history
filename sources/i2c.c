@@ -267,8 +267,10 @@ i2c_stop(void)
     {
         I2C_RESULT rv;
 
-        // generate stop
-        I2CStop(I2C1);
+        if (! I2CBusIsIdle(I2C1)) {
+            // generate stop
+            I2CStop(I2C1);
+        }
 
         // wait for stop
         while (I2C1CONbits.SEN || I2C1CONbits.RSEN || I2C1CONbits.PEN || I2C1CONbits.RCEN || I2C1CONbits.ACKEN || I2C1STATbits.TRSTAT) {

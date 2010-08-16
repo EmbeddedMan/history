@@ -1221,7 +1221,7 @@ flash_upgrade(uint32 fsys_frequency)
     
     // N.B. the flash upgrade routine is already copied to RAM
     // run it!
-    flash_upgrade_ram_begin(false);
+    flash_upgrade_ram_begin();
 
     // we should not come back!
     ASSERT(0);  // stop!
