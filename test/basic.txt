@@ -775,6 +775,7 @@ for more information:
   help modes
   help statements
   help blocks
+  help strings
   help devices
   help expressions
   help variables
@@ -794,12 +795,12 @@ clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
-delete [<line>][-][<line>]    -- delete program lines or <subname>
-download <slave Hz>           -- download for relay to QSPI to EzPort
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
-list [<line>][-][<line>]      -- list program lines or <subname>
+list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
@@ -831,30 +832,32 @@ watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
   heartbeat  safemode*
-  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
+<line>                                 -- delete program line from code ram
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
-dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
 end                                    -- end program
 halt                                   -- loop forever
-input [dec|hex|raw] <variable> [, ...] -- input data
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
-let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
-qspi <variable> [, ...]                -- perform qspi I/O by reference
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
 sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
+  help strings
   help devices
   help expressions
   help variables
@@ -893,6 +896,13 @@ uarts:
   off uart <n> (input|output)                -- disable uart interrupt
   mask uart <n> (input|output)               -- mask/hold uart interrupt
   unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
 
 watchpoints:
   on <expression> do <statement>             -- on expr execute statement
@@ -903,8 +913,10 @@ the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
   <variable>                -- simple variable
   <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
   (   )                     -- grouping
   !   ~                     -- logical not, bitwise not
   *   /   %                 -- times, divide, mod
@@ -918,12 +930,12 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
-simple variables are passed to sub params by reference
+simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for print and qspi/i2c statements
+v is the same as v[0], except for input/print/i2c/qspi statements
 
 ram variables:
-  dim <var>[[n]]
+  dim <var>[$][[n]]
   dim <var>[[n]] as (byte|short)
 
 absolute variables:

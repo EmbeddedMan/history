@@ -113,6 +113,7 @@ static char *const help_general =
 "  help modes\n"
 "  help statements\n"
 "  help blocks\n"
+"  help strings\n"
 "  help devices\n"
 "  help expressions\n"
 "  help variables\n"
@@ -138,12 +139,12 @@ static char * const help_commands =
 #endif
 "cls                           -- clear terminal screen\n"
 "cont [<line>]                 -- continue program from stop\n"
-"delete [<line>][-][<line>]    -- delete program lines or <subname>\n"
-"download <slave Hz>           -- download for relay to QSPI to EzPort\n"
+"delete ([<line>][-][<line>]|<subname>) -- delete program lines\n"
+"download <slave Hz>           -- download flash to slave MCU\n"
 "dir                           -- list saved programs\n"
 "edit <line>                   -- edit program line\n"
 "help [<topic>]                -- online help\n"
-"list [<line>][-][<line>]      -- list program lines or <subname>\n"
+"list ([<line>][-][<line>]|<subname>) -- list program lines\n"
 "load <name>                   -- load saved program\n"
 "memory                        -- print memory usage\n"
 "new                           -- erase code ram and flash memories\n"
@@ -187,9 +188,9 @@ static char * const help_modes =
 "pin assignments:\n"
 "  heartbeat  safemode*\n"
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
+"  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
 #else
-"  qspi_cs*   zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
+"  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
 #endif
 "\n"
 "for more information:\n"
@@ -197,30 +198,32 @@ static char * const help_modes =
 ;
 
 static char * const help_statements =
+"<line>                                 -- delete program line from code ram\n"
 "<line> <statement>                     -- enter program line into code ram\n"
 "\n"
 "assert <expression>                    -- break if expression is false\n"
 "data <n> [, ...]                       -- read-only data\n"
-"dim <variable>[[n]] [as ...] [, ...]   -- dimension variables\n"
+"dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables\n"
 "end                                    -- end program\n"
 #if BADGE_BOARD
 "jm(clear|set) <r>, <c>                 -- clear/set row/column of LED matrix\n"
 "jmscroll ...                           -- scroll printout to LED matrix\n"
 #endif
 "halt                                   -- loop forever\n"
-"input [dec|hex|raw] <variable> [, ...] -- input data\n"
+"input [dec|hex|raw] <variable>[$] [, ...] -- input data\n"
 "label <label>                          -- read/data label\n"
-"let <variable> = <expression> [, ...]  -- assign variable\n"
-"print (\"string\"|[dec|hex|raw] <expression>) [, ...]  -- print results\n"
-"qspi <variable> [, ...]                -- perform qspi I/O by reference\n"
+"let <variable>[$] = <expression> [, ...] -- assign variable\n"
+"print [dec|hex|raw] <expression> [, ...] -- print results\n"
 "read <variable> [, ...]                -- read read-only data into variables\n"
 "rem <remark>                           -- remark\n"
 "restore [<label>]                      -- restore read-only data pointer\n"
 "sleep <expression> (s|ms|us)           -- delay program execution\n"
 "stop                                   -- insert breakpoint in code\n"
+"vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable\n"
 "\n"
 "for more information:\n"
 "  help blocks\n"
+"  help strings\n"
 "  help devices\n"
 "  help expressions\n"
 "  help variables\n"
@@ -251,6 +254,29 @@ static char * const help_blocks =
 "endsub\n"
 ;
 
+static char * const help_strings =
+"v$ is a nul-terminated view into a byte array v[]\n"
+"\n"
+"string statements:\n"
+"  dim, input, let, print, vprint\n"
+"  if <expression> <relation> <expression> then\n"
+"  while <expression> <relation> <expression> do\n"
+"  until <expression> <relation> <expression> do\n"
+"\n"
+"string expressions:\n"
+"  \"literal\"                      -- literal string\n"
+"  <variable>$                    -- variable string\n"
+"  <variable>$[<start>:<length>]  -- variable substring\n"
+"  +                              -- concatenates strings\n"
+"\n"
+"string relations:\n"
+"  <=  <  >=  >                   -- inequalities\n"
+"  ==  !=                         -- equal, not equal\n"
+"  ~  !~                          -- contains, does not contain\n"
+"for more information:\n"
+"  help variables\n"
+;
+
 static char * const help_devices =
 "timers:\n"
 "  configure timer <n> for <n> (s|ms|us)\n"
@@ -265,6 +291,13 @@ static char * const help_devices =
 "  off uart <n> (input|output)                -- disable uart interrupt\n"
 "  mask uart <n> (input|output)               -- mask/hold uart interrupt\n"
 "  unmask uart <n> (input|output)             -- unmask uart interrupt\n"
+"  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O\n"
+"\n"
+"i2c:\n"
+"  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O\n"
+"\n"
+"qspi:\n"
+"  qspi <variable> [, ...]                    -- master qspi I/O\n"
 "\n"
 "watchpoints:\n"
 "  on <expression> do <statement>             -- on expr execute statement\n"
@@ -278,8 +311,10 @@ static char * const help_expressions =
 "in order of decreasing precedence:\n"
 "  <n>                       -- decimal constant\n"
 "  0x<n>                     -- hexadecimal constant\n"
+"  'c'                       -- character constant\n"
 "  <variable>                -- simple variable\n"
 "  <variable>[<expression>]  -- array variable element\n"
+"  <variable>#               -- length of array or string\n"
 "  (   )                     -- grouping\n"
 "  !   ~                     -- logical not, bitwise not\n"
 "  *   /   %                 -- times, divide, mod\n"
@@ -296,12 +331,12 @@ static char * const help_expressions =
 static char *const help_variables =
 "all variables must be dimensioned!\n"
 "variables dimensioned in a sub are local to that sub\n"
-"simple variables are passed to sub params by reference\n"
+"simple variables are passed to sub params by reference; otherwise, by value\n"
 "array variable indices start at 0\n"
-"v is the same as v[0], except for print and qspi/i2c statements\n"
+"v is the same as v[0], except for input/print/i2c/qspi statements\n"
 "\n"
 "ram variables:\n"
-"  dim <var>[[n]]\n"
+"  dim <var>[$][[n]]\n"
 "  dim <var>[[n]] as (byte|short)\n"
 "\n"
 "absolute variables:\n"
@@ -934,6 +969,8 @@ basic0_run(char *text_in)
                 p = help_devices;
             } else if (parse_word(&text, "blocks")) {
                 p = help_blocks;
+            } else if (parse_word(&text, "strings")) {
+                p = help_strings;
             } else if (parse_word(&text, "expressions")) {
                 p = help_expressions;
             } else if (parse_word(&text, "variables")) {
