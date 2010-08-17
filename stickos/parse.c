@@ -96,6 +96,7 @@ const struct keyword {
     "restore", code_restore,
     "return", code_return,
     "sleep", code_sleep,
+    "vprint", code_vprint,
     "stop", code_stop,
     "sub", code_sub,
     "uart", code_uart,
@@ -786,10 +787,15 @@ bool
 parse_class(IN char *text, IN OUT int *length, IN OUT byte *bytecode)
 {
     char *p;
+    char *q;
 
     p = strchr(text, ',');
     if (! p) {
         p = strchr(text, '\0');
+    }
+    q = strchr(text, '=');
+    if (q && q < p) {
+        p = q;
     }
     while (text != p) {
         if (*text == '$' || *text == '"') {
@@ -1248,7 +1254,23 @@ XXX_AGAIN_XXX:
             break;
             
         case code_print:
+        case code_vprint:
             if (! length) {
+                // if this is an vprint...
+                if (code == code_vprint) {
+                    string = parse_class(text, &length, bytecode);
+
+                    // parse the variable
+                    if (! parse_var(string, true, string?0:1, 0, &text, &length, bytecode)) {
+                        goto XXX_ERROR_XXX;
+                    }
+
+                    // parse the assignment
+                    if (! parse_char(&text, '=')) {
+                        goto XXX_ERROR_XXX;
+                    }
+                }
+
                 // if we're not printing a newline...
                 if (parse_find_tail(text, ";")) {
                     bytecode[length++] = code_semi;
@@ -2188,11 +2210,24 @@ XXX_AGAIN_XXX:
             break;
             
         case code_print:
-            // if we're not printing a newline...
-            if (*bytecode == code_semi) {
-                assert(bytecode == bytecode_in);
-                bytecode++;
-                semi = true;
+        case code_vprint:
+            if (bytecode == bytecode_in) {
+                // if this is an vprint...
+                if (code == code_vprint) {
+                    bytecode += unparse_class(bytecode, &string);
+
+                    // decompile the variable
+                    bytecode += unparse_var(string, true, string?0:1, bytecode, &out);
+
+                    // decompile the assignment
+                    out += sprintf(out, " = ");
+                }
+
+                // if we're not printing a newline...
+                if (*bytecode == code_semi) {
+                    bytecode++;
+                    semi = true;
+                }
             }
 
             bytecode += unparse_format(bytecode, &out);

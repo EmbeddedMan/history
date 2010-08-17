@@ -555,7 +555,7 @@ subinput(
     if (format == code_dec || format == code_hex) {
         boo = run_input_const((char **)&main_command, &value);
         if (! boo) {
-            printf("illegal input\n");
+            printf("bad number\n");
             stop();
         }
     } else {
@@ -853,6 +853,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
     int oindex;
     int pass;
     const char *name;
+    const char *name2;
     int size;
     int timer;
     int32 interval;
@@ -928,6 +929,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 output = bytecode[index];
                 index++;
 
+                assert(output == true || output == false);
                 inter = UART_INT(uart, output);
             } else if (device == code_watch) {
                 // this is the expression to watch
@@ -1231,7 +1233,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     // evaluate the assignment string
                     index += run_string(bytecode+index, length-index, sizeof(run_buffer1), run_buffer1, &k);
 
-                    // this is how many characetrs we actually printed
+                    // this is how many characters we actually printed
                     k = MIN(k, sizeof(run_buffer1)-1);
 
                     // assign an array of values
@@ -1350,7 +1352,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             } while (index < length && bytecode[index] == code_comma);
             
             if (*main_command) {
-                printf("extra input ignored\n");
+                printf("trailing garbage\n");
+                stop();
             }
             
             main_command = NULL;
@@ -1363,11 +1366,26 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             break;
 
         case code_print:
-#if ! GCC
-            cw7bug++;  // CW7 BUG
-#endif
+        case code_vprint:
             s = run_buffer1;
             n = sizeof(run_buffer1);
+
+            assert(! index);
+
+            // if this is an vprint...
+            if (code == code_vprint) {
+                // if we're printing to a string...
+                if (bytecode[index] == code_string) {
+                    string = true;
+                } else {
+                    assert(bytecode[index] == code_expression);
+                    string = false;
+                }
+                index++;
+
+                // get the variable
+                index += run_var(bytecode+index, length-index, &name2, &max_index);
+            }
 
             // if we're not printing a newline...
             semi = false;
@@ -1421,29 +1439,59 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 }
             } while (index < length && bytecode[index] == code_comma);
 
-            if (! semi) {
-                i = snprintf(s, n, "\n");
-                s += i;
-                n -= i;
+            // if this is a print...
+            if (code == code_print) {
+                // append newline if appropriate
+                if (! semi) {
+                    i = snprintf(s, n, "\n");
+                    s += i;
+                    n -= i;
+                }
             }
 
-            // this is how many characetrs we actually printed
+            // this is how many characters we actually printed
             k = MIN(s - run_buffer1, sizeof(run_buffer1)-1);
 
-            // make sure the run_buffer1 has a trailing \r\n or \n
-            assert(! run_buffer1[sizeof(run_buffer1)-1]);
-            if (k == sizeof(run_buffer1)-1) {
+            // if this is a print...
+            if (code == code_print) {
+                // make sure the run_buffer1 has a trailing \r\n or \n
+                assert(! run_buffer1[sizeof(run_buffer1)-1]);
+                if (k == sizeof(run_buffer1)-1) {
 #if ! STICK_GUEST
-                strcpy(run_buffer1+sizeof(run_buffer1)-3, "\r\n");
+                    strcpy(run_buffer1+sizeof(run_buffer1)-3, "\r\n");
 #else
-                strcpy(run_buffer1+sizeof(run_buffer1)-2, "\n");
+                    strcpy(run_buffer1+sizeof(run_buffer1)-2, "\n");
 #endif
+                }
             }
 
             if (run_condition) {
-                run_printf = true;
-                printf_write(run_buffer1, k);
-                run_printf = false;
+                // if this is a print...
+                if (code == code_print) {
+                    run_printf = true;
+                    printf_write(run_buffer1, k);
+                    run_printf = false;
+                } else {
+                    assert(code == code_vprint);
+
+                    if (string) {
+                        // assign an array of values
+                        size = var_get_size(name2, &count);
+                        for (j = 0; j < count; j++) {
+                            var_set(name2, j, j<k?(byte)(run_buffer1[j]):0);
+                        }
+                    } else {
+                        s = run_buffer1;
+                        if (! run_input_const(&s, &value)) {
+                            printf("bad number\n");
+                            stop();
+                        } else if (*s) {
+                            printf("trailing garbage\n");
+                            stop();
+                        }
+                        var_set(name2, max_index, value);
+                    }
+                }
             }
             break;
 

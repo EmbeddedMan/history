@@ -6194,10 +6194,11 @@ pin_uart_rx(int uart)
         value = 0;
 #endif
         value = value & umask[uart];
-        uart_armed[UART_INT(uart, false)] = true;
     } else {
         value = 0;
     }
+
+    uart_armed[UART_INT(uart, false)] = true;
     
     splx(x);
     

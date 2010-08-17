@@ -24,6 +24,7 @@ enum bytecode {
       code_absolute, // for absolute variables
     code_let,
     code_input,
+    code_vprint,
     code_print,
       code_hex,
       code_dec,
