@@ -148,7 +148,7 @@ static char * const help_commands =
 "load <name>                   -- load saved program\n"
 "memory                        -- print memory usage\n"
 "new                           -- erase code ram and flash memories\n"
-"profile [<line>][-][<line>]   -- like list, but display profile info\n"
+"profile ([<line>][-][<line>]|<subname>) -- display profile info\n"
 "purge <name>                  -- purge saved program\n"
 "renumber [<line>]             -- renumber program lines (and save)\n"
 "reset                         -- reset the MCU!\n"
