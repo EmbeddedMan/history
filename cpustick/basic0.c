@@ -113,9 +113,9 @@ static char *const help_general =
 "  help modes\n"
 "  help statements\n"
 "  help blocks\n"
-"  help strings\n"
 "  help devices\n"
 "  help expressions\n"
+"  help strings\n"
 "  help variables\n"
 "  help pins\n"
 #if MCF52259
@@ -223,9 +223,9 @@ static char * const help_statements =
 "\n"
 "for more information:\n"
 "  help blocks\n"
-"  help strings\n"
 "  help devices\n"
 "  help expressions\n"
+"  help strings\n"
 "  help variables\n"
 ;
 
@@ -252,29 +252,6 @@ static char * const help_blocks =
 "sub <subname> [<param>, ...]\n"
 "  [return]\n"
 "endsub\n"
-;
-
-static char * const help_strings =
-"v$ is a nul-terminated view into a byte array v[]\n"
-"\n"
-"string statements:\n"
-"  dim, input, let, print, vprint\n"
-"  if <expression> <relation> <expression> then\n"
-"  while <expression> <relation> <expression> do\n"
-"  until <expression> <relation> <expression> do\n"
-"\n"
-"string expressions:\n"
-"  \"literal\"                      -- literal string\n"
-"  <variable>$                    -- variable string\n"
-"  <variable>$[<start>:<length>]  -- variable substring\n"
-"  +                              -- concatenates strings\n"
-"\n"
-"string relations:\n"
-"  <=  <  >=  >                   -- inequalities\n"
-"  ==  !=                         -- equal, not equal\n"
-"  ~  !~                          -- contains, does not contain\n"
-"for more information:\n"
-"  help variables\n"
 ;
 
 static char * const help_devices =
@@ -324,6 +301,29 @@ static char * const help_expressions =
 "  ==  !=                    -- equal, not equal\n"
 "  |   ^   &                 -- bitwise or, xor, and\n"
 "  ||  ^^  &&                -- logical or, xor, and\n"
+"for more information:\n"
+"  help variables\n"
+;
+
+static char * const help_strings =
+"v$ is a nul-terminated view into a byte array v[]\n"
+"\n"
+"string statements:\n"
+"  dim, input, let, print, vprint\n"
+"  if <expression> <relation> <expression> then\n"
+"  while <expression> <relation> <expression> do\n"
+"  until <expression> <relation> <expression> do\n"
+"\n"
+"string expressions:\n"
+"  \"literal\"                      -- literal string\n"
+"  <variable>$                    -- variable string\n"
+"  <variable>$[<start>:<length>]  -- variable substring\n"
+"  +                              -- concatenates strings\n"
+"\n"
+"string relations:\n"
+"  <=  <  >=  >                   -- inequalities\n"
+"  ==  !=                         -- equal, not equal\n"
+"  ~  !~                          -- contains, does not contain\n"
 "for more information:\n"
 "  help variables\n"
 ;
@@ -969,10 +969,10 @@ basic0_run(char *text_in)
                 p = help_devices;
             } else if (parse_word(&text, "blocks")) {
                 p = help_blocks;
-            } else if (parse_word(&text, "strings")) {
-                p = help_strings;
             } else if (parse_word(&text, "expressions")) {
                 p = help_expressions;
+            } else if (parse_word(&text, "strings")) {
+                p = help_strings;
             } else if (parse_word(&text, "variables")) {
                 p = help_variables;
             } else if (parse_word(&text, "pins")) {
