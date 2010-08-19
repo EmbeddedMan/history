@@ -24,8 +24,8 @@ static const byte ftdi_device_descriptor[] = {
     PACKET_SIZE,  // packet size
     FTDI_VID%0x100, FTDI_VID/0x100, FTDI_PID%0x100, FTDI_PID/0x100,
     FTDI_RID%0x100, FTDI_RID/0x100,
-    0x00,  // manufacturer (string)  // 01
-    0x00,  // product (string)  // 02
+    0x01,  // manufacturer (string)
+    0x02,  // product (string)
     0x00,  // sn (string)
     0x01  // num configurations
 };

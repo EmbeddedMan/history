@@ -4,16 +4,16 @@
 // REVISIT -- we take debug info from the pic32 environment for now
 #ifdef __DEBUG
 #define SODEBUG  1
-#define DEBUGGING  1
+#define DEBUGGING  0
 #else
 #define SODEBUG  0
-#define DEBUGGING  1
+#define DEBUGGING  0
 #endif
 #elif ! FLASHER
 #endif
 
 // uncomment for HID bootloader and cp procdefs.ld.ubw32 procdefs.ld
-//#define HIDBL  1
+#define HIDBL  1
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #define DEMO  1  // 1 enables DEMO board USB power

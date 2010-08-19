@@ -166,7 +166,7 @@ static char * const help_commands =
 
 static char * const help_modes =
 "analog [<millivolts>]             -- set/display analog voltage scale\n"
-"autorun [on|off]                  -- autorun (on reset) mode\n"
+"autorun [on|off]                  -- autorun mode (on reset)\n"
 "echo [on|off]                     -- terminal echo mode\n"
 "indent [on|off]                   -- listing indent mode\n"
 #if MCF52233

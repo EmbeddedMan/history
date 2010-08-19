@@ -880,18 +880,22 @@ usb_isr(void)
                         ftdi_attached_count++;
                         ftdi_attached = 1;
                     } else if (setup->request == REQUEST_GET_CONFIGURATION) {
+                        endpoints[endpoint].data_pid = TOKEN_IN;
+
                         endpoints[endpoint].data_length = 1;
                         endpoints[endpoint].data_buffer[0] = 1;
 
                         // data phase starts with data1
                         assert(endpoints[endpoint].toggle[1] == BD_FLAGS_DATA);
                         usb_device_enqueue(0, 1, endpoints[endpoint].data_buffer, MIN(endpoints[endpoint].data_length, endpoints[endpoint].packetsize));
+                        goto XXX_SKIP2_XXX;
                     } else {
                         assert(0);
                     }
 
                     // prepare to transfer status (in the other direction)
                     usb_device_enqueue(0, 1, NULL, 0);
+XXX_SKIP2_XXX:;
                 }
             // otherwise, this is a class or vendor command
             } else {
