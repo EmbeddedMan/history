@@ -121,6 +121,17 @@ run
 0x4142 0x4344 0x4546 0x30313233 0x34353637 0x38393a3b 0x61 0x62 0x63
 EOF
 
+echo print semicolon
+"$BASIC" -q <<'EOF'
+1 dim a$
+2 let a$=" "
+10 print 1,2,3;
+20 print "4"+a$+"5"+a$+"6"
+list
+run
+EOF
+
+
 echo strings
 "$BASIC" -q <<'EOF'
 dim a$[80]
@@ -229,4 +240,5 @@ EOF
 
 # uart n read/write
 # i2c
-
+# parse errors
+# runtime errors?
