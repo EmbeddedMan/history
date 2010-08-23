@@ -35,7 +35,7 @@
 #define FLASH_BYTES  (256*1024)  // the smallest part we support
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  4096
-#define BASIC_VARS  100
+#define BASIC_VARS  200
 #define BASIC_STORES  8
 #elif MCF5211
 #define FLASH_START  0
@@ -104,7 +104,7 @@
 #define FLASH_BYTES  (256*1024)  // the smallest part we support
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  4096
-#define BASIC_VARS  100
+#define BASIC_VARS  200
 #define BASIC_STORES  6
 
 #define FLASH2_START  0x9FC00000  // boot flash, for flash upgrade

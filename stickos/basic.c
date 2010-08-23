@@ -250,24 +250,24 @@ basic_run(char *text_in)
                 
                 if (*text) {
                     // find the pin name
-                    for (pin = 0; pin < PIN_LAST; pin++) {
+                    for (pin = 0; pin < pin_last; pin++) {
                         if (parse_wordn(&text, pins[pin].name)) {
                             break;
                         }
                     }
-                    if (pin == PIN_LAST || *text) {
+                    if (pin == pin_last || *text) {
                         goto XXX_ERROR_XXX;
                     }
                     var_set_flash(FLASH_ASSIGNMENTS_BEGIN+i, pin);
                     pin_assign(i, pin);
                 } else {
-                    assert(pin_assignments[i] < PIN_LAST);
+                    assert(pin_assignments[i] < pin_last);
                     printf("%s\n", pins[pin_assignments[i]].name);
                 }
                 
             } else {
                 for (i = 0; i < pin_assignment_max; i++) {
-                    assert(pin_assignments[i] < PIN_LAST);
+                    assert(pin_assignments[i] < pin_last);
                     printf("%s %s\n", pin_assignment_names[i], pins[pin_assignments[i]].name);
                 }
             }
@@ -456,8 +456,13 @@ basic_run(char *text_in)
                     // *** interactive debugger ***
                     // see if this might be a basic line executing directly
                     if (parse_line(text, &length, bytecode, &syntax_error)) {
-                        // run the bytecode
-                        run_bytecode(true, bytecode, length);
+                        // if this line is not allowed in immediate mode...
+                        if (*bytecode == code_input) {
+                            printf("not allowed\n");
+                        } else {
+                            // run the bytecode
+                            run_bytecode(true, bytecode, length);
+                        }
                     } else {
                         terminal_command_error(text-text_in + syntax_error);
                     }

@@ -76,13 +76,13 @@ static int param_offset;  // allocated in FLASH_PARAM_PAGE
 // each array element is a bitmask of watchpoints associated with the
 // indexed pin.  Bits are set in var_get() while evaluating a
 // watchpoint condition.
-static uint8 pin_watchpoint_masks[ROUNDUP(PIN_LAST * num_watchpoints, 8) / 8];
+static uint8 pin_watchpoint_masks[ROUNDUP(PIN_MAX * num_watchpoints, 8) / 8];
 
 static
 int
 pin_watchpoint_mask_index(enum pin_number pin)
 {
-    assert(pin < PIN_LAST);
+    assert(pin < PIN_MAX);
     return pin / (8 / num_watchpoints);
 }
 
@@ -90,7 +90,7 @@ static
 int
 pin_watchpoint_mask_offset(enum pin_number pin)
 {
-    assert(pin < PIN_LAST);
+    assert(pin < PIN_MAX);
     return (pin % (8 / num_watchpoints)) * num_watchpoints;
 }
 
@@ -98,7 +98,7 @@ static
 void
 pin_watchpoint_set_mask(enum pin_number pin, uint32 watchpoint_mask)
 {
-    assert(pin < PIN_LAST);
+    assert(pin < PIN_MAX);
     assert((watchpoint_mask & all_watchpoints_mask) == watchpoint_mask);
     assert(pin_watchpoint_mask_index(pin) < LENGTHOF(pin_watchpoint_masks));
     pin_watchpoint_masks[pin_watchpoint_mask_index(pin)] |= watchpoint_mask << pin_watchpoint_mask_offset(pin);
@@ -108,7 +108,7 @@ static
 uint8
 pin_watchpoint_get_mask(enum pin_number pin)
 {
-    assert(pin < PIN_LAST);
+    assert(pin < PIN_MAX);
     assert(pin_watchpoint_mask_index(pin) < LENGTHOF(pin_watchpoint_masks));
     return (pin_watchpoint_masks[pin_watchpoint_mask_index(pin)] >> pin_watchpoint_mask_offset(pin)) & all_watchpoints_mask;
 }
@@ -861,7 +861,7 @@ void
 var_initialize(void)
 {
     // because struct var uses a byte for pin.number, assert that a byte is large enough to represented all pin numbers.
-    assert(PIN_LAST <= 255);
+    assert(PIN_MAX <= 255);
 
     // because pin_watchpoint_*() routines depend on a power of 2 number of watchpoints.
     assert((num_watchpoints == 1) || (num_watchpoints == 2) || (num_watchpoints == 4) || (num_watchpoints == 8));

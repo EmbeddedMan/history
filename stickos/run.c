@@ -1212,7 +1212,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                         pin_type = bytecode[index++];
                         pin_qual = bytecode[index++];
 
-                        assert(pin_number >= 0 && pin_number < PIN_LAST);
+                        assert(pin_number >= 0 && pin_number < pin_last);
 
                         // treat a non-array variable element as element zero of an array.
                         if (simple_var) {
@@ -1317,7 +1317,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             if (! main_command) {
                 index = length;  // blindly skip the bytecode
                 
-                // wait for input by simply execuuting the bytecode again
+                // wait for input by simply executing the bytecode again
                 // N.B. waits occur in the main loop so we can service interrupts
                 run_line_number--;
                 break;

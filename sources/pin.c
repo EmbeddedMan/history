@@ -98,6 +98,8 @@ const char * const pin_qual_names[] = {
     "open_drain"
 };
 
+int pin_last;
+
 uint16 pin_analog = 3300;
 
 static byte declared[(PIN_UNASSIGNED+7)/8];
@@ -470,8 +472,8 @@ const struct pin pins[] = {
     "ra6", DIO,
     "ra7", DIO,
     "ra8", 0,
-    "ra9", 0,
-    "ra10", 0,
+    "ra9", DIO,
+    "ra10", DIO,
     "ra11", 0,
     "ra12", 0,
     "ra13", 0,
@@ -506,9 +508,10 @@ const struct pin pins[] = {
     "rc9", 0,
     "rc10", 0,
     "rc11", 0,
-    "rc12", 0,
+    "rc12", DIO,
     "rc13", DIO,  // rc13...
     "rc14", DIO,
+    "rc15", DIO,
     "rd0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc1
     "rd1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc2
     "rd2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc3
@@ -551,8 +554,8 @@ const struct pin pins[] = {
     "rf13", DIO,
     "rg0", DIO,
     "rg1", DIO,
-    "rg2", 0,
-    "rg3", 0,
+    "rg2", DIO,
+    "rg3", DIO,
     "rg4", 0,
     "rg5", 0,
     "rg6", DIO,
@@ -564,6 +567,7 @@ const struct pin pins[] = {
     "rg12", DIO,
     "rg13", DIO,
     "rg14", DIO,
+    "rg15", DIO,
 #else
 #error
 #endif
@@ -6339,6 +6343,7 @@ pin_initialize(void)
     int32 analog;
 #endif
 
+    assert(PIN_LAST <= PIN_MAX);
     assert(pin_type_last < (sizeof(uint16)*8));
     assert(pin_qual_last < (sizeof(byte)*8));
     assert(LENGTHOF(pins) == PIN_LAST);

@@ -18,6 +18,8 @@
 
 // prior 2
 // =======
+// expose erase_page and write_word to basic to manipulate other half of flash!
+// allow input of negative numbers
 // give vprint ability to do sign extension?
 // add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
 // add configurable file name for usb host mode

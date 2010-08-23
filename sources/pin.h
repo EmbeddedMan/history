@@ -452,6 +452,7 @@ enum pin_number {
     PIN_RC12,  // unused
     PIN_RC13,
     PIN_RC14,
+    PIN_RC15,
     PIN_RD0,  // oc1
     PIN_RD1,  // oc2
     PIN_RD2,  // oc3
@@ -507,12 +508,17 @@ enum pin_number {
     PIN_RG12,
     PIN_RG13,
     PIN_RG14,
+    PIN_RG15,
 #else
 #error
 #endif
     PIN_UNASSIGNED,
     PIN_LAST
 };
+
+#define PIN_MAX  255  // do not change; PIN_LAST may not exceed 255!!!
+
+extern int pin_last;
 
 extern uint16 pin_analog;
 

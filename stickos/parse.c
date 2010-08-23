@@ -1142,15 +1142,15 @@ XXX_AGAIN_XXX:
                         bytecode[length++] = code_pin;
 
                         // parse the pin name
-                        for (pin_number = 0; pin_number < PIN_LAST; pin_number++) {
+                        for (pin_number = 0; pin_number < pin_last; pin_number++) {
                             if (parse_wordn(&text, pins[pin_number].name)) {
                                 break;
                             }
                         }
-                        if (pin_number == PIN_LAST) {
+                        if (pin_number == pin_last) {
                             goto XXX_ERROR_XXX;
                         }
-                        assert(pin_number < PIN_LAST);
+                        assert(pin_number < pin_last);
                         bytecode[length++] = pin_number;
 
                         if (! parse_word(&text, "for")) {
@@ -2172,7 +2172,7 @@ XXX_AGAIN_XXX:
                 qual = *bytecode++;
 
                 // decompile the pin name
-                assert(pin >= 0 && pin < PIN_LAST);
+                assert(pin >= 0 && pin < pin_last);
                 out += sprintf(out, "%s ", pins[pin].name);
 
                 out += sprintf(out, "for ");
