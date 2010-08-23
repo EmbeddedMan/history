@@ -2,6 +2,8 @@
 
 extern bool serial_active;
 
+extern int serial_baudrate;
+
 void
 serial_disable(void);
 

@@ -98,7 +98,7 @@ const char * const pin_qual_names[] = {
     "open_drain"
 };
 
-int pin_last;
+int pin_last = PIN_LAST;
 
 uint16 pin_analog = 3300;
 

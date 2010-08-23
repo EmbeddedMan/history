@@ -721,9 +721,9 @@ zb_initialize(void)
 {
     int x;
     int id;
-    
+
     assert(sizeof(packet_t) <= 125);
-    
+
     // leave clone in reset while we use the qspi chip select for zigflea
     //pin_set(pin_assignments[pin_assignment_clone_rst], pin_type_digital_output, 0, 0);
     

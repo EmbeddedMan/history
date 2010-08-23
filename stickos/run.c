@@ -2466,7 +2466,7 @@ stop()
 void
 run_initialize(void)
 {
-    watch_mode_smart = var_get_flash(FLASH_WATCH_SMART);
+    watch_mode_smart = !! var_get_flash(FLASH_WATCH_SMART);
     assert(MAX_INTS < sizeof(run_isr_enabled)*8);
 }
 

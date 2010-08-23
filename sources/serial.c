@@ -26,6 +26,8 @@ static bool busy;  // we're in the middle of a send() loop
 
 bool serial_active;
 
+int serial_baudrate;
+
 #if SODEBUG
 volatile bool serial_in_isr;
 volatile int32 serial_in_ticks;
@@ -214,8 +216,14 @@ serial_send(const byte *buffer, int length)
 void
 serial_initialize(void)
 {
+    // get the baudrate from flash; revert to 9600 on autorun disable
+    serial_baudrate = var_get_flash(FLASH_BAUD);
+    if (! serial_baudrate || serial_baudrate == -1 || disable_autorun) {
+        serial_baudrate = BAUDRATE;
+    }
+
     // configure the first uart for serial terminal by default
-    pin_uart_configure(UART, BAUDRATE, 8, 2, false);
+    pin_uart_configure(UART, serial_baudrate, 8, 2, false);
     
     // start us out with a CTRLQ
     pin_uart_tx(UART, CTRLQ);

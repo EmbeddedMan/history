@@ -3,6 +3,7 @@
 // variables at end of flash page
 enum flash_var {
     FLASH_AUTORUN,
+    FLASH_BAUD,
     FLASH_USBHOST,
     FLASH_ANALOG,
     FLASH_SERVO,

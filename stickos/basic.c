@@ -30,6 +30,7 @@ struct timer_unit const timer_units[] = {
 enum cmdcode {
     command_analog,  // nnn
     command_auto,  // [nnn]
+    command_baud,  // nnn
     command_clear,  // [flash]
     command_cls,
     command_cont,  // [nnn]
@@ -55,6 +56,7 @@ static
 const char * const commands[] = {
     "analog",
     "auto",
+    "baud",
     "clear",
     "cls",
     "cont",
@@ -213,6 +215,7 @@ basic_run(char *text_in)
 
     switch (cmd) {
         case command_analog:
+        case command_baud:
         case command_servo:
             if (*text) {
                 if (! basic_const(&text, &number1) || number1 == -1) {
@@ -227,15 +230,18 @@ basic_run(char *text_in)
                     }
                     var_set_flash(FLASH_ANALOG, number1);
                     pin_analog = number1;
+                } else if (cmd == command_baud) {
+                    var_set_flash(FLASH_BAUD, number1);
+                    // N.B. used on next reboot
                 } else {
-                    if (number1 < 30 || number1 > 400) {
+                    if (number1 < 20 || number1 > 500) {
                         goto XXX_ERROR_XXX;
                     }
                     var_set_flash(FLASH_SERVO, number1);
                     // N.B. used on next reboot
                 }
             } else {
-                printf("%d\n", cmd == command_analog ? pin_analog : servo_hz);
+                printf("%d\n", cmd == command_analog ? pin_analog : (cmd == command_baud ? serial_baudrate : servo_hz));
             }
             break;
 

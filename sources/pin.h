@@ -14,7 +14,7 @@ extern int servo_hz;
 
 // assigned pins
 
-enum pin_assignment {
+enum pin_assignment {  // XXX -- should we allow skeleton to extend this?
     pin_assignment_heartbeat,
     pin_assignment_safemode,
     pin_assignment_qspi_cs,  // clone and zigflea
@@ -31,7 +31,7 @@ extern byte pin_assignments[pin_assignment_max];
     
 
 // up to 16 bits
-enum pin_type {
+enum pin_type {  // XXX -- should we allow skeleton to extend this?
     pin_type_digital_input,
     pin_type_digital_output,
     pin_type_analog_input,
@@ -46,7 +46,7 @@ enum pin_type {
 extern const char * const pin_type_names[];
 
 // up to 8 bits.  keep in-sync with pin_qual_names.
-enum pin_qual {
+enum pin_qual {  // XXX -- should we allow skeleton to extend this?
     pin_qual_debounced,
     pin_qual_inverted,
     pin_qual_open_drain,
@@ -58,7 +58,7 @@ extern const byte pin_qual_mask[];
 extern const char * const pin_qual_names[];
 
 // N.B. pins marked with *** may affect zigflea or other system operation
-enum pin_number {
+enum pin_number {  // skeleton may extend this
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     PIN_DTIN0,
     PIN_DTIN1,
@@ -516,7 +516,7 @@ enum pin_number {
     PIN_LAST
 };
 
-#define PIN_MAX  255  // do not change; PIN_LAST may not exceed 255!!!
+#define PIN_MAX  255  // do not change; PIN_MAX/PIN_LAST may not exceed 255!!!
 
 extern int pin_last;
 

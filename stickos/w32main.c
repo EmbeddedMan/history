@@ -5,6 +5,7 @@
 #endif
 #include "main.h"
 
+int serial_baudrate;
 bool zb_present = true;
 bool main_prompt = true;
 bool terminal_echo = true;
