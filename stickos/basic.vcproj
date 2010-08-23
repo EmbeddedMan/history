@@ -1124,11 +1124,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\test\basic3.sh"
+				>
+			</File>
+			<File
+				RelativePath="..\test\basic3.txt"
+				>
+			</File>
+			<File
 				RelativePath="..\test\test.sh"
 				>
 			</File>
 			<File
 				RelativePath="..\test\test2.sh"
+				>
+			</File>
+			<File
+				RelativePath="..\test\test3.sh"
 				>
 			</File>
 		</Filter>

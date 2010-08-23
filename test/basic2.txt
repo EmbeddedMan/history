@@ -13,9 +13,9 @@ for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
   help pins
-  help board
   help clone
   help zigflea
 
@@ -31,16 +31,16 @@ clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
-delete [<line>][-][<line>]    -- delete program lines or <subname>
-download <slave Hz>           -- download for relay to QSPI to EzPort
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
-list [<line>][-][<line>]      -- list program lines or <subname>
+list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
-profile [<line>][-][<line>]   -- like list, but display profile info
+profile ([<line>][-][<line>]|<subname>) -- display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
@@ -53,7 +53,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
-autorun [on|off]                  -- autorun (on reset) mode
+autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 nodeid [<nodeid>|none]            -- set/display zigflea nodeid
@@ -68,32 +68,34 @@ watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
   heartbeat  safemode*
-  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
+<line>                                 -- delete program line from code ram
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
-dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
 end                                    -- end program
 halt                                   -- loop forever
-input [dec|hex|raw] <variable> [, ...] -- input data
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
-let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
-qspi <variable> [, ...]                -- perform qspi I/O by reference
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
 sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
 if <expression> then
 [elseif <expression> then]
@@ -130,6 +132,13 @@ uarts:
   off uart <n> (input|output)                -- disable uart interrupt
   mask uart <n> (input|output)               -- mask/hold uart interrupt
   unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
 
 watchpoints:
   on <expression> do <statement>             -- on expr execute statement
@@ -140,8 +149,10 @@ the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
   <variable>                -- simple variable
   <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
   (   )                     -- grouping
   !   ~                     -- logical not, bitwise not
   *   /   %                 -- times, divide, mod
@@ -155,12 +166,12 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
-simple variables are passed to sub params by reference
+simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for print and qspi statements
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
 
 ram variables:
-  dim <var>[[n]]
+  dim <var>[$][[n]]
   dim <var>[[n]] as (byte|short)
 
 absolute variables:
@@ -175,7 +186,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -197,27 +208,7 @@ dtin? = potential servo output (PWM) pins (cms)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
-                1  2  3  4  5  6  7  8  9  10 11 12 13 14
-
-                g  +  u  u  u  u  u  u  u  u  i  i  i  +
-                n  3  c  r  r  t  c  r  r  t  r  r  r  5
-                d  V  t  t  x  x  t  t  x  x  q  q  q  V
-                      s  s  d  d  s  s  d  d  7  4  1
-1  gnd                0  0  0  0  1  1  1  1  *  *  *
-2  +3V                *  *        *  *
-3  rsti*
-4  scl
-5  sda
-6  qspi_din
-7  qspi_dout
-8  qspi_clk
-9  qspi_cs0           d  d  d  d
-10 rcon*/irq4*        t  t  t  t
-                g  +  i  i  i  i  a  a  a  a  a  a  a  a
-                n  3  n  n  n  n  n  n  n  n  n  n  n  n
-                d  V  3  2  1  0  0  1  2  3  4  5  6  7
-
-                1  2  3  4  5  6  7  8  9  10 11 12 13 14
+       ^ - error
 clone cable:
   master           slave
   ---------        ----------------
@@ -310,6 +301,7 @@ for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
   help pins
   help clone
@@ -327,16 +319,16 @@ clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
-delete [<line>][-][<line>]    -- delete program lines or <subname>
-download <slave Hz>           -- download for relay to QSPI to EzPort
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
-list [<line>][-][<line>]      -- list program lines or <subname>
+list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
-profile [<line>][-][<line>]   -- like list, but display profile info
+profile ([<line>][-][<line>]|<subname>) -- display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
@@ -349,7 +341,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
-autorun [on|off]                  -- autorun (on reset) mode
+autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 ipaddress [dhcp|<ipaddress>]      -- set/display ip address
@@ -365,32 +357,34 @@ watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
   heartbeat  safemode*
-  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
+<line>                                 -- delete program line from code ram
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
-dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
 end                                    -- end program
 halt                                   -- loop forever
-input [dec|hex|raw] <variable> [, ...] -- input data
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
-let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
-qspi <variable> [, ...]                -- perform qspi I/O by reference
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
 sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
 if <expression> then
 [elseif <expression> then]
@@ -427,6 +421,13 @@ uarts:
   off uart <n> (input|output)                -- disable uart interrupt
   mask uart <n> (input|output)               -- mask/hold uart interrupt
   unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
 
 watchpoints:
   on <expression> do <statement>             -- on expr execute statement
@@ -437,8 +438,10 @@ the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
   <variable>                -- simple variable
   <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
   (   )                     -- grouping
   !   ~                     -- logical not, bitwise not
   *   /   %                 -- times, divide, mod
@@ -452,12 +455,12 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
-simple variables are passed to sub params by reference
+simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for print and qspi statements
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
 
 ram variables:
-  dim <var>[[n]]
+  dim <var>[$][[n]]
   dim <var>[[n]] as (byte|short)
 
 absolute variables:
@@ -472,7 +475,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -587,6 +590,7 @@ for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
   help pins
   help board
@@ -605,16 +609,16 @@ clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
-delete [<line>][-][<line>]    -- delete program lines or <subname>
-download <slave Hz>           -- download for relay to QSPI to EzPort
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
-list [<line>][-][<line>]      -- list program lines or <subname>
+list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
-profile [<line>][-][<line>]   -- like list, but display profile info
+profile ([<line>][-][<line>]|<subname>) -- display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
@@ -627,7 +631,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
-autorun [on|off]                  -- autorun (on reset) mode
+autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 nodeid [<nodeid>|none]            -- set/display zigflea nodeid
@@ -643,32 +647,34 @@ watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
   heartbeat  safemode*
-  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
+<line>                                 -- delete program line from code ram
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
-dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
 end                                    -- end program
 halt                                   -- loop forever
-input [dec|hex|raw] <variable> [, ...] -- input data
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
-let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
-qspi <variable> [, ...]                -- perform qspi I/O by reference
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
 sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
 if <expression> then
 [elseif <expression> then]
@@ -705,6 +711,13 @@ uarts:
   off uart <n> (input|output)                -- disable uart interrupt
   mask uart <n> (input|output)               -- mask/hold uart interrupt
   unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
 
 watchpoints:
   on <expression> do <statement>             -- on expr execute statement
@@ -715,8 +728,10 @@ the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
   <variable>                -- simple variable
   <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
   (   )                     -- grouping
   !   ~                     -- logical not, bitwise not
   *   /   %                 -- times, divide, mod
@@ -730,12 +745,12 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
-simple variables are passed to sub params by reference
+simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for print and qspi statements
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
 
 ram variables:
-  dim <var>[[n]]
+  dim <var>[$][[n]]
   dim <var>[[n]] as (byte|short)
 
 absolute variables:
@@ -750,7 +765,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -890,6 +905,7 @@ for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
   help pins
   help clone
@@ -907,16 +923,16 @@ clear [flash]                 -- clear ram [and flash] variables
 clone [run]                   -- clone flash to slave MCU [and run]
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
-delete [<line>][-][<line>]    -- delete program lines or <subname>
-download <slave Hz>           -- download for relay to QSPI to EzPort
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
-list [<line>][-][<line>]      -- list program lines or <subname>
+list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
-profile [<line>][-][<line>]   -- like list, but display profile info
+profile ([<line>][-][<line>]|<subname>) -- display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
@@ -929,7 +945,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
-autorun [on|off]                  -- autorun (on reset) mode
+autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 nodeid [<nodeid>|none]            -- set/display zigflea nodeid
@@ -944,32 +960,34 @@ watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
   heartbeat  safemode*
-  qspi_cs*   clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
+<line>                                 -- delete program line from code ram
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
-dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
 end                                    -- end program
 halt                                   -- loop forever
-input [dec|hex|raw] <variable> [, ...] -- input data
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
-let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
-qspi <variable> [, ...]                -- perform qspi I/O by reference
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
 sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
 if <expression> then
 [elseif <expression> then]
@@ -1006,6 +1024,13 @@ uarts:
   off uart <n> (input|output)                -- disable uart interrupt
   mask uart <n> (input|output)               -- mask/hold uart interrupt
   unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
 
 watchpoints:
   on <expression> do <statement>             -- on expr execute statement
@@ -1016,8 +1041,10 @@ the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
   <variable>                -- simple variable
   <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
   (   )                     -- grouping
   !   ~                     -- logical not, bitwise not
   *   /   %                 -- times, divide, mod
@@ -1031,12 +1058,12 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
-simple variables are passed to sub params by reference
+simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for print and qspi statements
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
 
 ram variables:
-  dim <var>[[n]]
+  dim <var>[$][[n]]
   dim <var>[[n]] as (byte|short)
 
 absolute variables:
@@ -1051,7 +1078,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -1167,6 +1194,7 @@ for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
   help pins
   help zigflea
@@ -1182,16 +1210,16 @@ auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
-delete [<line>][-][<line>]    -- delete program lines or <subname>
-download <slave Hz>           -- download for relay to QSPI to EzPort
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
-list [<line>][-][<line>]      -- list program lines or <subname>
+list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
-profile [<line>][-][<line>]   -- like list, but display profile info
+profile ([<line>][-][<line>]|<subname>) -- display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
@@ -1204,7 +1232,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
-autorun [on|off]                  -- autorun (on reset) mode
+autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 nodeid [<nodeid>|none]            -- set/display zigflea nodeid
@@ -1219,32 +1247,34 @@ watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
   heartbeat  safemode*
-  qspi_cs*   zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
+<line>                                 -- delete program line from code ram
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
-dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
 end                                    -- end program
 halt                                   -- loop forever
-input [dec|hex|raw] <variable> [, ...] -- input data
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
-let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
-qspi <variable> [, ...]                -- perform qspi I/O by reference
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
 sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
 if <expression> then
 [elseif <expression> then]
@@ -1281,6 +1311,10 @@ uarts:
   off uart <n> (input|output)                -- disable uart interrupt
   mask uart <n> (input|output)               -- mask/hold uart interrupt
   unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
 
 watchpoints:
   on <expression> do <statement>             -- on expr execute statement
@@ -1291,8 +1325,10 @@ the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
   <variable>                -- simple variable
   <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
   (   )                     -- grouping
   !   ~                     -- logical not, bitwise not
   *   /   %                 -- times, divide, mod
@@ -1306,12 +1342,12 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
-simple variables are passed to sub params by reference
+simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for print and qspi statements
+v is the same as v[0], except for input/print/qspi/uart statements
 
 ram variables:
-  dim <var>[[n]]
+  dim <var>[$][[n]]
   dim <var>[[n]] as (byte|short)
 
 absolute variables:
@@ -1326,7 +1362,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -1432,6 +1468,7 @@ for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
   help pins
   help zigflea
@@ -1447,16 +1484,16 @@ auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
-delete [<line>][-][<line>]    -- delete program lines or <subname>
-download <slave Hz>           -- download for relay to QSPI to EzPort
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
-list [<line>][-][<line>]      -- list program lines or <subname>
+list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
-profile [<line>][-][<line>]   -- like list, but display profile info
+profile ([<line>][-][<line>]|<subname>) -- display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
@@ -1469,7 +1506,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
-autorun [on|off]                  -- autorun (on reset) mode
+autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 nodeid [<nodeid>|none]            -- set/display zigflea nodeid
@@ -1484,32 +1521,34 @@ watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
   heartbeat  safemode*
-  qspi_cs*   zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
+<line>                                 -- delete program line from code ram
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
-dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
 end                                    -- end program
 halt                                   -- loop forever
-input [dec|hex|raw] <variable> [, ...] -- input data
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
-let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
-qspi <variable> [, ...]                -- perform qspi I/O by reference
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
 sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
 if <expression> then
 [elseif <expression> then]
@@ -1546,6 +1585,10 @@ uarts:
   off uart <n> (input|output)                -- disable uart interrupt
   mask uart <n> (input|output)               -- mask/hold uart interrupt
   unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
 
 watchpoints:
   on <expression> do <statement>             -- on expr execute statement
@@ -1556,8 +1599,10 @@ the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
   <variable>                -- simple variable
   <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
   (   )                     -- grouping
   !   ~                     -- logical not, bitwise not
   *   /   %                 -- times, divide, mod
@@ -1571,12 +1616,12 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
-simple variables are passed to sub params by reference
+simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for print and qspi statements
+v is the same as v[0], except for input/print/qspi/uart statements
 
 ram variables:
-  dim <var>[[n]]
+  dim <var>[$][[n]]
   dim <var>[[n]] as (byte|short)
 
 absolute variables:
@@ -1591,7 +1636,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -1697,6 +1742,7 @@ for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
   help pins
   help zigflea
@@ -1712,16 +1758,16 @@ auto <line>                   -- automatically number program lines
 clear [flash]                 -- clear ram [and flash] variables
 cls                           -- clear terminal screen
 cont [<line>]                 -- continue program from stop
-delete [<line>][-][<line>]    -- delete program lines or <subname>
-download <slave Hz>           -- download for relay to QSPI to EzPort
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
 dir                           -- list saved programs
 edit <line>                   -- edit program line
 help [<topic>]                -- online help
-list [<line>][-][<line>]      -- list program lines or <subname>
+list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
-profile [<line>][-][<line>]   -- like list, but display profile info
+profile ([<line>][-][<line>]|<subname>) -- display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
@@ -1733,7 +1779,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
-autorun [on|off]                  -- autorun (on reset) mode
+autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 nodeid [<nodeid>|none]            -- set/display zigflea nodeid
@@ -1748,34 +1794,36 @@ watchsmart [on|off]               -- low-overhead watchpoint mode
 
 pin assignments:
   heartbeat  safemode*
-  qspi_cs*   zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
 
 for more information:
   help pins
+<line>                                 -- delete program line from code ram
 <line> <statement>                     -- enter program line into code ram
 
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
-dim <variable>[[n]] [as ...] [, ...]   -- dimension variables
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
 end                                    -- end program
 jm(clear|set) <r>, <c>                 -- clear/set row/column of LED matrix
 jmscroll ...                           -- scroll printout to LED matrix
 halt                                   -- loop forever
-input [dec|hex|raw] <variable> [, ...] -- input data
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
-let <variable> = <expression> [, ...]  -- assign variable
-print ("string"|[dec|hex|raw] <expression>) [, ...]  -- print results
-qspi <variable> [, ...]                -- perform qspi I/O by reference
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
 sleep <expression> (s|ms|us)           -- delay program execution
 stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
   help devices
   help expressions
+  help strings
   help variables
 if <expression> then
 [elseif <expression> then]
@@ -1812,6 +1860,10 @@ uarts:
   off uart <n> (input|output)                -- disable uart interrupt
   mask uart <n> (input|output)               -- mask/hold uart interrupt
   unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
 
 watchpoints:
   on <expression> do <statement>             -- on expr execute statement
@@ -1822,8 +1874,10 @@ the following operators are supported as in C,
 in order of decreasing precedence:
   <n>                       -- decimal constant
   0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
   <variable>                -- simple variable
   <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
   (   )                     -- grouping
   !   ~                     -- logical not, bitwise not
   *   /   %                 -- times, divide, mod
@@ -1837,12 +1891,12 @@ for more information:
   help variables
 all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
-simple variables are passed to sub params by reference
+simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for print and qspi statements
+v is the same as v[0], except for input/print/qspi/uart statements
 
 ram variables:
-  dim <var>[[n]]
+  dim <var>[$][[n]]
   dim <var>[[n]] as (byte|short)
 
 absolute variables:
@@ -1857,7 +1911,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins

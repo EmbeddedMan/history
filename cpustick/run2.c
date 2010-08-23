@@ -44,12 +44,12 @@ run2_bytecode_code(uint code, const byte *bytecode, int length)
 
         case code_set:
         case code_clear:
-            index += run_evaluate(bytecode+index, length-index, NULL, &r);
+            index += run_expression(bytecode+index, length-index, NULL, &r);
             
             assert(bytecode[index] == code_comma);
             index++;
             
-            index += run_evaluate(bytecode+index, length-index, NULL, &c);
+            index += run_expression(bytecode+index, length-index, NULL, &c);
             
             if (run_condition) {
 #if ! STICK_GUEST
