@@ -17,6 +17,8 @@ bool run_step;
 bool run_sleep = true;
 bool run_trace;
 
+bool run_isr;
+
 int run_line_number;
 
 int data_line_number;
@@ -630,7 +632,7 @@ subprintarray(
     int n,
     const char *name,
     int start,
-    int length OPTIONAL,  // -1
+    int length,
     int format,
     bool string
     )
@@ -653,7 +655,7 @@ subprintarray(
             if (string && ! value) {
                 break;
             }
-            if (j >= start && (length == -1 || j < start+length)) {
+            if (j >= start && j < start+length) {
                 i += subprint(s+i, n-i, value, format, size);
             }
         }
@@ -692,8 +694,8 @@ run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *str
             case code_load_string:
             case code_load_string_indexed:
                 if (code == code_load_string) {
-                    value1 = -1;
-                    value2 = -1;
+                    value1 = 0;
+                    value2 = 0x7fff;
                 } else {
                     blen = read32(bytecode);
                     bytecode += sizeof(uint32);
@@ -1455,7 +1457,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     index += run_expression(bytecode+index, length-index, &name, &value);
                     if (name) {
                         // print an array of values
-                        i = subprintarray(s, n, name, -1, -1, format, false);
+                        i = subprintarray(s, n, name, 0, 0x7fff, format, false);
                     } else {
                         // print a single value
                         i = subprint(s, n, value, format, 4);
@@ -2085,6 +2087,10 @@ XXX_PERF_XXX:
 
         case code_sleep:
             // N.B. sleeps occur in the main loop so we can service interrupts
+            if (run_isr) {
+                printf("not allowed\n");
+                goto XXX_SKIP_XXX;
+            }
 
             // get the sleep ticks
             index += run_timer(bytecode+index, length-index, &value);
@@ -2198,7 +2204,6 @@ run(bool cont, int start_line_number)
 {
     int i;
     int32 tick;
-    bool isr;
     uint32 mask;
     int length;
     int32 value;
@@ -2222,7 +2227,7 @@ run(bool cont, int start_line_number)
     }
     run_sleep_line_number = 0;
 
-    isr = false;
+    run_isr = false;
     run_stop = 1;
 
     // this is the main run loop that executes program statements!
@@ -2385,7 +2390,7 @@ run(bool cont, int start_line_number)
 
         // if we're not already running an isr...
       XXX_CHECK_ISRS_XXX:
-        if (run_isr_pending && ! isr) {
+        if (run_isr_pending && ! run_isr) {
             for (i = 0; i < MAX_INTS; i++) {
                 // if we have an isr to run...
                 mask = 1<<i;
@@ -2404,8 +2409,8 @@ run(bool cont, int start_line_number)
                     // *** interrupt handler ***
                     
                     // run the isr, starting with the handler statement (which might be a gosub)
-                    assert(! isr);
-                    isr = true;
+                    assert(! run_isr);
+                    run_isr = true;
                     run_line_number = -1;
                     if (run_bytecode_code(*run_isr_bytecode[i], false, run_isr_bytecode[i]+1, run_isr_length[i]-1)) {
                         stop();
@@ -2427,8 +2432,8 @@ run(bool cont, int start_line_number)
             assert(cur_scopes);
             cur_scopes--;
 
-            assert(isr);
-            isr = false;
+            assert(run_isr);
+            run_isr = false;
 
             // check for more isrs before running any non-isr code.  multiple watchpoints may be enabled and should all be
             // executed to completion before continuing non-isr code.
