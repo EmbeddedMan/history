@@ -1,12 +1,12 @@
 // prior 1
 // =======
 // mode to disable usb device (and autorun disable to override)
-// store console uart bard rate in flash as mode; revert to 9600 on autorun disable
 // move block.c and fat32.c from pict-o-crypt to sources (include in skeleton)
 // on/off/mask/unmask should move to parse2.c/run2.c
 // 9s12 and others need to reset timer counter when increasing frequency output -- see "wrap"
 // add qspi pin assignments to online help (data, clk, cs)
 // Ctrl-E to dump all variables while basic program is running?
+// add a faster zigflea option for pic32/5225x!
 
 // doc
 // ===
@@ -100,3 +100,6 @@ avr32  EVK1104
 MSP430 or Atmel XMega
 lpc1758?  lpc2xxx?
 pic24
+9s12e
+51ac/9s08ac
+
