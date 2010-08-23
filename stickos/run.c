@@ -819,11 +819,18 @@ static
 void
 uart_read_write(IN int uart, IN bool write, byte *buffer, int length)
 {
+    int breaks;
+    
+    breaks = run_breaks;
     while (length--) {
         if (write) {
             pin_uart_tx(uart, *buffer);
         } else {
-            // while (! pin_uart_rx_ready(int uart)) ;
+            while (! pin_uart_rx_ready(uart)) {
+                if (run_breaks != breaks) {
+                    break;
+                }
+            }
             *buffer = pin_uart_rx(uart);
         }
     }
@@ -1505,6 +1512,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 }
 
                 code2 = bytecode[index];
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
                 if (code2 == code_device_start) {
                     assert(code == code_i2c);
                     index++;
@@ -1525,7 +1533,9 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 #endif
                     }
                     break;
-                } else if (code2 == code_device_read) {
+                } else
+#endif
+                if (code2 == code_device_read) {
                     assert(code == code_i2c || code == code_uart);
                     index++;
                 } else {
@@ -1647,6 +1657,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 #if ! STICK_GUEST
                             qspi_transfer(false, big_buffer, p-big_buffer);
 #endif
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
                         } else {
                             assert(code == code_i2c);
                             if (code2 == code_device_read) {
@@ -1663,6 +1674,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                                 // N.B. no need for the next pass for a write
                                 break;
                             }
+#endif
                         }
                     }
 
@@ -2149,7 +2161,9 @@ run_clear(bool flash)
     var_clear(flash);
 
 #if ! STICK_GUEST
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
     i2c_stop();
+#endif
 #endif
 }
 

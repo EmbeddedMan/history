@@ -4,8 +4,7 @@
 
 MEMORY {
    page0       (RX)  : ORIGIN = 0x20000000, LENGTH = 0x00000800
-   page1       (RX)  : ORIGIN = 0x20000800, LENGTH = 0x00000400
-   code        (RX)  : ORIGIN = 0x20000c00, LENGTH = 0x00002800
+   code        (RX)  : ORIGIN = 0x20000800, LENGTH = 0x00002c00
    userram     (RWX) : ORIGIN = 0x20003400, LENGTH = 0x00000c00
 }
 
@@ -39,12 +38,6 @@ SECTIONS {
 		*(.page0)
 		. = ALIGN (0x4); 
 	} > page0
-
-	.page1 :
-	{
-		*(.page1)
-		. = ALIGN (0x4); 
-	} > page1
 
 	.text :
 	{

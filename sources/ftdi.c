@@ -14,7 +14,7 @@
 // The PIDs must be used with VID 0403.
 #define FTDI_VID  0x0403
 #define FTDI_PID  0xA660
-#define FTDI_RID  0x0400
+#define FTDI_RID  0x0180
 
 static const byte ftdi_device_descriptor[] = {
     18,  // length

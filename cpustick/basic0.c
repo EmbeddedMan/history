@@ -270,9 +270,11 @@ static char * const help_devices =
 "  unmask uart <n> (input|output)             -- unmask uart interrupt\n"
 "  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O\n"
 "\n"
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
 "i2c:\n"
 "  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O\n"
 "\n"
+#endif
 "qspi:\n"
 "  qspi <variable> [, ...]                    -- master qspi I/O\n"
 "\n"
@@ -333,7 +335,11 @@ static char *const help_variables =
 "variables dimensioned in a sub are local to that sub\n"
 "simple variables are passed to sub params by reference; otherwise, by value\n"
 "array variable indices start at 0\n"
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
 "v is the same as v[0], except for input/print/i2c/qspi/uart statements\n"
+#else
+"v is the same as v[0], except for input/print/qspi/uart statements\n"
+#endif
 "\n"
 "ram variables:\n"
 "  dim <var>[$][[n]]\n"
