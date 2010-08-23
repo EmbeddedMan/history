@@ -861,6 +861,28 @@ parse_format(IN char **text, IN OUT int *length, IN OUT byte *bytecode)
     }
 }
 
+static
+bool
+parse_time(IN char **text, IN OUT int *length, IN OUT byte *bytecode)
+{
+    int i;
+
+    // parse and push the trailing timer interval unit specifier
+    for (i = 0; i < timer_unit_max; i++) {
+        if (parse_find_tail(*text, timer_units[i].name)) {
+            bytecode[(*length)++] = i;
+            break;
+        }
+    }
+    if (i == timer_unit_max) {
+        *text += strlen(*text);
+        return false;
+    }
+
+    // parse the sleep time expression
+    return parse_expression(0, text, length, bytecode);
+}
+
 // this function parses (compiles) a public statement line to bytecode,
 // excluding the keyword.
 bool
@@ -1010,19 +1032,7 @@ XXX_AGAIN_XXX:
                     goto XXX_ERROR_XXX;
                 }
 
-                // parse the timer interval
-                if (! parse_const(&text, &length, bytecode)) {
-                    goto XXX_ERROR_XXX;
-                }
-
-                // parse the timer interval unit specifier
-                for (i = 0; i < timer_unit_max; i++) {
-                    if (parse_word(&text, timer_units[i].name)) {
-                        bytecode[length++] = i;
-                        break;
-                    }
-                }
-                if (i == timer_unit_max) {
+                if (! parse_time(&text, &length, bytecode)) {
                     goto XXX_ERROR_XXX;
                 }
 
@@ -1504,20 +1514,7 @@ XXX_AGAIN_XXX:
             break;
 
         case code_sleep:
-            // parse and push the trailing timer interval unit specifier
-            for (i = 0; i < timer_unit_max; i++) {
-                if (parse_find_tail(text, timer_units[i].name)) {
-                    bytecode[length++] = i;
-                    break;
-                }
-            }
-            if (i == timer_unit_max) {
-                text += strlen(text);
-                goto XXX_ERROR_XXX;
-            }
-            
-            // parse the sleep time expression
-            if (! parse_expression(0, &text, &length, bytecode)) {
+            if (! parse_time(&text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
             }
             break;
@@ -1968,6 +1965,26 @@ unparse_format(byte *bytecode, char **out)
     return 1;
 }
 
+static
+int
+unparse_time(byte *bytecode_in, int length, char **out)
+{
+    byte *bytecode;
+    enum timer_unit_type timer_unit;
+
+    bytecode = bytecode_in;
+
+    // decompile the sleep time units
+    timer_unit = (enum timer_unit_type)*(bytecode++);
+
+    // and the sleep time expression
+    bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, out);
+
+    *out += sprintf(*out, " %s", timer_units[timer_unit].name);
+
+    return bytecode-bytecode_in;
+}
+
 // this function unparses (de-compiles) a public statement line from bytecode,
 // excluding the keyword.
 void
@@ -1984,7 +2001,6 @@ unparse_bytecode_code(IN byte code, IN byte *bytecode_in, IN int length, OUT cha
     bool multi;
     byte parity;
     byte loopback;
-    enum timer_unit_type timer_unit;
     byte device;
     byte code2;
     byte *bytecode;
@@ -2069,12 +2085,7 @@ XXX_AGAIN_XXX:
                 // decompile the timer and the timer number
                 bytecode += unparse_word_const_word("timer", "for ", bytecode, &out);
 
-                // and the timer interval
-                bytecode += unparse_const(0, bytecode, &out);
-
-                // and the timer interval unit specifier
-                timer_unit = (enum timer_unit_type)*(bytecode++);
-                out += sprintf(out, " %s", timer_units[timer_unit].name);
+                bytecode += unparse_time(bytecode, bytecode_in+length-bytecode, &out);
 
             } else if (device == code_uart) {
                 // decompile the uart
@@ -2390,13 +2401,7 @@ XXX_AGAIN_XXX:
             break;
 
         case code_sleep:
-            // decompile the sleep time units
-            timer_unit = (enum timer_unit_type)*(bytecode++);
-
-            // and the sleep time expression
-            bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
-
-            out += sprintf(out, " %s", timer_units[timer_unit].name);
+            bytecode += unparse_time(bytecode, length, &out);
             break;
 
         case code_halt:

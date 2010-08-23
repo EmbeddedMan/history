@@ -816,6 +816,33 @@ run_relation_or_expression(const byte *bytecode_in, int length, OUT int32 *value
 }
 
 static
+int
+run_timer(const byte *bytecode_in, int length, OUT int32 *value)
+{
+    const byte *bytecode;
+    enum timer_unit_type timer_unit;
+
+    bytecode = bytecode_in;
+
+    // evaluate the time units
+    timer_unit = (enum timer_unit_type)*bytecode;
+    bytecode++;
+
+    // evaluate the sleep time
+    bytecode += run_expression(bytecode, bytecode_in+length-bytecode, NULL, value);
+
+    // scale the timer interval
+    if (timer_units[timer_unit].scale < 0) {
+        *value /= -timer_units[timer_unit].scale;
+    } else {
+        assert(timer_units[timer_unit].scale > 0);
+        *value *= timer_units[timer_unit].scale;
+    }
+
+    return bytecode - bytecode_in;
+}
+
+static
 void
 uart_read_write(IN int uart, IN bool write, byte *buffer, int length)
 {
@@ -863,8 +890,6 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
     const char *name2;
     int size;
     int timer;
-    int32 interval;
-    enum timer_unit_type timer_unit;
     int32 max_index;
     int32 max_count;
     int count;
@@ -1030,22 +1055,15 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
             if (device == code_timer) {
                 // *** timer control ***
-                // get the timer number, interval, and unit specifier
+                // get the timer number
                 timer = run_bytecode_const(bytecode, &index);
-                interval = run_bytecode_const(bytecode, &index);
-                timer_unit = (enum timer_unit_type)bytecode[index++];
+
+                // get the timer ticks
+                index += run_timer(bytecode+index, length-index, &value);
 
                 if (run_condition) {
-                    // scale the timer interval
-                    if (timer_units[timer_unit].scale < 0) {
-                        interval /= -timer_units[timer_unit].scale;
-                    } else {
-                        assert(timer_units[timer_unit].scale > 0);
-                        interval *= timer_units[timer_unit].scale;
-                    }
-
                     // set the timer
-                    timers[timer].interval_ticks = interval;
+                    timers[timer].interval_ticks = value;
                 }
             } else if (device == code_uart) {
                 // *** uart control ***
@@ -1501,6 +1519,18 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 }
             }
             break;
+
+#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
+        default:
+            goto XXX_MORE_XXX;  // N.B. CW compiler bug
+            break;
+    }
+    
+    goto XXX_DONE_XXX;
+
+XXX_MORE_XXX:  // N.B. CW compiler bug
+    switch (code) {
+#endif
 
         case code_uart:
         case code_qspi:
@@ -2055,21 +2085,10 @@ XXX_PERF_XXX:
         case code_sleep:
             // N.B. sleeps occur in the main loop so we can service interrupts
 
-            // evaluate the time units
-            timer_unit = (enum timer_unit_type)bytecode[index++];
-            
-            // evaluate the sleep time
-            index += run_expression(bytecode+index, length-index, NULL, &value);
+            // get the sleep ticks
+            index += run_timer(bytecode+index, length-index, &value);
 
             if (run_condition && run_sleep) {
-                // scale the timer interval
-                if (timer_units[timer_unit].scale < 0) {
-                    value /= -timer_units[timer_unit].scale;
-                } else {
-                    assert(timer_units[timer_unit].scale > 0);
-                    value *= timer_units[timer_unit].scale;
-                }
-
                 // prepare to sleep
                 run_sleep_ticks = ticks+value;
                 assert(! run_sleep_line_number);
@@ -2103,6 +2122,10 @@ XXX_PERF_XXX:
             break;
     }
     
+#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
+XXX_DONE_XXX:
+#endif
+
 #if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
     assert_ram(index == length);  // CW bug
 #else

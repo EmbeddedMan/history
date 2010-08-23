@@ -775,9 +775,9 @@ for more information:
   help modes
   help statements
   help blocks
-  help strings
   help devices
   help expressions
+  help strings
   help variables
   help pins
   help clone
@@ -804,7 +804,7 @@ list ([<line>][-][<line>]|<subname>) -- list program lines
 load <name>                   -- load saved program
 memory                        -- print memory usage
 new                           -- erase code ram and flash memories
-profile [<line>][-][<line>]   -- like list, but display profile info
+profile ([<line>][-][<line>]|<subname>) -- display profile info
 purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
@@ -817,7 +817,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
-autorun [on|off]                  -- autorun (on reset) mode
+autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
 nodeid [<nodeid>|none]            -- set/display zigflea nodeid
@@ -847,7 +847,7 @@ halt                                   -- loop forever
 input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
 let <variable>[$] = <expression> [, ...] -- assign variable
-print [dec|hex|raw] <expression> [, ...] -- print results
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
 rem <remark>                           -- remark
 restore [<label>]                      -- restore read-only data pointer
@@ -857,9 +857,9 @@ vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
 
 for more information:
   help blocks
-  help strings
   help devices
   help expressions
+  help strings
   help variables
 if <expression> then
 [elseif <expression> then]
@@ -932,7 +932,7 @@ all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for input/print/i2c/qspi statements
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
 
 ram variables:
   dim <var>[$][[n]]
@@ -950,7 +950,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables:
-  nodeid  getchar  msecs  seconds  ticks  ticks_per_msec  (read-only)
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
 
 for more information:
   help pins
@@ -3056,7 +3056,7 @@ error -            ^
 error -                ^
 error -             ^
 error -                   ^
-error -                    ^
+error -                       ^
 error -           ^
 error -         ^
 error -           ^

@@ -6186,8 +6186,10 @@ pin_uart_rx(int uart)
 #elif PIC32
         if (uart) {
             value = U2RXREG;
+            U2STACLR = _U2STA_OERR_MASK;
         } else {
             value = U1RXREG;
+            U1STACLR = _U1STA_OERR_MASK;
         }
 #endif
 #else
