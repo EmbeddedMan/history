@@ -42,7 +42,7 @@ DECLSPEC_PAGE0_DATA
 #else
 const
 #endif
-void *_swvect[256] = {
+void *_swvect[128+128] = {
 __SP_AFTER_RESET, _startup,
     asm_xxx,                  // 2
     asm_xxx,                  // 3
@@ -210,7 +210,7 @@ DECLSPEC_PAGE0_DATA
 #else
 const
 #endif
-void *_swvect[256] = {
+void *_swvect[128+128] = {
     __SP_AFTER_RESET, _startup,
     asm_xxx,                  // 2
     asm_xxx,                  // 3
