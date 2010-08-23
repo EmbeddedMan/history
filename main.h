@@ -217,6 +217,7 @@ enum {
 #include "util.h"
 #include "adc.h"
 #include "led.h"
+#include "serial.h"
 
 #include "startup.h"
 
@@ -224,7 +225,6 @@ enum {
 
 #include "vectors.h"
 
-#include "serial.h"
 #include "sleep.h"
 
 #if MCF52221 || MCF52259 || MCF51JM128 || PIC32
