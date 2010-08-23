@@ -162,7 +162,7 @@ extern byte big_buffer[768];
 // use within a non-naked routine for inline asm.
 #define Q3_NON_NAKED(a,b,c)  asm("\t" #a " " #b "," #c "\n");
 #else  // GCC
-#define BEGIN_NAKED(func)  asm void func(void)
+#define BEGIN_NAKED(func)  asm void __declspec(register_abi) func(void)
 
 #define END_NAKED
 

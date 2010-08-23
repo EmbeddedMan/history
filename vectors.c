@@ -27,9 +27,9 @@ extern void _startup(void);
 asm void _startup(void);
 #endif // GCC
 
-static
-asm void
-asm_xxx(void)
+BEGIN_NAKED(asm_xxx);
+
+BEGIN_NAKED(asm_xxx)
 {
     halt
     rte
