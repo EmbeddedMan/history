@@ -19,6 +19,7 @@ extern bool run_trace;
 
 extern int run_line_number;
 
+extern bool run_watchpoint;
 extern bool run_condition;
 
 extern bool run_printf;

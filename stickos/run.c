@@ -22,6 +22,7 @@ int run_line_number;
 int data_line_number;
 int data_line_offset;
 
+bool run_watchpoint;
 bool run_condition = true;  // global condition flag
 
 bool run_printf;
@@ -2359,9 +2360,11 @@ run(bool cont, int start_line_number)
                 }
                 // evaluation watchpoint condition.  tell evaluator to decorate each evaluated pin/var with the current
                 // watchpoint num so changes to these pins/vars set the watchpoint as possible.
+                run_watchpoint = true;
                 run_condition = true;
                 length = run_expression_watchpoint(watchpoints[i].bytecode, watchpoints[i].length, 1 << i, NULL, &value);
                 assert(length == watchpoints[i].length);
+                run_watchpoint = false;
 
                 // if the watch is non-0...
                 if (value) {

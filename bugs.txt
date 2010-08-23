@@ -18,6 +18,7 @@
 
 // prior 2
 // =======
+// fgure out a clean way for spi/i2c to steal pins
 // expose erase_page and write_word to basic to manipulate other half of flash!
 // allow input of negative numbers
 // give vprint ability to do sign extension?

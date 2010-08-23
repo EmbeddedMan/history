@@ -665,7 +665,7 @@ var_get(IN const char *name, IN int index, IN uint32 running_watchpoint_mask)
             system = system_find(name);
             if (system) {
                 value = system->integer ? *system->integer : system->constant;
-                if (system->integer == &terminal_getchar && ! running_watchpoint_mask) {
+                if (system->integer == &terminal_getchar && ! run_watchpoint && ! running_watchpoint_mask) {
                     terminal_getchar = 0;
                 }
                 return value;
