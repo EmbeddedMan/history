@@ -94,6 +94,33 @@ list 50-
 cont
 EOF
 
+echo more print raw
+"$BASIC" -q <<'EOF'
+   10 dim an[10] as byte, j
+   20 for j = 0 to 9
+   30   let an[j] = j+48
+   40 next
+   45 configure timer 0 for 1 s
+   46 configure timer 1 for 3500ms
+   50 on timer 0 do print raw an
+   51 on timer 1 do stop
+   60 while 1 do
+   70 endwhile
+   list
+   run
+EOF
+
+echo print raw multibyte
+"$BASIC" -q <<'EOF'
+10 dim a[3] as short, b[3], c[3] as byte
+20 input a, b, c
+30 print raw a, b, c
+40 print hex a, b, c
+list
+run
+0x4142 0x4344 0x4546 0x30313233 0x34353637 0x38393a3b 0x61 0x62 0x63
+EOF
+
 echo strings
 "$BASIC" -q <<'EOF'
 dim a$[80]
