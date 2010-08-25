@@ -104,8 +104,7 @@ echo more print raw
    46 configure timer 1 for 3500ms
    50 on timer 0 do print raw an
    51 on timer 1 do stop
-   60 while 1 do
-   70 endwhile
+   60 halt
    list
    run
 EOF
