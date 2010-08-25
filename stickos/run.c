@@ -866,6 +866,19 @@ uart_read_write(IN int uart, IN bool write, byte *buffer, int length)
     }
 }
 
+#if STICK_GUEST
+static
+void
+dumpbuffer(char *buffer, int size)
+{
+    int i;
+
+    for (i = 0; i < size; i++) {
+        printf("  0x%x\n", (byte)buffer[i]);
+    }
+}
+#endif
+
 // this function executes a bytecode statement, with an independent keyword
 // bytecode.
 bool  // end
@@ -1554,6 +1567,8 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                     if (run_condition) {
 #if ! STICK_GUEST
                         i2c_start(value);
+#else
+                        printf("i2c start %d\n", (int)value);
 #endif
                     }
                     break;
@@ -1563,18 +1578,23 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                     if (run_condition) {
 #if ! STICK_GUEST
                         i2c_stop();
+#else
+                        printf("i2c stop\n");
 #endif
                     }
                     break;
                 } else
 #endif
-                if (code2 == code_device_read) {
-                    assert(code == code_i2c || code == code_uart);
-                    index++;
+                if (code == code_i2c || code == code_uart) {
+                    if (code2 == code_device_read) {
+                        index++;
+                    } else {
+                        assert(code2 == code_device_write);
+                        index++;
+                    }
                 } else {
-                    assert(code == code_i2c || code == code_uart);
-                    assert(code2 == code_device_write);
-                    index++;
+                    assert(code == code_qspi);
+                    code2 = 0;
                 }
             }
 
@@ -1675,12 +1695,17 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                                 // perform the uart read
 #if ! STICK_GUEST
                                 uart_read_write(uart, false, big_buffer, p-big_buffer);
+#else
+                                printf("uart %d read transfer %d bytes\n", uart, (int)(p-big_buffer));
 #endif
                             } else {
                                 assert(code2 == code_device_write);
                                 // perform the uart write
 #if ! STICK_GUEST
                                 uart_read_write(uart, true, big_buffer, p-big_buffer);
+#else
+                                printf("uart %d write transfer:\n", uart);
+                                dumpbuffer(big_buffer, p-big_buffer);
 #endif
                                 // N.B. no need for the next pass for a write
                                 break;
@@ -1689,6 +1714,9 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                             // perform the qspi transfer
 #if ! STICK_GUEST
                             qspi_transfer(false, big_buffer, p-big_buffer);
+#else
+                            printf("qspi transfer:\n");
+                            dumpbuffer(big_buffer, p-big_buffer);
 #endif
 #if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
                         } else {
@@ -1697,12 +1725,17 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                                 // perform the i2c read
 #if ! STICK_GUEST
                                 i2c_read_write(false, big_buffer, p-big_buffer);
+#else
+                                printf("i2c read transfer %d bytes\n", (int)(p-big_buffer));
 #endif
                             } else {
                                 assert(code2 == code_device_write);
                                 // perform the i2c write
 #if ! STICK_GUEST
                                 i2c_read_write(true, big_buffer, p-big_buffer);
+#else
+                                printf("i2c write transfer:\n");
+                                dumpbuffer(big_buffer, p-big_buffer);
 #endif
                                 // N.B. no need for the next pass for a write
                                 break;

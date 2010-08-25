@@ -21,7 +21,7 @@
 #endif
 
 // REVISIT -- align all bytecode values and eliminate these (except for qspi/i2c)?
-#if PIC32
+#if PIC32 && ! _WIN32
 void
 write32(byte *addr, uint32 data);
 
@@ -51,7 +51,7 @@ void write_n_bytes(int size, volatile void *addr, uint32 value);
 // protocol layers are defined to be big endian and the pic32 core
 // is little endian, so we have to byteswap.
 
-#if PIC32
+#if PIC32 || _WIN32
 #define TF_BIG(x)  byteswap((x), sizeof(x))
 #define TF_LITTLE(x)  (x)
 #else

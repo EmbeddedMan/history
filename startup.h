@@ -177,7 +177,7 @@ extern byte big_buffer[768];
 typedef void (*flash_upgrade_ram_begin_f)(void);
 
 void
-#if PIC32
+#if PIC32 && ! _WIN32
 __longramfunc__
 __attribute__((nomips16))
 #endif

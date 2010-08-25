@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-#if PIC32
+#if PIC32 && ! _WIN32
 void
 write32(byte *addr, uint32 data)
 {
@@ -97,7 +97,7 @@ byteswap(uint32 x, uint32 size)
 int
 gpl(void)
 {
-#if PIC32
+#if PIC32 && ! _WIN32
     int oldlevel;
 
     oldlevel = (_CP0_GET_STATUS() >> 10) & 7;
@@ -135,7 +135,7 @@ gpl(void)
 int
 splx(int level)
 {
-#if PIC32
+#if PIC32 && ! _WIN32
     int csr;
     int oldlevel;
     
@@ -583,7 +583,7 @@ isprint(int c)
 static uint16 sr = 0x2000;
 #endif
 
-#if ! PIC32
+#if ! PIC32 || _WIN32
 uint16
 get_sr(void)
 {

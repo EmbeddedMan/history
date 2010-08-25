@@ -448,12 +448,12 @@ parse_var(IN bool string, IN bool lvalue, IN int indices, IN int obase, IN OUT c
         assert(**text == '[');
         (*text)++;
 
-        // if we're allowed 2 indices...
+        // if we're allowed (required!) 2 indices...
         if (indices == 2) {
             // find the colon
             assert(string);
             q = strchr(*text, ':');
-            if (! p) {
+            if (! q) {
                 return false;
             }
             *q = '\0';

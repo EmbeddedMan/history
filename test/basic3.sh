@@ -238,7 +238,138 @@ list
 run
 EOF
 
-# uart n read/write
-# i2c
-# parse errors
-# runtime errors?
+echo i2c transfers
+"$BASIC" -q <<'EOF'
+10 dim a as byte, b as short, c[3], d$[4], e[4] as byte
+20 let a=1,b=0x0203,c[0]=0x11223344,c[1]=0x55667788
+25 let c[2]=0x99aabbcc
+30 let d$="hi", e[0] = 's', e[1]='t', e[2]='o', e[3]='p'
+40 i2c start 2+2
+50 i2c write a,b
+60 i2c write c,d
+70 i2c write e,c[0]
+80 i2c read a,b
+90 i2c read c,d
+100 i2c read e,c[0]
+110 i2c stop
+list
+run
+EOF
+
+echo qspi transfers
+"$BASIC" -q <<'EOF'
+10 dim a as byte, b as short, c[3], d$[4], e[4] as byte
+20 let a=1,b=0x0203,c[0]=0x11223344,c[1]=0x55667788
+25 let c[2]=0x99aabbcc
+30 let d$="hi", e[0] = 's', e[1]='t', e[2]='o', e[3]='p'
+50 qspi a,b
+60 qspi c,d
+70 qspi e,c[0]
+list
+run
+EOF
+
+echo uart transfers
+"$BASIC" -q <<'EOF'
+10 dim a as byte, b as short, c[3], d$[4], e[4] as byte
+20 let a=1,b=0x0203,c[0]=0x11223344,c[1]=0x55667788
+25 let c[2]=0x99aabbcc
+30 let d$="hi", e[0] = 's', e[1]='t', e[2]='o', e[3]='p'
+50 uart 0 write a,b
+60 uart 1 write c,d
+70 uart 0 write e,c[0]
+80 uart 1 read a,b
+90 uart 0 read c,d
+100 uart 1 read e,c[0]
+list
+run
+EOF
+
+echo parse errors strings
+"$BASIC" -q <<'EOF'
+10 dim a$[1:2]
+11 dim a$[1]+
+12 dim a$[1],
+20 let a$[1:2] = "hello"
+30 print a$[1]
+40 let a$[1] = bye
+50 let a$ = bye;
+60 print a$[1];
+70 if a$[1] = a$ then
+80 vprint a$[1:2] = 0
+90 vprint a$[1] = 0
+91 vprint a$[1] = 0+
+92 vprint a$[1] = 0,
+93 vprint a$[1]] = 0
+94 vprint a$[1]+ = 0
+95 vprint a$[1], = 0
+96 vprint a$[[1] = 0
+100 input a$[1]
+110 input a$[1:2]
+120 input a$;
+130 input a$+
+140 input a$,
+list
+EOF
+
+echo parse errors i2c, qspi, uart
+"$BASIC" -q <<'EOF'
+1 i2c
+2 i2c xxx
+10 i2c start 3+
+11 i2c start 3,
+12 i2c start
+20 i2c read
+21 i2c read a,
+22 i2c read a+
+30 i2c write
+31 i2c write a,
+32 i2c write a+
+40 i2c stop 1
+50 qspi
+51 qspi a,
+52 qspi a+
+60 uart 1 read
+61 uart 0 read a,
+62 uart 1 read a+
+70 uart 0 write
+71 uart 1 write a,
+72 uart 0 write a+
+80 uart 9 read a
+81 uart 1+1 read a
+82 uart 1, read a
+83 uart read a
+list
+EOF
+
+echo runtime errors immediate
+"$BASIC" -q <<'EOF'
+dim a$[10]
+dim b
+let a$="12b"
+vprint b=a$
+print b
+let a$="12345678901234567890"
+print a$
+vprint b=1,1
+EOF
+
+echo runtime errors program
+"$BASIC" -q <<'EOF'
+10 dim a$[10]
+20 dim b
+30 input a$
+40 vprint b=a$
+50 print b
+60 input a$
+70 print a$
+80 vprint b=1,1
+list
+run
+12b
+cont
+12345678901234567890
+cont
+EOF
+
+# add pic32 tests to test2.sh!!!

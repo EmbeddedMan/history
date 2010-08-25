@@ -382,7 +382,7 @@ static byte payload[ZB_PAYLOAD_SIZE];
 // this function is called when a packet is ready to be received.
 INTERRUPT
 void
-#if PIC32
+#if PIC32 && ! _WIN32
 __ISR(7, ipl6) // REVISIT -- ipl?
 #endif
 zb_isr(void)

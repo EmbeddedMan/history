@@ -2003,3 +2003,1413 @@ Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.80!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
+
+### platform 256H ###
+... testing help
+Welcome to StickOS for Microchip PIC32MXx-F256H v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+  help pins
+  help zigflea
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Microchip PIC32MXx-F256H v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+<Ctrl-C>                      -- stop program
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list ([<line>][-][<line>]|<subname>) -- list program lines
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile ([<line>][-][<line>]|<subname>) -- display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the MCU!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun mode (on reset)
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+usbhost [on|off]                  -- USB host mode (on reset)
+watchsmart [on|off]               -- low-overhead watchpoint mode
+
+pin assignments:
+  heartbeat  safemode*
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+
+for more information:
+  help pins
+<line>                                 -- delete program line from code ram
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
+end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
+label <label>                          -- read/data label
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference; otherwise, by value
+array variable indices start at 0
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
+
+ram variables:
+  dim <var>[$][[n]]
+  dim <var>[[n]] as (byte|short)
+
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables:
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
+
+for more information:
+  help pins
+pin names:
+  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15
+  ------- ------- ------- ------- ------- ------- ------- --------+
+  an0     an1     an2     an3     an4     an5     an6     an7     | PORT B
+  an8     an9     an10    an11    an12    an13    an14    an15    |      B+8
+          rc1     rc2     rc3     rc4                             | PORT C
+                                  rc12    rc13    rc14    rc15    |      C+8
+  rd0     rd1     rd2     rd3     rd4     rd5     rd6     rd7     | PORT D
+  rd8     rd9     rd10    rd11    rd12    rd13    rd14    rd15    |      D+8
+  re0     re1     re2     re3     re4     re5     re6     re7     | PORT E
+  re8     re9                                                     |      E+8
+  rf0     rf1     rf2     rf3     rf4     rf5                     | PORT F
+  rf8                             rf12    rf13                    |      F+8
+  rg0     rg1     rg2     rg3                     rg6     rg7     | PORT G
+  rg8     rg9                     rg12    rg13    rg14    rg15    |      G+8
+
+all pins support general purpose digital input/output
+an? = potential analog input pins (mV)
+rd[0-4] = potential analog output (PWM) pins (mV)
+rd[0-4] = potential servo output (PWM) pins (cms)
+rd[0-4] = potential frequency output pins (Hz)
+rf4 (u2) = potential uart input pins (received byte)
+rf5 (u2) = potential uart output pins (transmit byte)
+       ^ - error
+       ^ - error
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  sck1                 spiclk
+  sdi1                 miso
+  sdo1                 mosi
+  int1                 irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+off
+on
+error -   ^
+error -       ^
+on
+... testing pins
+Welcome to StickOS for Microchip PIC32MXx-F256H v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat re0
+safemode* re6
+qspi_cs* re1
+clone_rst* none
+zigflea_rst* re2
+zigflea_attn* re3
+zigflea_rxtxen re4
+... testing jm commands
+Welcome to StickOS for Microchip PIC32MXx-F256H v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Microchip PIC32MXx-F256H v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Microchip PIC32MXx-F256H v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+
+### platform 512HBL ###
+... testing help
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+  help pins
+  help zigflea
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+<Ctrl-C>                      -- stop program
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list ([<line>][-][<line>]|<subname>) -- list program lines
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile ([<line>][-][<line>]|<subname>) -- display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the MCU!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun mode (on reset)
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+usbhost [on|off]                  -- USB host mode (on reset)
+watchsmart [on|off]               -- low-overhead watchpoint mode
+
+pin assignments:
+  heartbeat  safemode*
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+
+for more information:
+  help pins
+<line>                                 -- delete program line from code ram
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
+end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
+label <label>                          -- read/data label
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference; otherwise, by value
+array variable indices start at 0
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
+
+ram variables:
+  dim <var>[$][[n]]
+  dim <var>[[n]] as (byte|short)
+
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables:
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
+
+for more information:
+  help pins
+pin names:
+  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15
+  ------- ------- ------- ------- ------- ------- ------- --------+
+  an0     an1     an2     an3     an4     an5     an6     an7     | PORT B
+  an8     an9     an10    an11    an12    an13    an14    an15    |      B+8
+          rc1     rc2     rc3     rc4                             | PORT C
+                                  rc12    rc13    rc14    rc15    |      C+8
+  rd0     rd1     rd2     rd3     rd4     rd5     rd6     rd7     | PORT D
+  rd8     rd9     rd10    rd11    rd12    rd13    rd14    rd15    |      D+8
+  re0     re1     re2     re3     re4     re5     re6     re7     | PORT E
+  re8     re9                                                     |      E+8
+  rf0     rf1     rf2     rf3     rf4     rf5                     | PORT F
+  rf8                             rf12    rf13                    |      F+8
+  rg0     rg1     rg2     rg3                     rg6     rg7     | PORT G
+  rg8     rg9                     rg12    rg13    rg14    rg15    |      G+8
+
+all pins support general purpose digital input/output
+an? = potential analog input pins (mV)
+rd[0-4] = potential analog output (PWM) pins (mV)
+rd[0-4] = potential servo output (PWM) pins (cms)
+rd[0-4] = potential frequency output pins (Hz)
+rf4 (u2) = potential uart input pins (received byte)
+rf5 (u2) = potential uart output pins (transmit byte)
+       ^ - error
+       ^ - error
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  sck1                 spiclk
+  sdi1                 miso
+  sdo1                 mosi
+  int1                 irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+off
+on
+error -   ^
+error -       ^
+on
+... testing pins
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat re0
+safemode* re6
+qspi_cs* re1
+clone_rst* none
+zigflea_rst* re2
+zigflea_attn* re3
+zigflea_rxtxen re4
+... testing jm commands
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+
+### platform 512H ###
+... testing help
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+  help pins
+  help zigflea
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+<Ctrl-C>                      -- stop program
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list ([<line>][-][<line>]|<subname>) -- list program lines
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile ([<line>][-][<line>]|<subname>) -- display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the MCU!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun mode (on reset)
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+usbhost [on|off]                  -- USB host mode (on reset)
+watchsmart [on|off]               -- low-overhead watchpoint mode
+
+pin assignments:
+  heartbeat  safemode*
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+
+for more information:
+  help pins
+<line>                                 -- delete program line from code ram
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
+end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
+label <label>                          -- read/data label
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference; otherwise, by value
+array variable indices start at 0
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
+
+ram variables:
+  dim <var>[$][[n]]
+  dim <var>[[n]] as (byte|short)
+
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables:
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
+
+for more information:
+  help pins
+pin names:
+  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15
+  ------- ------- ------- ------- ------- ------- ------- --------+
+  an0     an1     an2     an3     an4     an5     an6     an7     | PORT B
+  an8     an9     an10    an11    an12    an13    an14    an15    |      B+8
+          rc1     rc2     rc3     rc4                             | PORT C
+                                  rc12    rc13    rc14    rc15    |      C+8
+  rd0     rd1     rd2     rd3     rd4     rd5     rd6     rd7     | PORT D
+  rd8     rd9     rd10    rd11    rd12    rd13    rd14    rd15    |      D+8
+  re0     re1     re2     re3     re4     re5     re6     re7     | PORT E
+  re8     re9                                                     |      E+8
+  rf0     rf1     rf2     rf3     rf4     rf5                     | PORT F
+  rf8                             rf12    rf13                    |      F+8
+  rg0     rg1     rg2     rg3                     rg6     rg7     | PORT G
+  rg8     rg9                     rg12    rg13    rg14    rg15    |      G+8
+
+all pins support general purpose digital input/output
+an? = potential analog input pins (mV)
+rd[0-4] = potential analog output (PWM) pins (mV)
+rd[0-4] = potential servo output (PWM) pins (cms)
+rd[0-4] = potential frequency output pins (Hz)
+rf4 (u2) = potential uart input pins (received byte)
+rf5 (u2) = potential uart output pins (transmit byte)
+       ^ - error
+       ^ - error
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  sck1                 spiclk
+  sdi1                 miso
+  sdo1                 mosi
+  int1                 irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+off
+on
+error -   ^
+error -       ^
+on
+... testing pins
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat re0
+safemode* re6
+qspi_cs* re1
+clone_rst* none
+zigflea_rst* re2
+zigflea_attn* re3
+zigflea_rxtxen re4
+... testing jm commands
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+
+### platform 512LBL ###
+... testing help
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+  help pins
+  help zigflea
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+<Ctrl-C>                      -- stop program
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list ([<line>][-][<line>]|<subname>) -- list program lines
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile ([<line>][-][<line>]|<subname>) -- display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the MCU!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun mode (on reset)
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+usbhost [on|off]                  -- USB host mode (on reset)
+watchsmart [on|off]               -- low-overhead watchpoint mode
+
+pin assignments:
+  heartbeat  safemode*
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+
+for more information:
+  help pins
+<line>                                 -- delete program line from code ram
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
+end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
+label <label>                          -- read/data label
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference; otherwise, by value
+array variable indices start at 0
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
+
+ram variables:
+  dim <var>[$][[n]]
+  dim <var>[[n]] as (byte|short)
+
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables:
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
+
+for more information:
+  help pins
+pin names:
+  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15
+  ------- ------- ------- ------- ------- ------- ------- --------+
+  an0     an1     an2     an3     an4     an5     an6     an7     | PORT B
+  an8     an9     an10    an11    an12    an13    an14    an15    |      B+8
+          rc1     rc2     rc3     rc4                             | PORT C
+                                  rc12    rc13    rc14    rc15    |      C+8
+  rd0     rd1     rd2     rd3     rd4     rd5     rd6     rd7     | PORT D
+  rd8     rd9     rd10    rd11    rd12    rd13    rd14    rd15    |      D+8
+  re0     re1     re2     re3     re4     re5     re6     re7     | PORT E
+  re8     re9                                                     |      E+8
+  rf0     rf1     rf2     rf3     rf4     rf5                     | PORT F
+  rf8                             rf12    rf13                    |      F+8
+  rg0     rg1     rg2     rg3                     rg6     rg7     | PORT G
+  rg8     rg9                     rg12    rg13    rg14    rg15    |      G+8
+
+all pins support general purpose digital input/output
+an? = potential analog input pins (mV)
+rd[0-4] = potential analog output (PWM) pins (mV)
+rd[0-4] = potential servo output (PWM) pins (cms)
+rd[0-4] = potential frequency output pins (Hz)
+rf4 (u2) = potential uart input pins (received byte)
+rf5 (u2) = potential uart output pins (transmit byte)
+       ^ - error
+       ^ - error
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  sck1                 spiclk
+  sdi1                 miso
+  sdo1                 mosi
+  int1                 irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+off
+on
+error -   ^
+error -       ^
+on
+... testing pins
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat re0
+safemode* re6
+qspi_cs* re1
+clone_rst* none
+zigflea_rst* re2
+zigflea_attn* re3
+zigflea_rxtxen re4
+... testing jm commands
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+
+### platform 512L ###
+... testing help
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+  help pins
+  help zigflea
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+<Ctrl-C>                      -- stop program
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list ([<line>][-][<line>]|<subname>) -- list program lines
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile ([<line>][-][<line>]|<subname>) -- display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the MCU!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]             -- set/display analog voltage scale
+autorun [on|off]                  -- autorun mode (on reset)
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+sleep [on|off]                    -- debugger sleep mode
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+usbhost [on|off]                  -- USB host mode (on reset)
+watchsmart [on|off]               -- low-overhead watchpoint mode
+
+pin assignments:
+  heartbeat  safemode*
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+
+for more information:
+  help pins
+<line>                                 -- delete program line from code ram
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
+end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
+label <label>                          -- read/data label
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference; otherwise, by value
+array variable indices start at 0
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
+
+ram variables:
+  dim <var>[$][[n]]
+  dim <var>[[n]] as (byte|short)
+
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables:
+  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
+
+for more information:
+  help pins
+pin names:
+  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15
+  ------- ------- ------- ------- ------- ------- ------- --------+
+  an0     an1     an2     an3     an4     an5     an6     an7     | PORT B
+  an8     an9     an10    an11    an12    an13    an14    an15    |      B+8
+          rc1     rc2     rc3     rc4                             | PORT C
+                                  rc12    rc13    rc14    rc15    |      C+8
+  rd0     rd1     rd2     rd3     rd4     rd5     rd6     rd7     | PORT D
+  rd8     rd9     rd10    rd11    rd12    rd13    rd14    rd15    |      D+8
+  re0     re1     re2     re3     re4     re5     re6     re7     | PORT E
+  re8     re9                                                     |      E+8
+  rf0     rf1     rf2     rf3     rf4     rf5                     | PORT F
+  rf8                             rf12    rf13                    |      F+8
+  rg0     rg1     rg2     rg3                     rg6     rg7     | PORT G
+  rg8     rg9                     rg12    rg13    rg14    rg15    |      G+8
+
+all pins support general purpose digital input/output
+an? = potential analog input pins (mV)
+rd[0-4] = potential analog output (PWM) pins (mV)
+rd[0-4] = potential servo output (PWM) pins (cms)
+rd[0-4] = potential frequency output pins (Hz)
+rf4 (u2) = potential uart input pins (received byte)
+rf5 (u2) = potential uart output pins (transmit byte)
+       ^ - error
+       ^ - error
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  sck1                 spiclk
+  sdi1                 miso
+  sdo1                 mosi
+  int1                 irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+off
+on
+error -   ^
+error -       ^
+on
+... testing pins
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat re0
+safemode* re6
+qspi_cs* re1
+clone_rst* none
+zigflea_rst* re2
+zigflea_attn* re3
+zigflea_rxtxen re4
+... testing jm commands
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.80!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com

@@ -1,6 +1,6 @@
 #define VERSION  "1.80"
 
-#if PIC32
+#if PIC32 && ! _WIN32
 // REVISIT -- we take debug info from the pic32 environment for now
 #ifdef __DEBUG
 #define SODEBUG  1

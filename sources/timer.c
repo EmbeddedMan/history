@@ -26,7 +26,7 @@ enum { msecs_per_debounce = 4 }; // tunable
 // called by pit0 every tick
 INTERRUPT
 void
-#if PIC32
+#if PIC32 && ! _WIN32
 __ISR(4, ipl6) // REVISIT -- ipl?
 #endif
 timer_isr(void)
