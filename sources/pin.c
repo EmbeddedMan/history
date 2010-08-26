@@ -6221,9 +6221,11 @@ pin_clear(void)
     // N.B. we use 0 to mean no frequency type
     assert(! pin_type_digital_input);
 
+#if ! STICK_GUEST
     i2c_uninitialize();
     qspi_uninitialize();
     // XXX -- should we unconfigure uarts?
+#endif
 
     // reset all explicitly declared pins to digital input
     for (i = 0; i < PIN_UNASSIGNED; i++) {
