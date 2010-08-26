@@ -21,7 +21,7 @@
 #define FLASH_PAGE_SIZE  2048
 #define BASIC_RAM_PAGE_SIZE  2048
 #define BASIC_VARS  100
-#define BASIC_STORES  4
+#define BASIC_STORES  2
 #elif MCF52221
 #define FLASH_START  0
 #define FLASH_BYTES  (128*1024)
@@ -36,7 +36,7 @@
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  4096
 #define BASIC_VARS  200
-#define BASIC_STORES  8
+#define BASIC_STORES  2
 #elif MCF5211
 #define FLASH_START  0
 #define FLASH_BYTES  (128*1024)
@@ -105,7 +105,7 @@
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  4096
 #define BASIC_VARS  200
-#define BASIC_STORES  6
+#define BASIC_STORES  2
 
 #define FLASH2_START  0x9FC00000  // boot flash, for flash upgrade
 #define FLASH2_BYTES  (12*1024)
@@ -121,7 +121,11 @@
 #if SODEBUG && ! STICK_GUEST
 #define BASIC_LARGE_PAGE_SIZE  (8*1024)
 #else
+#if PIC32 || MCF52233 || MCF52259
+#define BASIC_LARGE_PAGE_SIZE  (28*1024)
+#else
 #define BASIC_LARGE_PAGE_SIZE  (12*1024)
+#endif
 #endif
 #endif
 
