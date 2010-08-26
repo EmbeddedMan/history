@@ -183,20 +183,7 @@ main()  // we're called directly by startup.c
     delay(20);
     splx(x);
     
-#if ! PICTOCRYPT
-    // initialize qspi
-    qspi_initialize();
-
-#endif
-
 #if ! FLASHER
-#if ! PICTOCRYPT
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
-    // initialize i2c
-    i2c_initialize();
-#endif
-#endif
-
     // initialize adc
     adc_initialize();
 #endif

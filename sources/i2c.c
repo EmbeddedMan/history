@@ -20,6 +20,7 @@ static
 void
 i2c_broke(void)
 {
+    i2c_uninitialize();
     i2c_initialize();
     printf("i2c reset\n");
 #if STICKOS
@@ -57,6 +58,8 @@ i2c_break(void)
 void
 i2c_start(int address_in)
 {
+    i2c_initialize();
+
     address = (byte)address_in;
     started = false;
 }
@@ -65,7 +68,7 @@ static
 bool
 i2c_start_real(bool write)
 {
-    breaks = run_breaks;
+    i2c_initialize();
 
     i2c_stop();
 
@@ -170,7 +173,7 @@ static
 void
 i2c_repeat_start_real(bool write)
 {
-    breaks = run_breaks;
+    i2c_initialize();
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // enable transmit
@@ -256,7 +259,7 @@ i2c_repeat_start_real(bool write)
 void
 i2c_stop(void)
 {
-    breaks = run_breaks;
+    i2c_initialize();
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // enable receive
@@ -295,7 +298,7 @@ i2c_stop(void)
 void
 i2c_read_write(bool write, byte *buffer, int length)
 {
-    breaks = run_breaks;
+    i2c_initialize();
 
     // if we need a start...
     if (! started) {
@@ -445,7 +448,7 @@ i2c_read_write(bool write, byte *buffer, int length)
 bool
 i2c_ack()
 {
-    breaks = run_breaks;
+    i2c_initialize();
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     return !!(MCF_I2C0_I2SR & MCF_I2C_I2SR_RXAK);
@@ -456,12 +459,37 @@ i2c_ack()
 #endif
 }
 
+static bool initialized;
+
+void
+i2c_uninitialize(void)
+{
+    initialized = false;
+
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+    // AS is gpio
+    MCF_GPIO_PASPAR = 0x00;
+#elif PIC32
+    I2CEnable(I2C1, false);
+#else
+#error
+#endif
+}
+
 void
 i2c_initialize(void)
 {
+    breaks = run_breaks;
+    if (initialized) {
+        return;
+    }
+    initialized = true;
+
+    {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     int ic;
     int div;
+    
 
     // AS is primary
     MCF_GPIO_PASPAR = 0x05;
@@ -500,4 +528,5 @@ i2c_initialize(void)
 #else
 #error
 #endif
+    }
 }

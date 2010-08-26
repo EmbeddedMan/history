@@ -723,6 +723,8 @@ zb_initialize(void)
     int id;
 
     assert(sizeof(packet_t) <= 125);
+    
+    qspi_initialize();
 
     // leave clone in reset while we use the qspi chip select for zigflea
     //pin_set(pin_assignments[pin_assignment_clone_rst], pin_type_digital_output, 0, 0);
@@ -743,6 +745,7 @@ zb_initialize(void)
     if ((id & 0xfb00) != 0x6000 && (id & 0xfb00) != 0x6400) {
         // no zigflea present
         splx(x);
+        qspi_uninitialize();
         return;
     }
     

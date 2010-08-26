@@ -13,5 +13,8 @@ extern bool
 i2c_ack();
 
 extern void
+i2c_uninitialize(void);
+
+extern void
 i2c_initialize(void);
 

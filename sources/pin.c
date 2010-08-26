@@ -5914,6 +5914,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
 }
 
 
+// XXX -- could we uninitialize on run_clear()?
 // N.B. parity: 0 -> even; 1 -> odd; 2 -> none
 void
 pin_uart_configure(int uart, int baud, int data, byte parity, bool loopback)
@@ -6216,10 +6217,14 @@ void
 pin_clear(void)
 {
     int i;
-    
+
     // N.B. we use 0 to mean no frequency type
     assert(! pin_type_digital_input);
-    
+
+    i2c_uninitialize();
+    qspi_uninitialize();
+    // XXX -- should we unconfigure uarts?
+
     // reset all explicitly declared pins to digital input
     for (i = 0; i < PIN_UNASSIGNED; i++) {
         if (declared[i/8] & (1 << (i%8))) {

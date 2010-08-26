@@ -15,7 +15,9 @@ qspi_transfer(bool cs, byte *buffer, int length)
     int i;
     int request;
 #endif
-    
+
+    qspi_initialize();
+
     x = splx(7);
     if (cs) {
         // cs active
@@ -149,9 +151,35 @@ qspi_baud_fast(void)
 #endif
 }
 
+static bool initialized;
+
+extern void
+qspi_uninitialize(void)
+{
+    initialized = false;
+
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+    // QS is gpio
+    MCF_GPIO_PQSPAR = 0x0000;
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+    SPI1C1X = 0;
+    SPI1C2X = 0;
+#elif PIC32
+    SPI2CON = 0;
+#else
+#error
+#endif
+}
+
 extern void
 qspi_initialize(void)
 {
+    if (initialized) {
+        return;
+    }
+    initialized = true;
+
+    {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // QS is primary
     MCF_GPIO_PQSPAR = 0x0015;
@@ -195,6 +223,7 @@ qspi_initialize(void)
 #else
 #error
 #endif
+    }
 
     // cs inactive
     pin_set(pin_assignments[pin_assignment_qspi_cs], pin_type_digital_output, 0, 1);
