@@ -6,7 +6,6 @@
 #define SHRINK  0
 
 #if FLASHER
-#define serial_disable()
 #define pin_get_digital_debounced(a, b)  0
 #endif
 
@@ -871,7 +870,6 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             if (pin_type == pin_type_uart_input || pin_type == pin_type_uart_output) {
                 assert(pin_number == PIN_URXD0 || pin_number == PIN_UTXD0);
                 MCF_GPIO_PUAPAR = (MCF_GPIO_PUAPAR &~ (3 << (offset*2))) | (1 << (offset*2));
-                serial_disable();
             } else {
                 MCF_GPIO_PUAPAR &= ~(3 << (offset*2));
                 if (pin_type == pin_type_digital_output) {
@@ -1107,11 +1105,9 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             if (pin_type == pin_type_uart_input) {
                 assert(offset == 1);
                 SCI1C2X |= SCI1C2_RE_MASK;
-                serial_disable();
             } else if (pin_type == pin_type_uart_output) {
                 assert(offset == 0);
                 SCI1C2X |= SCI1C2_TE_MASK;
-                serial_disable();
             } else if (pin_type == pin_type_analog_output || pin_type == pin_type_servo_output || pin_type == pin_type_frequency_output) {
                 assert(offset >= 2 && offset < 4);
                 n = 0;
@@ -1946,11 +1942,9 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 if (pin_type == pin_type_uart_input) {
                     assert(offset == 0);
                     SCI1C2X |= SCI1C2_RE_MASK;
-                    serial_disable();
                 } else if (pin_type == pin_type_uart_output) {
                     assert(offset == 1);
                     SCI1C2X |= SCI1C2_TE_MASK;
-                    serial_disable();
                 } else {
                     if (offset == 0) {
                         SCI1C2X &= ~SCI1C2_RE_MASK;
@@ -2478,7 +2472,6 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             if (pin_type == pin_type_uart_input) {
                 if (offset == 0) {
                     SCI1C2X |= SCI1C2_RE_MASK;
-                    serial_disable();
                 } else {
                     assert(offset == 2);
                     SCI2C2X |= SCI1C2_RE_MASK;
@@ -2486,7 +2479,6 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             } else if (pin_type == pin_type_uart_output) {
                 if (offset == 1) {
                     SCI1C2X |= SCI1C2_TE_MASK;
-                    serial_disable();
                 } else {
                     assert(offset == 3);
                     SCI2C2X |= SCI1C2_TE_MASK;
@@ -2775,7 +2767,6 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 } else {
                     assert(offset == 4 || offset == 5);
                     U2MODE |= _U2MODE_UARTEN_MASK;
-                    serial_disable();
                 }
             } else {
                 if (offset == 2 || offset == 8) {

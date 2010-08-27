@@ -1,5 +1,11 @@
 // *** serial.h ************************************************************
 
+#if PIC32 || MCF51CN128
+#define SERIAL_UART  1
+#else
+#define SERIAL_UART  0
+#endif
+
 extern bool serial_active;
 
 extern int serial_baudrate;

@@ -3,12 +3,6 @@
 
 #include "main.h"
 
-#if PIC32 || MCF51CN128
-#define UART  1
-#else
-#define UART  0
-#endif
-
 #define BAUDRATE  9600
 
 #define BUFFERSIZE  64
@@ -39,6 +33,8 @@ volatile int32 serial_max_ticks;
 void
 serial_disable(void)
 {
+    serial_active = false;
+
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // disable uart0 receive interrupts
     MCF_UART0_UIMR = 0;
@@ -88,9 +84,9 @@ serial_command_ack(void)
         waiting = false;
         
         // if the tx is ready...
-        if (pin_uart_tx_ready(UART)) {
+        if (pin_uart_tx_ready(SERIAL_UART)) {
             // stuff a resume
-            pin_uart_tx(UART, CTRLQ);
+            pin_uart_tx(SERIAL_UART, CTRLQ);
         } else {
             // record we need a resume
             suspend = false;
@@ -128,8 +124,8 @@ serial_isr(void)
 
     do {
         // process the receive fifo
-        while (pin_uart_rx_ready(UART)) {
-            c = pin_uart_rx(UART);
+        while (pin_uart_rx_ready(SERIAL_UART)) {
+            c = pin_uart_rx(SERIAL_UART);
             if (c && c != CTRLS && c != CTRLQ) {
                 if (c == '\r') {
                     serial_active = true;
@@ -149,9 +145,9 @@ serial_isr(void)
             // if a full command was accumulated...
             if (! boo) {
                 // if the tx is ready...
-                if (pin_uart_tx_ready(UART)) {
+                if (pin_uart_tx_ready(SERIAL_UART)) {
                     // stuff a suspend
-                    pin_uart_tx(UART, CTRLS);
+                    pin_uart_tx(SERIAL_UART, CTRLS);
                 } else {
                     // record we need a suspend
                     suspend = true;
@@ -163,7 +159,7 @@ serial_isr(void)
                 waiting = true;
             }
         }
-    } while (pin_uart_rx_ready(UART));
+    } while (pin_uart_rx_ready(SERIAL_UART));
     
     assert(serial_in_isr);
     assert((serial_in_isr = false) ? true : true);
@@ -179,7 +175,7 @@ serial_send(const byte *buffer, int length)
     assert(! busy);
     busy = true;
     
-    while (! pin_uart_tx_ready(UART)) {
+    while (! pin_uart_tx_ready(SERIAL_UART)) {
         // revisit -- poll?
     }
     
@@ -187,11 +183,11 @@ serial_send(const byte *buffer, int length)
     for (;;) {
         // if we have a suspend or resume to send, they take precedence
         if (suspend) {
-            pin_uart_tx(UART, CTRLS);
+            pin_uart_tx(SERIAL_UART, CTRLS);
             suspend = false;
             assert(! resume);
         } else if (resume) {
-            pin_uart_tx(UART, CTRLQ);
+            pin_uart_tx(SERIAL_UART, CTRLQ);
             resume = false;
             assert(! suspend);
         } else {
@@ -199,12 +195,12 @@ serial_send(const byte *buffer, int length)
                 break;
             }
             
-            pin_uart_tx(UART, *buffer);
+            pin_uart_tx(SERIAL_UART, *buffer);
             buffer++;
             length--;
         }
         
-        while (! pin_uart_tx_ready(UART)) {
+        while (! pin_uart_tx_ready(SERIAL_UART)) {
             // revisit -- poll?
         }
     }
@@ -223,10 +219,10 @@ serial_initialize(void)
     }
 
     // configure the first uart for serial terminal by default
-    pin_uart_configure(UART, serial_baudrate, 8, 2, false);
+    pin_uart_configure(SERIAL_UART, serial_baudrate, 8, 2, false);
     
     // start us out with a CTRLQ
-    pin_uart_tx(UART, CTRLQ);
+    pin_uart_tx(SERIAL_UART, CTRLQ);
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // UART 0

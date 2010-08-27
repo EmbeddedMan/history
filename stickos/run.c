@@ -1103,6 +1103,9 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
 #if ! STICK_GUEST
                 if (run_condition) {
+                    if (uart == SERIAL_UART) {
+                        serial_disable();
+                    }
                     pin_uart_configure(uart, baud, data, parity, loopback);
                 }
 #endif
