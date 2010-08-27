@@ -31,6 +31,8 @@ bool run_printf;
 
 static int32 run_sleep_ticks;
 static int run_sleep_line_number;
+static int32 run_isr_sleep_ticks;
+static int run_isr_sleep_line_number;
 
 // N.B. we assume UART_INTS start at 0!
 
@@ -2120,10 +2122,6 @@ XXX_PERF_XXX:
 
         case code_sleep:
             // N.B. sleeps occur in the main loop so we can service interrupts
-            if (run_isr) {
-                printf("not allowed\n");
-                goto XXX_SKIP_XXX;
-            }
 
             // get the sleep ticks
             index += run_timer(bytecode+index, length-index, &value);
@@ -2439,6 +2437,11 @@ run(bool cont, int start_line_number)
                     scopes[cur_scopes].condition_initial = true;
                     scopes[cur_scopes].condition_restore = false;
 
+                    // save the current sleep state
+                    run_isr_sleep_ticks = run_sleep_ticks;
+                    run_isr_sleep_line_number = run_sleep_line_number;
+                    run_sleep_line_number = 0;
+
                     // *** interrupt handler ***
                     
                     // run the isr, starting with the handler statement (which might be a gosub)
@@ -2459,6 +2462,10 @@ run(bool cont, int start_line_number)
         // if we're returning from our isr...
         if (run_line_number == -1) {
             run_line_number = scopes[cur_scopes].line_number;
+
+            // restore the current sleep state
+            run_sleep_ticks = run_isr_sleep_ticks;
+            run_sleep_line_number = run_isr_sleep_line_number;
 
             // close the temporary (unconditional) scope
             assert(scopes[cur_scopes].type == open_isr);

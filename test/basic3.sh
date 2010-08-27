@@ -371,4 +371,28 @@ cont
 cont
 EOF
 
-# add pic32 tests to test2.sh!!!
+echo test isr sleeps
+"$BASIC" -q <<'EOF'
+  10 dim i, start, tocks
+  20 configure timer 1 for 3 s
+  30 on timer 1 do gosub tock
+  40 for i = 1 to 20
+  50   let start = msecs
+  60   sleep 1 s
+  70   assert msecs>start+800&&msecs<start+1700
+  80 next
+  90 assert tocks>=5&&tocks<=8
+ 100 end
+ 110 sub tock
+ 120   dim start
+ 130   let start = msecs
+ 140   sleep 500 ms
+ 150   assert msecs>start+300&&msecs<start+700
+ 160   let tocks = tocks+1
+ 170 endsub
+ list
+ run
+ sleep off
+ run
+EOF
+
