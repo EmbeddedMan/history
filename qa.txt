@@ -140,8 +140,29 @@ demo3
  200   endif
  210 endsub
 
+pic32 uart pio
+  10 configure timer 1 for 5 s
+  20 on timer 1 do gosub doit
+  30 rem ### uart pio ###
+  40 configure uart 1 for 9600 baud 8 data no parity loopback
+  60 dim b as byte
+  70 let b = 3
+  80 uart 1 write b
+  90 let b = 4
+ 100 uart 1 write b
+ 110 uart 1 read b
+ 120 print b
+ 130 uart 1 read b
+ 140 print b
+ 150 uart 1 read b
+ 160 end
+ 170 sub doit
+ 180   let b = 5
+ 190   uart 1 write b
+ 200 endsub
 
 pic32 uart bug
+
 
 10 dim rx as pin rf4 for uart input
 20 dim tx as pin rf5 for uart output
@@ -327,6 +348,9 @@ switches
   20 on sw1 do print "sw3 pressed"
   30 sleep 1000 s
 
+  10 dim sw1 as pin fec_col for digital input debounced inverted
+  20 on sw1 do print "sw3 pressed"
+  30 sleep 1000 s
 
 
 
@@ -715,3 +739,53 @@ add qspi_cs* pins config
 auto terminates on error
 numbers on/off -
 higher power zigbee
+
+
+
+  10 dim p[0] as pin qspi_clk for digital output
+  20 dim p[1] as pin qspi_dout for digital output
+  30 dim p[2] as pin qspi_din for digital output
+  40 dim p[3] as pin qspi_cs0 for digital output
+  50 dim p[4] as pin qspi_cs2 for digital output
+  60 dim p[5] as pin qspi_cs3 for digital output
+  70 dim p[6] as pin utxd2 for digital output
+  80 dim p[7] as pin urxd2 for digital output
+  90 dim p[8] as pin urts2* for digital output
+ 100 dim p[9] as pin ucts2* for digital output
+ 110 dim p[10] as pin gpt0 for digital output
+ 120 dim p[11] as pin gpt1 for digital output
+ 130 dim p[12] as pin gpt2 for digital output
+ 140 dim p[13] as pin irq1* for digital output
+ 150 dim p[14] as pin irq3* for digital output
+ 160 dim p[15] as pin irq5* for digital output
+ 170 dim p[16] as pin irq7* for digital output
+ 180 dim p[17] as pin utxd0 for digital output
+ 190 dim p[18] as pin urxd0 for digital output
+ 200 dim p[19] as pin urts0* for digital output
+ 210 dim p[20] as pin ucts0* for digital output
+ 220 dim p[21] as pin utxd1 for digital output
+ 230 dim p[22] as pin urxd1 for digital output
+ 240 dim p[23] as pin urts1* for digital output
+ 250 dim p[24] as pin ucts1* for digital output
+ 260 dim p[25] as pin dtin0 for digital output
+ 270 dim p[26] as pin dtin1 for digital output
+ 280 dim p[27] as pin dtin2 for digital output
+ 290 dim p[28] as pin dtin3 for digital output
+ 300 dim p[29] as pin scl for digital output
+ 310 dim p[30] as pin sda for digital output
+ 320 dim p[31] as pin an0 for digital output
+ 330 dim p[32] as pin an1 for digital output
+ 340 dim p[33] as pin an2 for digital output
+ 350 dim p[34] as pin an3 for digital output
+ 360 dim p[35] as pin an4 for digital output
+ 370 dim p[36] as pin an5 for digital output
+ 380 dim p[37] as pin an6 for digital output
+ 390 dim p[38] as pin an7 for digital output
+ 400 dim p[39] as pin gpt3 for digital output
+ 410 dim i
+ 420 while 1 do
+ 430   for i = 0 to 39
+ 440     let p[i] = !p[i]
+ 450   next
+ 460   sleep 50 ms
+ 470 endwhile
