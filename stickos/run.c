@@ -88,7 +88,11 @@ enum scope_type {
     open_isr
 };
 
+#if PIC32 || MCF52259
+#define MAX_SCOPES  20
+#else
 #define MAX_SCOPES  10
+#endif
 
 static
 struct open_scope {
