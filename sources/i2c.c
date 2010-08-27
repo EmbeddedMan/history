@@ -259,8 +259,6 @@ i2c_repeat_start_real(bool write)
 void
 i2c_stop(void)
 {
-    i2c_initialize();
-
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // enable receive
     MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_MTX;
@@ -448,8 +446,6 @@ i2c_read_write(bool write, byte *buffer, int length)
 bool
 i2c_ack()
 {
-    i2c_initialize();
-
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     return !!(MCF_I2C0_I2SR & MCF_I2C_I2SR_RXAK);
 #elif PIC32
