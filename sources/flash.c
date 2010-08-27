@@ -455,7 +455,7 @@ flash_upgrade_ram_begin(void)
     // flash_write_words()
     addr = NULL;
     data = (uint32 *)(FLASH_BYTES/2);
-    nwords = FLASH_BYTES/2/sizeof(uint32) - 1;
+    nwords = FLASH_BYTES/2/sizeof(uint32);
     while (nwords) {
         assert_ram(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
         assert_ram(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
@@ -536,7 +536,7 @@ flash_upgrade_ram_begin(void)
     // flash_write_words()
     addr = NULL;
     data = (uint32 *)(FLASH_BYTES/2);
-    nwords = FLASH_BYTES/2/sizeof(uint32) - 1;
+    nwords = FLASH_BYTES/2/sizeof(uint32);
     while (nwords) {
         assert_ram(MCF_CFM_CFMCLKD & MCF_CFM_CFMCLKD_DIVLD);
         assert_ram(MCF_CFM_CFMUSTAT & MCF_CFM_CFMUSTAT_CBEIF);
@@ -618,7 +618,7 @@ flash_upgrade_ram_begin(void)
     // flash_write_words()
     addr = (uint32 *)FLASH_START;
     data = (uint32 *)(FLASH_START+FLASH_BYTES/2);
-    nwords = (FLASH_BYTES/2 - FLASH2_BYTES)/sizeof(uint32) - 1;
+    nwords = (FLASH_BYTES/2 - FLASH2_BYTES)/sizeof(uint32);
     while (nwords) {
         NVMADDR = KVA_TO_PA((unsigned int)addr);
         NVMDATA = *data;
@@ -660,7 +660,7 @@ flash_upgrade_ram_begin(void)
     // flash_write_words()
     addr = (uint32 *)FLASH2_START;
     data = (uint32 *)(FLASH_START+FLASH_BYTES-FLASH2_BYTES);
-    nwords = FLASH2_BYTES/sizeof(uint32) - 1;
+    nwords = FLASH2_BYTES/sizeof(uint32);
     while (nwords) {
         NVMADDR = KVA_TO_PA((unsigned int)addr);
         NVMDATA = *data;
@@ -999,7 +999,7 @@ flash_upgrade(uint32 fsys_frequency)
     uint32 zero;
     bool begun;
 
-    if ((int)end_of_static > FLASH_START+FLASH_BYTES/2) {
+    if ((int)end_of_static > FLASH_START+FLASH_BYTES/2-FLASH2_BYTES) {
         printf("code exceeds half of flash\n");
         return;
     }

@@ -396,3 +396,64 @@ echo test isr sleeps
  run
 EOF
 
+echo test basic arrays
+"$BASIC" -q <<'EOF'
+10 dim a[10]
+20 dim i, j
+30 for i = 0 to 9
+40 for j = i to 9
+50 let a[j] = a[j]+i
+60 next
+70 next
+80 for i = 0 to 9
+90 print i, a[i]
+100 next
+list
+run
+EOF
+
+echo test recursion
+"$BASIC" -q <<'EOF'
+  10 dim t
+  20 gosub sumit 7, t
+  30 print t
+  40 end
+  50 sub sumit x, y
+  60   dim z
+  70   if x==1 then
+  80     let y = 1
+  90     return
+ 100   endif
+ 110   gosub sumit x-1, z
+ 120   let y = z+x
+ 130 endsub
+ list
+ run
+EOF
+
+exit 0
+# XXX -- move this to basic2, along with:
+
+15 dim a1 as pin rd9 for digital output
+25 dim a2 as pin rd11 for digital output
+35 dim a3 as pin rd15 for digital output
+list
+pins heartbeat an10
+pins
+
+echo test too many scopes/gosubs
+"$BASIC" -q <<'EOF'
+10 gosub sub
+20 sub sub
+29 print "sub"
+30 gosub sub
+40 endsub
+list
+run
+21 if 1 then
+22 if 1 then
+31 endif
+32 endif
+list
+run
+EOF
