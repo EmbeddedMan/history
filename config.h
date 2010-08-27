@@ -1,4 +1,4 @@
-#define VERSION  "1.80+"
+#define VERSION  "1.80a"
 
 #if PIC32 && ! _WIN32
 // REVISIT -- we take debug info from the pic32 environment for now
