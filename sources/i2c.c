@@ -464,7 +464,7 @@ i2c_uninitialize(void)
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // AS is gpio
-    MCF_GPIO_PASPAR = 0x00;
+    MCF_GPIO_PASPAR = (MCF_GPIO_PASPAR&0xf0)|0x00;
 #elif PIC32
     I2CEnable(I2C1, false);
 #else
@@ -488,7 +488,7 @@ i2c_initialize(void)
     
 
     // AS is primary
-    MCF_GPIO_PASPAR = 0x05;
+    MCF_GPIO_PASPAR = (MCF_GPIO_PASPAR&0xf0)|0x05;
 
     // stop i2c
     MCF_I2C0_I2CR = 0;

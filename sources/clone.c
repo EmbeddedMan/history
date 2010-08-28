@@ -97,6 +97,8 @@ clone_init(uint32 slave_fsys)
     byte status;
     byte buffer[4];
 
+    qspi_initialize();
+
     // enter ezport mode
     pin_set(pin_assignments[pin_assignment_qspi_cs], pin_type_digital_output, 0, 0);
     clone_reset();

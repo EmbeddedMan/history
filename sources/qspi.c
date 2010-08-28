@@ -160,7 +160,7 @@ qspi_uninitialize(void)
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // QS is gpio
-    MCF_GPIO_PQSPAR = 0x0000;
+    MCF_GPIO_PQSPAR = (MCF_GPIO_PQSPAR&0xffc0)|0x0000;
 #elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     SPI1C1X = 0;
     SPI1C2X = 0;
@@ -182,7 +182,7 @@ qspi_initialize(void)
     {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // QS is primary
-    MCF_GPIO_PQSPAR = 0x0015;
+    MCF_GPIO_PQSPAR = (MCF_GPIO_PQSPAR&0xffc0)|0x0015;
 
     // initialize qspi master at 200k baud
     assert(bus_frequency/QSPI_BAUD_SLOW < 256);
@@ -224,8 +224,5 @@ qspi_initialize(void)
 #error
 #endif
     }
-
-    // cs inactive
-    pin_set(pin_assignments[pin_assignment_qspi_cs], pin_type_digital_output, 0, 1);
 }
 
