@@ -166,6 +166,7 @@ pic32 uart pio
  180   let b = 5
  190   uart 1 write b
  200 endsub
+should hang at end, and ctrl-c will work
 
 pic32 uart bug
 
