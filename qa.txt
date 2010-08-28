@@ -49,6 +49,9 @@ getchar test
 10 on getchar do print raw getchar
 20 halt
 
+10 on getchar do print raw getchar;
+
+
 input test
 ----------
 10 dim a[3], b$[10]
@@ -178,7 +181,7 @@ pic32 uart bug
 80 let i=i+1
 90 endwhile
 
-pic32 usb prints
+usb prints
 
 10 dim a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p
 20 dim ii,mm
