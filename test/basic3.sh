@@ -126,6 +126,9 @@ echo print semicolon
 2 let a$=" "
 10 print 1,2,3;
 20 print "4"+a$+"5"+a$+"6"
+30 print ";";
+40 print ";"
+50 print 2 ; 3
 list
 run
 EOF

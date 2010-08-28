@@ -223,32 +223,30 @@ parse_find_keyword(IN OUT char *text, IN char *word)
     return NULL;
 }
 
+// find final keyword in text
 bool
 parse_find_tail(IN OUT char *text, IN char *tail)
 {
-    char *p;
-    char *q;
+    int n;
+    int m;
 
-    // find final delimited keyword in text
-    p = text-1;
-    do {
-        q = parse_find_keyword(p+1, tail);
-        if (q) {
-            p = q;
-        }
-    } while (q);
-    if (p == text-1) {
+    n = strlen(text);
+    m = strlen(tail);
+
+    while (n && isspace(text[n-1])) {
+        n--;
+        text[n] = '\0';
+    }
+
+    if (m > n) {
         return false;
     }
 
-    // make sure nothing follows
-    *p = '\0';
-    p += strlen(tail);
-    parse_trim(&p);
-    if (*p) {
+    if (strcmp(text+n-m, tail)) {
         return false;
     }
 
+    text[n-m] = '\0';
     return true;
 }
 

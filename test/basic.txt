@@ -3201,21 +3201,21 @@ if
          ^ - error
      ^ - error
       ^ - error
-       ^ - error
+error -      ^
       ^ - error
 while
        ^ - error
 error -       ^
         ^ - error
          ^ - error
-error -   ^
+error -       ^
          ^ - error
 elseif
         ^ - error
 error -      ^
          ^ - error
 error -   ^
-error -    ^
+error -          ^
 error -   ^
 solos
       ^ - error
@@ -3245,8 +3245,8 @@ sleep
 error -       ^
 error -      ^
 error -          ^
-error -       ^
-error -       ^
+error -             ^
+error -             ^
 more
       ^ - error
       ^ - error
