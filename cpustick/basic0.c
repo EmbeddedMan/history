@@ -9,7 +9,6 @@ enum cmdcode {
     command_clone,  // [run]
 #endif
     command_connect,  // nnn
-    command_demo,
     command_download,  // nnn
     command_help,
 #if MCF52233
@@ -31,7 +30,6 @@ const char * const commands[] = {
     "clone",
 #endif
     "connect",
-    "demo",
     "download",
     "help",
 #if MCF52233
@@ -1020,6 +1018,9 @@ basic0_help(IN char *text_in)
 }
 
 #if HELP_COMPRESS
+int total_in;
+int total_out;
+
 void
 generate_help_code(char *name, char *string)
 {
@@ -1035,6 +1036,10 @@ generate_help_code(char *name, char *string)
 
     text_compress(string, buffer1);
     text_expand(buffer1, buffer2);
+
+    total_in += strlen(string);
+    total_out += strlen(buffer1);
+
     for (i = 0; string[i] || buffer2[i]; i++) {
         assert(string[i] == buffer2[i]);
     }
@@ -1090,6 +1095,7 @@ generate_help()
 #endif
     generate_help_macro(help_zigflea);
 
+    printf("total_in = %d; total_out = %d; comp = %d%%\n", total_in, total_out, 100*total_out/total_in);
     delay(20000);
 
     return 0;
@@ -1099,176 +1105,6 @@ generate_help()
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT
 #endif
-
-
-// *** demo ***********************************************************
-
-static const char * const demos[] = {
-  "rem ### blinky ###\n"
-#if STICK_GUEST
-  "dim i\n"
-#endif
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-  "dim led as pin dtin2 for digital output\n"
-#elif MCF51JM128
-  "dim led as pin ptf1 for digital output inverted\n"
-#elif MCF51CN128
-  "dim led as pin ptg5 for digital output inverted\n"
-#elif MCF51QE128 || MC9S08QE128
-  "dim led as pin ptc3 for digital output inverted\n"
-#elif MC9S12DT256 || MC9S12DP512
-  "dim led as pin pb6 for digital output inverted\n"
-#elif PIC32
-  "dim led as pin rd2 for digital output inverted\n"
-#else
-#error
-#endif
-#if STICK_GUEST
-  "while 1 do\n"
-  "  for i = 1 to 16\n"
-  "    let led = !led\n"
-  "    sleep 50 ms\n"
-  "  next\n"
-  "  sleep 800 ms\n"
-  "endwhile\n"
-  "end\n"
-#endif
-,
-  "rem ### uart isr ###\n"
-#if STICK_GUEST
-  "dim data\n"
-  "data 1, 1, 2, 3, 5, 8, 13, 21, 0\n"
-#endif
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MC9S12DT256 || MC9S12DP512
-  "configure uart 0 for 300 baud 8 data no parity loopback\n"
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-  "dim tx as pin utxd0 for uart output\n"
-  "dim rx as pin urxd0 for uart input\n"
-#elif MC9S12DT256 || MC9S12DP512
-  "dim tx as pin ps1 for uart output\n"
-  "dim rx as pin ps0 for uart input\n"
-#else
-#error
-#endif
-  "on uart 0 input do gosub receive\n"
-  "on uart 0 output do gosub transmit\n"
-#else
-  "configure uart 2 for 300 baud 8 data no parity loopback\n"
-#if MCF51JM128
-  "dim tx as pin ptc3 for uart output\n"
-  "dim rx as pin ptc5 for uart input\n"
-#elif MCF51CN128
-  "dim tx as pin ptd2 for uart output\n"
-  "dim rx as pin ptd3 for uart input\n"
-#elif MCF51QE128 || MC9S08QE128
-  "dim tx as pin ptc7 for uart output\n"
-  "dim rx as pin ptc6 for uart input\n"
-#elif PIC32
-  "dim tx as pin rf5 for uart output\n"
-  "dim rx as pin rf4 for uart input\n"
-#else
-#error
-#endif
-  "on uart 2 input do gosub receive\n"
-  "on uart 2 output do gosub transmit\n"
-#endif
-#if STICK_GUEST
-  "sleep 1000 ms\n"
-  "end\n"
-  "sub receive\n"
-  "  print \"received\", rx\n"
-  "endsub\n"
-  "sub transmit\n"
-  "  read data\n"
-  "  if ! data then\n"
-  "    return\n"
-  "  endif\n"
-  "  assert !tx\n"
-  "  print \"sending\", data\n"
-  "  let tx = data\n"
-  "endsub\n"
-#endif
-,
-  "rem ### uart pio ###\n"
-#if STICK_GUEST
-  "configure uart 1 for 9600 baud 7 data even parity loopback\n"
-#endif
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-  "dim tx as pin utxd1 for uart output\n"
-  "dim rx as pin urxd1 for uart input\n"
-#elif MCF51JM128
-  "dim tx as pin pte0 for uart output\n"
-  "dim rx as pin pte1 for uart input\n"
-#elif MCF51CN128
-  "dim tx as pin ptd0 for uart output\n"
-  "dim rx as pin ptd1 for uart input\n"
-#elif MCF51QE128 || MC9S08QE128
-  "dim tx as pin ptb1 for uart output\n"
-  "dim rx as pin ptb0 for uart input\n"
-#elif MC9S12DT256 || MC9S12DP512
-  "dim tx as pin ps3 for uart output\n"
-  "dim rx as pin ps2 for uart input\n"
-#elif PIC32
-  "dim tx as pin rf8 for uart output\n"
-  "dim rx as pin rf2 for uart input\n"
-#else
-#error
-#endif
-#if STICK_GUEST
-  "let tx = 3\n"
-#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
-  "while tx do\n"
-  "endwhile\n"
-  "print rx\n"
-#endif
-  "let tx = 4\n"
-  "while tx do\n"
-  "endwhile\n"
-  "print rx\n"
-  "print rx\n"
-  "print rx\n"
-  "end\n"
-#endif
-,
-  "rem ### toaster ###\n"
-#if STICK_GUEST
-  "dim target, secs\n"
-#endif
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || PIC32
-  "dim thermocouple as pin an0 for analog input\n"
-  "dim relay as pin an1 for digital output\n"
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128
-  "dim thermocouple as pin ptb2 for analog input\n"
-  "dim relay as pin ptb3 for digital output\n"
-#elif MCF51CN128
-  "dim thermocouple as pin pte0 for analog input\n"
-  "dim relay as pin pte1 for digital output\n"
-#elif MC9S12DT256 || MC9S12DP512
-  "dim thermocouple as pin pad00 for analog input\n"
-  "dim relay as pin pa0 for digital output\n"
-#else
-#error
-#endif
-#if STICK_GUEST
-  "data 5124, 6, 7460, 9, 8940, 3, -1, -1\n"
-  "configure timer 0 for 1000 ms\n"
-  "on timer 0 do gosub adjust\n"
-  "rem ---------------\n"
-  "while target!=-1 do\n"
-  "  sleep secs s\n"
-  "  read target, secs\n"
-  "endwhile\n"
-  "let relay = 0\n"
-  "end\n"
-  "sub adjust\n"
-  "  if thermocouple>=target then\n"
-  "    let relay = 0\n"
-  "  else\n"
-  "    let relay = 1\n"
-  "  endif\n"
-  "endsub\n"
-#endif
-};
 
 
 // *** basic0_run() ***************************************************
@@ -1292,7 +1128,6 @@ basic0_run(char *text_in)
     bool init;
 #endif
     const char *p;
-    const char *np;
     char *text;
     int number1;
     int number2;
@@ -1367,40 +1202,6 @@ basic0_run(char *text_in)
 #endif
 
                 printf("...disconnected\n");
-            }
-            break;
-
-        case command_demo:
-            number1 = 0;
-            if (*text) {
-                if (! basic_const(&text, &number1) || number1 < 0 || number1 >= LENGTHOF(demos)) {
-                    goto XXX_ERROR_XXX;
-                }
-            }
-
-            number2 = 0;
-            if (*text) {
-                if (! basic_const(&text, &number2) || ! number2) {
-                    goto XXX_ERROR_XXX;
-                }
-                if (*text) {
-                    goto XXX_ERROR_XXX;
-                }
-            }
-
-            if (! number2) {
-                number2 = 10;
-                code_new();
-            }
-
-            i = 0;
-            for (p = (char *)demos[number1]; *p; p = np+1) {
-                np = strchr(p, '\n');
-                assert(np);
-                strncpy((char *)big_buffer, p, np-p);
-                big_buffer[np-p] = '\0';
-                code_insert(number2+i*10, (char *)big_buffer, 0);
-                i++;
             }
             break;
 

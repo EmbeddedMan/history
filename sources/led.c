@@ -18,7 +18,9 @@ enum led {
 static int led_count[led_max];
 static int last_led_count[led_max];
 
+#if PICTOCRYPT
 static int led_code;
+#endif
 
 static enum led led_blink;
 

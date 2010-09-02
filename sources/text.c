@@ -4,10 +4,10 @@
 #include "main.h"
 
 // compression
-// 0x01 - 0x1f -> add 0x60 and add 2 spaces; except \n for 0x7f
-// ' '-'~'     -> ' '-'~'
-// 0x80 - 0xbf -> subtract 0x40 and add 1 space
-// 0xc0 - 0xff -> add 2+(c-0xc0) spaces
+// 0x01 - 0x1f -> add 0x20 and follow with a space (use 0x7f in place of \n)
+// 0x20 - 0x7e -> literal
+// 0x80 - 0xbf -> subtract 0x40 and follow with a space
+// 0xc0 - 0xff -> generate 2+(c-0xc0) spaces
 
 #if HELP_COMPRESS
 void
@@ -23,13 +23,13 @@ text_compress(
             c += 0x40;
             assert(c >= 0x80 && c < 0xc0);
             text++;
-        } else if (c > 0x60 && c < 0x80 && text[0] == ' ' && text[1] == ' ' && text[2] != ' ') {
-            c -= 0x60;
+        } else if (c > 0x20 && c < 0x40 && text[0] == ' ' && text[1] != ' ') {
+            c -= 0x20;
             if (c == '\n') {
                 c = 0x7f;
             }
             assert((c != '\n' && (c > 0 && c < 0x20)) || c == 0x7f);
-            text += 2;
+            text++;
         } else if (c == ' ' && text[0] == ' ') {
             text++;
             c = 0xc0;
@@ -63,8 +63,7 @@ text_expand(
             if (c == 0x7f) {
                 c = '\n';
             }
-            *text++ = c+0x60;
-            *text++ = ' ';
+            *text++ = c+0x20;
             *text++ = ' ';
         } else if (c >= 0xc0 && c < 0x100) {
             *text++ = ' ';
