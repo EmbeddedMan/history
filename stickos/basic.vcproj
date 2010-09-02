@@ -1040,6 +1040,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\sources\text.c"
+				>
+			</File>
+			<File
+				RelativePath="..\sources\text.h"
+				>
+			</File>
+			<File
 				RelativePath="..\sources\timer.c"
 				>
 			</File>
@@ -1156,6 +1164,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath="..\bugs.txt"
+			>
+		</File>
 		<File
 			RelativePath="..\build.sh"
 			>

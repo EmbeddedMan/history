@@ -1,5 +1,6 @@
 // prior 1
 // =======
+// generate skeleton with HIDBL commented out!
 // make flash filesystem allocate only as much space as is needed to save a current program!
 // mode to disable usb device (and autorun disable to override)
 // move block.c and fat32.c from pict-o-crypt to sources (include in skeleton)

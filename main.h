@@ -213,6 +213,7 @@ enum {
 #include "i2c.h"
 #include "zigflea.h"
 #include "terminal.h"
+#include "text.h"
 #include "timer.h"
 #include "util.h"
 #include "adc.h"

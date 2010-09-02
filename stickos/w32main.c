@@ -94,6 +94,11 @@ main(int argc, char **argv)
     int i;
     char text[2*BASIC_INPUT_LINE_SIZE];
 
+#if HELP_COMPRESS
+    extern int generate_help();
+    return generate_help();
+#endif
+
 #if __unix__
     signal(SIGINT, ctrlc);
 #else
