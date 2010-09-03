@@ -103,9 +103,14 @@ char * const help_about =
 // functions that copy these to RAM in unbanked memory.
 #endif
 
+
+#if 1
+#include "help.c"
+#else
+// GENERATE_HELP_BEGIN
+
 #if ! SODEBUG || STICK_GUEST
 static char *const help_general =
-#if HELP_COMPRESS
 "for more information:\n"
 "  help about\n"
 "  help commands\n"
@@ -127,33 +132,9 @@ static char *const help_general =
 "\n"
 "see also:\n"
 "  http://www.cpustick.com\n"
-#else
-"fo\262mor\245information:\n"
-"\300hel\260about\n"
-"\300hel\260commands\n"
-"\300hel\260modes\n"
-"\300hel\260statements\n"
-"\300hel\260blocks\n"
-"\300hel\260devices\n"
-"\300hel\260expressions\n"
-"\300hel\260strings\n"
-"\300hel\260variables\n"
-"\300hel\260pins\n"
-#if MCF52259
-"  help board\n"
-#endif
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"\300hel\260clone\n"
-#endif
-"\300hel\260zigflea\n"
-"\n"
-"se\245also:\n"
-"\300http://www.cpustick.com\n"
-#endif
 ;
 
 static char * const help_commands =
-#if HELP_COMPRESS
 "<Ctrl-C>                      -- stop program\n"
 "auto <line>                   -- automatically number program lines\n"
 "clear [flash]                 -- clear ram [and flash] variables\n"
@@ -185,43 +166,9 @@ static char * const help_commands =
 "\n"
 "for more information:\n"
 "  help modes\n"
-#else
-"<Ctrl-C>\324-- sto\260program\n"
-"aut\257<line>\321-- automaticall\271numbe\262progra\255lines\n"
-"clea\262[flash]\317-- clea\262ra\255[an\244flash\235variables\n"
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"clon\245[run]\321-- clon\245flas\250t\257slav\245MC\225[an\244run]\n"
-#endif
-"cls\331-- clea\262termina\254screen\n"
-"con\264[<line>]\317-- continu\245progra\255fro\255stop\n"
-"delet\245([<line>][-][<line>]|<subname>) -- delet\245progra\255lines\n"
-"downloa\244<slav\245Hz>\311-- downloa\244flas\250t\257slav\245MCU\n"
-"dir\331-- lis\264save\244programs\n"
-"edi\264<line>\321-- edi\264progra\255line\n"
-"hel\260[<topic>]\316-- onlin\245help\n"
-"lis\264([<line>][-][<line>]|<subname>) -- lis\264progra\255lines\n"
-"loa\244<name>\321-- loa\244save\244program\n"
-"memory\326-- prin\264memor\271usage\n"
-"new\331-- eras\245cod\245ra\255an\244flas\250memories\n"
-"profil\245([<line>][-][<line>]|<subname>) -- displa\271profil\245info\n"
-"purg\245<name>\320-- purg\245save\244program\n"
-"renumbe\262[<line>]\313-- renumbe\262progra\255line\263(an\244save)\n"
-"reset\327-- rese\264th\245MCU!\n"
-"ru\256[<line>]\320-- ru\256program\n"
-"sav\245[<name>]\317-- sav\245cod\245ra\255t\257flas\250memory\n"
-"undo\330-- und\257cod\245change\263sinc\245las\264save\n"
-#if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
-"upgrade\325-- upgrad\245StickO\223firmware!\n"
-#endif
-"uptime\326-- prin\264tim\245sinc\245las\264reset\n"
-"\n"
-"fo\262mor\245information:\n"
-"\300hel\260modes\n"
-#endif
 ;
 
 static char * const help_modes =
-#if HELP_COMPRESS
 "analog [<millivolts>]             -- set/display analog voltage scale\n"
 "autorun [on|off]                  -- autorun mode (on reset)\n"
 "echo [on|off]                     -- terminal echo mode\n"
@@ -252,42 +199,9 @@ static char * const help_modes =
 "\n"
 "for more information:\n"
 "  help pins\n"
-#else
-"analo\247[<millivolts>]\313-- set/displa\271analo\247voltag\245scale\n"
-"autoru\256[on|off]\320-- autoru\256mod\245(o\256reset)\n"
-"ech\257[on|off]\323-- termina\254ech\257mode\n"
-"inden\264[on|off]\321-- listin\247inden\264mode\n"
-#if MCF52233
-"ipaddress [dhcp|<ipaddress>]      -- set/display ip address\n"
-#endif
-"nodei\244[<nodeid>|none]\312-- set/displa\271zigfle\241nodeid\n"
-"number\263[on|off]\320-- listin\247lin\245number\263mode\n"
-"pin\263[<assign> [<pinname>|none]]\300-- set/displa\271StickO\223pi\256assignments\n"
-"promp\264[on|off]\321-- termina\254promp\264mode\n"
-"serv\257[<Hz>]\324-- set/displa\271serv\257H\272(o\256reset)\n"
-"slee\260[on|off]\322-- debugge\262slee\260mode\n"
-"ste\260[on|off]\323-- debugge\262single-ste\260mode\n"
-"trac\245[on|off]\322-- debugge\262trac\245mode\n"
-#if MCF52259 || PIC32
-"usbhost [on|off]                  -- USB host mode (on reset)\n"
-#endif
-"watchsmar\264[on|off]\315-- low-overhea\244watchpoin\264mode\n"
-"\n"
-"pi\256assignments:\n"
-"\300heartbea\024safemode*\n"
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"\300qspi_cs*\300clone_rst*\300zigflea_rst*\300zigflea_attn*\300zigflea_rxtxen\n"
-#else
-"  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
-#endif
-"\n"
-"fo\262mor\245information:\n"
-"\300hel\260pins\n"
-#endif
 ;
 
 static char * const help_statements =
-#if HELP_COMPRESS
 "<line>                                 -- delete program line from code ram\n"
 "<line> <statement>                     -- enter program line into code ram\n"
 "\n"
@@ -317,41 +231,9 @@ static char * const help_statements =
 "  help expressions\n"
 "  help strings\n"
 "  help variables\n"
-#else
-"<line>\337-- delet\245progra\255lin\245fro\255cod\245ram\n"
-"<line> <statement>\323-- ente\262progra\255lin\245int\257cod\245ram\n"
-"\n"
-"asser\264<expression>\322-- brea\253i\246expressio\256i\263false\n"
-"dat\241<n> [, ...]\325-- read-onl\271data\n"
-"di\255<variable>[$][[n]\235[a\263...\235[, ...\235-- dimensio\256variables\n"
-"end\342-- en\244program\n"
-#if BADGE_BOARD
-"jm(clear|set) <r>, <c>                 -- clear/set row/column of LED matrix\n"
-"jmscroll ...                           -- scroll printout to LED matrix\n"
-#endif
-"halt\341-- loo\260forever\n"
-"inpu\264[dec|hex|raw\235<variable>[$\235[, ...\235-- inpu\264data\n"
-"labe\254<label>\330-- read/dat\241label\n"
-"le\264<variable>[$\235= <expression> [, ...\235-- assig\256variable\n"
-"prin\264[dec|hex|raw\235<expression> [, ...\235[;\235-- prin\264results\n"
-"rea\244<variable> [, ...]\316-- rea\244read-onl\271dat\241int\257variables\n"
-"re\255<remark>\331-- remark\n"
-"restor\245[<label>]\324-- restor\245read-onl\271dat\241pointer\n"
-"slee\260<expression> (s|ms|us)\311-- dela\271progra\255execution\n"
-"stop\341-- inser\264breakpoin\264i\256code\n"
-"vprin\264<variable>[$\235= [dec|hex|raw\235<expression> [, ...\235-- prin\264t\257variable\n"
-"\n"
-"fo\262mor\245information:\n"
-"\300hel\260blocks\n"
-"\300hel\260devices\n"
-"\300hel\260expressions\n"
-"\300hel\260strings\n"
-"\300hel\260variables\n"
-#endif
 ;
 
 static char * const help_blocks =
-#if HELP_COMPRESS
 "if <expression> then\n"
 "[elseif <expression> then]\n"
 "[else]\n"
@@ -374,34 +256,9 @@ static char * const help_blocks =
 "sub <subname> [<param>, ...]\n"
 "  [return]\n"
 "endsub\n"
-#else
-"i\246<expression> then\n"
-"[elsei\246<expression> then]\n"
-"[else]\n"
-"endif\n"
-"\n"
-"fo\262<variable> = <expression> t\257<expression> [ste\260<expression>]\n"
-"\300[(break|continue) [n]]\n"
-"next\n"
-"\n"
-"whil\245<expression> do\n"
-"\300[(break|continue) [n]]\n"
-"endwhile\n"
-"\n"
-"do\n"
-"\300[(break|continue) [n]]\n"
-"unti\254<expression>\n"
-"\n"
-"gosu\242<subname> [<expression>, ...]\n"
-"\n"
-"su\242<subname> [<param>, ...]\n"
-"\300[return]\n"
-"endsub\n"
-#endif
 ;
 
 static char * const help_devices =
-#if HELP_COMPRESS
 "timers:\n"
 "  configure timer <n> for <n> (s|ms|us)\n"
 "  on timer <n> do <statement>                -- on timer execute statement\n"
@@ -430,40 +287,9 @@ static char * const help_devices =
 "  off <expression>                           -- disable expr watchpoint\n"
 "  mask <expression>                          -- mask/hold expr watchpoint\n"
 "  unmask <expression>                        -- unmask expr watchpoint\n"
-#else
-"timers:\n"
-"\300configur\245time\262<n> fo\262<n> (s|ms|us)\n"
-"\300o\256time\262<n> d\257<statement>\316-- o\256time\262execut\245statement\n"
-"\300of\246time\262<n>\334-- disabl\245time\262interrupt\n"
-"\300mas\253time\262<n>\333-- mask/hol\244time\262interrupt\n"
-"\300unmas\253time\262<n>\331-- unmas\253time\262interrupt\n"
-"\n"
-"uarts:\n"
-"\300configur\245uar\264<n> fo\262<n> bau\244<n> dat\241(even|odd|no) parit\271[loopback]\n"
-"\300o\256uar\264<n> (input|output) d\257<statement>\300-- o\256uar\264execut\245statement\n"
-"\300of\246uar\264<n> (input|output)\316-- disabl\245uar\264interrupt\n"
-"\300mas\253uar\264<n> (input|output)\315-- mask/hol\244uar\264interrupt\n"
-"\300unmas\253uar\264<n> (input|output)\313-- unmas\253uar\264interrupt\n"
-"\300uar\264<n> (read|write) <variable> [, ...]\301-- perfor\255uar\264I/O\n"
-"\n"
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
-"i2c:\n"
-"\300i2\243(star\264<addr>|(read|write) <variable> [, ...]|stop) -- maste\262i2\243I/O\n"
-"\n"
-#endif
-"qspi:\n"
-"\300qsp\251<variable> [, ...]\322-- maste\262qsp\251I/O\n"
-"\n"
-"watchpoints:\n"
-"\300o\256<expression> d\257<statement>\313-- o\256exp\262execut\245statement\n"
-"\300of\246<expression>\331-- disabl\245exp\262watchpoint\n"
-"\300mas\253<expression>\330-- mask/hol\244exp\262watchpoint\n"
-"\300unmas\253<expression>\326-- unmas\253exp\262watchpoint\n"
-#endif
 ;
 
 static char * const help_expressions =
-#if HELP_COMPRESS
 "the following operators are supported as in C,\n"
 "in order of decreasing precedence:\n"
 "  <n>                       -- decimal constant\n"
@@ -483,31 +309,9 @@ static char * const help_expressions =
 "  ||  ^^  &&                -- logical or, xor, and\n"
 "for more information:\n"
 "  help variables\n"
-#else
-"th\245followin\247operator\263ar\245supporte\244a\263i\256C,\n"
-"i\256orde\262o\246decreasin\247precedence:\n"
-"\300<n>\325-- decima\254constant\n"
-"\3000x<n>\323-- hexadecima\254constant\n"
-"\300'c'\325-- characte\262constant\n"
-"\300<variable>\316-- simpl\245variable\n"
-"\300<variable>[<expression>]\300-- arra\271variabl\245element\n"
-"\300<variable>#\315-- lengt\250o\246arra\271o\262string\n"
-"\300(\301)\323-- grouping\n"
-"\300!\301~\323-- logica\254not, bitwis\245not\n"
-"\300*\301/\301%\317-- times, divide, mod\n"
-"\300+\301-\323-- plus, minus\n"
-"\300>>\300<<\322-- shif\264right, left\n"
-"\300<=\300<\300>=\300>\314-- inequalities\n"
-"\300==\300!=\322-- equal, no\264equal\n"
-"\300|\301^\301&\317-- bitwis\245or, xor, and\n"
-"\300|\034^^\300&&\316-- logica\254or, xor, and\n"
-"fo\262mor\245information:\n"
-"\300hel\260variables\n"
-#endif
 ;
 
 static char * const help_strings =
-#if HELP_COMPRESS
 "v$ is a nul-terminated view into a byte array v[]\n"
 "\n"
 "string statements:\n"
@@ -528,32 +332,9 @@ static char * const help_strings =
 "  ~  !~                          -- contains, does not contain\n"
 "for more information:\n"
 "  help variables\n"
-#else
-"v$ i\263\241nul-terminate\244vie\267int\257\241byt\245arra\271v[]\n"
-"\n"
-"strin\247statements:\n"
-"\300dim, input, let, print, vprint\n"
-"\300i\246<expression> <relation> <expression> then\n"
-"\300whil\245<expression> <relation> <expression> do\n"
-"\300unti\254<expression> <relation> <expression> do\n"
-"\n"
-"strin\247expressions:\n"
-"\300\"literal\"\324-- litera\254string\n"
-"\300<variable>$\322-- variabl\245string\n"
-"\300<variable>$[<start>:<length>]\300-- variabl\245substring\n"
-"\300+\334-- concatenate\263strings\n"
-"\n"
-"strin\247relations:\n"
-"\300<=\300<\300>=\300>\321-- inequalities\n"
-"\300==\300!=\327-- equal, no\264equal\n"
-"\300\036!~\330-- contains, doe\263no\264contain\n"
-"fo\262mor\245information:\n"
-"\300hel\260variables\n"
-#endif
 ;
 
 static char *const help_variables =
-#if HELP_COMPRESS
 "all variables must be dimensioned!\n"
 "variables dimensioned in a sub are local to that sub\n"
 "simple variables are passed to sub params by reference; otherwise, by value\n"
@@ -584,48 +365,11 @@ static char *const help_variables =
 "\n"
 "for more information:\n"
 "  help pins\n"
-#else
-"al\254variable\263mus\264b\245dimensioned!\n"
-"variable\263dimensione\244i\256\241su\242ar\245loca\254t\257tha\264sub\n"
-"simpl\245variable\263ar\245passe\244t\257su\242param\263b\271reference; otherwise, b\271value\n"
-"arra\271variabl\245indice\263star\264a\2640\n"
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
-"\266i\263th\245sam\245a\263v[0], excep\264fo\262input/print/i2c/qspi/uar\264statements\n"
-#else
-"v is the same as v[0], except for input/print/qspi/uart statements\n"
-#endif
-"\n"
-"ra\255variables:\n"
-"\300di\255<var>[$][[n]]\n"
-"\300di\255<var>[[n]\235a\263(byte|short)\n"
-"\n"
-"absolut\245variables:\n"
-"\300di\255<var>[[n]\235[a\263(byte|short)\235a\264addres\263<addr>\n"
-"\n"
-"flas\250paramete\262variables:\n"
-"\300di\255<varflash>[[n]\235a\263flash\n"
-"\n"
-"pi\256alia\263variables:\n"
-"\300di\255<varpin> a\263pi\256<pinname> fo\262(digital|analog|servo|frequency|uart) \\\n"
-"\344(input|output) \\\n"
-"\344[debounced\235[inverted\235[open_drain]\n"
-"\n"
-"syste\255variables:\n"
-"\300getcha\022nodei\004msec\023second\023tick\023ticks_per_mse\003(read-only)\n"
-"\n"
-"fo\262mor\245information:\n"
-"\300hel\260pins\n"
-#endif
 ;
 
 static char *const help_pins =
-#if HELP_COMPRESS
 "pin names:\n"
-#else
-"pi\256names:\n"
-#endif
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-#if HELP_COMPRESS
 "    0         1         2         3        4     5        6        7\n"
 "  --------  --------- --------- -------- ----- -------- -------- ------+\n"
 "  an0       an1       an2       an3      an4   an5      an6      an7   | AN\n"
@@ -663,45 +407,6 @@ static char *const help_pins =
 "dtin? = potential frequency output pins (Hz)\n"
 "urxd? = potential uart input pins (received byte)\n"
 "utxd? = potential uart output pins (transmit byte)\n"
-#else
-"\3020\3071\3072\3073\3064\3035\3066\3067\n"
-"\300--------\300--------- --------- -------- ----- -------- -------- ------+\n"
-"\300an0\305an1\305an2\305an3\304an4\301an5\304an6\304an7\301\274AN\n"
-"\300scl\305sda\366\274AS\n"
-#if MCF52233 || MCF52259 || MCF5211
-"  gpt0      gpt1      gpt2      gpt3                                   | TA\n"
-#endif
-#if MCF52259
-"            irq1*               irq3*          irq5*             irq7* | NQ\n"
-#else
-"\312irq1*\326irq4*\321irq7* \274NQ\n"
-#endif
-#if MCF52233
-"                                irq11*                                 | GP\n"
-#endif
-"\300qspi_dou\264qspi_di\016qspi_cl\013qspi_cs0\305qspi_cs2 qspi_cs3\305\274QS\n"
-"\300dtin0\303dtin1\303dtin2\303dtin3\340\274TC\n"
-"\300utxd0\303urxd0\303urts0*\302ucts0*\337\274UA\n"
-"\300utxd1\303urxd1\303urts1*\302ucts1*\337\274UB\n"
-#if MCF52259
-"  fec_col   fec_crs   fec_rxclk fec_rxd[0-3]                  fec_rxdv | TI\n"
-"  fec_rxer  fec_txclk fec_txd[0-3]                   fec_txen fec_txer | TJ\n"
-"  utxd2     urxd2     urts2*    ucts2*                                 | UC\n"
-#endif
-"\n"
-"al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
-"an? = potentia\254analo\247inpu\264pin\263(mV)\n"
-#if MCF52233 || MCF52259 || MCF5211
-"dtin?, gpt? = potential analog output (PWM) pins (mV)\n"
-"dtin?, gpt? = potential servo output (PWM) pins (cms)\n"
-#else
-"dtin? = potentia\254analo\247outpu\264(PWM) pin\263(mV)\n"
-"dtin? = potentia\254serv\257outpu\264(PWM) pin\263(cms)\n"
-#endif
-"dtin? = potentia\254frequenc\271outpu\264pin\263(Hz)\n"
-"urxd? = potentia\254uar\264inpu\264pin\263(receive\244byte)\n"
-"utxd? = potentia\254uar\264outpu\264pin\263(transmi\264byte)\n"
-#endif
 #elif MCF51JM128
 "    0       1       2       3       4       5       6       7\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
@@ -844,7 +549,6 @@ static char *const help_board =
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 static char *const help_clone =
-#if HELP_COMPRESS
 "clone cable:\n"
 "  master           slave\n"
 "  ---------        ----------------\n"
@@ -855,23 +559,10 @@ static char *const help_clone =
 "  pins clone_rst*  rsti*\n"
 "  vss              vss\n"
 "  vdd              vdd\n"
-#else
-"clon\245cable:\n"
-"\300master\311slave\n"
-"\300---------\306----------------\n"
-"\300qspi_clk\307qspi_cl\253(ezpck)\n"
-"\300qspi_din\307qspi_dou\264(ezpq)\n"
-"\300qspi_dout\306qspi_di\256(ezpd)\n"
-"\300qspi_cs0\307rcon* (ezpcs*)\n"
-"\300pin\263clone_rst*\300rsti*\n"
-"\300vss\314vss\n"
-"\300vdd\314vdd\n"
-#endif
 ;
 #endif
 
 static char *const help_zigflea =
-#if HELP_COMPRESS
 "connect <nodeid>              -- connect to MCU <nodeid> via zigflea\n"
 "<Ctrl-D>                      -- disconnect from zigflea\n"
 "\n"
@@ -924,61 +615,10 @@ static char *const help_zigflea =
 "  pins zigflea_rxtxen  rxtxen\n"
 "  vss                  vss\n"
 "  vdd                  vdd\n"
-#else
-"connec\264<nodeid>\314-- connec\264t\257MC\225<nodeid> vi\241zigflea\n"
-"<Ctrl-D>\324-- disconnec\264fro\255zigflea\n"
-"\n"
-"remot\245nod\245variables:\n"
-"\300di\255<varremote>[[n]\235a\263remot\245o\256nodei\244<nodeid>\n"
-"\n"
-"zigfle\241cable:\n"
-"\300MCU\320MC1320X\n"
-"\300-------------\306-----------\n"
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"\300qspi_clk\313spiclk\n"
-"\300qspi_din\313miso\n"
-"\300qspi_dout\312mosi\n"
-#if MCF52259
-"  irq1*                irq*\n"
-#else
-"\300irq4*\316irq*\n"
-#endif
-#elif MCF51JM128
-"  spsck1 (pte6)        spiclk\n"
-"  miso1 (pte4)         miso\n"
-"  mosi1 (pte5)         mosi\n"
-"  irq*                 irq*\n"
-#elif MCF51CN128
-"  spsck1 (ptb5)        spiclk\n"
-"  miso1 (ptb4)         miso\n"
-"  mosi1 (ptb3)         mosi\n"
-"  irq* (ptc4)          irq*\n"
-#elif MCF51QE128 || MC9S08QE128
-"  spsck1 (ptb2)        spiclk\n"
-"  miso1 (ptb4)         miso\n"
-"  mosi1 (ptb3)         mosi\n"
-"  irq*                 irq*\n"
-#elif MC9S12DT256 || MC9S12DP512
-"  sck0 (pm5)           spiclk\n"
-"  miso0 (pm2)          miso\n"
-"  mosi0 (pm4)          mosi\n"
-"  irq* (pe1)           irq*\n"
-#elif PIC32
-// REVISIT -- implement zigflea on MRF24J40
-"  sck1                 spiclk\n"
-"  sdi1                 miso\n"
-"  sdo1                 mosi\n"
-"  int1                 irq*\n"
-#else
-#error
-#endif
-"\300pin\263qspi_cs*\306ce*\n"
-"\300pin\263zigflea_rst*\302rst*\n"
-"\300pin\263zigflea_rxtxe\016rxtxen\n"
-"\300vss\320vss\n"
-"\300vdd\320vdd\n"
-#endif
 ;
+#endif
+
+// GENERATE_HELP_END
 #endif
 
 void
@@ -1016,91 +656,6 @@ basic0_help(IN char *text_in)
     }
 #endif
 }
-
-#if HELP_COMPRESS
-int total_in;
-int total_out;
-
-void
-generate_help_code(char *name, char *string)
-{
-    int i;
-    int c;
-    static byte buffer1[65536];
-    static char buffer2[65536];
-
-    extern char * const help_commands;
-
-    memset(buffer1, 0, sizeof(buffer1));
-    memset(buffer2, 0, sizeof(buffer2));
-
-    text_compress(string, buffer1);
-    text_expand(buffer1, buffer2);
-
-    total_in += strlen(string);
-    total_out += strlen(buffer1);
-
-    for (i = 0; string[i] || buffer2[i]; i++) {
-        assert(string[i] == buffer2[i]);
-    }
-
-    printf("static char *const %s =\n", name);
-    printf("\"");
-    for (i = 0; (c = buffer1[i]); i++) {
-        if (isprint(c)) {
-            printf("%c", c);
-        } else if (c == '"') {
-            printf("\\\"");
-        } else if (c == '\\') {
-            printf("\\\\");
-        } else if (c == '\n') {
-            printf("\\n");
-        } else {
-            printf("\\%03o", c);
-        }
-        if (c == '\n') {
-            if (buffer1[i+1]) {
-                printf("\"\n");
-                printf("\"");
-            } else {
-                printf("\"\n");
-                printf(";\n");
-            }
-        }
-    }
-    printf("\n");
-}
-
-#define generate_help_macro(s)  generate_help_code(#s, s)
-
-int
-generate_help()
-{
-    generate_help_macro(help_general);
-    generate_help_macro(help_about);
-    generate_help_macro(help_commands);
-    generate_help_macro(help_modes);
-    generate_help_macro(help_statements);
-    generate_help_macro(help_devices);
-    generate_help_macro(help_blocks);
-    generate_help_macro(help_expressions);
-    generate_help_macro(help_strings);
-    generate_help_macro(help_variables);
-    generate_help_macro(help_pins);
-#if MCF52259
-    generate_help_macro(help_board);
-#endif
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211
-    generate_help_macro(help_clone);
-#endif
-    generate_help_macro(help_zigflea);
-
-    printf("total_in = %d; total_out = %d; comp = %d%%\n", total_in, total_out, 100*total_out/total_in);
-    delay(20000);
-
-    return 0;
-}
-#endif
 
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG DEFAULT

@@ -88,16 +88,79 @@ ctrlc(int event)
 #endif
 }
 
+uint total_in;
+uint total_out;
+
+int
+generate_help(
+    void
+    )
+{
+    int c;
+    int i;
+    int n;
+    bool on;
+    char *line;
+    char line1[1024];
+    byte line2[1024];
+    char line3[1024];
+
+    on = false;
+    while (line = line1, gets(line)) {
+        if (strstr(line, "GENERATE_HELP_BEGIN")) {
+            on = true;
+        }
+        if (strstr(line, "GENERATE_HELP_END")) {
+            break;
+        }
+        if (on) {
+            n = strlen(line);
+            if (line[0] == '"' && line[n-1] == '"') {
+                line[n-1] = '\0';
+                line++;
+
+                text_compress(line, line2);
+                text_expand(line2, line3);
+
+                total_in += strlen(line);
+                total_out += strlen(line2);
+
+                for (i = 0; line[i] || line3[i]; i++) {
+                    assert(line[i] == line3[i]);
+                }
+
+                printf("\"");
+                for (i = 0; (c = line2[i]); i++) {
+                    if (isprint(c)) {
+                        printf("%c", c);
+                    } else if (c == '"') {
+                        printf("\\\"");
+                    } else if (c == '\\') {
+                        printf("\\\\");
+                    } else if (c == '\n') {
+                        printf("\\n");
+                    } else {
+                        printf("\\%03o", c);
+                    }
+                }
+                printf("\"\n");
+            } else {
+                printf("%s\n", line);
+            }
+        }
+    }
+    return 0;
+}
+
 int
 main(int argc, char **argv)
 {
     int i;
     char text[2*BASIC_INPUT_LINE_SIZE];
 
-#if HELP_COMPRESS
-    extern int generate_help();
-    return generate_help();
-#endif
+    if (argc > 1 && ! strcmp(argv[1], "help")) {
+        return generate_help();
+    }
 
 #if __unix__
     signal(SIGINT, ctrlc);
