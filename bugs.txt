@@ -1,5 +1,7 @@
 // prior 1
 // =======
+// pasting into an edited line doesn't work!  echo buffer overflow!
+// add getchar example in ug?
 // generate skeleton with HIDBL commented out!
 // make flash filesystem allocate only as much space as is needed to save a current program!
 // mode to disable usb device (and autorun disable to override)
