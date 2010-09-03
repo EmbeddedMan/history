@@ -1,5 +1,6 @@
 // prior 1
 // =======
+// multi-pin variables (digital I/O only)!!!
 // I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
 // pasting into an edited line doesn't work!  echo buffer overflow!
 // add getchar example in ug?
