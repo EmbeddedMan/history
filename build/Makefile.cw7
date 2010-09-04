@@ -54,7 +54,7 @@ endif
 endif
 
 # linker flags
-LDFLAGS = -force_active __cfm,__vect,__swvect \
+LDFLAGS = -force_active __cfm,__swvect \
           -main __startup \
           -dead \
           -map keep \

@@ -52,7 +52,7 @@ endif
 # linker flags
 ifneq (BADGE_BOARD,$(findstring BADGE_BOARD,$(CPU)))
 LDFLAGS = -main __startup \
-          -force_active __cfm,__vect,__swvect \
+          -force_active __cfm,__swvect \
           -dead \
           -map \
           -srec -sreclength 32
