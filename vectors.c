@@ -387,7 +387,7 @@ DECLSPEC_PAGE0_DATA
 #else
 const
 #endif
-const uint32 _cfm[] = {
+uint32 _cfm[] = {
 #if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
     0,                              // (0x00000400) KEY_UPPER
     0,                              // (0x00000404) KEY_LOWER

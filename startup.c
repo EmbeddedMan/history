@@ -1,6 +1,6 @@
 // *** startup.c ******************************************************
-// this file is where hardware starts execution, at _startup in page0;
-// then we call init(); init() is responsible for calling main().
+// this file is where hardware starts execution, at _startup; then we
+// call init(); init() is responsible for calling main().
 
 #include "main.h"
 
@@ -31,80 +31,10 @@ byte big_buffer[768];
 
 #if ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 
-static
-void
-init(void);
-
 #if BADGE_BOARD || DEMO_KIT
 extern void pre_main(void);
 #endif
 extern int main();
-
-#if ! GCC
-extern
-BEGIN_NAKED(_startup);
-#endif
-
-// this function performs assembly language initialization from
-// reset, and then calls C initialization, which calls main().
-BEGIN_NAKED(_startup)
-{
-    // disable interrupts
-    Q3(move.w,  #0x2700,sr)
-    
-#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
-    // initialize RAMBAR
-    Q3(move.l,  #__RAMBAR+0x21,d0)
-    Q3(movec,   d0,RAMBAR)
-
-    // initialize IPSBAR
-    Q3(move.l,  #__IPSBAR,d0)
-    Q3(andi.l,  #0xC0000000,d0)  // need to mask
-    Q3(add.l,   #0x1,d0)
-    Q3(move.l,  d0,0x40000000)
-
-    // initialize FLASHBAR
-    Q3(move.l,  #__FLASHBAR,d0)
-    Q3(andi.l,  #0xFFF80000,d0)  // need to mask
-#if MCF52259
-    Q3(add.l,   #0x21,d0)
-#else
-    Q3(add.l,   #0x61,d0)
-#endif
-    Q3(movec,   d0,FLASHBAR)
-#else
-    Q3(move.l,  #0xc0000000,d0)
-    Q3(movec,   d0,CPUCR)
-#endif
-
-    // set up the real stack pointer
-    Q3(lea,     _SP_INIT,a7)
-
-    // set up short data base A5
-    Q3(lea,     _SDA_BASE,a5)
-
-    // set up A6 dummy stackframe
-    Q3(movea.l, #0,a6)
-    Q3(link,    a6,#0)
-
-    // C initialization, links to main
-    Q2(jsr,     init)
-
-    Q1(nop)
-    Q1(halt)
-}
-END_NAKED
-
-#if ! GCC
-BEGIN_NAKED(asm_xxx);
-#endif
-
-BEGIN_NAKED(asm_xxx)
-{
-    Q1(halt)
-    Q1(rte)
-}
-END_NAKED
 
 // this function performs C initialization before main() runs.
 void
@@ -386,5 +316,72 @@ init(void)
     // finally, call main()
     main();
 }
+
+#if ! GCC
+extern
+BEGIN_NAKED(_startup);
+#endif
+
+// this function performs assembly language initialization from
+// reset, and then calls C initialization, which calls main().
+BEGIN_NAKED(_startup)
+{
+    // disable interrupts
+    Q3(move.w,  #0x2700,sr)
+
+#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
+    // initialize RAMBAR
+    Q3(move.l,  #__RAMBAR+0x21,d0)
+    Q3(movec,   d0,RAMBAR)
+
+    // initialize IPSBAR
+    Q3(move.l,  #__IPSBAR,d0)
+    Q3(andi.l,  #0xC0000000,d0)  // need to mask
+    Q3(add.l,   #0x1,d0)
+    Q3(move.l,  d0,0x40000000)
+
+    // initialize FLASHBAR
+    Q3(move.l,  #__FLASHBAR,d0)
+    Q3(andi.l,  #0xFFF80000,d0)  // need to mask
+#if MCF52259
+    Q3(add.l,   #0x21,d0)
+#else
+    Q3(add.l,   #0x61,d0)
+#endif
+    Q3(movec,   d0,FLASHBAR)
+#else
+    Q3(move.l,  #0xc0000000,d0)
+    Q3(movec,   d0,CPUCR)
+#endif
+
+    // set up the real stack pointer
+    Q3(lea,     _SP_INIT,a7)
+
+    // set up short data base A5
+    Q3(lea,     _SDA_BASE,a5)
+
+    // set up A6 dummy stackframe
+    Q3(movea.l, #0,a6)
+    Q3(link,    a6,#0)
+
+    // C initialization, links to main
+    Q2(jsr,     init)
+
+    Q1(nop)
+    Q1(halt)
+}
+END_NAKED
+
+#if ! GCC
+BEGIN_NAKED(asm_xxx);
+#endif
+
+BEGIN_NAKED(asm_xxx)
+{
+    Q1(halt)
+    Q1(rte)
+}
+END_NAKED
+
 #endif // ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 

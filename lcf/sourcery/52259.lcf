@@ -47,12 +47,6 @@ SECTIONS {
         . = ALIGN (0x4); 
     } > page0_data
     
-    .page0_code :
-    {
-        *(.page0_code .page0_code.*)
-        . = ALIGN (0x4); 
-    } > page0_code
-
     .text :
     {
         *(.text .text.*)
