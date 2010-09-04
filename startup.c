@@ -95,6 +95,17 @@ BEGIN_NAKED(_startup)
 }
 END_NAKED
 
+#if ! GCC
+BEGIN_NAKED(asm_xxx);
+#endif
+
+BEGIN_NAKED(asm_xxx)
+{
+    Q1(halt)
+    Q1(rte)
+}
+END_NAKED
+
 // this function performs C initialization before main() runs.
 void
 init(void)

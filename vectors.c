@@ -27,16 +27,11 @@ extern void _startup(void);
 asm void _startup(void);
 #endif // GCC
 
-#if ! GCC
-BEGIN_NAKED(asm_xxx);
-#endif
-
-BEGIN_NAKED(asm_xxx)
-{
-    Q1(halt)
-    Q1(rte)
-}
-END_NAKED
+#if GCC
+extern void asm_xxx(void);
+#else // GCC
+asm void asm_xxx(void);
+#endif // GCC
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 // this is the hardware interrupt vector table.
@@ -387,7 +382,11 @@ void *_swvect[128+128] = {
 #endif
 
 // this is the cfm config
+#if ! BADGE_BOARD && ! DEMO_KIT
 DECLSPEC_PAGE0_DATA
+#else
+const
+#endif
 const uint32 _cfm[] = {
 #if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
     0,                              // (0x00000400) KEY_UPPER
