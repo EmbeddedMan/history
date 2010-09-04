@@ -6,11 +6,11 @@
 # build/Makefile.cw7
 
 # install and tools location
-INSTALL = C:/Program Files/Freescale/CodeWarrior for ColdFire V7.1
+INSTALL = C:/Program Files/Freescale/CodeWarrior for ColdFire V7.2
 TOOLS = $(INSTALL)/ColdFire_Tools/Command_Line_Tools
 
 # system header file paths (sans $(INSTALL))
-SYSDIRS = ColdFire_Support/msl/MSL_C/MSL_Common/Include ColdFire_Support/msl/MSL_C/MSL_ColdFire/Include
+SYSDIRS = ColdFire_Support/ewl/EWL_C/include
 
 # compiler and linker
 CC = $(TOOLS)/mwccmcf.exe

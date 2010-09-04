@@ -7,7 +7,7 @@ ifeq (52233,$(findstring 52233,$(CPU)))
 LIBS=$(ROOTDIR)/nichelite/$(OBJDIR)/nichelite
 endif
 
-SOURCES=startup.c vectors.c init.c main.c basic0.c cpustick.c parse2.c run2.c \
+SOURCES=startup.c vectors.c main.c basic0.c cpustick.c parse2.c run2.c \
         basic.c code.c parse.c run.c vars.c \
         adc.c clone.c flash.c ftdi.c led.c pin.c printf.c qspi.c scsi.c \
         serial.c sleep.c terminal.c timer.c usb.c util.c zigflea.c
