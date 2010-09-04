@@ -8,7 +8,7 @@ static uint16 rows[5];
 static uint16 scroll[5];
 static byte row;
 
-static char scroll_buf[BASIC_LINE_SIZE];
+static char scroll_buf[BASIC_OUTPUT_LINE_SIZE];
 static int scroll_col;
 
 extern const unsigned char font[][5];
