@@ -6,9 +6,7 @@ ENTRY(_startup)
 
 MEMORY {
    page0_data  (R)   : ORIGIN = 0x00000000, LENGTH = 0x00000418
-   page0_code  (RX)  : ORIGIN = 0x00000418, LENGTH = 0x000003e8
-   page1       (RX)  : ORIGIN = 0x00000800, LENGTH = 0x00000800
-   code        (RX)  : ORIGIN = 0x00001000, LENGTH = 0x0001f000
+   code        (RX)  : ORIGIN = 0x00000418, LENGTH = 0x0001fbe8
    bdtram      (RWX) : ORIGIN = 0x20000000, LENGTH = 0x00000080
    userram     (RWX) : ORIGIN = 0x20000080, LENGTH = 0x00003f80
 }
@@ -54,13 +52,6 @@ SECTIONS {
         *(.page0_code .page0_code.*)
         . = ALIGN (0x4); 
     } > page0_code
-
-    .page1 :
-    {
-        *(.page1)
-        KEEP (*(.page1))
-        . = ALIGN (0x4); 
-    } > page1
 
     .text :
     {

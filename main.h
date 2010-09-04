@@ -81,6 +81,7 @@ typedef uint32 size_t;
 #define INTERRUPT __attribute__((interrupt))
 #define far
 #define __IPSBAR ((volatile uint8 *)0x40000000)
+extern uint8 __RAMBAR[];
 #define RAMBAR_ADDRESS ((uintptr)__RAMBAR)
 #define FLASH_UPGRADE_RAM_BEGIN __attribute__((section(".text_flash_upgrade_ram_begin")))
 #define FLASH_UPGRADE_RAM_END __attribute__((section(".text_flash_upgrade_ram_end")))

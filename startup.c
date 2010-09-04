@@ -40,8 +40,10 @@ extern void pre_main(void);
 #endif
 extern int main();
 
+#if ! GCC
 extern
 BEGIN_NAKED(_startup);
+#endif
 
 // this function performs assembly language initialization from
 // reset, and then calls C initialization, which calls main().

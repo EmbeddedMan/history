@@ -150,7 +150,8 @@ extern byte big_buffer[768];
 
 // make cw and gcc assemblers compatible
 #if GCC
-#define BEGIN_NAKED(func)  void func ## _not(void) \
+#define BEGIN_NAKED(func)  extern uint8 func[]; \
+                           void func ## _not(void) \
                            { \
                                asm ("\t.globl " #func ); \
                                asm ("\t.type " #func ", @function"); \

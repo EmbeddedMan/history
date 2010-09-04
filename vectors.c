@@ -27,13 +27,16 @@ extern void _startup(void);
 asm void _startup(void);
 #endif // GCC
 
+#if ! GCC
 BEGIN_NAKED(asm_xxx);
+#endif
 
 BEGIN_NAKED(asm_xxx)
 {
-    halt
-    rte
+    Q1(halt)
+    Q1(rte)
 }
+END_NAKED
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 // this is the hardware interrupt vector table.
