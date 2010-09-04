@@ -46,7 +46,7 @@ i2c_break(void)
         return true;
     }
 #else
-#error
+//#error
 #endif
     if (run_breaks != breaks) {
         i2c_broke();
@@ -162,7 +162,7 @@ i2c_start_real(bool write)
         }
     }
 #else
-#error
+//#error
 #endif
 
     started = true;
@@ -252,7 +252,7 @@ i2c_repeat_start_real(bool write)
         }
     }
 #else
-#error
+//#error
 #endif
 }
 
@@ -287,7 +287,7 @@ i2c_stop(void)
         }
     }
 #else
-#error
+//#error
 #endif
 
     started = false;
@@ -439,7 +439,7 @@ i2c_read_write(bool write, byte *buffer, int length)
         }
     }
 #else
-#error
+//#error
 #endif
 }
 
@@ -451,7 +451,7 @@ i2c_ack()
 #elif PIC32
     return I2CByteWasAcknowledged(I2C1);
 #else
-#error
+//#error
 #endif
 }
 
@@ -468,7 +468,7 @@ i2c_uninitialize(void)
 #elif PIC32
     I2CEnable(I2C1, false);
 #else
-#error
+//#error
 #endif
 }
 
@@ -522,7 +522,7 @@ i2c_initialize(void)
 
     I2CEnable(I2C1, true);
 #else
-#error
+//#error
 #endif
     }
 }

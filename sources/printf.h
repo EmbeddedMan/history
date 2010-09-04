@@ -23,6 +23,9 @@ int
 sprintf(char *buffer, const char *format, ...);
 
 int
+vsprintf(char *buffer, const char *format, va_list ap);
+
+int
 printf(const char *format, ...);
 
 int

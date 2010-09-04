@@ -276,6 +276,16 @@ sprintf(char *buffer, const char *format, ...)
     return n;
 }
 
+int
+vsprintf(char *buffer, const char *format, va_list ap)
+{
+    int n;
+
+    n = vsnprintf(buffer, 32767, format, ap);
+    return n;
+}
+
+
 #if ! STICK_GUEST
 static char printf_buffer[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
 #else

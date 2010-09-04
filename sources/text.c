@@ -79,3 +79,4 @@ text_expand(
     }
     *text = '\0';
 }
+

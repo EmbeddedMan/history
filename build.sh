@@ -51,7 +51,7 @@ esac
 
 # our build flavors are below
 cat <<EOF | while read TARGET BUILD CPU
-  nichelite cw7.CW MCF52233.CFV2
+  nichelite cw7.CW MCF52233.NICHELITE.CFV2
   cpustick cw7.CW MCF52221.CFV2
   cpustick cw7.CW MCF52233.CFV2
   cpustick cw7.CW MCF52259.CFV2
