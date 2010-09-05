@@ -621,10 +621,10 @@ subprint(
         if (size == 1) {
             i = snprintf(s, n, "%c", value);
         } else if (size == 2) {
-            i = snprintf(s, n, "%c%c", (unsigned)value>>8, value);
+            i = snprintf(s, n, "%c%c", (uint32)value>>8, value);
         } else {
             assert(size == 4);
-            i = snprintf(s, n, "%c%c%c%c", (unsigned)value>>24, (unsigned)value>>16, (unsigned)value>>8, value);
+            i = snprintf(s, n, "%c%c%c%c", (uint32)value>>24, (uint32)value>>16, (uint32)value>>8, value);
         }
     }
     return i;
@@ -1595,12 +1595,8 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                 } else
 #endif
                 if (code == code_i2c || code == code_uart) {
-                    if (code2 == code_device_read) {
-                        index++;
-                    } else {
-                        assert(code2 == code_device_write);
-                        index++;
-                    }
+                    assert(code2 == code_device_read || code2 == code_device_write);
+                    index++;
                 } else {
                     assert(code == code_qspi);
                     code2 = 0;

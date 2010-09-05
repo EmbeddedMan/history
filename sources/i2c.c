@@ -452,6 +452,7 @@ i2c_ack()
     return I2CByteWasAcknowledged(I2C1);
 #else
 //#error
+    return 0;
 #endif
 }
 

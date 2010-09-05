@@ -37,6 +37,7 @@ extern void pre_main(void);
 extern int main();
 
 // this function performs C initialization before main() runs.
+static
 void
 init(void)
 {
