@@ -88,7 +88,7 @@ enum bytecode {
 };
 
 enum timer_unit_type {
-    timer_unit_usecs = 0x01,
+    timer_unit_usecs,
     timer_unit_msecs,
     timer_unit_secs,
     timer_unit_max
