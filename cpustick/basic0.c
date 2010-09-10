@@ -9,7 +9,9 @@ enum cmdcode {
     command_clone,  // [run]
 #endif
     command_connect,  // nnn
+#if STICK_GUEST
     command_demo,
+#endif
     command_download,  // nnn
     command_help,
 #if MCF52233
@@ -31,7 +33,9 @@ const char * const commands[] = {
     "clone",
 #endif
     "connect",
+#if STICK_GUEST
     "demo",
+#endif
     "download",
     "help",
 #if MCF52233
@@ -665,7 +669,7 @@ basic0_help(IN char *text_in)
 
 
 // *** demo ***********************************************************
-
+#if STICK_GUEST
 static const char * const demos[] = {
   "rem ### blinky ###\n"
 #if STICK_GUEST
@@ -832,6 +836,7 @@ static const char * const demos[] = {
   "endsub\n"
 #endif
 };
+#endif
 
 
 // *** basic0_run() ***************************************************
@@ -855,7 +860,9 @@ basic0_run(char *text_in)
     bool init;
 #endif
     const char *p;
+#if STICK_GUEST
     const char *np;
+#endif
     char *text;
     int number1;
     int number2;
@@ -933,6 +940,7 @@ basic0_run(char *text_in)
             }
             break;
 
+#if STICK_GUEST
         case command_demo:
             number1 = 0;
             if (*text) {
@@ -966,6 +974,7 @@ basic0_run(char *text_in)
                 i++;
             }
             break;
+#endif
 
         case command_help:
 #if ! SODEBUG || STICK_GUEST

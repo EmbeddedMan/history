@@ -1,6 +1,6 @@
 This project contains the following targets:
 
-project.mcp (for CW7.1):
+project.mcp (for CW7.2):
 
 * CPUStick 5211    -- skeleton code to run on an MCF5211 (source code)
 * CPUStick 52221   -- skeleton code to run on an MCF52221, with USB host
@@ -19,6 +19,7 @@ project.mcp (for CW7.1):
 
 flexis.mcp (for CW6.2):
 
+* CPUStick 51cn128   -- skeleton code to run on an MCF51CN128 (source code)
 * CPUStick 51jm128   -- skeleton code to run on an MCF51JM128, with USB host
                         and device drivers (source code)
 * CPUStick Badge     -- skeleton code to run on a Badge Board, under the USB
@@ -32,7 +33,7 @@ hcs12.mcp (for CW 4.7)
 * CPUStick 9s12dt256 -- skeleton code to run on an MC9s12dt259 (source code)
 * CPUStick 9s12dp512 -- skeleton code to run on an MC9s12dp512 (source code)
 
-pic32.mcw (for MPLAB8.1):
+pic32.mcw (for MPLAB8.53):
 
 * pic32.mcp          -- skeleton code to run on a PIC32MX3/4, with USB host
                         and device drivers (source code)
@@ -91,19 +92,15 @@ shifter.  Set the PC to 9600 baud, 8 data bits, no parity, and XON/XOFF
 flow control.  Open HyperTerminal and connect to the Physical Com Port.
 Press <Enter> for a prompt (this may take a few seconds).
 
-Putty is an excellent alternative to HyperTerminal, and is available
-from http://www.putty.org.  Be sure to use a raw connection and to force
-local echo and line feeds off when talking to the MCF52233.
-
 If you have an IOStick or a 1320xRFC RF daughter card, you can use
 zigbee to connect from one node to another -- just set the nodeid with
 the "nodeid" command and then use the "connect" command to connect to
 the remote node.
 
-The code starts at startup.c which calls init.c.  For the MCF52221 bits,
-it continues to main.c.  For the MCF52233 bits, on the other hand, it
-continues to the Niche Lite code which starts a tasking system, and then
-resumes to main.c.  From there code continues to the project-specific
+The code starts at startup.c which calls its own init().  For most MCU
+bits, it continues to main.c.  For the MCF52233 bits, on the other hand,
+it continues to the Niche Lite code which starts a tasking system, and
+then resumes to main.c.  From there code continues to the project-specific
 skeleton.c.
 
 The general purpose sources files are as follows:
@@ -112,6 +109,7 @@ adc.[ch]       -- simple a/d converter driver
 clone.[ch]     -- QSPI/EzPort CPU-to-CPU flash cloner
 flash.[ch]     -- flash access and FTDI-based USB upgrade routines
 ftdi.[ch]      -- FTDI device class driver
+i2c.[ch]       -- i2c transport driver
 led.[ch]       -- trivial LED status driver
 pin.[ch]       -- MCU I/O pin manipulation
 printf.[ch]    -- lightweight printf to terminal or CW debug console
