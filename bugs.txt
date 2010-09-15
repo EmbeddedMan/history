@@ -1,7 +1,11 @@
 // prior 1
 // =======
+// fix checksum to be compatible/consistent with bootloader (pic32 and freescale)
+// pins should survive upgrade
+// do we want BASIC to have control over pull-ups?  thru a mode variable?
+// make sure if pins safemode* none is set that we cannot autorun!
 // why does jm upgrade show diff cecksum (by 0x5a?) than program from cw?
-// multi-pin variables (digital I/O only)!!!
+// multi-pin variables (digital I/O only, using binary integer)!!!
 // I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
 // pasting into an edited line doesn't work!  echo buffer overflow!
 // add getchar example in ug?
@@ -29,7 +33,6 @@
 // expose erase_page and write_word to basic to manipulate other half of flash!
 // allow input of negative numbers
 // give vprint ability to do sign extension?
-// add ability to configure multiple I/O pins at once, and assign/read them in binary (or with arrays?)
 // add configurable file name for usb host mode
 // consider doing servos in sw w/ lightweight isr rather than using hw timers
 // add "modes" to turn off USB and QSPI and get their pins back for gpio
