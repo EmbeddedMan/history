@@ -43,6 +43,8 @@ byte pin_assignments[pin_assignment_max] = {
     PIN_PB7, PIN_PP0, PIN_PM3, PIN_UNASSIGNED, PIN_PT0, PIN_PT1, PIN_PB6
 #elif MCF51JM128
     PIN_PTF0, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_PTE2, PIN_PTE3, PIN_PTB5
+#elif MCF51AC128
+    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #elif MCF5211 || MCF52221 || MCF52233 || (MCF52259 && DEMO)
     PIN_DTIN3,
 #if MCF5211
@@ -363,6 +365,8 @@ const struct pin pins[] = {
     "ptg1", DIO,
     "ptg2", DIO|1<<pin_type_analog_input,
     "ptg3", DIO|1<<pin_type_analog_input,
+#elif MCF51AC128
+    "xxx", 0,
 #elif MC9S12DT256 || MC9S12DP512
     "pad00", 1<<pin_type_digital_input|1<<pin_type_analog_input,
     "pad01", 1<<pin_type_digital_input|1<<pin_type_analog_input,
@@ -591,7 +595,7 @@ const char * const uart_names[MAX_UARTS] = {
 #endif
 };
 
-#if MCF51JM128 || MCF51CN128 || PIC32
+#if MCF51JM128 || MCF51CN128 || MCF51AC128 || PIC32
 static byte freq[2];  // 0, pin_type_analog_output, pin_type_servo_output, pin_type_frequency_output
 #elif MCF51QE128 || MC9S08QE128
 static byte freq[3];  // 0, pin_type_analog_output, pin_type_servo_output, pin_type_frequency_output
@@ -599,7 +603,7 @@ static byte freq[3];  // 0, pin_type_analog_output, pin_type_servo_output, pin_t
 static byte freq[1];  // 0 or pin_type_frequency_output
 #endif
 
-#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
 #define FREQ_PRESCALE  16
 #elif PIC32
 #define FREQ_PRESCALE  64
@@ -634,7 +638,7 @@ enum debounce_ports {
 #if MCF52233 || MCF52259 || MCF5211
     port_ta,
 #endif
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128
     port_a,
     port_b,
     port_c,
@@ -674,7 +678,7 @@ enum debounce_ports {
 };
 
 // This structure records recent samples from digital pins.
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
 typedef uint8 pin_port_sample_t;
 #elif PIC32
 typedef uint16 pin_port_sample_t;
@@ -2275,6 +2279,8 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
             assert(0);
             break;
     }
+#elif MCF51AC128
+    offset = 0;
 #elif MC9S12DT256 || MC9S12DP512
     // configure the MC9S12DT256/MC9S12DP512 pin for the requested function
     switch (pin_number) {
@@ -3981,6 +3987,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             assert(0);
             break;
     }
+#elif MCF51AC128
+    offset = 0;
 #elif MC9S12DT256 || MC9S12DP512
     // set the MC9S12DT256/MC9S12DP512 pin to value
     switch (pin_number) {
@@ -5436,6 +5444,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             assert(0);
             break;
     }
+#elif MCF51AC128
+    offset = 0;
 #elif MC9S12DT256 || MC9S12DP512
     // get the value of the MC9S12DT256/MC9S12DP512 pin
     switch (pin_number) {
@@ -5932,7 +5942,7 @@ pin_uart_configure(int uart, int baud, int data, byte parity, bool loopback)
     MCF_UART_UBG2(uart) = (uint8)(divisor%0x100);
 
     MCF_UART_UCR(uart) = MCF_UART_UCR_TX_ENABLED|MCF_UART_UCR_RX_ENABLED;
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF51AC128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     // configure the uart for the requested protocol and speed
 #if MCF51CN128
     if (uart == 2) {
@@ -6018,7 +6028,7 @@ pin_uart_tx_ready(int uart)
     if (MCF_UART_USR(uart) & MCF_UART_USR_TXRDY) {
         return true;
     }
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
     // if the uart transmitter is ready...
 #if MCF51CN128
     usr = (uart==2)?(SCI3S1):(uart?SCI2S1X:SCI1S1X);
@@ -6055,7 +6065,7 @@ pin_uart_tx_empty(int uart)
     if (usr & MCF_UART_USR_TXEMP) {
         return true;
     }
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
     // if the uart transmitter is empty...
 #if MCF51CN128
     usr = (uart==2)?(SCI3S1):(uart?SCI2S1X:SCI1S1X);
@@ -6092,7 +6102,7 @@ pin_uart_rx_ready(int uart)
     if (usr & MCF_UART_USR_RXRDY) {
         return true;
     }
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
     // if the uart receiver is ready...
 #if MCF51CN128
     usr = (uart==2)?(SCI3S1):(uart?SCI2S1X:SCI1S1X);
@@ -6131,7 +6141,7 @@ pin_uart_tx(int uart, byte value)
 #if ! STICK_GUEST
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     MCF_UART_UTB(uart) = value;
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
 #if MCF51CN128
     if (uart == 2) {
         SCI3D = value;
@@ -6168,7 +6178,7 @@ pin_uart_rx(int uart)
 #if ! STICK_GUEST
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
         value = MCF_UART_URB(uart);
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
 #if MCF51CN128
         if (uart == 2) {
             value = SCI3D;
@@ -6228,7 +6238,7 @@ pin_clear(void)
     }
     
 #if ! STICK_GUEST
-#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
+#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128
     // we have to manage shared timer resources across pins
     memset(freq, pin_type_digital_input, sizeof(freq));
 #elif MC9S12DT256 || MC9S12DP512
@@ -6273,7 +6283,7 @@ pin_timer_poll(void)
 #if MCF52233 || MCF52259 || MCF5211
     sample[port_ta] = MCF_GPIO_SETTA;
 #endif
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128
     sample[port_a] = PTAD;
     sample[port_b] = PTBD;
     sample[port_c] = PTCD;
@@ -6386,7 +6396,7 @@ pin_initialize(void)
     MCF_DTIM1_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
     MCF_DTIM2_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
     MCF_DTIM3_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128
     // we have to manage shared timer resources across pins
     pin_clear();
     

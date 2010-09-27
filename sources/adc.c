@@ -6,7 +6,7 @@
 
 static bool adc_initialized;
 
-#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
+#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128
 static byte adcn = -1;
 #endif
 
@@ -65,7 +65,7 @@ adc_timer_poll(bool debouncing)
 
     // re-start the adc
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_START0;
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128
     // we can only poll one enabled channel every tick
     
     // if a previous result just completed...
@@ -207,7 +207,7 @@ adc_initialize(void)
     MCF_ADC_CTRL1 = MCF_ADC_CTRL1_START0;
 
     delay(10);
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128
     // initialize adc to read one channel at a time
     ADCCFG = ADCCFG_ADLPC_MASK|ADCCFG_ADIV_MASK|ADCCFG_ADLSMP_MASK|ADCCFG_MODE0_MASK|ADCCFG_ADICLK0_MASK;
 #elif MC9S12DT256 || MC9S12DP512

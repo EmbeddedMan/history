@@ -74,6 +74,8 @@ init(void)
     SOPT1 = SOPT1_STOPE_MASK;
 #elif MCF51QE128
     SOPT1 = SOPT1_STOPE_MASK|SOPT1_BKGDPE_MASK;
+#elif MCF51AC128
+    SOPT = SOPT_STOPE_MASK;
 #else
 #error
 #endif
@@ -287,6 +289,58 @@ init(void)
     if (KBI1SC == 0x01) {
         debugger_attached = true;
     }
+#elif MCF51AC128
+#define setReg8(RegName, val)  (RegName = (byte)(val))
+#define clrSetReg8Bits(RegName, ClrMask, SetMask)  (RegName = (byte)((byte)((byte)RegName & (~(byte)(ClrMask))) | (byte)(SetMask)))
+#define setReg8Bits(RegName, SetMask)                            (RegName |= (byte)(SetMask))
+#define clrReg8Bits(RegName, ClrMask)                            (RegName &= ~(byte)(ClrMask))
+
+    /*  System clock initialization */
+    /* MCGC2: BDIV=0,RANGE=1,HGO=0,LP=0,EREFS=1,ERCLKEN=1,EREFSTEN=0 */
+    setReg8(MCGC2, 0x26);                /* Set MCGC2 register */ 
+    /* MCGC3: DIV32=1 */
+    setReg8Bits(MCGC3, 0x10);             
+    /* MCGC1: CLKS=2,RDIV=2,IREFS=0,IRCLKEN=1,IREFSTEN=0 */
+    setReg8(MCGC1, 0x92);                /* Set MCGC1 register */ 
+    /* MCGC3: LOLIE=0,PLLS=0,CME=0,DIV32=1,VDIV=6 */
+    setReg8(MCGC3, 0x16);                /* Set MCGC3 register */ 
+    /* MCGC4: ??=0,??=0,DMX32=0,??=0,??=0,??=0,DRST_DRS=0 */
+    setReg8(MCGC4, 0x00);                /* Set MCGC4 register */ 
+    while(!MCGSC_OSCINIT) {              /* Wait until external reference is stable */
+    }
+    while(MCGSC_IREFST) {                /* Wait until external reference is selected */
+    }
+    while((MCGSC & 0x0C) != 0x08) {      /* Wait until external clock is selected as a bus clock reference */
+    }
+    /* MCGC2: BDIV=0,RANGE=1,HGO=0,LP=1,EREFS=1,ERCLKEN=1,EREFSTEN=0 */
+    setReg8(MCGC2, 0x2E);                /* Set MCGC2 register */ 
+    /* MCGC1: CLKS=2,RDIV=1,IREFS=0,IRCLKEN=1,IREFSTEN=0 */
+    setReg8(MCGC1, 0x8A);                /* Set MCGC1 register */ 
+    /* MCGC3: LOLIE=0,PLLS=0,CME=0,DIV32=0,VDIV=6 */
+    setReg8(MCGC3, 0x06);                /* Set MCGC3 register */ 
+    /* MCGC3: LOLIE=0,PLLS=1,CME=0,DIV32=0,VDIV=6 */
+    setReg8(MCGC3, 0x46);                /* Set MCGC3 register */ 
+    while(!MCGSC_PLLST) {                /* Wait until PLL is selected */
+    }
+    /* MCGC2: LP=0 */
+    clrReg8Bits(MCGC2, 0x08);             
+    while(!MCGSC_LOCK) {                 /* Wait until PLL is locked */
+    }
+    /* MCGC1: CLKS=0,RDIV=1,IREFS=0,IRCLKEN=1,IREFSTEN=0 */
+    setReg8(MCGC1, 0x0A);                /* Set MCGC1 register */ 
+    while((MCGSC & 0x0C) != 0x0C) {      /* Wait until PLL clock is selected as a bus clock reference */
+    }
+
+    /* Now MCGOUT=48MHz, BUS_CLOCK=24MHz */  
+    cpu_frequency = 48000000;
+    bus_frequency = cpu_frequency/2;
+    oscillator_frequency = 4000000;
+
+    // we read KBI1SC's initial value to determine if the debugger is attached
+    // N.B. this value must be set by the debugger's cmd file!
+    //if (KBI1SC == 0x01) {
+        debugger_attached = true;
+    //}
 #else
 #error
 #endif
@@ -332,7 +386,7 @@ BEGIN_NAKED(_startup)
     // disable interrupts
     Q3(move.w,  #0x2700,sr)
 
-#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
+#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128 && ! MCF51AC128
     // initialize RAMBAR
     Q3(move.l,  #__RAMBAR+0x21,d0)
     Q3(movec,   d0,RAMBAR)

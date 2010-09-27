@@ -47,6 +47,9 @@ timer_isr(void)
     MCF_PIT0_PCSR |= MCF_PIT_PCSR_PIF;
 #elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
     RTCSC |= RTCSC_RTIF_MASK;
+#elif MCF51AC128
+    /* SRTISC: RTIACK=1 */
+    SRTISC |= 0x40;           /* Reset real-time interrupt request flag */ 
 #elif MC9S12DT256 || MC9S12DP512
     CRGFLG = 128;                        /* Reset interrupt request flag */
 #elif PIC32
@@ -206,7 +209,7 @@ timer_initialize(void)
     MCF_PIT0_PCSR = 0;
     MCF_PIT0_PMR = bus_frequency/1000/ticks_per_msec - 1;
     MCF_PIT0_PCSR = MCF_PIT_PCSR_PRE(0)|MCF_PIT_PCSR_DOZE|MCF_PIT_PCSR_DBG|MCF_PIT_PCSR_OVW|MCF_PIT_PCSR_PIE|MCF_PIT_PCSR_RLD|MCF_PIT_PCSR_EN;
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128
 #if ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
     // remap rtc to level 6
     // XXX -- this does nothing???
@@ -221,6 +224,10 @@ timer_initialize(void)
     // configure rtc to interrupt every ticks times per msec.
     RTCSC = RTCSC_RTCLKS0_MASK|RTCSC_RTIE_MASK|8;  // use external oscillator with prescale 1000
     RTCMOD = oscillator_frequency/1000/1000/ticks_per_msec - 1;
+#elif MCF51AC128
+    // configure rtc to interrupt every ticks times per msec.
+    /* SRTISC: RTIF=0,RTIACK=0,RTICLKS=1,RTIE=1,??=0,RTIS2=1,RTIS1=0,RTIS0=0 */
+    SRTISC = 0x34;               /* Run RTI (select clock source, set frequency and enable interrupt) */ 
 #else
     // run on the internal oscillator for now -- REVISIT!
     RTCSC = RTCSC_RTCLKS1_MASK|RTCSC_RTIE_MASK|8;

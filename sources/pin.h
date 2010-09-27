@@ -305,6 +305,8 @@ enum pin_number {  // skeleton may extend this
     PIN_PTG1,
     PIN_PTG2,
     PIN_PTG3,
+#elif MCF51AC128
+    PIN_XXX = 0,
 #elif MC9S12DT256 || MC9S12DP512
     PIN_PAD00,
     PIN_PAD01,

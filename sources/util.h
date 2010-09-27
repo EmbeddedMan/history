@@ -6,7 +6,7 @@
 #define SPL_IRQ4  4  // irq4 isr runs at interrupt level 4 (fixed, zigflea)
 #define SPL_SERIAL  4  // uart0 isr runs at interrupt level 4
 #define SPL_IRQ1  1  // irq1 isr runs at interrupt level 1 (fixed, sleep or zigflea)
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
 #define SPL_PIT0  6  // pit0 isr runs at interrupt level 6
 #define SPL_USB  6  // usb isr runs at interrupt level 6
 #define SPL_IRQ4  4  // irq isr runs at interrupt level 4 (zigflea)

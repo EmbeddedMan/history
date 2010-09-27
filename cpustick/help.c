@@ -354,6 +354,7 @@ static char *const help_pins =
 "pta[0167]\014ptb[45]\014ptc[0-5\235\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"
 "ptb\020(u1)\014ptc\026(u2\011\035potentia\254uar\264inpu\264pin\263(receive\244byte)\n"
 "ptb\021(u1)\014ptc\027(u2\011\035potentia\254uar\264outpu\264pin\263(transmi\264byte)\n"
+#elif MCF51AC128
 #elif MC9S12DT256 || MC9S12DP512
 "\3020\3051\3052\3053\3054\3055\3056\3057\n"
 "\300------\015------\015------\015------\015------\015------\015------\015--------+\n"
@@ -487,6 +488,7 @@ static char *const help_zigflea =
 "\300miso\021(ptb4)\307miso\n"
 "\300mosi\021(ptb3)\307mosi\n"
 "\300irq*\317irq*\n"
+#elif MCF51AC128
 #elif MC9S12DT256 || MC9S12DP512
 "\300sck\020(pm5)\311spiclk\n"
 "\300miso\020(pm2)\310miso\n"

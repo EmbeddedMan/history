@@ -38,7 +38,7 @@ serial_disable(void)
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // disable uart0 receive interrupts
     MCF_UART0_UIMR = 0;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
     // disable uart1 receive interrupts
     SCI1C2X &= ~SCI1C2_RIE_MASK;
 #elif MCF51CN128
@@ -238,7 +238,7 @@ serial_initialize(void)
     
     // configure uart0 receive interrupts
     MCF_UART0_UIMR = MCF_UART_UIMR_FFULL_RXRDY;
-#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF51JM128 || MCF51QE128 || MC9S08QE128 || MCF51AC128 || MC9S12DT256 || MC9S12DP512
     SCI1C2X = SCI1C2_TE_MASK|SCI1C2_RE_MASK;
     
     // configure uart1 receive interrupts
