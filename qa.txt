@@ -209,25 +209,35 @@ cdc usb prints
 
 real toaster
 
-10 dim target, secs
-20 dim thermocouple as pin an0 for analog input
-30 dim relay as pin an1 for digital output
-40 data 512, 90, 746, 105, 894, 20, -1, -1
-50 configure timer 0 for 1000 ms
-60 on timer 0 do gosub adjust
-70 while target!=-1 do
-80   sleep secs s
-90   read target, secs
-100 endwhile
-110 let relay = 0
-120 end
-130 sub adjust
-140   if thermocouple>=target then
-150     let relay = 0
-160   else
-170     let relay = 1
-180   endif
-190 endsub
+  10 dim target, secs
+  20 dim thermocouple as pin an0 for analog input
+  30 dim relay as pin an1 for digital output
+  40 dim buzzer as pin dtin3 for frequency output
+  50 data 512, 90, 746, 105, 894, 20, -1, -1
+  60 configure timer 0 for 1 s
+  70 configure timer 1 for 1 s
+  80 on timer 0 do gosub adjust
+  90 on timer 1 do gosub beep
+ 100 while target!=-1 do
+ 110   sleep secs s
+ 120   read target, secs
+ 130 endwhile
+ 140 let relay = 0
+ 150 end
+ 160 sub adjust
+ 170   if thermocouple>=target then
+ 180     let relay = 0
+ 190   else
+ 200     let relay = 1
+ 210   endif
+ 220 endsub
+ 230 sub beep
+ 240   let buzzer = thermocouple
+ 250   sleep 100 ms
+ 260   let buzzer = target
+ 270   sleep 100 ms
+ 280   let buzzer = 0
+ 290 endsub
 
 185 print thermocouple, target, relay
 
