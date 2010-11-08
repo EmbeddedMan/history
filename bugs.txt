@@ -1,5 +1,6 @@
 // prior 1
 // =======
+// add to help pins all "unchangable" pins (i2c, spi, etc.) from freescale.pdf and microchip.pdf
 // add ability to call subs in "library" BASIC program; ability to chain basic programs.
 // fix checksum to be compatible/consistent with bootloader (pic32 and freescale)
 // pins should survive upgrade
