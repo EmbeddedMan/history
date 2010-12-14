@@ -1,5 +1,6 @@
 // prior 1
 // =======
+// I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
 // get rid of parse2/run2/basic0 if we make stickos source public?
 // add to help pins all "unchangable" pins (i2c, spi, etc.) from freescale.pdf and microchip.pdf
 // add ability to call subs in "library" BASIC program; ability to chain basic programs.
@@ -21,6 +22,8 @@
 // add qspi pin assignments to online help (data, clk, cs)
 // Ctrl-E to dump all variables while basic program is running?
 // add a faster zigflea option for pic32/5225x!
+// with no pullups, i2c will crash
+// test i2c with sda, scl, sda and acl all tied to ground -- no hangs or crashes.
 
 // doc
 // ===
@@ -89,6 +92,11 @@
 // make console virtual uart a first class citizen!!!
 // separate os from stickos; allow non 50/50 flash split
 // allow basic isrs to run while waiting for uart or i2c receive data (anywhere we allow ctrl-c)
+// separate os from stickos; allow non 50/50 flash split
+// turn stickos into a generic programmable uart/usbcdc/ethernet/spi/i2c gateway
+// get rid of basic0/basic2, parse0/parse2, run0/run2, etc. -- save lots of code!  release core source???
+// handle all uart rx/tx in isrs; have basic statements feed isrs
+// get rid of uart pin vars for pic32!  for all???
 
 // perf
 // ====
