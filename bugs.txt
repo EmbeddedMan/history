@@ -1,3 +1,11 @@
+I will add a section on device file naming for OS X and Linux -- I usually just assume if folks are using those OS's, they know how their device files are named.
+ 
+On Linux (assuming a moderately recent distribution), if you are running v1.80, your dev file should be very easy to find -- it has the name ACM in it, like /dev/ttyACM0 -- that is because StickOS presents a CDC/ACM function.  The actual number will likely depend on the exact physical USB port you use.
+ 
+On OS X, the dev file is /dev/tty.usbmodemX, where X again depends on the exact physical USB port you use, like 411 or 621.
+ 
+You can also find these by viewing "dmesg" after boot
+
 // prior 1
 // =======
 // I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
