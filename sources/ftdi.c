@@ -12,6 +12,7 @@
 
 // We have allocated 8 PIDs to you from A660 to A667 (hex).
 // The PIDs must be used with VID 0403.
+// We use A660; Cale Fallgatter uses A661.
 #define FTDI_VID  0x0403
 #define FTDI_PID  0xA660
 #define FTDI_RID  0x0180
