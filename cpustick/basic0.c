@@ -95,6 +95,8 @@ char * const help_about =
 "Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__)
 "Welcome to StickOS for Microchip PIC32MXx-F512L v" VERSION "!\n"
+#elif PIC32 && defined(__32MX795F512L__)
+"Welcome to StickOS for Microchip PIC32MX7-F512L v" VERSION "!\n"
 #else
 #error
 #endif
