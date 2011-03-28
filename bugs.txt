@@ -6,6 +6,18 @@ On OS X, the dev file is /dev/tty.usbmodemX, where X again depends on the exact 
  
 You can also find these by viewing "dmesg" after boot
 
+
+
+1. Personal preference, but it would be nice if variable names could 
+start with an underscore "_", as subroutines can.  This would be useful 
+for naming variables assigned to inverted logic pins.
+
+2. I think it would be awesome if the timer functions could take a 
+variable (or expression) rather than simply 0-n.  This would make it a 
+lot easier to keep track of timers in code.
+
+
+
 // prior 1
 // =======
 // I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
