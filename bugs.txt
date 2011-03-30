@@ -17,6 +17,14 @@ variable (or expression) rather than simply 0-n.  This would make it a
 lot easier to keep track of timers in code.
 
 
+I need to add real support ("configure qspi ...") to set the clock polarity in BASIC.
+
+I might as well add the baud rate there, too.
+
+And do the same for i2c.
+
+
+
 
 // prior 1
 // =======
