@@ -7,12 +7,18 @@
 #endif
 
 #if !MCU_HAS_PAGE0 || STICK_GUEST
-#define DECLSPEC_PAGE0_DATA
+#define DECLSPEC_SWVECT
+#define DECLSPEC_STARTUP
+#define DECLSPEC_CFM
 #elif GCC
-#define DECLSPEC_PAGE0_DATA __attribute__((section(".page0_data")))
+#error // sourcery lcfs need update for swvect, startup, and cfm sections
 #else
-#pragma define_section page0 ".page0" far_absolute R
-#define DECLSPEC_PAGE0_DATA  __declspec(page0)
+#pragma define_section swvect ".swvect" far_absolute R
+#pragma define_section startup ".startup" far_absolute R
+#pragma define_section cfm ".cfm" far_absolute R
+#define DECLSPEC_SWVECT  __declspec(swvect)
+#define DECLSPEC_STARTUP  __declspec(startup)
+#define DECLSPEC_CFM  __declspec(cfm)
 #endif
 
 #if MCF52233

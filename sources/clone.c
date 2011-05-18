@@ -5,7 +5,7 @@
 
 #include "main.h"
 
-#if MCF52221 || MCF52259
+#if MCF52221 || MCF52259 || MCF5211
 #define SLAVE_FSYS    8000000  // frequency of target board
 #elif MCF52233
 #define SLAVE_FSYS    5000000  // frequency of target board
@@ -187,7 +187,7 @@ clone_program(uint32 addr, uint32 *data, uint32 length)
 void
 clone(bool and_run)
 {
-#if MCF52221 || MCF52233 || MCF52259
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
     uint32 addr;
     uint32 *data;
 
@@ -232,7 +232,9 @@ clone(bool and_run)
     }
     
 #if ! FLASHER
+#if ! FB32
     zb_initialize();
+#endif
 #endif
 #endif
 }

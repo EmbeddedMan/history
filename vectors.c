@@ -36,12 +36,12 @@ asm void asm_xxx(void);
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 // this is the hardware interrupt vector table.
 #if ! BADGE_BOARD && ! DEMO_KIT
-DECLSPEC_PAGE0_DATA
+DECLSPEC_SWVECT
 #else
 const
 #endif
-void *_swvect[128+128] = {
-__SP_AFTER_RESET, _startup,
+void *_swvect[128] = {
+    __SP_AFTER_RESET, _startup,
     asm_xxx,                  // 2
     asm_xxx,                  // 3
     asm_xxx,                  // 4
@@ -204,11 +204,11 @@ __SP_AFTER_RESET, _startup,
 #elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF51AC128
 // this is the hardware interrupt vector table.
 #if ! BADGE_BOARD && ! DEMO_KIT
-DECLSPEC_PAGE0_DATA
+DECLSPEC_SWVECT
 #else
 const
 #endif
-void *_swvect[128+128] = {
+void *_swvect[128] = {
     __SP_AFTER_RESET, _startup,
     asm_xxx,                  // 2
     asm_xxx,                  // 3
@@ -384,7 +384,7 @@ void *_swvect[128+128] = {
 // this is the cfm config
 // XXX -- this should have #error for unspecified MCUs!
 #if ! BADGE_BOARD && ! DEMO_KIT
-DECLSPEC_PAGE0_DATA
+DECLSPEC_CFM
 #else
 const
 #endif

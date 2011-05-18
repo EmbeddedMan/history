@@ -13,19 +13,19 @@
 #endif
 
 #if MCF51JM128 || MCF51QE128 || MCF51CN128
-#define MCF_I2C0_I2FDR  IIC1F
 #define MCF_I2C0_I2CR  IIC1C
 #define MCF_I2C0_I2SR  IIC1S
 #define MCF_I2C0_I2DR  IIC1D
-#define MCF_I2C_I2SR_IAL  IIC1S_ARBL_MASK
-#define MCF_I2C_I2SR_IBB  IIC1S_BUSY_MASK
+#define MCF_I2C0_I2FDR  IIC1F
 #define MCF_I2C_I2CR_MTX  IIC1C_TX_MASK
 #define MCF_I2C_I2CR_MSTA  IIC1C_MST_MASK
-#define MCF_I2C_I2SR_IIF  IIC1S_IICIF_MASK
 #define MCF_I2C_I2CR_RSTA  IIC1C_RSTA_MASK
-#define MCF_I2C_I2SR_RXAK  IIC1S_RXAK_MASK
 #define MCF_I2C_I2CR_TXAK  IIC1C_TXAK_MASK
 #define MCF_I2C_I2CR_IEN  IIC1C_IICEN_MASK
+#define MCF_I2C_I2SR_IAL  IIC1S_ARBL_MASK
+#define MCF_I2C_I2SR_IBB  IIC1S_BUSY_MASK
+#define MCF_I2C_I2SR_IIF  IIC1S_IICIF_MASK
+#define MCF_I2C_I2SR_RXAK  IIC1S_RXAK_MASK
 #endif
 
 static byte address;
@@ -50,6 +50,11 @@ i2c_break(void)
 {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
     if (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL) {
+#if MCF51JM128 || MCF51QE128 || MCF51CN128
+        MCF_I2C0_I2SR |= MCF_I2C_I2SR_IAL;
+#else
+        MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IAL;
+#endif
         i2c_broke();
         return true;
     }
@@ -111,7 +116,11 @@ i2c_start_real(bool write)
             return started;
         }
     }
+#if MCF51JM128 || MCF51QE128 || MCF51CN128
+    MCF_I2C0_I2SR |= MCF_I2C_I2SR_IIF;
+#else
     MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
+#endif
 
     if (! write) {
         // enable receive
@@ -207,7 +216,11 @@ i2c_repeat_start_real(bool write)
             return;
         }
     }
+#if MCF51JM128 || MCF51QE128 || MCF51CN128
+    MCF_I2C0_I2SR |= MCF_I2C_I2SR_IIF;
+#else
     MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
+#endif
 
     if (! write) {
         // enable receive
@@ -337,7 +350,11 @@ i2c_read_write(bool write, byte *buffer, int length)
                     return;
                 }
             }
+#if MCF51JM128 || MCF51QE128 || MCF51CN128
+            MCF_I2C0_I2SR |= MCF_I2C_I2SR_IIF;
+#else
             MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
+#endif
 
             // if no ack...
             if (MCF_I2C0_I2SR & MCF_I2C_I2SR_RXAK) {
@@ -366,7 +383,11 @@ i2c_read_write(bool write, byte *buffer, int length)
                     return;
                 }
             }
+#if MCF51JM128 || MCF51QE128 || MCF51CN128
+            MCF_I2C0_I2SR |= MCF_I2C_I2SR_IIF;
+#else
             MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
+#endif
 
             // if this is not the (second to the) last byte...
             if (length > 1) {
@@ -524,6 +545,9 @@ i2c_initialize(void)
     assert(ic <= 0x3f);
     MCF_I2C0_I2FDR = MCF_I2C_I2FDR_IC(ic);
 #else
+    // stop i2c
+    MCF_I2C0_I2CR = 0;
+
     // these tables are just goofy!
     MCF_I2C0_I2FDR = 0x23;
 #endif

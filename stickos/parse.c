@@ -80,7 +80,7 @@ const struct keyword {
     "for", code_for,
     "gosub", code_gosub,
     "halt", code_halt,
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
     "i2c", code_i2c,
 #endif
     "if", code_if,
@@ -1310,7 +1310,7 @@ XXX_AGAIN_XXX:
                     }
                 }
 
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
                 if (code == code_i2c && parse_word(&text, "start")) {
                     bytecode[length++] = code_device_start;
                     // parse the address
@@ -2268,7 +2268,7 @@ XXX_AGAIN_XXX:
                     bytecode += unparse_uart(bytecode, &out);
                 }
 
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
                 if (code == code_i2c && *bytecode == code_device_start) {
                     bytecode++;
                     out += sprintf(out, "start ");
