@@ -180,6 +180,7 @@ static char * const help_commands =
 
 static char * const help_modes =
 "analog [<millivolts>]             -- set/display analog voltage scale\n"
+"baud [<rate>]                     -- set/display uart console baud rate\n"
 "autorun [on|off]                  -- autorun mode (on reset)\n"
 "echo [on|off]                     -- terminal echo mode\n"
 "indent [on|off]                   -- listing indent mode\n"
