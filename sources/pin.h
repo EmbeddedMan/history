@@ -22,6 +22,12 @@ enum pin_assignment {  // XXX -- should we allow skeleton to extend this?
     pin_assignment_zigflea_rst,
     pin_assignment_zigflea_attn,
     pin_assignment_zigflea_rxtxen,
+    pin_assignment_lcd_d4,
+    pin_assignment_lcd_d5,
+    pin_assignment_lcd_d6,
+    pin_assignment_lcd_d7,
+    pin_assignment_lcd_en,
+    pin_assignment_lcd_rs,
     pin_assignment_max
 };
 

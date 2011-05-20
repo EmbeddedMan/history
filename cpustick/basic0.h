@@ -6,6 +6,8 @@ enum bytecode2 {
     code_scroll,
     code_set,
     code_clear,
+#else
+    code_lcd,
 #endif
     code_max_max
 };

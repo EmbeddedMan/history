@@ -1,9 +1,5 @@
 // *** printf.h *******************************************************
 
-#if BADGE_BOARD
-extern bool printf_scroll;
-#endif
-
 int
 printf_write(char *buffer, int n);
 

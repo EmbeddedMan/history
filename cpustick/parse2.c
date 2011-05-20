@@ -14,8 +14,9 @@ const struct keyword {
     "jmset", code_set,
     "jmclear", code_clear,
 #else
-    "private", code_private,
+    "lcd", code_lcd,
 #endif
+    "private", code_private,
 };
 
 
@@ -27,11 +28,9 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
     int len;
     char *text;
     int length;
-#if BADGE_BOARD
     bool boo;
     int length2;
     int syntax_error;
-#endif
 
     text = text_in;
     parse_trim(&text);
@@ -85,6 +84,27 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
             if (*text) {
                 goto XXX_ERROR_XXX;
             }
+            break;
+#else
+        case code_lcd:
+            // parse the pos expression
+            if (! parse_expression(0, &text, &length, bytecode)) {
+                goto XXX_ERROR_XXX;
+            }
+            
+            if (! parse_char(&text, ',')) {
+                goto XXX_ERROR_XXX;
+            }
+            bytecode[length++] = code_comma;
+
+            boo = parse_line_code(code_print, text, &length2, bytecode+length, &syntax_error);
+            if (! boo) {
+                *syntax_error_in = text - text_in + syntax_error;
+                assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_OUTPUT_LINE_SIZE);
+                return boo;
+            }
+            *length_out = length+length2;
+            return true;
             break;
 #endif
         default:
@@ -147,8 +167,18 @@ unparse2_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
             
             bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
             break;
-#endif
+#else
+        case code_lcd:
+            bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
+            
+            out += sprintf(out, ", ");
+            assert(*bytecode == code_comma);
+            bytecode++;
 
+            unparse_bytecode_code(code_print, bytecode, bytecode_in+length-bytecode, out);
+            return;
+            break;
+#endif
         default:
             assert(0);
             break;

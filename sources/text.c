@@ -55,7 +55,8 @@ text_expand(
 {
     int c;
 
-    while ((c = *buffer++)) {
+    while (*buffer) {
+        c = *buffer++;  // CW bug
         if (c >= 0x80 && c < 0xc0) {
             *text++ = c-0x40;
             *text++ = ' ';

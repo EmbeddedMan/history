@@ -72,7 +72,11 @@ char * const help_about =
 #elif BADGE_BOARD && MCF51JM128
 "Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v" VERSION "!\n"
 #elif MCF51JM128
+#if FB32
+"Welcome to StickOS for Freescale MCF51JM128 FB32 v" VERSION "!\n"
+#else
 "Welcome to StickOS for Freescale MCF51JM128 v" VERSION "!\n"
+#endif
 #elif MCF51CN128
 "Welcome to StickOS for Freescale MCF51CN128 v" VERSION "!\n"
 #elif MCF51QE128
@@ -227,6 +231,7 @@ static char * const help_statements =
 "halt                                   -- loop forever\n"
 "input [dec|hex|raw] <variable>[$] [, ...] -- input data\n"
 "label <label>                          -- read/data label\n"
+"lcd <pos>, [dec|hex|raw] <expression> [, ...] [;] -- display results on lcd\n"
 "let <variable>[$] = <expression> [, ...] -- assign variable\n"
 "print [dec|hex|raw] <expression> [, ...] [;] -- print results\n"
 "read <variable> [, ...]                -- read read-only data into variables\n"

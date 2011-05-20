@@ -6,10 +6,6 @@
 #include <stdarg.h>
 extern bool debugger_attached;
 
-#if BADGE_BOARD
-bool printf_scroll;
-#endif
-
 #if _WIN32
 // XXX -- I have no idea why this is needed, but without it, some other
 // function causes libcmtd.lib:*printf.obj to be sucked in, resulting in
@@ -304,6 +300,12 @@ printf_write(char *buffer, int n)
 #if BADGE_BOARD && STICKOS
     if (run_printf && run2_scroll) {
         jm_scroll(buffer, n);
+        return n;
+    }
+#endif
+#if STICKOS
+    if (run_printf && run2_lcd) {
+        lcd(run2_lcd-1, buffer, n);
         return n;
     }
 #endif

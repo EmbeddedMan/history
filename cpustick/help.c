@@ -108,6 +108,7 @@ static char * const help_statements =
 "halt\341-\015loo\260forever\n"
 "inpu\264[dec|hex|raw\235<variable>[$\235[\014...\235-\015inpu\264data\n"
 "labe\254<label>\330-\015read/dat\241label\n"
+"lc\244<pos>\014[dec|hex|raw\235<expression\036[\014...\235[;\235-\015displa\271result\263o\256lcd\n"
 "le\264<variable>[$\235\035<expression\036[\014...\235-\015assig\256variable\n"
 "prin\264[dec|hex|raw\235<expression\036[\014...\235[;\235-\015prin\264results\n"
 "rea\244<variable\036[\014...]\316-\015rea\244read-onl\271dat\241int\257variables\n"

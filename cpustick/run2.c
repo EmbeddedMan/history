@@ -5,6 +5,7 @@
 #include "main.h"
 
 bool run2_scroll;
+bool run2_lcd;
 
 // this function executes a private bytecode statement.
 bool  // end
@@ -13,11 +14,12 @@ run2_bytecode_code(uint code, const byte *bytecode, int length)
 #if BADGE_BOARD
     int r;
     int c;
-    bool boo;
 #endif
+    int pos;
+    bool boo;
     bool end;
     int index;
-    
+
     end = false;
 
     index = 0;
@@ -28,29 +30,29 @@ run2_bytecode_code(uint code, const byte *bytecode, int length)
 #if ! GCC
             cw7bug++;  // CW7 BUG
 #endif
-            
+
 #if ! STICK_GUEST
             while (! jm_scroll_ready()) {
                 // see if the sleep switch was pressed
                 basic0_poll();
             }
 #endif
-            
+
             run2_scroll = true;
             boo = run_bytecode_code(code_print, run_condition, bytecode, length);
             run2_scroll = false;
-            
+
             return boo;
 
         case code_set:
         case code_clear:
             index += run_expression(bytecode+index, length-index, NULL, &r);
-            
+
             assert(bytecode[index] == code_comma);
             index++;
-            
+
             index += run_expression(bytecode+index, length-index, NULL, &c);
-            
+
             if (run_condition) {
 #if ! STICK_GUEST
                 if (code == code_set) {
@@ -61,6 +63,21 @@ run2_bytecode_code(uint code, const byte *bytecode, int length)
 #endif
             }
             break;
+#else
+        case code_lcd:
+#if ! GCC
+            cw7bug++;  // CW7 BUG
+#endif
+            index += run_expression(bytecode+index, length-index, NULL, &pos);
+
+            assert(bytecode[index] == code_comma);
+            index++;
+
+            run2_lcd = pos+1;
+            boo = run_bytecode_code(code_print, run_condition, bytecode+index, length-index);
+            run2_lcd = 0;
+
+            return boo;
 #endif
 
         default:
