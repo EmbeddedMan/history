@@ -114,14 +114,31 @@ lcdinit(void)
     }
 }
 
+
 void
 lcd(int pos, char *buffer, int n)
 {
+    int pos2;
+    static byte posn[4] = { 0x80, 0xc0, 0x94, 0xd4 };
+
     if (! init) {
         lcdinit();
         init = true;
     }
-    writeline(pos, buffer, n);
+    
+    if (pos < 0x80) {
+        pos2 = posn[pos&3];
+    } else {
+        pos2 = pos;
+    }
+    
+    writeline(pos2, buffer, n);
+    
+    if (pos < 0x80) {
+        while (n++ < 20) {
+            writebyte(' ', true);
+        }
+    }
 }
 
 #endif

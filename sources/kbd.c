@@ -52,11 +52,11 @@ void kbd_timer_poll(void)
     int r;
     int n;
     static int32 keychar;
-    
+
     if (pin_assignments[pin_assignment_kbd_s0] == PIN_UNASSIGNED) {
         return;
     }
-    
+
     if (! init) {
         kbdinit();
         init = true;
