@@ -4617,7 +4617,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_tc, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETTC & (1 << offset));
+                value = (MCF_GPIO_SETTC & (1 << offset));
             }
             break;
         case PIN_QSPI_DOUT:
@@ -4635,7 +4635,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_qs, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETQS & (1 << offset));
+                value = (MCF_GPIO_SETQS & (1 << offset));
             }
             break;
 #if MCF52259
@@ -4654,7 +4654,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_ti, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETTI & (1 << offset));
+                value = (MCF_GPIO_SETTI & (1 << offset));
             }
             break;
         case PIN_FEC_RXER:
@@ -4672,7 +4672,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_tj, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETTJ & (1 << offset));
+                value = (MCF_GPIO_SETTJ & (1 << offset));
             }
             break;
         case PIN_UTXD2:
@@ -4691,7 +4691,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_uc, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETUC & (1 << offset));
+                value = (MCF_GPIO_SETUC & (1 << offset));
             }
             break;
 #endif
@@ -4711,7 +4711,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_ub, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETUB & (1 << offset));
+                value = (MCF_GPIO_SETUB & (1 << offset));
             }
             break;
         case PIN_UTXD0:
@@ -4730,7 +4730,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_ua, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETUA & (1 << offset));
+                value = (MCF_GPIO_SETUA & (1 << offset));
             }
             break;
         case PIN_AN0:
@@ -4750,7 +4750,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_an, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETAN & (1 << offset));
+                value = (MCF_GPIO_SETAN & (1 << offset));
             }
             break;
         case PIN_IRQ1:
@@ -4767,7 +4767,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_nq, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETNQ & (1 << offset));
+                value = (MCF_GPIO_SETNQ & (1 << offset));
             }
             break;
 #if MCF52233
@@ -4779,7 +4779,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_gp, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETGP & (1 << offset));
+                value = (MCF_GPIO_SETGP & (1 << offset));
             }
             break;
 #endif
@@ -4799,7 +4799,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_ta, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETTA & (1 << offset));
+                value = (MCF_GPIO_SETTA & (1 << offset));
             }
             break;
 #endif
@@ -4812,7 +4812,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_as, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(MCF_GPIO_SETAS & (1 << offset));
+                value = (MCF_GPIO_SETAS & (1 << offset));
             }
             break;
         default:
@@ -4835,7 +4835,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_a, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTAD & (1<<offset));
+                value = (PTAD & (1<<offset));
             }
             break;
         case PIN_PTB0:  // adc0
@@ -4857,7 +4857,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_b, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTBD & (1<<offset));
+                value = (PTBD & (1<<offset));
             }
             break;
         case PIN_PTC0:
@@ -4880,7 +4880,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_c, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTCD & (1<<offset));
+                value = (PTCD & (1<<offset));
             }
             break;
         case PIN_PTD0:  // adc8
@@ -4903,7 +4903,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_d, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTDD & (1<<offset));
+                value = (PTDD & (1<<offset));
             }
             break;
         case PIN_PTE0:  // u1tx
@@ -4944,7 +4944,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_e, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTED & (1<<offset));
+                value = (PTED & (1<<offset));
             }
             break;
         case PIN_PTF0:
@@ -4987,7 +4987,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_f, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTFD & (1<<offset));
+                value = (PTFD & (1<<offset));
             }
             break;
         case PIN_PTG0:
@@ -5001,7 +5001,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_g, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTGD & (1<<offset));
+                value = (PTGD & (1<<offset));
             }
             break;
         default:
@@ -5032,7 +5032,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_a, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTAD & (1<<offset));
+                value = (PTAD & (1<<offset));
             }
             break;
         case PIN_PTB0:
@@ -5068,7 +5068,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_b, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTBD & (1<<offset));
+                value = (PTBD & (1<<offset));
             }
             break;
         case PIN_PTC0:  // tpm2ch2
@@ -5105,7 +5105,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_c, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTCD & (1<<offset));
+                value = (PTCD & (1<<offset));
             }
             break;
         case PIN_PTD0:  // adc7, u1tx
@@ -5142,7 +5142,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_d, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTDD & (1<<offset));
+                value = (PTDD & (1<<offset));
             }
             break;
         case PIN_PTE0:  // adc2
@@ -5185,7 +5185,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_e, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTED & (1<<offset));
+                value = (PTED & (1<<offset));
             }
             break;
         case PIN_PTF0:
@@ -5203,7 +5203,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_f, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTFD & (1<<offset));
+                value = (PTFD & (1<<offset));
             }
             break;
         case PIN_PTG0:
@@ -5221,7 +5221,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_g, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTGD & (1<<offset));
+                value = (PTGD & (1<<offset));
             }
             break;
         case PIN_PTH0:
@@ -5239,7 +5239,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_h, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTHD & (1<<offset));
+                value = (PTHD & (1<<offset));
             }
             break;
         case PIN_PTJ0:
@@ -5255,7 +5255,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_j, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTJD & (1<<offset));
+                value = (PTJD & (1<<offset));
             }
             break;
         default:
@@ -5306,7 +5306,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_a, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTAD & (1<<offset));
+                value = (PTAD & (1<<offset));
             }
             break;
         case PIN_PTB0:  // adc4, u1rx
@@ -5353,7 +5353,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_b, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTBD & (1<<offset));
+                value = (PTBD & (1<<offset));
             }
             break;
         case PIN_PTC0:  // tpm3ch0
@@ -5403,7 +5403,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_c, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTCD & (1<<offset));
+                value = (PTCD & (1<<offset));
             }
             break;
         case PIN_PTD0:
@@ -5421,7 +5421,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_d, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTDD & (1<<offset));
+                value = (PTDD & (1<<offset));
             }
             break;
         case PIN_PTE0:
@@ -5439,7 +5439,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_e, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTED & (1<<offset));
+                value = (PTED & (1<<offset));
             }
             break;
         case PIN_PTF0:  // adc10
@@ -5462,7 +5462,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_f, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTFD & (1<<offset));
+                value = (PTFD & (1<<offset));
             }
             break;
         case PIN_PTG0:
@@ -5481,7 +5481,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_g, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTGD & (1<<offset));
+                value = (PTGD & (1<<offset));
             }
             break;
         default:
@@ -5511,7 +5511,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_ad0, offset);
             } else {
                 assert(pin_type == pin_type_digital_input);
-                value = !!(PORTAD0 & (1<<offset));
+                value = (PORTAD0 & (1<<offset));
             }
             break;
         case PIN_PAD08:
@@ -5532,7 +5532,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_ad1, offset);
             } else {
                 assert(pin_type == pin_type_digital_input);
-                value = !!(PORTAD1 & (1<<offset));
+                value = (PORTAD1 & (1<<offset));
             }
             break;
         case PIN_PA0:
@@ -5550,7 +5550,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_a, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PORTA & (1<<offset));
+                value = (PORTA & (1<<offset));
             }
             break;
         case PIN_PB0:
@@ -5568,7 +5568,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_b, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PORTB & (1<<offset));
+                value = (PORTB & (1<<offset));
             }
             break;
         case PIN_PE0:
@@ -5586,7 +5586,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_e, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PORTE & (1<<offset));
+                value = (PORTE & (1<<offset));
             }
             break;
         case PIN_PJ0:
@@ -5604,7 +5604,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_j, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTIJ & (1<<offset));
+                value = (PTIJ & (1<<offset));
             }
             break;
         case PIN_PM0:
@@ -5622,7 +5622,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_m, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTIM & (1<<offset));
+                value = (PTIM & (1<<offset));
             }
             break;
         case PIN_PP0:
@@ -5676,7 +5676,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_p, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTIP & (1<<offset));
+                value = (PTIP & (1<<offset));
             }
             break;
         case PIN_PS0:
@@ -5708,7 +5708,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_s, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTIS & (1<<offset));
+                value = (PTIS & (1<<offset));
             }
             break;        
         case PIN_PT0:
@@ -5736,7 +5736,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_t, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !!(PTIT & (1<<offset));
+                value = (PTIT & (1<<offset));
             }
             break;
         default:
@@ -5764,7 +5764,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_a, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !! (PORTA & 1 << offset);
+                value = (PORTA & 1 << offset);
             }
             break;
 #endif
@@ -5809,7 +5809,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_c, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !! (PORTC & 1 << offset);
+                value = (PORTC & 1 << offset);
             }
             break;
         case PIN_RD0:
@@ -5859,7 +5859,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_d, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !! (PORTD & 1<<offset);
+                value = (PORTD & 1<<offset);
             }
             break;
         case PIN_RE0:
@@ -5879,7 +5879,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_e, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !! (PORTE & 1 << offset);
+                value = (PORTE & 1 << offset);
             }
             break;
         case PIN_RF0:
@@ -5912,7 +5912,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_f, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !! (PORTF & 1 << offset);
+                value = (PORTF & 1 << offset);
             }
             break;
         case PIN_RG0:
@@ -5931,7 +5931,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = pin_get_digital_debounced(port_g, offset);
             } else {
                 assert(pin_type == pin_type_digital_input || pin_type == pin_type_digital_output);
-                value = !! (PORTG & 1 << offset);
+                value = (PORTG & 1 << offset);
             }
             break;
         default:
@@ -5942,6 +5942,10 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
 #error
 #endif
 
+    if (pin_type == pin_type_digital_input || pin_type == pin_type_digital_output) {
+        value = !!value;
+    }
+    
     if (pin_qual & (1<<pin_qual_inverted)) {
         if (pin_type == pin_type_digital_input || pin_type == pin_type_digital_output) {
             value = ! value;
