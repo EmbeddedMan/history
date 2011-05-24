@@ -46,7 +46,7 @@ SECTIONS {
 
 	.startup :
 	{
-		startup.c(.text)
+		*(.startup)
 		. = ALIGN (0x4); 
 	} > startup
 

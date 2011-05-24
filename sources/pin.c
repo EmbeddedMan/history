@@ -6377,7 +6377,11 @@ pin_assign(int assign, int pin)
     pin_assignments[assign] = pin;
 
     if (pin < PIN_UNASSIGNED) {
-        if (assign == pin_assignment_safemode || (assign >= pin_assignment_kbd_r0 && assign <= pin_assignment_kbd_r3)) {
+        if (assign == pin_assignment_safemode
+#if KBD
+        || (assign >= pin_assignment_kbd_r0 && assign <= pin_assignment_kbd_r3)
+#endif
+       ) {
             pin_declare_internal(pin, pin_type_digital_input, 0, false, false);
         } else {
             pin_declare_internal(pin, pin_type_digital_output, 0, false, false);

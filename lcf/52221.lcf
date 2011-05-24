@@ -43,9 +43,9 @@ SECTIONS {
 		. = ALIGN (0x4); 
 	} > swvect
 
-		.startup :
+	.startup :
 	{
-		startup.c(.text)
+		*(.startup)
 		. = ALIGN (0x4); 
 	} > startup
 

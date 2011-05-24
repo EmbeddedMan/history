@@ -3,9 +3,10 @@
 # Memory ranges
 
 MEMORY {
-   page0       (RX)  : ORIGIN = 0x00000000, LENGTH = 0x00000800
-   page1       (RX)  : ORIGIN = 0x00000800, LENGTH = 0x00000400
-   code        (RX)  : ORIGIN = 0x00000c00, LENGTH = 0x0001f400
+   swvect      (RX)  : ORIGIN = 0x00000000, LENGTH = 0x00000200
+   startup     (RX)  : ORIGIN = 0x00000200, LENGTH = 0x000001fc
+   cfm         (RX)  : ORIGIN = 0x00000400, LENGTH = 0x00000018
+   code        (RX)  : ORIGIN = 0x00000418, LENGTH = 0x0001fbe8
    userram     (RWX) : ORIGIN = 0x00800000, LENGTH = 0x00002000
 }
 
@@ -35,17 +36,23 @@ SECTIONS {
   .userram	  : {} > userram		
   .code	    : {} > code		
 	
-	.page0 :
+	.swvect :
 	{
-		*(.page0)
+		*(.swvect)
 		. = ALIGN (0x4); 
-	} > page0
+	} > swvect
 
-	.page1 :
+	.startup :
 	{
-		*(.page1)
+		*(.startup)
 		. = ALIGN (0x4); 
-	} > page1
+	} > startup
+
+	.cfm :
+	{
+		*(.cfm)
+		. = ALIGN (0x4); 
+	} > cfm
 
 	.text :
 	{

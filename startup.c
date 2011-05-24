@@ -39,6 +39,7 @@ extern int main();
 // this function performs C initialization before main() runs.
 #if ! GCC
 static
+DECLSPEC_STARTUP
 #endif
 void
 init(void)
@@ -381,6 +382,9 @@ BEGIN_NAKED(_startup);
 
 // this function performs assembly language initialization from
 // reset, and then calls C initialization, which calls main().
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
+DECLSPEC_STARTUP
+#endif
 BEGIN_NAKED(_startup)
 {
     // disable interrupts
@@ -433,6 +437,9 @@ END_NAKED
 BEGIN_NAKED(asm_xxx);
 #endif
 
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
+DECLSPEC_STARTUP
+#endif
 BEGIN_NAKED(asm_xxx)
 {
     Q1(halt)

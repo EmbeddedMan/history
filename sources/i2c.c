@@ -12,7 +12,7 @@
 #define MCF_I2C0_I2FDR  MCF_I2C_I2FDR
 #endif
 
-#if MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
 #define MCF_I2C0_I2CR  IIC1C
 #define MCF_I2C0_I2SR  IIC1S
 #define MCF_I2C0_I2DR  IIC1D
@@ -48,9 +48,9 @@ static
 bool  // indicates things are awry
 i2c_break(void)
 {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     if (MCF_I2C0_I2SR & MCF_I2C_I2SR_IAL) {
-#if MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
         MCF_I2C0_I2SR |= MCF_I2C_I2SR_IAL;
 #else
         MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IAL;
@@ -93,7 +93,7 @@ i2c_start_real(bool write)
 
     i2c_stop();
 
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     // wait for i2c idle
     while (MCF_I2C0_I2SR & MCF_I2C_I2SR_IBB) {
         if (i2c_break()) {
@@ -116,7 +116,7 @@ i2c_start_real(bool write)
             return started;
         }
     }
-#if MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     MCF_I2C0_I2SR |= MCF_I2C_I2SR_IIF;
 #else
     MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
@@ -200,7 +200,7 @@ i2c_repeat_start_real(bool write)
 {
     i2c_initialize();
 
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     // enable transmit
     MCF_I2C0_I2CR |= MCF_I2C_I2CR_MTX;
 
@@ -216,7 +216,7 @@ i2c_repeat_start_real(bool write)
             return;
         }
     }
-#if MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     MCF_I2C0_I2SR |= MCF_I2C_I2SR_IIF;
 #else
     MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
@@ -288,7 +288,7 @@ i2c_repeat_start_real(bool write)
 void
 i2c_stop(void)
 {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     // enable receive
     MCF_I2C0_I2CR &= ~MCF_I2C_I2CR_MTX;
 
@@ -338,7 +338,7 @@ i2c_read_write(bool write, byte *buffer, int length)
         i2c_repeat_start_real(write);
     }
 
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     if (write) {
         while (length--) {
             // send data
@@ -350,7 +350,7 @@ i2c_read_write(bool write, byte *buffer, int length)
                     return;
                 }
             }
-#if MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
             MCF_I2C0_I2SR |= MCF_I2C_I2SR_IIF;
 #else
             MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
@@ -383,7 +383,7 @@ i2c_read_write(bool write, byte *buffer, int length)
                     return;
                 }
             }
-#if MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
             MCF_I2C0_I2SR |= MCF_I2C_I2SR_IIF;
 #else
             MCF_I2C0_I2SR &= ~MCF_I2C_I2SR_IIF;
@@ -483,7 +483,7 @@ i2c_read_write(bool write, byte *buffer, int length)
 bool
 i2c_ack()
 {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     return !!(MCF_I2C0_I2SR & MCF_I2C_I2SR_RXAK);
 #elif PIC32
     return I2CByteWasAcknowledged(I2C1);
@@ -503,7 +503,7 @@ i2c_uninitialize(void)
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     // AS is gpio
     MCF_GPIO_PASPAR = (MCF_GPIO_PASPAR&0xf0)|0x00;
-#elif  MCF51JM128 || MCF51QE128 || MCF51CN128
+#elif  MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
     // stop i2c
     MCF_I2C0_I2CR = 0;
 #elif PIC32
@@ -523,7 +523,7 @@ i2c_initialize(void)
     initialized = true;
 
     {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF51AC128
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     int ic;
     int div;
