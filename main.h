@@ -252,7 +252,12 @@ enum {
 #if BADGE_BOARD
 #include "jm.h"
 #else
+#if KBD
+#include "kbd.h"
+#endif
+#if LCD
 #include "lcd.h"
+#endif
 #endif
 
 #endif  // ! STICK_GUEST

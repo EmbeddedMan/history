@@ -33,6 +33,16 @@
 #define EXTRACT  0  // 1 uses extracted headers rather than Freescale
 #endif
 
+#if FB32
+#define KBD  1
+#define LCD  1
+#define ZIGFLEA  0
+#else
+#define KBD  0
+#define LCD  0
+#define ZIGFLEA  1
+#endif
+
 // Enable in-memory trace buffer for debugging with the trace() macro.
 #define IN_MEMORY_TRACE 0
 

@@ -22,12 +22,24 @@ enum pin_assignment {  // XXX -- should we allow skeleton to extend this?
     pin_assignment_zigflea_rst,
     pin_assignment_zigflea_attn,
     pin_assignment_zigflea_rxtxen,
-    pin_assignment_lcd_d4,
+#if LCD
+    pin_assignment_lcd_d4,  // must be first in group
     pin_assignment_lcd_d5,
     pin_assignment_lcd_d6,
     pin_assignment_lcd_d7,
     pin_assignment_lcd_en,
-    pin_assignment_lcd_rs,
+    pin_assignment_lcd_rs,  // must be last in group
+#endif
+#if KBD
+    pin_assignment_kbd_s0,  // must be first in group
+    pin_assignment_kbd_s1,
+    pin_assignment_kbd_s2,
+    pin_assignment_kbd_s3,
+    pin_assignment_kbd_r0,
+    pin_assignment_kbd_r1,
+    pin_assignment_kbd_r2,
+    pin_assignment_kbd_r3,  // must be last in group
+#endif
     pin_assignment_max
 };
 

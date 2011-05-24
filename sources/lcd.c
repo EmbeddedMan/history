@@ -3,6 +3,8 @@
 
 #include "main.h"
 
+#if LCD
+
 static bool init;
 
 #define LCDROWS  4
@@ -82,11 +84,12 @@ void
 writeline(int pos, char *buffer, int n)
 {
     int i;
-    
+
     writebyte(0x80|pos, false);
     for (i = 0; i < n; i++) {
         if (isprint(buffer[i])) {
-           writebyte(buffer[i], true);         }
+            writebyte(buffer[i], true);
+        }
     }
 }
 
@@ -99,13 +102,11 @@ void
 lcdinit(void)
 {
     int i;
-    
-    pin_set(pin_assignments[pin_assignment_lcd_d4], pin_type_digital_output, 0, 0);
-    pin_set(pin_assignments[pin_assignment_lcd_d5], pin_type_digital_output, 0, 0);
-    pin_set(pin_assignments[pin_assignment_lcd_d6], pin_type_digital_output, 0, 0);
-    pin_set(pin_assignments[pin_assignment_lcd_d7], pin_type_digital_output, 0, 0);
-    pin_set(pin_assignments[pin_assignment_lcd_en], pin_type_digital_output, 0, 0);
-    pin_set(pin_assignments[pin_assignment_lcd_rs], pin_type_digital_output, 0, 0);
+
+    for (i = pin_assignment_lcd_d4; i < pin_assignment_lcd_rs+1; i++) {
+        pin_set(pin_assignments[i], pin_type_digital_output, 0, 0);
+    }
+
     delay(20);
     for (i = 0; i < LENGTHOF(data); i++) {
         writebyte(data[i], false);
@@ -122,3 +123,5 @@ lcd(int pos, char *buffer, int n)
     }
     writeline(pos, buffer, n);
 }
+
+#endif

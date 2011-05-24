@@ -231,7 +231,9 @@ static char * const help_statements =
 "halt                                   -- loop forever\n"
 "input [dec|hex|raw] <variable>[$] [, ...] -- input data\n"
 "label <label>                          -- read/data label\n"
+#if LCD
 "lcd <pos>, [dec|hex|raw] <expression> [, ...] [;] -- display results on lcd\n"
+#endif
 "let <variable>[$] = <expression> [, ...] -- assign variable\n"
 "print [dec|hex|raw] <expression> [, ...] [;] -- print results\n"
 "read <variable> [, ...]                -- read read-only data into variables\n"

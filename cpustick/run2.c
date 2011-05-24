@@ -5,7 +5,9 @@
 #include "main.h"
 
 bool run2_scroll;
+#if LCD
 bool run2_lcd;
+#endif
 
 // this function executes a private bytecode statement.
 bool  // end
@@ -64,6 +66,7 @@ run2_bytecode_code(uint code, const byte *bytecode, int length)
             }
             break;
 #else
+#if LCD
         case code_lcd:
 #if ! GCC
             cw7bug++;  // CW7 BUG
@@ -78,6 +81,7 @@ run2_bytecode_code(uint code, const byte *bytecode, int length)
             run2_lcd = 0;
 
             return boo;
+#endif
 #endif
 
         default:

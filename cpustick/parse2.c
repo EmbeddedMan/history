@@ -14,7 +14,9 @@ const struct keyword {
     "jmset", code_set,
     "jmclear", code_clear,
 #else
+#if LCD
     "lcd", code_lcd,
+#endif
 #endif
     "private", code_private,
 };
@@ -86,6 +88,7 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
             }
             break;
 #else
+#if LCD
         case code_lcd:
             // parse the pos expression
             if (! parse_expression(0, &text, &length, bytecode)) {
@@ -106,6 +109,7 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
             *length_out = length+length2;
             return true;
             break;
+#endif
 #endif
         default:
             assert(0);
@@ -168,6 +172,7 @@ unparse2_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
             bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
             break;
 #else
+#if LCD
         case code_lcd:
             bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
             
@@ -178,6 +183,7 @@ unparse2_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
             unparse_bytecode_code(code_print, bytecode, bytecode_in+length-bytecode, out);
             return;
             break;
+#endif
 #endif
         default:
             assert(0);

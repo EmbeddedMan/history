@@ -232,7 +232,7 @@ clone(bool and_run)
     }
     
 #if ! FLASHER
-#if ! FB32
+#if ZIGFLEA
     zb_initialize();
 #endif
 #endif

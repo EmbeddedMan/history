@@ -116,6 +116,12 @@ timer_isr(void)
         // manage LED matrix
         jm_timer_poll();
 #endif
+#if KBD && ! STICK_GUEST
+        // manage kbd scanning every 8ms
+        if ((msecs & 7) == 0) {
+            kbd_timer_poll();
+        }
+#endif
     } else {
         debouncing = false;
     }

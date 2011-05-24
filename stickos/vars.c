@@ -20,18 +20,20 @@ static byte *alternate_flash_param_page;
 
 static struct system_var {
     char *name;
-    volatile int32 *integer;  // if NULL, then variable is constant.
-    int32 constant;
-    void (*set_cbfn)(int32 value);  // if NULL, then the var is read-only.
+    volatile int32 *integer;  // try this
+    int32 constant;  // then this
 } const systems[] = {
-#if ! STICK_GUEST
-    "nodeid", &zb_nodeid, 0, NULL,
+#if KBD
+    "keychar", &kbd_keychar, 0,
 #endif
-    "getchar", &terminal_getchar, 0, NULL,
-    "msecs", &msecs, 0, NULL,
-    "seconds", &seconds, 0, NULL,
-    "ticks", &ticks, 0, NULL,
-    "ticks_per_msec", NULL, ticks_per_msec, NULL
+    "getchar", &terminal_getchar, 0,
+    "msecs", &msecs, 0,
+#if ! STICK_GUEST
+    "nodeid", &zb_nodeid, 0,
+#endif
+    "seconds", &seconds, 0,
+    "ticks", &ticks, 0,
+    "ticks_per_msec", NULL, ticks_per_msec,
 };
 
 #define VAR_NAME_SIZE  14
@@ -665,6 +667,11 @@ var_get(IN const char *name, IN int index, IN uint32 running_watchpoint_mask)
             system = system_find(name);
             if (system) {
                 value = system->integer ? *system->integer : system->constant;
+#if KBD
+                if (system->integer == &kbd_keychar && ! run_watchpoint && ! running_watchpoint_mask) {
+                    kbd_keychar = 0;
+                }
+#endif
                 if (system->integer == &terminal_getchar && ! run_watchpoint && ! running_watchpoint_mask) {
                     terminal_getchar = 0;
                 }

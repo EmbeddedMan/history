@@ -42,7 +42,7 @@ main_reset_cbfn(void)
 static int autoran;
 
 // this function implements the main program loop of stickos, where we
-// wait for and then process (elsewhere) stickos commands.extern void
+// wait for and then process (elsewhere) stickos commands.
 void
 main_run(void)
 {

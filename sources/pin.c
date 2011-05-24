@@ -31,36 +31,42 @@ const char * const pin_assignment_names[] = {
     "zigflea_rst*",
     "zigflea_attn*",
     "zigflea_rxtxen",
+#if LCD
     "lcd_d4",
     "lcd_d5",
     "lcd_d6",
     "lcd_d7",
     "lcd_en",
     "lcd_rs",
+#endif
+#if KBD
+    "kbd_s0",
+    "kbd_s1",
+    "kbd_s2",
+    "kbd_s3",
+    "kbd_r0",
+    "kbd_r1",
+    "kbd_r2",
+    "kbd_r3",
+#endif
 };
 
 byte pin_assignments[pin_assignment_max] = {
     // set our default pin assignments
 #if MC9S08QE128 || MCF51QE128
     PIN_PTC2, PIN_PTA2, PIN_PTB5, PIN_UNASSIGNED, PIN_PTC0, PIN_PTC1, PIN_PTF1,
-    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #elif MCF51CN128
     PIN_PTE3, PIN_PTG6, PIN_PTF0, PIN_UNASSIGNED, PIN_PTF1, PIN_PTF2, PIN_PTF3,
-    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #elif MC9S12DT256 || MC9S12DP512
     PIN_PB7, PIN_PP0, PIN_PM3, PIN_UNASSIGNED, PIN_PT0, PIN_PT1, PIN_PB6,
-    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #elif MCF51JM128
 #if FB32
     PIN_PTE6, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
-    PIN_PTA2, PIN_PTA3, PIN_PTA4, PIN_PTA5, PIN_PTA1, PIN_PTA0
 #else
     PIN_PTF0, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_PTE2, PIN_PTE3, PIN_PTB5,
-    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #endif
 #elif MCF51AC128
     PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
-    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #elif MCF5211 || MCF52221 || MCF52233 || (MCF52259 && DEMO)
     PIN_DTIN3,
 #if MCF5211
@@ -77,15 +83,28 @@ byte pin_assignments[pin_assignment_max] = {
 #else
             PIN_AN2, PIN_AN3, PIN_AN5,
 #endif
-    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #elif MCF52259
     PIN_FEC_CRS, PIN_FEC_COL, PIN_QSPI_CS0, PIN_QSPI_CS2, PIN_FEC_RXER, PIN_UNASSIGNED, PIN_FEC_TXCLK,
-    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #elif PIC32
     PIN_RE0, PIN_RE6, PIN_RE1, PIN_UNASSIGNED, PIN_RE2, PIN_RE3, PIN_RE4,
-    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
 #else
 #error
+#endif
+
+#if LCD
+#if FB32
+    PIN_PTA2, PIN_PTA3, PIN_PTA4, PIN_PTA5, PIN_PTA1, PIN_PTA0,
+#else
+    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
+#endif
+#endif
+
+#if KBD
+#if FB32
+    PIN_PTD4, PIN_PTD5, PIN_PTD6, PIN_PTD7, PIN_PTD0, PIN_PTD1, PIN_PTD2, PIN_PTD3
+#else
+    PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
+#endif
 #endif
 };
 
@@ -6356,7 +6375,7 @@ pin_assign(int assign, int pin)
     pin_assignments[assign] = pin;
 
     if (pin < PIN_UNASSIGNED) {
-        if (assign == pin_assignment_safemode) {
+        if (assign == pin_assignment_safemode || (assign >= pin_assignment_kbd_r0 && assign <= pin_assignment_kbd_r3)) {
             pin_declare_internal(pin, pin_type_digital_input, 0, false, false);
         } else {
             pin_declare_internal(pin, pin_type_digital_output, 0, false, false);
