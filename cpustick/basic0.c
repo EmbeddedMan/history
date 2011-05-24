@@ -28,7 +28,7 @@ enum cmdcode {
     command_reset,
     command_upgrade,
     command_uptime,
-#if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA && (SODEBUG || MCF52259 || PIC32)
     command_zigflea,
 #endif
     command_dummy
@@ -59,7 +59,7 @@ const char * const commands[] = {
     "reset",
     "upgrade",
     "uptime",
-#if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA && (SODEBUG || MCF52259 || PIC32)
     "zigflea",
 #endif
 };
@@ -228,7 +228,11 @@ static char * const help_modes =
 "pin assignments:\n"
 "  heartbeat  safemode*\n"
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
+"  qspi_cs*  clone_rst*"
+#if ZIGFLEA
+"  zigflea_rst*  zigflea_attn*  zigflea_rxtxen"
+#endif
+"\n"
 #else
 "  qspi_cs*"
 #if ZIGFLEA
@@ -1217,8 +1221,7 @@ basic0_run(char *text_in)
             printf("%dd %dh %dm\n", d, h, m);
             break;
             
-#if SODEBUG || MCF52259 || PIC32
-#if ZIGFLEA
+#if ZIGFLEA && (SODEBUG || MCF52259 || PIC32)
         case command_zigflea:
             reset = parse_word(&text, "reset");
             init = parse_word(&text, "init");
@@ -1229,7 +1232,6 @@ basic0_run(char *text_in)
             zb_diag(reset, init);
 #endif
             break;
-#endif
 #endif
 
         case LENGTHOF(commands):
