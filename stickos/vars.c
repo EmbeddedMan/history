@@ -28,7 +28,7 @@ static struct system_var {
 #endif
     "getchar", &terminal_getchar, 0,
     "msecs", &msecs, 0,
-#if ! STICK_GUEST
+#if ZIGFLEA && ! STICK_GUEST
     "nodeid", &zb_nodeid, 0,
 #endif
     "seconds", &seconds, 0,
@@ -525,7 +525,7 @@ var_set(IN const char *name, IN int index, IN int32 value)
     uint type;
     int var_gosubs;
     struct var *var;
-#if ! STICK_GUEST
+#if ZIGFLEA && ! STICK_GUEST
     remote_set_t set;
 #endif
 
@@ -547,6 +547,7 @@ var_set(IN const char *name, IN int index, IN int32 value)
             stop();
         } else {
             switch (type) {
+#if ZIGFLEA
                 case code_nodeid:
                     if (! zb_present) {
                         printf("zigflea not present\n");
@@ -572,6 +573,7 @@ var_set(IN const char *name, IN int index, IN int32 value)
                         }
                     }
                     // fall thru
+#endif
 #endif
                     
                 case code_ram:
@@ -873,7 +875,7 @@ var_initialize(void)
     // because pin_watchpoint_*() routines depend on a power of 2 number of watchpoints.
     assert((num_watchpoints == 1) || (num_watchpoints == 2) || (num_watchpoints == 4) || (num_watchpoints == 8));
 
-#if ! STICK_GUEST
+#if ZIGFLEA && ! STICK_GUEST
     zb_register(zb_class_remote_set, class_remote_set);
 #endif
 }

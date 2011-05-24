@@ -8,7 +8,9 @@ enum cmdcode {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     command_clone,  // [run]
 #endif
+#if ZIGFLEA
     command_connect,  // nnn
+#endif
 #if STICK_GUEST
     command_demo,
 #endif
@@ -17,7 +19,9 @@ enum cmdcode {
 #if MCF52233
     command_ipaddress,  // [dhcp|<ipaddress>]
 #endif
+#if ZIGFLEA
     command_nodeid,  // nnn
+#endif
     command_reset,
     command_upgrade,
     command_uptime,
@@ -32,7 +36,9 @@ const char * const commands[] = {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     "clone",
 #endif
+#if ZIGFLEA
     "connect",
+#endif
 #if STICK_GUEST
     "demo",
 #endif
@@ -41,7 +47,9 @@ const char * const commands[] = {
 #if MCF52233
     "ipaddress",
 #endif    
+#if ZIGFLEA
     "nodeid",
+#endif
     "reset",
     "upgrade",
     "uptime",
@@ -857,7 +865,9 @@ static const char * const demos[] = {
 void
 basic0_run(char *text_in)
 {
+#if ZIGFLEA
     int i;
+#endif
     int d;
     int h;
     int m;
@@ -919,6 +929,7 @@ basic0_run(char *text_in)
             break;
 #endif
 
+#if ZIGFLEA
         case command_connect:
             if (! zb_present) {
                 printf("zigflea not present\n");
@@ -951,6 +962,7 @@ basic0_run(char *text_in)
                 printf("...disconnected\n");
             }
             break;
+#endif
 
 #if STICK_GUEST
         case command_demo:
@@ -1067,6 +1079,7 @@ basic0_run(char *text_in)
             break;
 #endif
 
+#if ZIGFLEA
         case command_nodeid:
             if (*text) {
                 if (parse_word(&text, "none")) {
@@ -1092,6 +1105,7 @@ basic0_run(char *text_in)
                 }
             }
             break;
+#endif
         
         case command_reset:
             if (*text) {
