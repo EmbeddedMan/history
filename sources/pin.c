@@ -28,9 +28,11 @@ const char * const pin_assignment_names[] = {
     "safemode*",
     "qspi_cs*",  // clone and zigflea
     "clone_rst*",
+#if ZIGFLEA
     "zigflea_rst*",
     "zigflea_attn*",
     "zigflea_rxtxen",
+#endif
 #if LCD
     "lcd_d4",
     "lcd_d5",
@@ -61,7 +63,7 @@ byte pin_assignments[pin_assignment_max] = {
     PIN_PB7, PIN_PP0, PIN_PM3, PIN_UNASSIGNED, PIN_PT0, PIN_PT1, PIN_PB6,
 #elif MCF51JM128
 #if FB32
-    PIN_PTE6, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
+    PIN_PTE6, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED,
 #else
     PIN_PTF0, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_PTE2, PIN_PTE3, PIN_PTB5,
 #endif

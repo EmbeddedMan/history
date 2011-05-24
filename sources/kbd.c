@@ -4,10 +4,7 @@
 
 static bool init;
 
-#define KBDSCANS  4
-#define KBDRETURNS  4
-
-static const char chars[] = "123a456b789c*0#d";
+char kbd_chars[KBDSCANS*KBDRETURNS+1] = "123a456b789c*0#d";
 
 /*
  430 rem --- sub kdbscan ---
@@ -38,11 +35,17 @@ int32 kbd_keychar;
 static void kbdinit(void)
 {
     int i;
+    int32 j;
 
-    for (i = pin_assignment_kbd_s0; i < pin_assignment_kbd_r3+1; i++) {
-        if (i < pin_assignment_kbd_r0) {
-            pin_set(pin_assignments[i], pin_type_digital_output, 0, 1);
+    for (i = pin_assignment_kbd_s0; i < pin_assignment_kbd_s0+KBDSCANS; i++) {
+        pin_set(pin_assignments[i], pin_type_digital_output, 0, 1);
+    }
+    for (i = 0; i < sizeof(kbd_chars)/4; i++) {
+        j = var_get_flash(FLASH_KBDCHARS0+i);
+        if (! j || j == -1) {
+            break;
         }
+        write32(kbd_chars+i*4, j);
     }
 }
 
@@ -68,11 +71,11 @@ void kbd_timer_poll(void)
             n = s*4+r;
             if (! pin_get(pin_assignments[pin_assignment_kbd_r0+r], 0, 0)) {
                 if (! keychar) {
-                    keychar = chars[n];
+                    keychar = kbd_chars[n];
                     kbd_keychar = keychar;
                 }
             } else {
-                if (keychar == chars[n]) {
+                if (keychar == kbd_chars[n]) {
                     keychar = 0;
                 }
             }

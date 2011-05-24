@@ -17,6 +17,12 @@ enum flash_var2 {
 #if MCF52233
     FLASH_IPADDRESS = FLASH_NEXT,
 #endif
+#if KBD
+    FLASH_KBDCHARS0,
+    FLASH_KBDCHARS1,
+    FLASH_KBDCHARS2,
+    FLASH_KBDCHARS3,
+#endif
     FLASH_LAST_LAST
 };
 

@@ -19,6 +19,9 @@ enum cmdcode {
 #if MCF52233
     command_ipaddress,  // [dhcp|<ipaddress>]
 #endif
+#if KBD
+    command_keychars,  // 0123456789abcdef
+#endif
 #if ZIGFLEA
     command_nodeid,  // nnn
 #endif
@@ -46,7 +49,10 @@ const char * const commands[] = {
     "help",
 #if MCF52233
     "ipaddress",
-#endif    
+#endif
+#if KBD
+    "keychars",
+#endif
 #if ZIGFLEA
     "nodeid",
 #endif
@@ -150,7 +156,9 @@ static char *const help_general =
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "  help clone\n"
 #endif
+#if ZIGFLEA
 "  help zigflea\n"
+#endif
 "\n"
 "see also:\n"
 "  http://www.cpustick.com\n"
@@ -199,7 +207,12 @@ static char * const help_modes =
 #if MCF52233
 "ipaddress [dhcp|<ipaddress>]      -- set/display ip address\n"
 #endif
+#if KBD
+"keychars [<keychars>]             -- set/display keypad scan chars\n"
+#endif
+#if ZIGFLEA
 "nodeid [<nodeid>|none]            -- set/display zigflea nodeid\n"
+#endif
 "numbers [on|off]                  -- listing line numbers mode\n"
 "pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments\n"
 "prompt [on|off]                   -- terminal prompt mode\n"
@@ -217,7 +230,11 @@ static char * const help_modes =
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
 #else
-"  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
+"  qspi_cs*"
+#if ZIGFLEA
+"  zigflea_rst*  zigflea_attn*  zigflea_rxtxen"
+#endif
+"\n"
 #endif
 "\n"
 "for more information:\n"
@@ -386,8 +403,15 @@ static char *const help_variables =
 "                                      (input|output) \\\n"
 "                                      [debounced] [inverted] [open_drain]\n"
 "\n"
-"system variables:\n"
-"  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)\n"
+"system variables (read-only):\n"
+"  getchar"
+#if ZIGFLEA
+"  nodeid"
+#endif
+#if KBD
+"  keychar"
+#endif
+"  msecs  seconds  ticks  ticks_per_msec\n"
 "\n"
 "for more information:\n"
 "  help pins\n"
@@ -588,6 +612,7 @@ static char *const help_clone =
 ;
 #endif
 
+#if ZIGFLEA
 static char *const help_zigflea =
 "connect <nodeid>              -- connect to MCU <nodeid> via zigflea\n"
 "<Ctrl-D>                      -- disconnect from zigflea\n"
@@ -642,6 +667,7 @@ static char *const help_zigflea =
 "  vss                  vss\n"
 "  vdd                  vdd\n"
 ;
+#endif
 #endif
 
 // GENERATE_HELP_END
@@ -865,7 +891,7 @@ static const char * const demos[] = {
 void
 basic0_run(char *text_in)
 {
-#if ZIGFLEA
+#if ZIGFLEA || KBD
     int i;
 #endif
     int d;
@@ -1035,8 +1061,10 @@ basic0_run(char *text_in)
             } else if (parse_word(&text, "clone")) {
                 p = help_clone;
 #endif
+#if ZIGFLEA
             } else if (parse_word(&text, "zigflea")) {
                 p = help_zigflea;
+#endif
 #endif
             } else {
                 goto XXX_ERROR_XXX;
@@ -1075,6 +1103,22 @@ basic0_run(char *text_in)
                 } else {
                     printf("%u.%u.%u.%u\n", (int)(i>>24)&0xff, (int)(i>>16)&0xff, (int)(i>>8)&0xff, (int)i&0xff);
                 }
+            }
+            break;
+#endif
+
+#if KBD
+        case command_keychars:
+            if (*text) {
+                memset(kbd_chars, 0, sizeof(kbd_chars));
+                for (i = 0; *text && i < sizeof(kbd_chars)-1; i++) {
+                    kbd_chars[i] = *text++;
+                }
+                for (i = 0; i < sizeof(kbd_chars)/4; i++) {
+                    var_set_flash(FLASH_KBDCHARS0+i, read32(kbd_chars+i*4));
+                }
+            } else {
+                printf("%s\n", kbd_chars);
             }
             break;
 #endif
@@ -1174,6 +1218,7 @@ basic0_run(char *text_in)
             break;
             
 #if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA
         case command_zigflea:
             reset = parse_word(&text, "reset");
             init = parse_word(&text, "init");
@@ -1184,6 +1229,7 @@ basic0_run(char *text_in)
             zb_diag(reset, init);
 #endif
             break;
+#endif
 #endif
 
         case LENGTHOF(commands):

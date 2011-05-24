@@ -119,7 +119,7 @@ void
 lcd(int pos, char *buffer, int n)
 {
     int pos2;
-    static byte posn[4] = { 0x80, 0xc0, 0x94, 0xd4 };
+    static byte posn[LCDROWS] = { 0x80, 0xc0, 0x94, 0xd4 };
 
     if (! init) {
         lcdinit();
@@ -127,7 +127,7 @@ lcd(int pos, char *buffer, int n)
     }
     
     if (pos < 0x80) {
-        pos2 = posn[pos&3];
+        pos2 = posn[pos&(LCDROWS-1)];
     } else {
         pos2 = pos;
     }
@@ -135,7 +135,7 @@ lcd(int pos, char *buffer, int n)
     writeline(pos2, buffer, n);
     
     if (pos < 0x80) {
-        while (n++ < 20) {
+        while (n++ < LCDCHARS) {
             writebyte(' ', true);
         }
     }
