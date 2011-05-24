@@ -156,7 +156,7 @@ typedef uint64_t size_t;
 typedef uint32 size_t;
 #endif
 #else // ! GCC
-#define _WIN32_WINNT 0x0600
+#define _WIN32_WINNT 0x0601
 #include <windows.h>
 extern int isatty(int);
 #if ! NO_UINT_TYPEDEFS

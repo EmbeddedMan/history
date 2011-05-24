@@ -817,6 +817,7 @@ uptime                        -- print time since last reset
 for more information:
   help modes
 analog [<millivolts>]             -- set/display analog voltage scale
+baud [<rate>]                     -- set/display uart console baud rate
 autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
