@@ -49,6 +49,7 @@ static char forward[BASIC_INPUT_LINE_SIZE*2];
 
 static bool ack = true;
 
+#if SODEBUG
 static
 #if ! GCC && ! PIC32 && ! MC9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512
 asm __declspec(register_abi)
@@ -70,6 +71,7 @@ TRKAccessFile(long command, unsigned long file_handle, int *length_ptr, char *bu
     rts
 #endif
 }
+#endif
 
 void
 terminal_print(const byte *buffer, int length)
@@ -115,9 +117,11 @@ terminal_print(const byte *buffer, int length)
 #else
 #error
 #endif
+#if SODEBUG
     if (! printed && ! usb_host_mode && debugger_attached && length) {
         TRKAccessFile(0xD0, 0, &length, (char *)buffer);
     }
+#endif
 }
 
 // *** line editor ***
@@ -135,7 +139,7 @@ enum keys {
 };
 
 struct keycode {
-    char *keys;
+    char keys[7];
     byte code;
 } const keycodes[] = {
     "\033[C", KEY_RIGHT,

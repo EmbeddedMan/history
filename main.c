@@ -197,7 +197,7 @@ main()  // we're called directly by startup.c
     } else {
         usb_host_mode = true;
     }
-#elif STICKOS
+#elif STICKOSPLUS
     usb_host_mode = (var_get_flash(FLASH_USBHOST) == 1) && ! disable_autorun;
 #endif
 
