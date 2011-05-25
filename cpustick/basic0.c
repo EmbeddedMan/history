@@ -89,8 +89,6 @@ char * const help_about =
 "Welcome to StickOS for Freescale MCF51QE128 v" VERSION "!\n"
 #elif MC9S08QE128
 "Welcome to StickOS for Freescale MC9S08QE128 v" VERSION "!\n"
-#elif MCF51AC128
-"Welcome to StickOS for Freescale MCF51AC128 v" VERSION "!\n"
 #elif MC9S12DT256
 "Welcome to StickOS for Freescale MC9S12DT256 v" VERSION "!\n"
 #elif MC9S12DP512
@@ -1131,7 +1129,7 @@ basic0_run(char *text_in)
             (void)splx(7);
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
             MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF51AC128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128
             asm {
                 move.l  #0x00000000,d0
                 movec   d0,CPUCR
