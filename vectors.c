@@ -105,14 +105,14 @@ void *_swvect[128] = {
     asm_xxx,                  // 62
     asm_xxx,                  // 63
     asm_xxx,                  // 64
-#if MCF52259 || MCF5211
+#if ! FLASHER && ! PICTOCRYPT && (MCF52259 || MCF5211)
     zb_isr,                   // 65 - irq1*
 #else
     asm_xxx,                  // 65
 #endif
     asm_xxx,                  // 66
     asm_xxx,                  // 67
-#if ! MCF52259 && ! MCF5211
+#if ! FLASHER && ! PICTOCRYPT && ! MCF52259 && ! MCF5211
     zb_isr,                   // 68 - irq4*
 #else
     asm_xxx,                  // 68
