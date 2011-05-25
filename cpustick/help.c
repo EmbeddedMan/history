@@ -19,9 +19,7 @@ static char *const help_general =
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "\300hel\260clone\n"
 #endif
-#if ZIGFLEA
 "\300hel\260zigflea\n"
-#endif
 "\n"
 "se\245also:\n"
 "\300http://www.cpustick.com\n"
@@ -73,9 +71,7 @@ static char * const help_modes =
 #if KBD
 "keychar\263[<keychars>]\313-\015set/displa\271keypa\244sca\256chars\n"
 #endif
-#if ZIGFLEA
 "nodei\244[<nodeid>|none]\312-\015set/displa\271zigfle\241nodeid\n"
-#endif
 "number\263[on|off]\320-\015listin\247lin\245number\263mode\n"
 "pin\263[<assign\036[<pinname>|none]]\300-\015set/displa\271StickO\223pi\256assignments\n"
 "promp\264[on|off]\321-\015termina\254promp\264mode\n"
@@ -93,11 +89,7 @@ static char * const help_modes =
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "\300qspi_cs*\300clone_rst*\300zigflea_rst*\300zigflea_attn*\300zigflea_rxtxen\n"
 #else
-"\300qspi_cs*"
-#if ZIGFLEA
-"\300zigflea_rst*\300zigflea_attn*\300zigflea_rxtxen"
-#endif
-"\n"
+"\300qspi_cs*\300zigflea_rst*\300zigflea_attn*\300zigflea_rxtxen\n"
 #endif
 "\n"
 "fo\262mor\245information:\n"
@@ -266,15 +258,13 @@ static char *const help_variables =
 "\344(input|output\011\\\n"
 "\344[debounced\235[inverted\235[open_drain]\n"
 "\n"
-"syste\255variables:\n"
+"syste\255variable\263(read-only):\n"
 "\300getchar"
-#if ZIGFLEA
 "\300nodeid"
-#endif
 #if KBD
 "\300keychar"
 #endif
-"\300msecs\300seconds\300ticks\300ticks_per_msec\300(read-only)\n"
+"\300msecs\300seconds\300ticks\300ticks_per_msec\n"
 "\n"
 "fo\262mor\245information:\n"
 "\300hel\260pins\n"
@@ -475,7 +465,6 @@ static char *const help_clone =
 ;
 #endif
 
-#if ZIGFLEA
 static char *const help_zigflea =
 "connec\264<nodeid>\314-\015connec\264t\257MC\225<nodeid\036vi\241zigflea\n"
 "<Ctrl-D>\324-\015disconnec\264fro\255zigflea\n"
@@ -530,6 +519,5 @@ static char *const help_zigflea =
 "\300vss\320vss\n"
 "\300vdd\320vdd\n"
 ;
-#endif
 #endif
 

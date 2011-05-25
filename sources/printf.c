@@ -303,7 +303,7 @@ printf_write(char *buffer, int n)
         return n;
     }
 #endif
-#if STICKOS && LCD
+#if LCD && STICKOS
     if (run_printf && run2_lcd) {
         lcd(run2_lcd-1, buffer, n);
         return n;

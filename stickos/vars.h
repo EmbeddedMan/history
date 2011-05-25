@@ -9,9 +9,7 @@ enum flash_var {
 #endif
     FLASH_ANALOG,
     FLASH_SERVO,
-#if ZIGFLEA
     FLASH_NODEID,
-#endif
     FLASH_ASSIGNMENTS_BEGIN,  // pin assignments begin here
     FLASH_ASSIGNMENTS_END = FLASH_ASSIGNMENTS_BEGIN+pin_assignment_max-1,
     FLASH_WATCH_SMART,

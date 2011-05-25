@@ -111,13 +111,11 @@ main_ip_address()
 }
 #endif
 
-#if ZIGFLEA
 int
 main_nodeid()
 {
     return var_get_flash(FLASH_NODEID);    
 }
-#endif
 
 // this function is called by upper level code to register callback
 // functions.

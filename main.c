@@ -230,9 +230,7 @@ main()  // we're called directly by startup.c
 
 #if ! FLASHER && ! PICTOCRYPT
     // initialize zigflea
-#if ZIGFLEA
     zb_initialize();
-#endif
     
     // initialize the terminal interface
     terminal_initialize();

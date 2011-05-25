@@ -3,8 +3,6 @@
 
 #include "main.h"
 
-#if ZIGFLEA
-
 #define ACK_MS  40  // zb_class_receive, zb_class_print
 #define FAST_ACK_MS  5  // zb_class_remote_set
 #define WAIT_MS  50
@@ -841,4 +839,3 @@ zb_initialize(void)
 #endif
 }
 
-#endif

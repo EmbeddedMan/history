@@ -4,7 +4,9 @@
 
 #include "main.h"
 
+#if BADGE_BOARD
 bool run2_scroll;
+#endif
 #if LCD
 bool run2_lcd;
 #endif

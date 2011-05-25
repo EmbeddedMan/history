@@ -36,15 +36,9 @@
 #if FB32
 #define KBD  1
 #define LCD  1
-#define ZIGFLEA  1
 #else
 #define KBD  0
 #define LCD  0
-#if FLASHER || PICTOCRYPT
-#define ZIGFLEA  0
-#else
-#define ZIGFLEA  1
-#endif
 #endif
 
 // Enable in-memory trace buffer for debugging with the trace() macro.

@@ -88,18 +88,14 @@ terminal_print(const byte *buffer, int length)
     // if we're connected to another node...
     id = terminal_txid;
     if (id != -1) {
-#if ZIGFLEA
         // forward packets
         zb_send(id, zb_class_print, length, buffer);
-#endif
     }
 
-#if ZIGFLEA
     if (serial_active) {
         serial_send(buffer, length);
         printed = true;
     }
-#endif
 
 #if MCF52221 || MCF52259 || MCF51JM128 || PIC32
 #if ! FLASHER
@@ -406,9 +402,7 @@ terminal_receive_internal(const byte *buffer, int length)
                 extra[length-(j+1)] = '\0';
 
                 ack = false;
-#if ZIGFLEA
                 zb_drop(true);
-#endif
                 
                 assert(command_cbfn);
                 command_cbfn(command);
@@ -514,9 +508,7 @@ terminal_command_ack(bool edit)
     }
     
     ack = true;
-#if ZIGFLEA
     zb_drop(false);
-#endif
 }
 
 // this function is called by upper level code in response to an
@@ -582,9 +574,7 @@ terminal_poll(void)
     splx(x);
     
     if (copy[0]) {
-#if ZIGFLEA
         zb_send(terminal_rxid, zb_class_receive, strlen(copy), (byte *)copy);
-#endif
         if (copy[0] == '\004') {
             // stop forwarding packets on Ctrl-D
             terminal_rxid = -1;
@@ -604,9 +594,7 @@ terminal_poll(void)
         }
     }
     
-#if ZIGFLEA
     zb_poll();
-#endif
     
 #if PICTOCRYPT
     sleep_poll();
@@ -647,9 +635,7 @@ class_print(int nodeid, int length, byte *buffer)
 void
 terminal_initialize(void)
 {
-#if ZIGFLEA
     zb_register(zb_class_receive, class_receive);
     zb_register(zb_class_print, class_print);
-#endif
 }
 

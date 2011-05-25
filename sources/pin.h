@@ -19,11 +19,9 @@ enum pin_assignment {  // XXX -- should we allow skeleton to extend this?
     pin_assignment_safemode,
     pin_assignment_qspi_cs,  // clone and zigflea
     pin_assignment_clone_rst,
-#if ZIGFLEA
     pin_assignment_zigflea_rst,
     pin_assignment_zigflea_attn,
     pin_assignment_zigflea_rxtxen,
-#endif
 #if LCD
     pin_assignment_lcd_d4,  // must be first in group
     pin_assignment_lcd_d5,

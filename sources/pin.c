@@ -28,11 +28,9 @@ const char * const pin_assignment_names[] = {
     "safemode*",
     "qspi_cs*",  // clone and zigflea
     "clone_rst*",
-#if ZIGFLEA
     "zigflea_rst*",
     "zigflea_attn*",
     "zigflea_rxtxen",
-#endif
 #if LCD
     "lcd_d4",
     "lcd_d5",

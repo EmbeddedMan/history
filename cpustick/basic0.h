@@ -7,7 +7,9 @@ enum bytecode2 {
     code_set,
     code_clear,
 #else
+#if LCD
     code_lcd,
+#endif
 #endif
     code_max_max
 };

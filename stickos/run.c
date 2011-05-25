@@ -1545,6 +1545,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             }
             break;
 
+#if 0
 #if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
         default:
             goto XXX_MORE_XXX;  // N.B. CW compiler bug
@@ -1555,6 +1556,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 
 XXX_MORE_XXX:  // N.B. CW compiler bug
     switch (code) {
+#endif
 #endif
 
         case code_uart:

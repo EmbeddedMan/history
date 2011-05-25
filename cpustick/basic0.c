@@ -8,9 +8,7 @@ enum cmdcode {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     command_clone,  // [run]
 #endif
-#if ZIGFLEA
     command_connect,  // nnn
-#endif
 #if STICK_GUEST
     command_demo,
 #endif
@@ -22,13 +20,11 @@ enum cmdcode {
 #if KBD
     command_keychars,  // 0123456789abcdef
 #endif
-#if ZIGFLEA
     command_nodeid,  // nnn
-#endif
     command_reset,
     command_upgrade,
     command_uptime,
-#if ZIGFLEA && (SODEBUG || MCF52259 || PIC32)
+#if SODEBUG || MCF52259 || PIC32
     command_zigflea,
 #endif
     command_dummy
@@ -39,9 +35,7 @@ const char * const commands[] = {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     "clone",
 #endif
-#if ZIGFLEA
     "connect",
-#endif
 #if STICK_GUEST
     "demo",
 #endif
@@ -53,13 +47,11 @@ const char * const commands[] = {
 #if KBD
     "keychars",
 #endif
-#if ZIGFLEA
     "nodeid",
-#endif
     "reset",
     "upgrade",
     "uptime",
-#if ZIGFLEA && (SODEBUG || MCF52259 || PIC32)
+#if SODEBUG || MCF52259 || PIC32
     "zigflea",
 #endif
 };
@@ -156,9 +148,7 @@ static char *const help_general =
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 "  help clone\n"
 #endif
-#if ZIGFLEA
 "  help zigflea\n"
-#endif
 "\n"
 "see also:\n"
 "  http://www.cpustick.com\n"
@@ -210,9 +200,7 @@ static char * const help_modes =
 #if KBD
 "keychars [<keychars>]             -- set/display keypad scan chars\n"
 #endif
-#if ZIGFLEA
 "nodeid [<nodeid>|none]            -- set/display zigflea nodeid\n"
-#endif
 "numbers [on|off]                  -- listing line numbers mode\n"
 "pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments\n"
 "prompt [on|off]                   -- terminal prompt mode\n"
@@ -228,17 +216,9 @@ static char * const help_modes =
 "pin assignments:\n"
 "  heartbeat  safemode*\n"
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-"  qspi_cs*  clone_rst*"
-#if ZIGFLEA
-"  zigflea_rst*  zigflea_attn*  zigflea_rxtxen"
-#endif
-"\n"
+"  qspi_cs*  clone_rst*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
 #else
-"  qspi_cs*"
-#if ZIGFLEA
-"  zigflea_rst*  zigflea_attn*  zigflea_rxtxen"
-#endif
-"\n"
+"  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen\n"
 #endif
 "\n"
 "for more information:\n"
@@ -408,10 +388,7 @@ static char *const help_variables =
 "                                      [debounced] [inverted] [open_drain]\n"
 "\n"
 "system variables (read-only):\n"
-"  getchar"
-#if ZIGFLEA
-"  nodeid"
-#endif
+"  getchar  nodeid"
 #if KBD
 "  keychar"
 #endif
@@ -616,7 +593,6 @@ static char *const help_clone =
 ;
 #endif
 
-#if ZIGFLEA
 static char *const help_zigflea =
 "connect <nodeid>              -- connect to MCU <nodeid> via zigflea\n"
 "<Ctrl-D>                      -- disconnect from zigflea\n"
@@ -671,7 +647,6 @@ static char *const help_zigflea =
 "  vss                  vss\n"
 "  vdd                  vdd\n"
 ;
-#endif
 #endif
 
 // GENERATE_HELP_END
@@ -895,9 +870,7 @@ static const char * const demos[] = {
 void
 basic0_run(char *text_in)
 {
-#if ZIGFLEA || KBD
     int i;
-#endif
     int d;
     int h;
     int m;
@@ -959,7 +932,6 @@ basic0_run(char *text_in)
             break;
 #endif
 
-#if ZIGFLEA
         case command_connect:
             if (! zb_present) {
                 printf("zigflea not present\n");
@@ -992,7 +964,6 @@ basic0_run(char *text_in)
                 printf("...disconnected\n");
             }
             break;
-#endif
 
 #if STICK_GUEST
         case command_demo:
@@ -1065,10 +1036,8 @@ basic0_run(char *text_in)
             } else if (parse_word(&text, "clone")) {
                 p = help_clone;
 #endif
-#if ZIGFLEA
             } else if (parse_word(&text, "zigflea")) {
                 p = help_zigflea;
-#endif
 #endif
             } else {
                 goto XXX_ERROR_XXX;
@@ -1127,7 +1096,6 @@ basic0_run(char *text_in)
             break;
 #endif
 
-#if ZIGFLEA
         case command_nodeid:
             if (*text) {
                 if (parse_word(&text, "none")) {
@@ -1153,7 +1121,6 @@ basic0_run(char *text_in)
                 }
             }
             break;
-#endif
         
         case command_reset:
             if (*text) {
@@ -1221,7 +1188,7 @@ basic0_run(char *text_in)
             printf("%dd %dh %dm\n", d, h, m);
             break;
             
-#if ZIGFLEA && (SODEBUG || MCF52259 || PIC32)
+#if SODEBUG || MCF52259 || PIC32
         case command_zigflea:
             reset = parse_word(&text, "reset");
             init = parse_word(&text, "init");

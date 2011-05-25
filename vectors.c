@@ -105,14 +105,14 @@ void *_swvect[128] = {
     asm_xxx,                  // 62
     asm_xxx,                  // 63
     asm_xxx,                  // 64
-#if ZIGFLEA && (MCF52259 || MCF5211)
+#if MCF52259 || MCF5211
     zb_isr,                   // 65 - irq1*
 #else
     asm_xxx,                  // 65
 #endif
     asm_xxx,                  // 66
     asm_xxx,                  // 67
-#if ZIGFLEA && ! MCF52259 && ! MCF5211
+#if ! MCF52259 && ! MCF5211
     zb_isr,                   // 68 - irq4*
 #else
     asm_xxx,                  // 68
@@ -272,11 +272,7 @@ void *_swvect[128] = {
     asm_xxx,                  // 61
     asm_xxx,                  // 62
     asm_xxx,                  // 63
-#if ZIGFLEA
     zb_pre_isr,               // 64 zigflea.c
-#else
-    asm_xxx,                  // 64
-#endif
     asm_xxx,                  // 65
     asm_xxx,                  // 66
     asm_xxx,                  // 67
@@ -335,7 +331,7 @@ void *_swvect[128] = {
     asm_xxx,                  // 96
     asm_xxx,                  // 97
     asm_xxx,                  // 98
-#if ZIGFLEA && MCF51QE128
+#if MCF51QE128
     zb_isr,                   // 99 zigflea.c
 #else
     asm_xxx,                  // 99
@@ -346,12 +342,12 @@ void *_swvect[128] = {
     asm_xxx,                  // 103
     asm_xxx,                  // 104
     asm_xxx,                  // 105
-#if ZIGFLEA && (MCF51CN128 || MCF51AC128)
+#if MCF51CN128 || MCF51AC128
     zb_isr,                   // 106 zigflea.c
 #else
     asm_xxx,                  // 106
 #endif
-#if ZIGFLEA && MCF51JM128
+#if MCF51JM128
     zb_isr,                   // 107 zigflea.c
 #else
     asm_xxx,                  // 107
