@@ -30,9 +30,11 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
     int len;
     char *text;
     int length;
+#if BADGE_BOARD
     bool boo;
     int length2;
     int syntax_error;
+#endif
 
     text = text_in;
     parse_trim(&text);
