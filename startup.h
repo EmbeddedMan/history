@@ -82,13 +82,6 @@
 #define FLASH2_PPAGE  0x06
 #define FLASH2_START  0x8000  // BASIC stores, for code access
 #define FLASH2_BYTES  (16*1024L)
-#elif MCF51AC128
-#define FLASH_START  0
-#define FLASH_BYTES  (128*1024)
-#define FLASH_PAGE_SIZE  2048
-#define BASIC_RAM_PAGE_SIZE  1024
-#define BASIC_VARS  100
-#define BASIC_STORES  2
 #elif MC9S12DT256
 #define FLASH_START  0L
 #define FLASH_BYTES  (64*1024L)

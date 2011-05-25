@@ -201,7 +201,7 @@ void *_swvect[128] = {
     asm_xxx,                  // 126
     asm_xxx,                  // 127
 };
-#elif MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF51AC128
+#elif MCF51JM128 || MCF51CN128 || MCF51QE128
 // this is the hardware interrupt vector table.
 #if ! BADGE_BOARD && ! DEMO_KIT
 DECLSPEC_SWVECT
@@ -303,7 +303,7 @@ void *_swvect[128] = {
 #else
     asm_xxx,                  // 82
 #endif
-#if MCF51CN128 || MCF51AC128
+#if MCF51CN128
     serial_isr,               // 83 serial.c
 #else
     asm_xxx,                  // 83
@@ -319,7 +319,7 @@ void *_swvect[128] = {
     asm_xxx,                  // 88
     asm_xxx,                  // 89
     asm_xxx,                  // 90
-#if MCF51JM128 || MCF51AC128
+#if MCF51JM128
     timer_isr,                // 91 timer.c
 #else
     asm_xxx,                  // 91
@@ -342,7 +342,7 @@ void *_swvect[128] = {
     asm_xxx,                  // 103
     asm_xxx,                  // 104
     asm_xxx,                  // 105
-#if MCF51CN128 || MCF51AC128
+#if MCF51CN128
     zb_isr,                   // 106 zigflea.c
 #else
     asm_xxx,                  // 106
@@ -389,7 +389,7 @@ DECLSPEC_CFM
 const
 #endif
 uint32 _cfm[] = {
-#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128 && ! MCF51AC128
+#if ! MCF51JM128 && ! MCF51CN128 && ! MCF51QE128
     0,                              // (0x00000400) KEY_UPPER
     0,                              // (0x00000404) KEY_LOWER
     0xffffffff,                     // (0x00000408) CFMPROT

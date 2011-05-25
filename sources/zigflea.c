@@ -447,7 +447,7 @@ zb_isr(void)
     zb_isrs++;
 }
 
-#if MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF51AC128
+#if MCF51JM128 || MCF51CN128 || MCF51QE128
 interrupt
 void
 zb_pre_isr(void)
@@ -459,8 +459,6 @@ zb_pre_isr(void)
     INTC_SFRC = 0x3B;
 #elif MCF51QE128
     INTC_SFRC = 0x23;
-#elif MCF51AC128
-    INTC_SFRC = 0x3B;
 #else
 #error
 #endif
