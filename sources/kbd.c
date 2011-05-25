@@ -40,6 +40,7 @@ static void kbdinit(void)
     for (i = pin_assignment_kbd_s0; i < pin_assignment_kbd_s0+KBDSCANS; i++) {
         pin_set(pin_assignments[i], pin_type_digital_output, 0, 1);
     }
+    
     for (i = 0; i < sizeof(kbd_chars)/4; i++) {
         j = var_get_flash(FLASH_KBDCHARS0+i);
         if (! j || j == -1) {

@@ -14,8 +14,9 @@ enum bytecode2 {
 
 // revisit -- move to var2.h???
 enum flash_var2 {
+    FLASH_UNUSED = FLASH_NEXT,
 #if MCF52233
-    FLASH_IPADDRESS = FLASH_NEXT,
+    FLASH_IPADDRESS,
 #endif
 #if KBD
     FLASH_KBDCHARS0,

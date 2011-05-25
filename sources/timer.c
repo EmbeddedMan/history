@@ -118,7 +118,7 @@ timer_isr(void)
 #endif
 #if KBD && ! STICK_GUEST
         // manage kbd scanning every 8ms
-        if ((msecs & 7) == 0) {
+        if ((msecs & 7) == 7) {
             kbd_timer_poll();
         }
 #endif

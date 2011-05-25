@@ -36,7 +36,7 @@
 #if FB32
 #define KBD  1
 #define LCD  1
-#define ZIGFLEA  0
+#define ZIGFLEA  1
 #else
 #define KBD  0
 #define LCD  0
