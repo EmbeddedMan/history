@@ -79,7 +79,7 @@ char * const help_about =
 "Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v" VERSION "!\n"
 #elif MCF51JM128
 #if FB32
-"Welcome to StickOS for Freescale MCF51JM128 FB32 v" VERSION "!\n"
+"Welcome to StickOS for Freescale MCF51JM128 Firebird32 v" VERSION "!\n"
 #else
 "Welcome to StickOS for Freescale MCF51JM128 v" VERSION "!\n"
 #endif
