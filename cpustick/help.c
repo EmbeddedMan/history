@@ -259,8 +259,7 @@ static char *const help_variables =
 "\344[debounced\235[inverted\235[open_drain]\n"
 "\n"
 "syste\255variable\263(read-only):\n"
-"\300getchar"
-"\300nodeid"
+"\300getchar\300nodeid"
 #if KBD
 "\300keychar"
 #endif
