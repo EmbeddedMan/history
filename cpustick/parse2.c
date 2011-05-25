@@ -30,7 +30,7 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
     int len;
     char *text;
     int length;
-#if BADGE_BOARD
+#if BADGE_BOARD || LCD
     bool boo;
     int length2;
     int syntax_error;
