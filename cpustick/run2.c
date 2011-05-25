@@ -22,7 +22,9 @@ run2_bytecode_code(uint code, const byte *bytecode, int length)
 #if LCD
     int pos;
 #endif
+#if BADGE_BOARD || LCD
     bool boo;
+#endif
     bool end;
     int index;
 
