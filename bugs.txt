@@ -28,6 +28,7 @@ And do the same for i2c.
 
 // prior 1
 // =======
+// "trace on" should not trace input or halt statements
 // I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
 // get rid of parse2/run2/basic0 if we make stickos source public?
 // add to help pins all "unchangable" pins (i2c, spi, etc.) from freescale.pdf and microchip.pdf

@@ -96,7 +96,7 @@ demo
   90   sleep 800 ms
  100 endwhile
  110 end
-demo1
+demo1 (not for 5211 or CN)
   25 dim data
   26 data 1, 1, 2, 3, 5, 8, 13, 21, 0
   90 sleep 1000 ms
@@ -113,7 +113,7 @@ demo1
  200   print "sending", data
  210   let tx = data
  220 endsub
-demo2
+demo2 (not for QE)
 51 while tx do
 52 endwhile
 53 print rx
@@ -357,6 +357,10 @@ switches
   20 on sw1 do print "sw1 pressed"
   30 sleep 1000 s
 
+  10 dim sw1 as pin irq4* for digital input debounced inverted
+  20 on sw1 do print "sw1 pressed"
+  30 sleep 1000 s
+
   10 dim sw1 as pin pta2 for digital input debounced inverted
   20 on sw1 do print "sw1 pressed"
   30 sleep 1000 s
@@ -559,6 +563,10 @@ let a=250
 let b=750
 let c=1500
 
+dim a as pin pte3 for analog output inverted
+dim b as pin pte5 for analog output inverted
+let a=250
+let b=750
 
 TEST SERVO OUTPUT!!!
 
@@ -695,6 +703,11 @@ for i = 0 to 63 step 4
 print hex i, ":", buffer[i], buffer[i+1], buffer[i+2], buffer[i+3]
 next
 
+for qe short pin 24 to 26
+dim nrsti as pin pta7 for digital output
+dim ncs as pin ptb5 for digital output
+
+for qe, sda = 9, scl = 11
 
 
 
