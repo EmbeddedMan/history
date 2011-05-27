@@ -328,7 +328,7 @@ BEGIN_NAKED(_startup);
 
 // this function performs assembly language initialization from
 // reset, and then calls C initialization, which calls main().
-#if MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF52221
 DECLSPEC_STARTUP
 #endif
 BEGIN_NAKED(_startup)
@@ -383,7 +383,7 @@ END_NAKED
 BEGIN_NAKED(asm_xxx);
 #endif
 
-#if MCF51JM128 || MCF51QE128 || MCF51CN128
+#if MCF51JM128 || MCF51QE128 || MCF51CN128 || MCF52221
 DECLSPEC_STARTUP
 #endif
 BEGIN_NAKED(asm_xxx)

@@ -33,12 +33,9 @@
 #define EXTRACT  0  // 1 uses extracted headers rather than Freescale
 #endif
 
-#if FB32
+#if ! BADGE_BOARD
 #define KBD  1
 #define LCD  1
-#else
-#define KBD  0
-#define LCD  0
 #endif
 
 // Enable in-memory trace buffer for debugging with the trace() macro.
