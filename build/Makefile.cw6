@@ -6,11 +6,11 @@
 # build/Makefile.cw6
 
 # install and tools location
-INSTALL = C:/Program Files/Freescale/CodeWarrior for Microcontrollers V6.2
+INSTALL = C:/Program Files/Freescale/CodeWarrior for Microcontrollers V6.3
 TOOLS = $(INSTALL)/ColdFire_Tools/Command_Line_Tools
 
 # system header file paths (sans $(INSTALL))
-SYSDIRS = ColdFire_Support/msl/MSL_C/MSL_Common/Include ColdFire_Support/msl/MSL_C/MSL_ColdFire/Include
+SYSDIRS = ColdFire_Support/msl/MSL_C/MSL_Common/Include ColdFire_Support/ewl/EWL_C/include
 
 # compiler and linker
 CC = $(TOOLS)/mwccmcf.exe
@@ -18,7 +18,7 @@ LD = $(TOOLS)/mwldmcf.exe
 AS = $(TOOLS)/mwasmmcf.exe
 
 ifeq (51JM128,$(findstring 51JM128,$(CPU)))
-PROC=51JMe
+PROC=51JM
 else ifeq (51QE128,$(findstring 51QE128,$(CPU)))
 PROC=51QE
 else
@@ -82,7 +82,7 @@ ifeq (PROGRAM, $(TARGETTYPE))
 target: $(TARGET).elf
 $(TARGET).elf: $(LCFS) $(OBJECTS) $(OBJECTASMS) $(OBJECTLIBS) $(OBJECTLIBS)
 	echo mwldmcf.exe -o $@ $+ >&2; \
-	"$(LD)" $(LDFLAGS) -o $@ $+ "$(INSTALL)/ColdFire_Support/Runtime/C_4i_CF_RegABI_Runtime.a"
+	"$(LD)" $(LDFLAGS) -o $@ $+ "$(INSTALL)/ColdFire_Support/ewl/lib/v1/librt.a"
 
 else ifeq (LIBRARY, $(TARGETTYPE))
 
