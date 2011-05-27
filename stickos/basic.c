@@ -113,7 +113,6 @@ static const struct mode modes[] = {
     { "indent",     &code_indent,      FLASH_LAST         },
     { "numbers",    &code_numbers,     FLASH_LAST         }, 
     { "prompt",     &main_prompt,      FLASH_LAST         },
-    { "sleep",      &run_sleep,        FLASH_LAST         },
     { "step",       &run_step,         FLASH_LAST         },
     { "trace",      &run_trace,        FLASH_LAST         },
 #if MCF52259 || PIC32

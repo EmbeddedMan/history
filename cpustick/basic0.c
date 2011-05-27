@@ -203,7 +203,6 @@ static char * const help_modes =
 "pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments\n"
 "prompt [on|off]                   -- terminal prompt mode\n"
 "servo [<Hz>]                      -- set/display servo Hz (on reset)\n"
-"sleep [on|off]                    -- debugger sleep mode\n"
 "step [on|off]                     -- debugger single-step mode\n"
 "trace [on|off]                    -- debugger trace mode\n"
 #if MCF52259 || PIC32

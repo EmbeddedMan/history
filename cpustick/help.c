@@ -76,7 +76,6 @@ static char * const help_modes =
 "pin\263[<assign\036[<pinname>|none]]\300-\015set/displa\271StickO\223pi\256assignments\n"
 "promp\264[on|off]\321-\015termina\254promp\264mode\n"
 "serv\257[<Hz>]\324-\015set/displa\271serv\257H\272(o\256reset)\n"
-"slee\260[on|off]\322-\015debugge\262slee\260mode\n"
 "ste\260[on|off]\323-\015debugge\262single-ste\260mode\n"
 "trac\245[on|off]\322-\015debugge\262trac\245mode\n"
 #if MCF52259 || PIC32
@@ -172,7 +171,7 @@ static char * const help_devices =
 "\300unmas\253uar\264<n\036(input|output)\313-\015unmas\253uar\264interrupt\n"
 "\300uar\264<n\036(read|write\011<variable\036[\014...]\301-\015perfor\255uar\264I/O\n"
 "\n"
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF5
 "i2c:\n"
 "\300i2\243(star\264<addr>|(read|write\011<variable\036[\014...]|stop\011-\015maste\262i2\243I/O\n"
 "\n"
@@ -237,7 +236,7 @@ static char *const help_variables =
 "variable\263dimensione\244i\256\241su\242ar\245loca\254t\257tha\264sub\n"
 "simpl\245variable\263ar\245passe\244t\257su\242param\263b\271reference\033otherwise\014b\271value\n"
 "arra\271variabl\245indice\263star\264a\2640\n"
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF5
 "\266i\263th\245sam\245a\263v[0]\014excep\264fo\262input/print/i2c/qspi/uar\264statements\n"
 #else
 "\266i\263th\245sam\245a\263v[0]\014excep\264fo\262input/print/qspi/uar\264statements\n"

@@ -14,7 +14,6 @@ extern int cw7bug;
 #endif
 
 extern bool run_step;
-extern bool run_sleep;
 extern bool run_trace;
 
 extern int run_line_number;

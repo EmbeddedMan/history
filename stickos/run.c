@@ -14,7 +14,6 @@ int cw7bug;
 #endif
 
 bool run_step;
-bool run_sleep = true;
 bool run_trace;
 
 bool run_isr;
@@ -2131,7 +2130,7 @@ XXX_PERF_XXX:
             // get the sleep ticks
             index += run_timer(bytecode+index, length-index, &value);
 
-            if (run_condition && run_sleep) {
+            if (run_condition) {
                 // prepare to sleep
                 run_sleep_ticks = ticks+value;
                 assert(! run_sleep_line_number);
@@ -2247,10 +2246,6 @@ run(bool cont, int start_line_number)
     int32 last_tick;
     struct line *line;
 
-    if (! run_sleep) {
-        printf("warning: sleep is off\n");
-    }
-    
     last_tick = ticks;
 
     if (! cont) {
