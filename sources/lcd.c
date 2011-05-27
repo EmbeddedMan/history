@@ -60,10 +60,11 @@ static
 void
 writenib(int nib, int rsin)
 {
-    pin_set(pin_assignments[pin_assignment_lcd_d4], pin_type_digital_output, 0, nib&1);
-    pin_set(pin_assignments[pin_assignment_lcd_d5], pin_type_digital_output, 0, nib&2);
-    pin_set(pin_assignments[pin_assignment_lcd_d6], pin_type_digital_output, 0, nib&4);
-    pin_set(pin_assignments[pin_assignment_lcd_d7], pin_type_digital_output, 0, nib&8);
+    int i;
+    
+    for (i = 0; i < 4; i++) {
+        pin_set(pin_assignments[pin_assignment_lcd_d4+i], pin_type_digital_output, 0, nib&(1<<i));
+    }
     pin_set(pin_assignments[pin_assignment_lcd_rs], pin_type_digital_output, 0, rsin);
     pin_set(pin_assignments[pin_assignment_lcd_en], pin_type_digital_output, 0, 1);
     delay(1);
@@ -93,7 +94,7 @@ writeline(int pos, char *buffer, int n)
     }
 }
 
-static byte data[] = {
+static const byte data[] = {
     0x33, 0x32, 0x28, 0x0c, 0x01, 0x06
 };
 
@@ -119,7 +120,7 @@ void
 lcd(int pos, char *buffer, int n)
 {
     int pos2;
-    static byte posn[LCDROWS] = { 0x80, 0xc0, 0x94, 0xd4 };
+    static const byte posn[LCDROWS] = { 0x80, 0xc0, 0x94, 0xd4 };
 
     if (! init) {
         lcdinit();
