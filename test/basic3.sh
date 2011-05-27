@@ -435,16 +435,6 @@ echo test recursion
  run
 EOF
 
-exit 0
-# XXX -- move this to basic2, along with:
-
-15 dim a1 as pin rd9 for digital output
-25 dim a2 as pin rd11 for digital output
-35 dim a3 as pin rd15 for digital output
-list
-pins heartbeat an10
-pins
-
 echo test too many scopes/gosubs
 "$BASIC" -q <<'EOF'
 10 gosub sub
@@ -461,3 +451,21 @@ run
 list
 run
 EOF
+
+echo test analog
+"$BASIC" -q <<'EOF'
+print analog-1
+analog 3400
+analog
+print analog+1
+EOF
+
+exit 0
+# XXX -- move this to basic2, along with:
+
+15 dim a1 as pin rd9 for digital output
+25 dim a2 as pin rd11 for digital output
+35 dim a3 as pin rd15 for digital output
+list
+pins heartbeat an10
+pins

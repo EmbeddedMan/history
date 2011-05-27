@@ -28,6 +28,7 @@ static struct system_var {
 #endif
     "getchar", &terminal_getchar, 0,
     "msecs", &msecs, 0,
+    "analog", &pin_analog, 0,
 #if ! STICK_GUEST
     "nodeid", &zb_nodeid, 0,
 #endif

@@ -952,7 +952,7 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables (read-only):
-  getchar  keychar  nodeid  msecs  seconds  ticks  ticks_per_msec
+  analog  getchar  keychar  nodeid  msecs  seconds  ticks  ticks_per_msec
 
 for more information:
   help pins

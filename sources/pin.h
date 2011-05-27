@@ -538,7 +538,7 @@ enum pin_number {  // skeleton may extend this
 
 extern int pin_last;
 
-extern uint16 pin_analog;
+extern int32 pin_analog;
 
 const extern struct pin {
     char *name;

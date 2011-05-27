@@ -385,7 +385,7 @@ static char *const help_variables =
 "                                      [debounced] [inverted] [open_drain]\n"
 "\n"
 "system variables (read-only):\n"
-"  getchar"
+"  analog  getchar"
 #if KBD
 "  keychar"
 #endif

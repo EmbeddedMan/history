@@ -138,9 +138,9 @@ const char * const pin_qual_names[] = {
 int pin_last = PIN_LAST;
 
 #if FB32
-uint16 pin_analog = 5000;
+int32 pin_analog = 5000;
 #else
-uint16 pin_analog = 3300;
+int32 pin_analog = 3300;
 #endif
 
 static byte declared[(PIN_UNASSIGNED+7)/8];
