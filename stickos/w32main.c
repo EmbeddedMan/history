@@ -2,6 +2,7 @@
 #include <signal.h>
 #else
 #include <windows.h>
+#include <stdio.h>
 #endif
 #include "main.h"
 
@@ -146,7 +147,9 @@ generate_help(
                 }
                 printf("\"\n");
             } else {
-                printf("%s\n", line);
+                // N.B. our printf() is limited to 80 characters
+                fprintf(stdout, "%s\n", line);
+                fflush(stdout);
             }
         }
     }

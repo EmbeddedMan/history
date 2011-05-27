@@ -821,12 +821,12 @@ baud [<rate>]                     -- set/display uart console baud rate
 autorun [on|off]                  -- autorun mode (on reset)
 echo [on|off]                     -- terminal echo mode
 indent [on|off]                   -- listing indent mode
+keychars [<keychars>]             -- set/display keypad scan chars
 nodeid [<nodeid>|none]            -- set/display zigflea nodeid
 numbers [on|off]                  -- listing line numbers mode
 pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
 prompt [on|off]                   -- terminal prompt mode
 servo [<Hz>]                      -- set/display servo Hz (on reset)
-sleep [on|off]                    -- debugger sleep mode
 step [on|off]                     -- debugger single-step mode
 trace [on|off]                    -- debugger trace mode
 watchsmart [on|off]               -- low-overhead watchpoint mode
@@ -847,6 +847,7 @@ end                                    -- end program
 halt                                   -- loop forever
 input [dec|hex|raw] <variable>[$] [, ...] -- input data
 label <label>                          -- read/data label
+lcd <pos>, [dec|hex|raw] <expression> [, ...] [;] -- display results on lcd
 let <variable>[$] = <expression> [, ...] -- assign variable
 print [dec|hex|raw] <expression> [, ...] [;] -- print results
 read <variable> [, ...]                -- read read-only data into variables
@@ -950,8 +951,8 @@ pin alias variables:
                                       (input|output) \
                                       [debounced] [inverted] [open_drain]
 
-system variables:
-  getchar  nodeid  msecs  seconds  ticks  ticks_per_msec  (read-only)
+system variables (read-only):
+  getchar  keychar  nodeid  msecs  seconds  ticks  ticks_per_msec
 
 for more information:
   help pins
@@ -1411,6 +1412,20 @@ clone_rst* scl
 zigflea_rst* an2
 zigflea_attn* an3
 zigflea_rxtxen an5
+lcd_d4 none
+lcd_d5 none
+lcd_d6 none
+lcd_d7 none
+lcd_en none
+lcd_rs none
+kbd_s0 none
+kbd_s1 none
+kbd_s2 none
+kbd_s3 none
+kbd_r0 none
+kbd_r1 none
+kbd_r2 none
+kbd_r3 none
        ^ - error
 dtin3
 error -          ^
@@ -1425,6 +1440,20 @@ clone_rst* scl
 zigflea_rst* an2
 zigflea_attn* an3
 zigflea_rxtxen an5
+lcd_d4 none
+lcd_d5 none
+lcd_d6 none
+lcd_d7 none
+lcd_en none
+lcd_rs none
+kbd_s0 none
+kbd_s1 none
+kbd_s2 none
+kbd_s3 none
+kbd_r0 none
+kbd_r1 none
+kbd_r2 none
+kbd_r3 none
 test servo
 45
 45
@@ -3255,9 +3284,9 @@ more
      ^ - error
         ^ - error
         ^ - error
-       ^ - error
-       ^ - error
-       ^ - error
+        ^ - error
+         ^ - error
+        ^ - error
       ^ - error
      ^ - error
 error -      ^

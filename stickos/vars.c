@@ -23,12 +23,14 @@ static struct system_var {
     volatile int32 *integer;  // try this
     int32 constant;  // then this
 } const systems[] = {
-#if KBD
+#if KBD && ! STICK_GUEST
     "keychar", &kbd_keychar, 0,
 #endif
     "getchar", &terminal_getchar, 0,
     "msecs", &msecs, 0,
+#if ! STICK_GUEST
     "nodeid", &zb_nodeid, 0,
+#endif
     "seconds", &seconds, 0,
     "ticks", &ticks, 0,
     "ticks_per_msec", NULL, ticks_per_msec,
@@ -665,7 +667,7 @@ var_get(IN const char *name, IN int index, IN uint32 running_watchpoint_mask)
             system = system_find(name);
             if (system) {
                 value = system->integer ? *system->integer : system->constant;
-#if KBD
+#if KBD && ! STICK_GUEST
                 if (system->integer == &kbd_keychar && ! run_watchpoint && ! running_watchpoint_mask) {
                     kbd_keychar = 0;
                 }

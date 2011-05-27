@@ -1077,7 +1077,7 @@ basic0_run(char *text_in)
             break;
 #endif
 
-#if KBD
+#if KBD && ! STICK_GUEST
         case command_keychars:
             if (*text) {
                 memset(kbd_chars, 0, sizeof(kbd_chars));

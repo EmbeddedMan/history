@@ -50,7 +50,7 @@ static char * const help_commands =
 "ru\256[<line>]\320-\015ru\256program\n"
 "sav\245[<name>]\317-\015sav\245cod\245ra\255t\257flas\250memory\n"
 "undo\330-\015und\257cod\245change\263sinc\245las\264save\n"
-#if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12
+#if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
 "upgrade\325-\015upgrad\245StickO\223firmware!\n"
 #endif
 "uptime\326-\015prin\264tim\245sinc\245las\264reset\n"
@@ -171,7 +171,7 @@ static char * const help_devices =
 "\300unmas\253uar\264<n\036(input|output)\313-\015unmas\253uar\264interrupt\n"
 "\300uar\264<n\036(read|write\011<variable\036[\014...]\301-\015perfor\255uar\264I/O\n"
 "\n"
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF5
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
 "i2c:\n"
 "\300i2\243(star\264<addr>|(read|write\011<variable\036[\014...]|stop\011-\015maste\262i2\243I/O\n"
 "\n"
@@ -236,7 +236,7 @@ static char *const help_variables =
 "variable\263dimensione\244i\256\241su\242ar\245loca\254t\257tha\264sub\n"
 "simpl\245variable\263ar\245passe\244t\257su\242param\263b\271reference\033otherwise\014b\271value\n"
 "arra\271variabl\245indice\263star\264a\2640\n"
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF5
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
 "\266i\263th\245sam\245a\263v[0]\014excep\264fo\262input/print/i2c/qspi/uar\264statements\n"
 #else
 "\266i\263th\245sam\245a\263v[0]\014excep\264fo\262input/print/qspi/uar\264statements\n"
