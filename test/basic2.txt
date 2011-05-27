@@ -1672,6 +1672,9 @@ uarts:
   unmask uart <n> (input|output)             -- unmask uart interrupt
   uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
 
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
 qspi:
   qspi <variable> [, ...]                    -- master qspi I/O
 
@@ -1703,7 +1706,7 @@ all variables must be dimensioned!
 variables dimensioned in a sub are local to that sub
 simple variables are passed to sub params by reference; otherwise, by value
 array variable indices start at 0
-v is the same as v[0], except for input/print/qspi/uart statements
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
 
 ram variables:
   dim <var>[$][[n]]
