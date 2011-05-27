@@ -50,7 +50,7 @@ case `uname 2>/dev/null` in
 esac
 
 # our build flavors are below
-cat <<EOF | while read TARGET BUILD CPU
+grep -v "^#" <<EOF | while read TARGET BUILD CPU
   nichelite cw7.CW MCF52233.NICHELITE.CFV2
   cpustick cw7.CW MCF52221.CFV2
   cpustick cw7.CW MCF52233.CFV2
@@ -60,9 +60,9 @@ cat <<EOF | while read TARGET BUILD CPU
   cpustick cw6.CW MCF51JM128.CFV1
   cpustick cw6.CW MCF51QE128.CFV1
   cpustick cw6.CW BADGE_BOARD.MCF51JM128.CFV1
-  cpustick sourcery.GCC.EXTRACT MCF52221.CFV2
-  cpustick sourcery.GCC.EXTRACT MCF52259.CFV2
-  cpustick sourcery.GCC.EXTRACT DEMO_KIT.MCF52259.CFV2
+#  cpustick sourcery.GCC.EXTRACT MCF52221.CFV2
+#  cpustick sourcery.GCC.EXTRACT MCF52259.CFV2
+#  cpustick sourcery.GCC.EXTRACT DEMO_KIT.MCF52259.CFV2
   stickos linux.GCC.STICK_GUEST MCF52221.CFV2
   stickos linux.GCC.STICK_GUEST MCF52233.CFV2
   stickos linux.GCC.STICK_GUEST MCF52259.CFV2
