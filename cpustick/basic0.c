@@ -386,11 +386,11 @@ static char *const help_variables =
 "                                      [debounced] [inverted] [open_drain]\n"
 "\n"
 "system variables (read-only):\n"
-"  getchar  nodeid"
+"  getchar"
 #if KBD
 "  keychar"
 #endif
-"  msecs  seconds  ticks  ticks_per_msec\n"
+"  nodeid  msecs  seconds  ticks  ticks_per_msec\n"
 "\n"
 "for more information:\n"
 "  help pins\n"

@@ -259,11 +259,11 @@ static char *const help_variables =
 "\344[debounced\235[inverted\235[open_drain]\n"
 "\n"
 "syste\255variable\263(read-only):\n"
-"\300getchar\300nodeid"
+"\300getchar"
 #if KBD
 "\300keychar"
 #endif
-"\300msecs\300seconds\300ticks\300ticks_per_msec\n"
+"\300nodeid\300msecs\300seconds\300ticks\300ticks_per_msec\n"
 "\n"
 "fo\262mor\245information:\n"
 "\300hel\260pins\n"
