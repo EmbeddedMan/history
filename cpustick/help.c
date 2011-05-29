@@ -171,11 +171,9 @@ static char * const help_devices =
 "\300unmas\253uar\264<n\036(input|output)\313-\015unmas\253uar\264interrupt\n"
 "\300uar\264<n\036(read|write\011<variable\036[\014...]\301-\015perfor\255uar\264I/O\n"
 "\n"
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
 "i2c:\n"
 "\300i2\243(star\264<addr>|(read|write\011<variable\036[\014...]|stop\011-\015maste\262i2\243I/O\n"
 "\n"
-#endif
 "qspi:\n"
 "\300qsp\251<variable\036[\014...]\322-\015maste\262qsp\251I/O\n"
 "\n"
@@ -236,11 +234,7 @@ static char *const help_variables =
 "variable\263dimensione\244i\256\241su\242ar\245loca\254t\257tha\264sub\n"
 "simpl\245variable\263ar\245passe\244t\257su\242param\263b\271reference\033otherwise\014b\271value\n"
 "arra\271variabl\245indice\263star\264a\2640\n"
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
 "\266i\263th\245sam\245a\263v[0]\014excep\264fo\262input/print/i2c/qspi/uar\264statements\n"
-#else
-"\266i\263th\245sam\245a\263v[0]\014excep\264fo\262input/print/qspi/uar\264statements\n"
-#endif
 "\n"
 "ra\255variables:\n"
 "\300di\255<var>[$][[n]]\n"
