@@ -345,12 +345,15 @@ run_expression_watchpoint(const byte *bytecode_in, int length, IN uint32 running
 {
     int32 lhs;
     int32 rhs;
+#if MC9S08QE128
+    // CW bug
+    register
+#endif
     uint code;
     int32 push;
     const byte *bytecode;
 
     bytecode = bytecode_in;
-
     // assume a non-lvalue.
     if (lvalue_var_name != NULL) {
         *lvalue_var_name = NULL;
@@ -358,20 +361,8 @@ run_expression_watchpoint(const byte *bytecode_in, int length, IN uint32 running
 
     clear_stack();
     
-#if MC9S08QE128
-    // CW bug
-    while (1) {
-        if (bytecode >= bytecode_in+length) {
-            break;
-        }
-        code = *bytecode;
-        if (code == code_comma) {
-            break;
-        }
-#else
     while (bytecode < bytecode_in+length && *bytecode != code_comma) {
         code = *bytecode++;
-#endif
         switch (code) {
             case code_add:
             case code_subtract:
