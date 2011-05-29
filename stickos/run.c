@@ -1567,6 +1567,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                         i2c_start(value);
 #else
                         printf("i2c start %d\n", (int)value);
+#endif
                     }
                     break;
                 } else if (code2 == code_device_stop) {
@@ -1580,9 +1581,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
 #endif
                     }
                     break;
-                } else
-#endif
-                if (code == code_i2c || code == code_uart) {
+                } else if (code == code_i2c || code == code_uart) {
                     assert(code2 == code_device_read || code2 == code_device_write);
                     index++;
                 } else {
@@ -1719,6 +1718,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                                 i2c_read_write(false, big_buffer, p-big_buffer);
 #else
                                 printf("i2c read transfer %d bytes\n", (int)(p-big_buffer));
+#endif
                             } else {
                                 assert(code2 == code_device_write);
                                 // perform the i2c write
@@ -1731,7 +1731,6 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                                 // N.B. no need for the next pass for a write
                                 break;
                             }
-#endif
                         }
                     }
 
