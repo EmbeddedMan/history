@@ -621,12 +621,12 @@ subprint(
     } else {
         assert(format == code_raw);
         if (size == 1) {
-            i = snprintf(s, n, "%c", value);
+            i = snprintf(s, n, "%c", (int)value);
         } else if (size == 2) {
-            i = snprintf(s, n, "%c%c", (uint32)value>>8, value);
+            i = snprintf(s, n, "%c%c", (int)(value>>8), (int)value);
         } else {
             assert(size == 4);
-            i = snprintf(s, n, "%c%c%c%c", (uint32)value>>24, (uint32)value>>16, (uint32)value>>8, value);
+            i = snprintf(s, n, "%c%c%c%c", (int)(value>>24), (int)(value>>16), (int)(value>>8), (int)value);
         }
     }
     return i;
