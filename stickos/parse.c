@@ -80,9 +80,7 @@ const struct keyword {
     "for", code_for,
     "gosub", code_gosub,
     "halt", code_halt,
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MC9S12DT256 || MC9S12DP512 || MC9S08QE128
     "i2c", code_i2c,
-#endif
     "if", code_if,
     "input", code_input,
     "label", code_label,
@@ -1310,7 +1308,6 @@ XXX_AGAIN_XXX:
                     }
                 }
 
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MC9S12DT256 || MC9S12DP512 || MC9S08QE128
                 if (code == code_i2c && parse_word(&text, "start")) {
                     bytecode[length++] = code_device_start;
                     // parse the address
@@ -1322,7 +1319,7 @@ XXX_AGAIN_XXX:
                     bytecode[length++] = code_device_stop;
                     break;
                 } else
-#endif
+
                 if ((code == code_uart || code == code_i2c) && parse_word(&text, "read")) {
                     bytecode[length++] = code_device_read;
                 } else if ((code == code_uart || code == code_i2c) && parse_word(&text, "write")) {
@@ -2268,7 +2265,6 @@ XXX_AGAIN_XXX:
                     bytecode += unparse_uart(bytecode, &out);
                 }
 
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MC9S12DT256 || MC9S12DP512 || MC9S08QE128
                 if (code == code_i2c && *bytecode == code_device_start) {
                     bytecode++;
                     out += sprintf(out, "start ");
@@ -2280,7 +2276,7 @@ XXX_AGAIN_XXX:
                     out += sprintf(out, "stop");
                     break;
                 } else
-#endif
+
                 if ((code == code_uart || code == code_i2c) && *bytecode == code_device_read) {
                     bytecode++;
                     out += sprintf(out, "read ");

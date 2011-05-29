@@ -1547,20 +1547,6 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             }
             break;
 
-#if 0
-#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
-        default:
-            goto XXX_MORE_XXX;  // N.B. CW compiler bug
-            break;
-    }
-    
-    goto XXX_DONE_XXX;
-
-XXX_MORE_XXX:  // N.B. CW compiler bug
-    switch (code) {
-#endif
-#endif
-
         case code_uart:
         case code_qspi:
         case code_i2c:
@@ -1571,7 +1557,6 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                 }
 
                 code2 = bytecode[index];
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MC9S12DT256 || MC9S12DP512 || MC9S08QE128
                 if (code2 == code_device_start) {
                     assert(code == code_i2c);
                     index++;
@@ -1582,7 +1567,6 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                         i2c_start(value);
 #else
                         printf("i2c start %d\n", (int)value);
-#endif
                     }
                     break;
                 } else if (code2 == code_device_stop) {
@@ -1727,7 +1711,6 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                             printf("qspi transfer:\n");
                             dumpbuffer(big_buffer, p-big_buffer);
 #endif
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MC9S12DT256 || MC9S12DP512 || MC9S08QE128
                         } else {
                             assert(code == code_i2c);
                             if (code2 == code_device_read) {
@@ -1736,7 +1719,6 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                                 i2c_read_write(false, big_buffer, p-big_buffer);
 #else
                                 printf("i2c read transfer %d bytes\n", (int)(p-big_buffer));
-#endif
                             } else {
                                 assert(code2 == code_device_write);
                                 // perform the i2c write
@@ -2167,12 +2149,6 @@ XXX_PERF_XXX:
             break;
     }
     
-#if 0
-#if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
-XXX_DONE_XXX:
-#endif
-#endif
-
 #if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
     assert_ram(index == length);  // CW bug
 #else
@@ -2231,9 +2207,7 @@ run_clear(bool flash)
     var_clear(flash);
 
 #if ! STICK_GUEST
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
     i2c_stop();
-#endif
 #endif
 }
 
