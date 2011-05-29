@@ -1,4 +1,4 @@
-#define VERSION  "1.80x"
+#define VERSION  "1.82a"
 
 #if PIC32 && ! _WIN32
 // REVISIT -- we take debug info from the pic32 environment for now
@@ -13,7 +13,7 @@
 #endif
 
 // uncomment for HID bootloader and cp procdefs.ld.ubw32 procdefs.ld
-#define HIDBL  1
+//#define HIDBL  1
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #define DEMO  1  // 1 enables DEMO board USB power
