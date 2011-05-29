@@ -1580,7 +1580,7 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                 }
 
                 code2 = bytecode[index];
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MC9S12DT256 || MC9S12DP512 || MC9S08QE128
                 if (code2 == code_device_start) {
                     assert(code == code_i2c);
                     index++;
@@ -1736,7 +1736,7 @@ XXX_MORE_XXX:  // N.B. CW compiler bug
                             printf("qspi transfer:\n");
                             dumpbuffer(big_buffer, p-big_buffer);
 #endif
-#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128
+#if PIC32 || MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51QE128 || MCF51CN128 || MC9S12DT256 || MC9S12DP512 || MC9S08QE128
                         } else {
                             assert(code == code_i2c);
                             if (code2 == code_device_read) {
