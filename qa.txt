@@ -710,6 +710,9 @@ dim ncs as pin ptb5 for digital output
 for qe, sda = 9, scl = 11
 
 
+for cn tower, scl=B74, sda=B75
+
+
 
                   bump version     bump version
                   debug            release
