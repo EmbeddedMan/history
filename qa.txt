@@ -779,6 +779,20 @@ numbers on/off -
 higher power zigbee
 
 
+                csum        perf        upgrade        reset
+52233
+52221
+5211
+51JM
+FB32
+Badge
+51CN
+51QE
+12DP
+12DT
+08QE
+
+
 
   10 dim p[0] as pin qspi_clk for digital output
   20 dim p[1] as pin qspi_dout for digital output
