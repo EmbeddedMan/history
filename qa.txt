@@ -2,8 +2,11 @@ fix all other mcus to handle qspi/i2c initialize/uninitialize with pins manageme
 
 
 when programming flash for flexis, use flash menu, not load menu,
-or checksum will be wrong and bits will be slow!  when upgrading
-51qe128, reduce baud rate to 2400 and turn off xon/xoff.
+or checksum will be wrong and bits will be slow!
+
+when measuring perf, do not run under bdm!!!
+
+when upgrading 51qe128, reduce baud rate to 2400 and turn off xon/xoff.
 
 IF PIC32 UPGRADE ENDS WITH A BRICK, MAKE SURE YOU HAVE NOT SET HIDBL
 WRONG BY MISTAKE!!!

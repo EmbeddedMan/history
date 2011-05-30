@@ -240,7 +240,7 @@ basic_run(char *text_in)
                     // N.B. used on next reboot
                 }
             } else {
-                printf("%d\n", cmd == command_analog ? pin_analog : (cmd == command_baud ? serial_baudrate : servo_hz));
+                printf("%d\n", (int)(cmd == command_analog ? pin_analog : (cmd == command_baud ? serial_baudrate : servo_hz)));
             }
             break;
 
