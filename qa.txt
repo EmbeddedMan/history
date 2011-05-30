@@ -780,16 +780,27 @@ higher power zigbee
 
 
                 csum        perf        upgrade        reset
+
 52233
+
 52221
+
 5211
+
 51JM
+
 FB32
+
 Badge
+
 51CN
+
 51QE
+
 12DP
+
 12DT
+
 08QE
 
 
