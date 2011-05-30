@@ -1,3 +1,8 @@
+website bugs -- lcd should be listed as HD44780-compatible everywhere
+cpustick.inf link jumps in document (used to go to the text box)
+
+
+
 I will add a section on device file naming for OS X and Linux -- I usually just assume if folks are using those OS's, they know how their device files are named.
  
 On Linux (assuming a moderately recent distribution), if you are running v1.80, your dev file should be very easy to find -- it has the name ACM in it, like /dev/ttyACM0 -- that is because StickOS presents a CDC/ACM function.  The actual number will likely depend on the exact physical USB port you use.
