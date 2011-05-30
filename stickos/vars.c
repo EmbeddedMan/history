@@ -473,7 +473,7 @@ var_declare_reference(const char *name, int gosubs, const char *target_name)
 typedef struct remote_set {
     char name[VAR_NAME_SIZE];  // 14 char max variable name
     char pad;  // XXX -- figure out how to get pragma pack working
-#if MC9S08QE128
+#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     char pad2;  // XXX -- figure out how to get pragma pack working
 #endif
     int32 index;
