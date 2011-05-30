@@ -561,6 +561,10 @@ i2c_initialize(void)
     assert(ic <= 0x3f);
     MCF_I2C0_I2FDR = MCF_I2C_I2FDR_IC(ic);
 #else
+#if MCF51CN128
+    PTGPF2 |= 0xf0;  // ptg2,3
+#endif
+
     // stop i2c
     MCF_I2C0_I2CR = 0;
 
