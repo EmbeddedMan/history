@@ -6,9 +6,13 @@
 #include "main.h"
 
 #if PIC32 && ! HIDBL
+#if defined(_USB)
     #pragma config UPLLEN   = ON            // USB PLL Enabled
+#endif
     #pragma config FPLLMUL  = MUL_20        // PLL Multiplier
+#if defined(_USB)
     #pragma config UPLLIDIV = DIV_2         // USB PLL Input Divider
+#endif
     #pragma config FPLLIDIV = DIV_2         // PLL Input Divider
     #pragma config FPLLODIV = DIV_1         // PLL Output Divider
     #pragma config FPBDIV   = DIV_1         // Peripheral Clock divisor
@@ -29,6 +33,11 @@
 
 #if PIC32
 void _general_exception_context(void)
+{
+    led_hex(_CP0_GET_CAUSE());
+}
+
+void _bootstrap_exception_handler(void)
 {
     led_hex(_CP0_GET_CAUSE());
 }
@@ -214,7 +223,7 @@ main()  // we're called directly by startup.c
     serial_initialize();
 #endif
 
-#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
     // initialize usb
     usb_initialize();
 #endif
@@ -235,7 +244,7 @@ main()  // we're called directly by startup.c
     // initialize the terminal interface
     terminal_initialize();
 #endif
-    
+
 #if BADGE_BOARD
     // initialize badge board
     jm_initialize();

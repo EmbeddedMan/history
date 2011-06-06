@@ -1,7 +1,11 @@
 // *** serial.h ************************************************************
 
 #if PIC32 || MCF51CN128
+#if defined(__32MX320F128H__)
+#define SERIAL_UART  0
+#else
 #define SERIAL_UART  1
+#endif
 #else
 #define SERIAL_UART  0
 #endif

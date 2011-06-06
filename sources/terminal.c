@@ -101,14 +101,14 @@ terminal_print(const byte *buffer, int length)
     }
 #endif
 
-#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
 #if ! FLASHER
     if (ftdi_attached && ftdi_active) {
         ftdi_print(buffer, length);
         printed = true;
     }
 #endif
-#elif MCF5211 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#elif MCF5211 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512 || (PIC32 && ! defined(_USB))
 #elif MCF52233
     if (rich_so) {
         m_send(rich_so, buffer, length);
@@ -505,7 +505,7 @@ terminal_command_ack(bool edit)
     }
 
     if (terminal_txid == -1) {
-#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
         ftdi_command_ack();
 #endif
 #if ! FLASHER && ! PICTOCRYPT
@@ -592,7 +592,7 @@ terminal_poll(void)
         
         if (strchr((char *)copy, '\r')) {
             if (terminal_txid == -1) {
-#if MCF52221 || MCF52259 || MCF51JM128 || PIC32
+#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
                 ftdi_command_ack();
 #endif
 #if ! FLASHER && ! PICTOCRYPT

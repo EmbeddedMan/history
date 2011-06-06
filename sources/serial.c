@@ -46,7 +46,11 @@ serial_disable(void)
     SCI2C2X &= ~SCI2C2_RIE_MASK;
 #elif PIC32
     // Unconfigure UART2 RX Interrupt
+#if SERIAL_UART
     ConfigIntUART2(0);
+#else
+    ConfigIntUART1(0);
+#endif
 #endif
     // don't allow the rx ball to start rolling
     waiting = false;
@@ -102,7 +106,11 @@ XXX_SKIP_XXX:
 INTERRUPT
 void
 #if PIC32
+#if SERIAL_UART
 __ISR(32, ipl2) // REVISIT -- ipl?
+#else
+__ISR(24, ipl2) // REVISIT -- ipl?
+#endif
 #endif
 serial_isr(void)
 {
@@ -119,7 +127,11 @@ serial_isr(void)
 
 #if PIC32
     // Clear the RX interrupt Flag
+#if SERIAL_UART
     mU2RXClearIntFlag();
+#else
+    mU1RXClearIntFlag();
+#endif
 #endif
 
     do {
@@ -251,10 +263,17 @@ serial_initialize(void)
     
     PTDPF2 = 0xa0;
 #elif PIC32
+#if SERIAL_UART
     U2MODE |= _U2MODE_UARTEN_MASK;
 
     // Configure UART1 RX Interrupt
     ConfigIntUART2(UART_INT_PR2 | UART_RX_INT_EN);
+#else
+    U1MODE |= _U1MODE_UARTEN_MASK;
+
+    // Configure UART1 RX Interrupt
+    ConfigIntUART1(UART_INT_PR2 | UART_RX_INT_EN);
+#endif
 #else
 #error
 #endif

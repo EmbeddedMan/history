@@ -115,7 +115,7 @@ static const struct mode modes[] = {
     { "prompt",     &main_prompt,      FLASH_LAST         },
     { "step",       &run_step,         FLASH_LAST         },
     { "trace",      &run_trace,        FLASH_LAST         },
-#if MCF52259 || PIC32
+#if MCF52259 || (PIC32 && defined(_USB))
     { "usbhost",    NULL,              FLASH_USBHOST      },
 #endif
     { "watchsmart", &watch_mode_smart, FLASH_WATCH_SMART  },
@@ -177,7 +177,7 @@ basic_run(char *text_in)
                     boo = var_get_flash(mode->flash_var) == 1;
                 }
                 printf("%s\n", boo ? "on" : "off");
-#if ! STICK_GUEST && (MCF52259 || PIC32)
+#if ! STICK_GUEST && (MCF52259 || (PIC32 && defined(_USB)))
                 if (mode->flash_var == FLASH_USBHOST && boo) {
                     if (scsi_attached) {
                         printf("(attached)\n");
