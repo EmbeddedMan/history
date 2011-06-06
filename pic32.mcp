@@ -82,6 +82,7 @@ file_054=sources
 file_055=sources
 file_056=sources
 file_057=.
+file_058=.
 [GENERATED_FILES]
 file_000=no
 file_001=no
@@ -141,6 +142,7 @@ file_054=no
 file_055=no
 file_056=no
 file_057=no
+file_058=no
 [OTHER_FILES]
 file_000=no
 file_001=no
@@ -200,6 +202,7 @@ file_054=no
 file_055=no
 file_056=no
 file_057=no
+file_058=no
 [FILE_INFO]
 file_000=main.c
 file_001=cpustick\run2.c
@@ -259,6 +262,7 @@ file_054=sources\text.h
 file_055=sources\kbd.h
 file_056=sources\lcd.h
 file_057=pic32stickos.a
+file_058=chipKIT-UNO32-application-32MX320F128L.ld
 [SUITE_INFO]
 suite_guid={14495C23-81F8-43F3-8A44-859C583D7760}
 suite_state=

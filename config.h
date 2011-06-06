@@ -7,7 +7,7 @@
 #define DEBUGGING  1
 #else
 #define SODEBUG  0
-#define DEBUGGING  0
+#define DEBUGGING  1
 #endif
 #elif ! FLASHER
 #endif
