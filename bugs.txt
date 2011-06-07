@@ -1,6 +1,7 @@
 website bugs -- lcd should be listed as HD44780-compatible everywhere
 cpustick.inf link jumps in document (used to go to the text box)
 
+ADD data from freescale.pdf/microchip.pdf to "ehlp pins"!
 
 
 I will add a section on device file naming for OS X and Linux -- I usually just assume if folks are using those OS's, they know how their device files are named.
