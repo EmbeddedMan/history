@@ -735,7 +735,9 @@ flash_upgrade(uint32 fsys_frequency)
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128
     int i;
     int n;
+#if UPGRADE
     int x;
+#endif
     int y;
     char c;
     int sum;
@@ -746,7 +748,9 @@ flash_upgrade(uint32 fsys_frequency)
     bool error;
     uint32 data;
     bool begun;
+#if UPGRADE
     flash_upgrade_ram_begin_f fn;
+#endif
 
     if (fsys_frequency) {
 #if ! PICTOCRYPT
@@ -957,7 +961,7 @@ flash_upgrade(uint32 fsys_frequency)
         terminal_echo = true;
         return;
     }
-    
+#if UPGRADE
     printf("programming flash for upgrade...\n");
     printf("wait for heartbeat LED to blink!\n");
     delay(100);
@@ -975,6 +979,7 @@ flash_upgrade(uint32 fsys_frequency)
 
     // and run it!
     fn();
+#endif
 
     // we should not come back!
     ASSERT(0);  // stop!
