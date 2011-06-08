@@ -6,11 +6,11 @@
 #include "main.h"
 
 #if PIC32 && ! HIDBL
-#if defined(_USB)
+#if defined(USB)
     #pragma config UPLLEN   = ON            // USB PLL Enabled
 #endif
     #pragma config FPLLMUL  = MUL_20        // PLL Multiplier
-#if defined(_USB)
+#if defined(USB)
     #pragma config UPLLIDIV = DIV_2         // USB PLL Input Divider
 #endif
     #pragma config FPLLIDIV = DIV_2         // PLL Input Divider
@@ -223,7 +223,7 @@ main()  // we're called directly by startup.c
     serial_initialize();
 #endif
 
-#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
+#if USB
     // initialize usb
     usb_initialize();
 #endif

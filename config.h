@@ -38,6 +38,20 @@
 #define LCD  1
 #endif
 
+#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
+#define USB  1
+#endif
+
+#if PIC32 && defined(__32MX320F128H__)
+#define CHIPKIT  1
+#else
+#if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
+#define UPGRADE  1
+#endif
+#define DOWNLOAD  1
+#define ZIGFLEA  1
+#endif
+
 // Enable in-memory trace buffer for debugging with the trace() macro.
 #define IN_MEMORY_TRACE 0
 

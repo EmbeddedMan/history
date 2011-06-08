@@ -12,7 +12,9 @@ enum cmdcode {
 #if STICK_GUEST || SODEBUG
     command_demo,
 #endif
+#if DOWNLOAD
     command_download,  // nnn
+#endif
     command_help,
 #if MCF52233
     command_ipaddress,  // [dhcp|<ipaddress>]
@@ -22,7 +24,9 @@ enum cmdcode {
 #endif
     command_nodeid,  // nnn
     command_reset,
+#if UPGRADE
     command_upgrade,
+#endif
     command_uptime,
 #if SODEBUG || MCF52259 || PIC32
     command_zigflea,
@@ -39,7 +43,9 @@ const char * const commands[] = {
 #if STICK_GUEST || SODEBUG
     "demo",
 #endif
+#if DOWNLOAD
     "download",
+#endif
     "help",
 #if MCF52233
     "ipaddress",
@@ -49,7 +55,9 @@ const char * const commands[] = {
 #endif
     "nodeid",
     "reset",
+#if UPGRADE
     "upgrade",
+#endif
     "uptime",
 #if SODEBUG || MCF52259 || PIC32
     "zigflea",
@@ -164,7 +172,9 @@ static char * const help_commands =
 "cls                           -- clear terminal screen\n"
 "cont [<line>]                 -- continue program from stop\n"
 "delete ([<line>][-][<line>]|<subname>) -- delete program lines\n"
+#if DOWNLOAD
 "download <slave Hz>           -- download flash to slave MCU\n"
+#endif
 "dir                           -- list saved programs\n"
 "edit <line>                   -- edit program line\n"
 "help [<topic>]                -- online help\n"
@@ -179,7 +189,7 @@ static char * const help_commands =
 "run [<line>]                  -- run program\n"
 "save [<name>]                 -- save code ram to flash memory\n"
 "undo                          -- undo code changes since last save\n"
-#if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
+#if UPGRADE
 "upgrade                       -- upgrade StickOS firmware!\n"
 #endif
 "uptime                        -- print time since last reset\n"
@@ -1150,8 +1160,13 @@ basic0_run(char *text_in)
 #endif
             break;
 
-        case command_upgrade:  // upgrade StickOS S19 file
+#if DOWNLOAD || UPGRADE
+#if DOWNLOAD
         case command_download:  // relay S19 file to QSPI to EzPort
+#endif
+#if UPGRADE
+        case command_upgrade:  // upgrade StickOS S19 file
+#endif
             number1 = 0;
             if (cmd == command_download) {
                 // get fsys_frequency
@@ -1166,6 +1181,7 @@ basic0_run(char *text_in)
             }
             flash_upgrade(number1);
             break;
+#endif
 
         case command_uptime:
             if (*text) {

@@ -1,4 +1,3 @@
-#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
 // *** ftdi.c *********************************************************
 // N.B. as of v1.80, this file implements a CDC/ACM transport (on top
 // of the usb driver module).
@@ -7,6 +6,7 @@
 // the usb driver module).
 
 #include "main.h"
+#if USB
 
 #define PACKET_SIZE  64
 

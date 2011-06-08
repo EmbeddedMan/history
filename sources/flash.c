@@ -418,6 +418,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 #error
 #endif
 
+#if UPGRADE
 // this function performs the final step of a firmware flash upgrade.
 FLASH_UPGRADE_RAM_BEGIN
 void
@@ -428,7 +429,6 @@ void
 flash_upgrade_ram_begin(void)
 {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
-#if ! DEMO_KIT
     uint32 *addr;
     uint32 *data;
     uint32 nwords;
@@ -509,9 +509,7 @@ flash_upgrade_ram_begin(void)
     // reset the MCU
     MCF_RCM_RCR = MCF_RCM_RCR_SOFTRST;
     asm_halt();
-#endif
 #elif MCF51JM128 || MCF51CN128 || MCF51QE128
-#if ! BADGE_BOARD
     uint32 *addr;
     uint32 *data;
     uint32 nwords;
@@ -592,7 +590,6 @@ flash_upgrade_ram_begin(void)
         trap    #0
     };
     asm_halt();
-#endif
 #elif MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     asm_halt();
 #elif PIC32
@@ -726,7 +723,9 @@ flash_upgrade_ram_end(void)
 {
     // NULL
 }
+#endif
 
+#if DOWNLOAD || UPGRADE
 // this function downloads a new s19 firmware file to a staging
 // area, and then installs it by calling a RAM copy of
 // flash_upgrade_ram_begin().
@@ -734,7 +733,6 @@ void
 flash_upgrade(uint32 fsys_frequency)
 {
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128
-#if ! BADGE_BOARD && ! DEMO_KIT
     int i;
     int n;
     int x;
@@ -980,11 +978,6 @@ flash_upgrade(uint32 fsys_frequency)
 
     // we should not come back!
     ASSERT(0);  // stop!
-#else
-    printf("use Badge Board bootloader to upgrade\n");
-    printf("upgrade failed\n");
-    return;
-#endif
 #elif MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #elif PIC32
     int i;
@@ -1239,13 +1232,17 @@ flash_upgrade(uint32 fsys_frequency)
 #error
 #endif
 }
+#endif
 
 // this function initializes the flash module.
 void
 flash_initialize(void)
 {
-#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
+#if UPGRADE
     assert((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer));
+#endif
+
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #if MC9S12DT256 || MC9S12DP512
     if (oscillator_frequency > 12800000) {
         MCF_CFM_CFMCLKD = MCF_CFM_CFMCLKD_PRDIV8|MCF_CFM_CFMCLKD_DIV((oscillator_frequency/8-1)/200000);

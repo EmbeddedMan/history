@@ -35,7 +35,9 @@ static char * const help_commands =
 "cls\331-\015clea\262termina\254screen\n"
 "con\264[<line>]\317-\015continu\245progra\255fro\255stop\n"
 "delet\245([<line>][-][<line>]|<subname>\011-\015delet\245progra\255lines\n"
+#if DOWNLOAD
 "downloa\244<slav\245Hz>\311-\015downloa\244flas\250t\257slav\245MCU\n"
+#endif
 "dir\331-\015lis\264save\244programs\n"
 "edi\264<line>\321-\015edi\264progra\255line\n"
 "hel\260[<topic>]\316-\015onlin\245help\n"
@@ -50,7 +52,7 @@ static char * const help_commands =
 "ru\256[<line>]\320-\015ru\256program\n"
 "sav\245[<name>]\317-\015sav\245cod\245ra\255t\257flas\250memory\n"
 "undo\330-\015und\257cod\245change\263sinc\245las\264save\n"
-#if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
+#if UPGRADE
 "upgrade\325-\015upgrad\245StickO\223firmware!\n"
 #endif
 "uptime\326-\015prin\264tim\245sinc\245las\264reset\n"

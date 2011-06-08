@@ -1,9 +1,9 @@
-#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
 // *** usb.c **********************************************************
 // this file implements a generic usb device driver; the FTDI transport
 // sits on top of this module to implement a specific usb device.
 
 #include "main.h"
+#if USB
 
 #if PIC32
 // REVISIT -- move to relocated compat.h

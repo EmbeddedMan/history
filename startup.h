@@ -105,7 +105,7 @@
 #define FLASH2_START  0x8000  // BASIC stores, for code access
 #define FLASH2_BYTES  (16*1024L)
 #elif PIC32
-#if defined(_USB)
+#if defined(USB)
 #define STICKOSPLUS  1
 #endif
 #define FLASH_START  0x9D000000
@@ -138,7 +138,7 @@
 #else
 #if PIC32 || MCF52233 || MCF52259
 #if defined(__32MX320F128H__)
-#define BASIC_LARGE_PAGE_SIZE  (4*1024)
+#define BASIC_LARGE_PAGE_SIZE  (8*1024)
 #else
 #define BASIC_LARGE_PAGE_SIZE  (24*1024)
 #endif
