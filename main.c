@@ -5,7 +5,7 @@
 
 #include "main.h"
 
-#if PIC32 && ! HIDBL
+#if PIC32 && ! HIDBL && ! CHIPKIT
 #if defined(USB)
     #pragma config UPLLEN   = ON            // USB PLL Enabled
 #endif
