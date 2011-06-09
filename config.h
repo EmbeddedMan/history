@@ -42,9 +42,9 @@
 #define USB  1
 #endif
 
-#if PIC32 && defined(__32MX320F128H__)
 #define CHIPKIT  1
-#else
+
+#if ! CHIPKIT
 #if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
 #define UPGRADE  1
 #endif
