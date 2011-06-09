@@ -5836,6 +5836,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                     value = OC5RS;
                 }
                 if (pin_type == pin_type_frequency_output) {
+                    // XXX -- if OCxCONCLR is off we should print 0!
                     if (! value) {
                         value = 0x10000;
                     }
