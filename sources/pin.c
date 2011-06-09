@@ -5841,9 +5841,6 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                     }
                     value = bus_frequency/FREQ_PRESCALE/(value+1)/2;
                 } else if (pin_type == pin_type_servo_output) {
-                    if (! value) {
-                        value = SERVO_MOD;
-                    }
                     value = value*SERVO_MAX/SERVO_MOD;
                 }
             } else if (pin_qual & 1<<pin_qual_debounced) {
