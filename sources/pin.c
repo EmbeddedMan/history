@@ -11,7 +11,7 @@
 
 int servo_hz = 45;
 
-#define SERVO_MAX (100000/servo_hz)
+#define SERVO_MAX (1000000/servo_hz)
 #if MC9S08QE128 || MCF51QE128 || MCF51CN128 || MCF51JM128 || PIC32
 #if PIC32
 #define SERVO_PRESCALE  64
@@ -2888,7 +2888,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
 #if MCF51CN128 || MCF51QE128 || MC9S08QE128
     int n;
 #endif
-    int value2;
+    int32 value2;
     uint32 offset;
     
     if (pin_number == PIN_UNASSIGNED) {
