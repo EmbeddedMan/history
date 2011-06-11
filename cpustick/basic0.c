@@ -132,6 +132,15 @@ char * const help_about =
 #endif
 
 
+/*
+to change help:
+
+1. change the help inside the "dead" part of the #if (between GENERATE_HELP_BEGIN and GENERATE_HELP_END)
+2. download the Win32 version of StickOS from cpustick.com
+3. in a shell window, cd to the cpustick directory
+4. run: "StickOS.exe help <basic0.c >help.c"
+5. rebuild
+*/
 #if 1
 #include "help.c"
 #else
