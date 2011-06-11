@@ -89,7 +89,6 @@ ctrlc(int event)
 #endif
 }
 
-#if HELP_COMPRESS
 uint total_in;
 uint total_out;
 
@@ -155,7 +154,6 @@ generate_help(
     }
     return 0;
 }
-#endif
 
 int
 main(int argc, char **argv)
@@ -163,11 +161,9 @@ main(int argc, char **argv)
     int i;
     char text[2*BASIC_INPUT_LINE_SIZE];
 
-#if HELP_COMPRESS
     if (argc > 1 && ! strcmp(argv[1], "help")) {
         return generate_help();
     }
-#endif
 
 #if __unix__
     signal(SIGINT, ctrlc);
