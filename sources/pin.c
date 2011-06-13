@@ -594,7 +594,7 @@ const struct pin pins[] = {
     "1", DIO,
     "39", DIO|1<<pin_type_uart_input,  // u2rx
     "40", DIO|1<<pin_type_uart_output,  // u2tx
-    "38", 0,
+    "38", DIO,
     "rf7", 0,
     "rf8", DIO,
     "rf9", 0,
@@ -701,7 +701,7 @@ const struct pin pins[] = {
     "rf3", DIO,
     "rf4", DIO|1<<pin_type_uart_input,  // u2rx
     "rf5", DIO|1<<pin_type_uart_output,  // u2tx
-    "rf6", 0,
+    "rf6", DIO,
     "rf7", 0,
     "rf8", DIO,
     "rf9", 0,
@@ -808,7 +808,7 @@ const struct pin pins[] = {
     "rf3", DIO,
     "rf4", DIO|1<<pin_type_uart_input,  // u2rx
     "rf5", DIO|1<<pin_type_uart_output,  // u2tx
-    "rf6", 0,
+    "rf6", DIO,
     "rf7", 0,
     "rf8", DIO,
     "rf9", 0,
@@ -3012,6 +3012,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_RF3:
         case PIN_RF4:
         case PIN_RF5:
+        case PIN_RF6:
         case PIN_RF8:
         case PIN_RF12:
         case PIN_RF13:
@@ -4725,6 +4726,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_RF3:
         case PIN_RF4:
         case PIN_RF5:
+        case PIN_RF6:
         case PIN_RF8:
         case PIN_RF12:
         case PIN_RF13:
@@ -6088,6 +6090,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_RF3:
         case PIN_RF4:
         case PIN_RF5:
+        case PIN_RF6:
         case PIN_RF8:
         case PIN_RF12:
         case PIN_RF13:

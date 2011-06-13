@@ -503,7 +503,7 @@ enum pin_number {  // skeleton may extend this
     PIN_RF3,
     PIN_RF4,
     PIN_RF5,
-    PIN_RF6,  // unused
+    PIN_RF6,
     PIN_RF7,  // unused
     PIN_RF8,
     PIN_RF9,  // unused
