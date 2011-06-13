@@ -385,6 +385,17 @@ static char *const help_pins =
 "ps\020(u0)\014ps\022(u1\011\035potentia\254uar\264inpu\264pin\263(receive\244byte)\n"
 "ps\021(u0)\014ps\023(u1\011\035potentia\254uar\264outpu\264pin\263(transmi\264byte)\n"
 #elif PIC32
+#if defined CHIPKIT
+"al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
+#if defined(__32MX320F128H__)
+"a?,a,4\021\035potentia\254analo\247inpu\264pin\263(mV)\n"
+#else
+"a\037\035potentia\254analo\247inpu\264pin\263(mV)\n"
+#endif
+"3,5,6,9,1\020\035potentia\254analo\247outpu\264(PWM\011pin\263(mV)\n"
+"3,5,6,9,1\020\035potentia\254serv\257outpu\264(PWM\011pin\263(us)\n"
+"3,5,6,9,1\020\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"
+#else
 "\3000/8\3031/9\3032/10\3023/11\3024/12\3025/13\3026/14\3027/15\n"
 "\300------\015------\015------\015------\015------\015------\015------\015--------+\n"
 #if _PORTA_RA0_MASK
@@ -411,6 +422,7 @@ static char *const help_pins =
 "rd[0-4\235\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"
 "rf\024(u2\011\035potentia\254uar\264inpu\264pin\263(receive\244byte)\n"
 "rf\025(u2\011\035potentia\254uar\264outpu\264pin\263(transmi\264byte)\n"
+#endif
 #else
 #error
 #endif

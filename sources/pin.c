@@ -86,9 +86,9 @@ byte pin_assignments[pin_assignment_max] = {
 #elif PIC32
 #if CHIPKIT
 #if defined(__32MX320F128H__)
-    PIN_RG6, PIN_AN13, PIN_RE1, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
+    PIN_RG6, PIN_AN13, PIN_RG9, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
 #else
-    PIN_RA3, PIN_AN13, PIN_RE1, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
+    PIN_RA3, PIN_AN13, PIN_RG9, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
 #endif
 #else
     PIN_RE0, PIN_RE6, PIN_RE1, PIN_UNASSIGNED, PIN_RE2, PIN_RE3, PIN_RE4,
@@ -511,6 +511,114 @@ const struct pin pins[] = {
     "pt6", DIO|1<<pin_type_frequency_output,
     "pt7", DIO|1<<pin_type_frequency_output,
 #elif PIC32
+#if defined(__32MX320F128H__) && defined CHIPKIT
+#ifdef _PORTA_RA0_MASK
+    "ra0", DIO,
+    "ra1", DIO,
+    "ra2", DIO,
+    "ra3", DIO,
+    "ra4", DIO,
+    "ra5", DIO,
+    "ra6", DIO,
+    "ra7", DIO,
+    "ra8", 0,
+    "ra9", DIO,
+    "ra10", DIO,
+    "ra11", 0,
+    "ra12", 0,
+    "ra13", 0,
+    "ra14", DIO,
+    "ra15", DIO,
+#endif
+    "a", DIO|1<<pin_type_analog_input,  // rb0...
+    "41", DIO|1<<pin_type_analog_input,
+    "a0", DIO|1<<pin_type_analog_input,
+    "a6", DIO|1<<pin_type_analog_input,
+    "a1", DIO|1<<pin_type_analog_input,
+    "a7", DIO|1<<pin_type_analog_input,
+    "rb6", DIO|1<<pin_type_analog_input,
+    "rb7", DIO|1<<pin_type_analog_input,
+    "a2", DIO|1<<pin_type_analog_input,  // U2CTS
+    "a8", DIO|1<<pin_type_analog_input,
+    "a3", DIO|1<<pin_type_analog_input,
+    "a9", DIO|1<<pin_type_analog_input,
+    "a4", DIO|1<<pin_type_analog_input,
+    "a10", DIO|1<<pin_type_analog_input,
+    "a5", DIO|1<<pin_type_analog_input,  // U2RTS
+    "a11", DIO|1<<pin_type_analog_input,
+    "rc0", 0,
+    "rc1", DIO,  // rc1...
+    "rc2", DIO,
+    "rc3", DIO,
+    "rc4", DIO,
+    "rc5", 0,
+    "rc6", 0,
+    "rc7", 0,
+    "rc8", 0,
+    "rc9", 0,
+    "rc10", 0,
+    "rc11", 0,
+    "rc12", DIO,
+    "rc13", DIO,  // rc13...
+    "rc14", DIO,
+    "rc15", DIO,
+    "3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc1
+    "5", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc2
+    "6", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc3
+    "9", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc4
+    "10", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc5
+    "34", DIO,
+    "36", DIO,
+    "37", DIO,
+    "2", DIO,
+    "7", DIO,
+    "8", DIO,
+    "35", DIO,
+    "rd12", DIO,
+    "rd13", DIO,
+    "rd14", DIO,
+    "rd15", DIO,
+    "26", DIO,
+    "27", DIO,
+    "28", DIO,
+    "29", DIO,
+    "30", DIO,
+    "31", DIO,
+    "32", DIO,
+    "33", DIO,
+    "re8", DIO,
+    "re9", DIO,
+    "rf0", DIO,
+    "4", DIO,
+    "0", DIO,
+    "1", DIO,
+    "39", DIO|1<<pin_type_uart_input,  // u2rx
+    "40", DIO|1<<pin_type_uart_output,  // u2tx
+    "38", 0,
+    "rf7", 0,
+    "rf8", DIO,
+    "rf9", 0,
+    "rf10", 0,
+    "rf11", 0,
+    "rf12", DIO,
+    "rf13", DIO,
+    "rg0", DIO,
+    "rg1", DIO,
+    "rg2", DIO,
+    "rg3", DIO,
+    "rg4", 0,
+    "rg5", 0,
+    "13", DIO,
+    "12", DIO,
+    "11", DIO,
+    "rg9", DIO,
+    "rg10", 0,
+    "rg11", 0,
+    "rg12", DIO,
+    "rg13", DIO,
+    "rg14", DIO,
+    "rg15", DIO,
+#elif defined(__32MX795F512L__) && defined CHIPKIT
 #ifdef _PORTA_RA0_MASK
     "ra0", DIO,
     "ra1", DIO,
@@ -589,13 +697,13 @@ const struct pin pins[] = {
     "re9", DIO,
     "rf0", DIO,
     "rf1", DIO,
-    "rf2", DIO|1<<pin_type_uart_input,  // u1rx
+    "rf2", DIO,
     "rf3", DIO,
     "rf4", DIO|1<<pin_type_uart_input,  // u2rx
     "rf5", DIO|1<<pin_type_uart_output,  // u2tx
     "rf6", 0,
     "rf7", 0,
-    "rf8", DIO|1<<pin_type_uart_output,  // u1tx
+    "rf8", DIO,
     "rf9", 0,
     "rf10", 0,
     "rf11", 0,
@@ -617,6 +725,114 @@ const struct pin pins[] = {
     "rg13", DIO,
     "rg14", DIO,
     "rg15", DIO,
+#else
+#ifdef _PORTA_RA0_MASK
+    "ra0", DIO,
+    "ra1", DIO,
+    "ra2", DIO,
+    "ra3", DIO,
+    "ra4", DIO,
+    "ra5", DIO,
+    "ra6", DIO,
+    "ra7", DIO,
+    "ra8", 0,
+    "ra9", DIO,
+    "ra10", DIO,
+    "ra11", 0,
+    "ra12", 0,
+    "ra13", 0,
+    "ra14", DIO,
+    "ra15", DIO,
+#endif
+    "an0", DIO|1<<pin_type_analog_input,  // rb0...
+    "an1", DIO|1<<pin_type_analog_input,
+    "an2", DIO|1<<pin_type_analog_input,
+    "an3", DIO|1<<pin_type_analog_input,
+    "an4", DIO|1<<pin_type_analog_input,
+    "an5", DIO|1<<pin_type_analog_input,
+    "an6", DIO|1<<pin_type_analog_input,
+    "an7", DIO|1<<pin_type_analog_input,
+    "an8", DIO|1<<pin_type_analog_input,  // U2CTS
+    "an9", DIO|1<<pin_type_analog_input,
+    "an10", DIO|1<<pin_type_analog_input,
+    "an11", DIO|1<<pin_type_analog_input,
+    "an12", DIO|1<<pin_type_analog_input,
+    "an13", DIO|1<<pin_type_analog_input,
+    "an14", DIO|1<<pin_type_analog_input,  // U2RTS
+    "an15", DIO|1<<pin_type_analog_input,
+    "rc0", 0,
+    "rc1", DIO,  // rc1...
+    "rc2", DIO,
+    "rc3", DIO,
+    "rc4", DIO,
+    "rc5", 0,
+    "rc6", 0,
+    "rc7", 0,
+    "rc8", 0,
+    "rc9", 0,
+    "rc10", 0,
+    "rc11", 0,
+    "rc12", DIO,
+    "rc13", DIO,  // rc13...
+    "rc14", DIO,
+    "rc15", DIO,
+    "rd0", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc1
+    "rd1", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc2
+    "rd2", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc3
+    "rd3", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc4
+    "rd4", DIO|1<<pin_type_analog_output|1<<pin_type_frequency_output|1<<pin_type_servo_output,  // oc5
+    "rd5", DIO,
+    "rd6", DIO,
+    "rd7", DIO,
+    "rd8", DIO,
+    "rd9", DIO,
+    "rd10", DIO,
+    "rd11", DIO,
+    "rd12", DIO,
+    "rd13", DIO,
+    "rd14", DIO,
+    "rd15", DIO,
+    "re0", DIO,
+    "re1", DIO,
+    "re2", DIO,
+    "re3", DIO,
+    "re4", DIO,
+    "re5", DIO,
+    "re6", DIO,
+    "re7", DIO,
+    "re8", DIO,
+    "re9", DIO,
+    "rf0", DIO,
+    "rf1", DIO,
+    "rf2", DIO,
+    "rf3", DIO,
+    "rf4", DIO|1<<pin_type_uart_input,  // u2rx
+    "rf5", DIO|1<<pin_type_uart_output,  // u2tx
+    "rf6", 0,
+    "rf7", 0,
+    "rf8", DIO,
+    "rf9", 0,
+    "rf10", 0,
+    "rf11", 0,
+    "rf12", DIO,
+    "rf13", DIO,
+    "rg0", DIO,
+    "rg1", DIO,
+    "rg2", DIO,
+    "rg3", DIO,
+    "rg4", 0,
+    "rg5", 0,
+    "rg6", DIO,
+    "rg7", DIO,
+    "rg8", DIO,
+    "rg9", DIO,
+    "rg10", 0,
+    "rg11", 0,
+    "rg12", DIO,
+    "rg13", DIO,
+    "rg14", DIO,
+    "rg15", DIO,
+#endif
 #else
 #error
 #endif
@@ -2812,16 +3028,10 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 }
             }
             if (pin_type == pin_type_uart_input || pin_type == pin_type_uart_output) {
-                if (offset == 2 || offset == 8) {
-                    U1MODE |= _U1MODE_UARTEN_MASK;
-                } else {
-                    assert(offset == 4 || offset == 5);
-                    U2MODE |= _U2MODE_UARTEN_MASK;
-                }
+                assert(offset == 4 || offset == 5);
+                U2MODE |= _U2MODE_UARTEN_MASK;
             } else {
-                if (offset == 2 || offset == 8) {
-                    U1MODE &= ~_U1MODE_UARTEN_MASK;
-                } else if (offset == 4 || offset == 5) {
+                if (offset == 4 || offset == 5) {
                     U2MODE &= ~_U2MODE_UARTEN_MASK;
                 }
 
@@ -4521,12 +4731,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             offset = pin_number - PIN_RF0;
             assert(offset < 16);
             if (pin_type == pin_type_uart_output) {
-                if (pin_number == PIN_RF8) {
-                    pin_uart_tx(0, value);
-                } else {
-                    assert(pin_number == PIN_RF5);
-                    pin_uart_tx(1, value);
-                }
+                assert(pin_number == PIN_RF5);
+                pin_uart_tx(1, value);
             } else {
                 assert(pin_type == pin_type_digital_output);
                 if (value) {
@@ -5888,19 +6094,11 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             offset = pin_number - PIN_RF0;
             assert(offset < 16);
             if (pin_type == pin_type_uart_input) {
-                if (offset == 2) {
-                    value = pin_uart_rx(0);
-                } else {
-                    assert(offset == 4);
-                    value = pin_uart_rx(1);
-                }
+                assert(offset == 4);
+                value = pin_uart_rx(1);
             } else if (pin_type == pin_type_uart_output) {
-                if (offset == 8) {
-                    value = pin_uart_tx_empty(0)?0:ulasttx[0];
-                } else {
-                    assert(offset == 5);
-                    value = pin_uart_tx_empty(1)?0:ulasttx[1];
-                }
+                assert(offset == 5);
+                value = pin_uart_tx_empty(1)?0:ulasttx[1];
             } else if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
                 value = pin_get_digital_debounced(port_f, offset);

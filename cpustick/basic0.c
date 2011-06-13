@@ -107,12 +107,14 @@ char * const help_about =
 "Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__)
 "Welcome to StickOS for Microchip PIC32MXx-F512H v" VERSION "!\n"
-#elif PIC32 && defined(__32MX320F128H__)
-"Welcome to StickOS for Microchip PIC32MXx-F128H v" VERSION "!\n"
+#elif PIC32 && defined(__32MX320F128H__) && defined CHIPKIT
+"Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__)
 "Welcome to StickOS for Microchip PIC32MXx-F512L v" VERSION "!\n"
+#elif PIC32 && defined(__32MX795F512L__) && defined CHIPKIT
+"Welcome to StickOS for Microchip PIC32MX7-F512L chipKIT Max32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX795F512L__)
 "Welcome to StickOS for Microchip PIC32MX7-F512L v" VERSION "!\n"
 #else
@@ -135,7 +137,7 @@ char * const help_about =
 /*
 to change help:
 
-1. change the help inside the "dead" part of the #if (between GENERATE_HELP_BEGIN and GENERATE_HELP_END)
+1. change the help inside the "dead" part of the #if (between GENERATE-HELP-BEGIN and GENERATE-HELP-END)
 2. download the Win32 version of StickOS from cpustick.com
 3. in a shell window, cd to the cpustick directory
 4. run: "StickOS.exe help <basic0.c >help.c"
@@ -531,6 +533,17 @@ static char *const help_pins =
 "ps0 (u0), ps2 (u1) = potential uart input pins (received byte)\n"
 "ps1 (u0), ps3 (u1) = potential uart output pins (transmit byte)\n"
 #elif PIC32
+#if defined CHIPKIT
+"all pins support general purpose digital input/output\n"
+#if defined(__32MX320F128H__)
+"a?,a,41 = potential analog input pins (mV)\n"
+#else
+"a? = potential analog input pins (mV)\n"
+#endif
+"3,5,6,9,10 = potential analog output (PWM) pins (mV)\n"
+"3,5,6,9,10 = potential servo output (PWM) pins (us)\n"
+"3,5,6,9,10 = potential frequency output pins (Hz)\n"
+#else
 "  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
 #if _PORTA_RA0_MASK
@@ -557,6 +570,7 @@ static char *const help_pins =
 "rd[0-4] = potential frequency output pins (Hz)\n"
 "rf4 (u2) = potential uart input pins (received byte)\n"
 "rf5 (u2) = potential uart output pins (transmit byte)\n"
+#endif
 #else
 #error
 #endif
