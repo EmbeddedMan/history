@@ -619,6 +619,7 @@ const struct pin pins[] = {
     "rg14", DIO,
     "rg15", DIO,
 #elif defined(__32MX795F512L__) && defined CHIPKIT
+//###
 #ifdef _PORTA_RA0_MASK
     "ra0", DIO,
     "ra1", DIO,

@@ -386,12 +386,15 @@ static char *const help_pins =
 "ps\021(u0)\014ps\023(u1\011\035potentia\254uar\264outpu\264pin\263(transmi\264byte)\n"
 #elif PIC32
 #if defined CHIPKIT
-"al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
 #if defined(__32MX320F128H__)
-"a?,a,4\021\035potentia\254analo\247inpu\264pin\263(mV)\n"
+"pi\256names\032a0-a11\0140-13\01426-41\014a\014rg2\014rg3\014rg9\n"
+"jumpers\032jp4=rd4\014jp5,7=master\014jp6=a4\014jp8=a5\n"
 #else
-"a\037\035potentia\254analo\247inpu\264pin\263(mV)\n"
+//###
 #endif
+"\n"
+"al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
+"a\037\035potentia\254analo\247inpu\264pin\263(mV)\n"
 "3,5,6,9,1\020\035potentia\254analo\247outpu\264(PWM\011pin\263(mV)\n"
 "3,5,6,9,1\020\035potentia\254serv\257outpu\264(PWM\011pin\263(us)\n"
 "3,5,6,9,1\020\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"

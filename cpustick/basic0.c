@@ -534,12 +534,15 @@ static char *const help_pins =
 "ps1 (u0), ps3 (u1) = potential uart output pins (transmit byte)\n"
 #elif PIC32
 #if defined CHIPKIT
-"all pins support general purpose digital input/output\n"
 #if defined(__32MX320F128H__)
-"a?,a,41 = potential analog input pins (mV)\n"
+"pin names: a0-a11, 0-13, 26-41, a, rg2, rg3, rg9\n"
+"jumpers: jp4=rd4, jp5,7=master, jp6=a4, jp8=a5\n"
 #else
-"a? = potential analog input pins (mV)\n"
+//###
 #endif
+"\n"
+"all pins support general purpose digital input/output\n"
+"a? = potential analog input pins (mV)\n"
 "3,5,6,9,10 = potential analog output (PWM) pins (mV)\n"
 "3,5,6,9,10 = potential servo output (PWM) pins (us)\n"
 "3,5,6,9,10 = potential frequency output pins (Hz)\n"
