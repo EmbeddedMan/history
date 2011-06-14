@@ -423,8 +423,8 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 FLASH_UPGRADE_RAM_BEGIN
 void
 #if PIC32
-//__longramfunc__
-//__attribute__((nomips16))
+__longramfunc__
+__attribute__((nomips16))
 #endif
 flash_upgrade_ram_begin(void)
 {
