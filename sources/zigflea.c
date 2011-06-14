@@ -663,7 +663,7 @@ zb_reset(void)
     delay(50);
 }
 
-#if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA
 void
 zb_diag(bool reset, bool init)
 {

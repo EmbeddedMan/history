@@ -37,7 +37,7 @@ zb_poll(void);
 void
 zb_drop(bool drop);
 
-#if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA
 void
 zb_diag(bool reset, bool init);
 #endif

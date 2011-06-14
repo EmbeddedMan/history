@@ -39,7 +39,11 @@
 #endif
 
 #if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
-#define USB  1
+#define USB_  1
+#endif
+
+#if SODEBUG || MCF52259 || (PIC32 && defined(_USB))
+#define ZIGFLEA  1
 #endif
 
 #define CHIPKIT  1

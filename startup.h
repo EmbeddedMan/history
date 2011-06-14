@@ -105,7 +105,7 @@
 #define FLASH2_START  0x8000  // BASIC stores, for code access
 #define FLASH2_BYTES  (16*1024L)
 #elif PIC32
-#if defined(USB)
+#if defined(USB_)
 #define STICKOSPLUS  1
 #endif
 #define FLASH_START  0x9D000000

@@ -3,7 +3,7 @@
 // sits on top of this module to implement a specific usb device.
 
 #include "main.h"
-#if USB
+#if USB_
 
 #if PIC32
 // REVISIT -- move to relocated compat.h

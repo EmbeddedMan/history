@@ -28,7 +28,7 @@ enum cmdcode {
     command_upgrade,
 #endif
     command_uptime,
-#if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA
     command_zigflea,
 #endif
     command_dummy
@@ -59,7 +59,7 @@ const char * const commands[] = {
     "upgrade",
 #endif
     "uptime",
-#if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA
     "zigflea",
 #endif
 };
@@ -228,7 +228,7 @@ static char * const help_modes =
 "servo [<Hz>]                      -- set/display servo Hz (on reset)\n"
 "step [on|off]                     -- debugger single-step mode\n"
 "trace [on|off]                    -- debugger trace mode\n"
-#if MCF52259 || PIC32
+#if USB_HOST
 "usbhost [on|off]                  -- USB host mode (on reset)\n"
 #endif
 "watchsmart [on|off]               -- low-overhead watchpoint mode\n"
@@ -924,7 +924,7 @@ basic0_run(char *text_in)
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
     bool boo;
 #endif
-#if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA
     bool reset;
     bool init;
 #endif
@@ -1238,7 +1238,7 @@ basic0_run(char *text_in)
             printf("%dd %dh %dm\n", d, h, m);
             break;
             
-#if SODEBUG || MCF52259 || PIC32
+#if ZIGFLEA
         case command_zigflea:
             reset = parse_word(&text, "reset");
             init = parse_word(&text, "init");
