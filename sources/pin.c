@@ -6233,7 +6233,11 @@ pin_uart_configure(int uart, int baud, int data, byte parity, bool loopback)
     }
 #elif PIC32
     if (! uart) {
-        U1MODE = _U1MODE_UARTEN_MASK|(loopback?_U1MODE_LPBACK_MASK:0)|((data==8&&parity!=2)?(parity?_U1MODE_PDSEL1_MASK:_U1MODE_PDSEL0_MASK):0)/*|_U1MODE_STSEL_MASK*/;
+#if CHIPKIT
+        U1MODE = _U1MODE_UARTEN_MASK|(loopback?_U1MODE_LPBACK_MASK:0)|((data==8&&parity!=2)?(parity?_U1MODE_PDSEL1_MASK:_U1MODE_PDSEL0_MASK):0);
+#else
+        U1MODE = _U1MODE_UARTEN_MASK|(loopback?_U1MODE_LPBACK_MASK:0)|((data==8&&parity!=2)?(parity?_U1MODE_PDSEL1_MASK:_U1MODE_PDSEL0_MASK):0)|_U1MODE_STSEL_MASK;
+#endif
 
         divisor = bus_frequency/baud/16;
         if (divisor >= 0x10000) {
@@ -6243,8 +6247,11 @@ pin_uart_configure(int uart, int baud, int data, byte parity, bool loopback)
 
         U1STA = _U1STA_URXEN_MASK|_U1STA_UTXEN_MASK;
     } else {
-        U2MODE = _U2MODE_UARTEN_MASK|(loopback?_U2MODE_LPBACK_MASK:0)|((data==8&&parity!=2)?(parity?_U2MODE_PDSEL1_MASK:_U2MODE_PDSEL0_MASK):0)/*|_U2MODE_STSEL_MASK*/;
-
+#if CHIPKIT
+        U2MODE = _U2MODE_UARTEN_MASK|(loopback?_U2MODE_LPBACK_MASK:0)|((data==8&&parity!=2)?(parity?_U2MODE_PDSEL1_MASK:_U2MODE_PDSEL0_MASK):0);
+#else
+        U2MODE = _U2MODE_UARTEN_MASK|(loopback?_U2MODE_LPBACK_MASK:0)|((data==8&&parity!=2)?(parity?_U2MODE_PDSEL1_MASK:_U2MODE_PDSEL0_MASK):0)|_U2MODE_STSEL_MASK;
+#endif
         divisor = bus_frequency/baud/16;
         if (divisor >= 0x10000) {
             divisor = 0xffff;
