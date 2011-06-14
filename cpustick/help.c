@@ -305,6 +305,18 @@ static char *const help_pins =
 "urxd\037\035potentia\254uar\264inpu\264pin\263(receive\244byte)\n"
 "utxd\037\035potentia\254uar\264outpu\264pin\263(transmi\264byte)\n"
 #elif MCF51JM128
+#if FB32
+"\300a0-a7\0140-13\014ptc0\014ptc1\014pte7\n"
+"\n"
+"jumpers:\n"
+"\300d6=pwm\n"
+"\n"
+"al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
+"a\037\035potentia\254analo\247inpu\264pin\263(mV)\n"
+"3,5,6,9,10,1\021\035potentia\254analo\247outpu\264(PWM\011pin\263(mV)\n"
+"3,5,6,9,10,1\021\035potentia\254serv\257outpu\264(PWM\011pin\263(us)\n"
+"3,5,6,9,10,1\021\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"
+#else
 "\3020\3051\3052\3053\3054\3055\3056\3057\n"
 "\300------\015------\015------\015------\015------\015------\015------\015--------+\n"
 "\300pta0\302pta1\302pta2\302pta3\302pta4\302pta5\322\274POR\224A\n"
@@ -322,6 +334,7 @@ static char *const help_pins =
 "pte[23]\014ptf[0-5\235\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"
 "pte\021(u1)\014ptc\025(u2\011\035potentia\254uar\264inpu\264pin\263(receive\244byte)\n"
 "pte\020(u1)\014ptc\023(u2\011\035potentia\254uar\264outpu\264pin\263(transmi\264byte)\n"
+#endif
 #elif MCF51CN128
 "\3020\3051\3052\3053\3054\3055\3056\3057\n"
 "\300------\015------\015------\015------\015------\015------\015------\015--------+\n"
@@ -387,9 +400,10 @@ static char *const help_pins =
 #elif PIC32
 #if defined CHIPKIT
 #if defined(__32MX320F128H__)
-"a0-a11\0140-13\01426-41\014a\014rg2\014rg3\014rg9\n"
+"\300a0-a11\0140-13\01426-41\014rg2\014rg3\014rg9\n"
 "\n"
-"jumpers\032jp4=rd4\014jp5,7=master\014jp6=a4\014jp8=a5\n"
+"jumpers:\n"
+"\300jp5,jp7=master\n"
 #else
 //###
 #endif

@@ -453,6 +453,18 @@ static char *const help_pins =
 "urxd? = potential uart input pins (received byte)\n"
 "utxd? = potential uart output pins (transmit byte)\n"
 #elif MCF51JM128
+#if FB32
+"  a0-a7, 0-13, ptc0, ptc1, pte7\n"
+"\n"
+"jumpers:\n"
+"  d6=pwm\n"
+"\n"
+"all pins support general purpose digital input/output\n"
+"a? = potential analog input pins (mV)\n"
+"3,5,6,9,10,11 = potential analog output (PWM) pins (mV)\n"
+"3,5,6,9,10,11 = potential servo output (PWM) pins (us)\n"
+"3,5,6,9,10,11 = potential frequency output pins (Hz)\n"
+#else
 "    0       1       2       3       4       5       6       7\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
 "  pta0    pta1    pta2    pta3    pta4    pta5                    | PORT A\n"
@@ -470,6 +482,7 @@ static char *const help_pins =
 "pte[23], ptf[0-5] = potential frequency output pins (Hz)\n"
 "pte1 (u1), ptc5 (u2) = potential uart input pins (received byte)\n"
 "pte0 (u1), ptc3 (u2) = potential uart output pins (transmit byte)\n"
+#endif
 #elif MCF51CN128
 "    0       1       2       3       4       5       6       7\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
@@ -535,9 +548,10 @@ static char *const help_pins =
 #elif PIC32
 #if defined CHIPKIT
 #if defined(__32MX320F128H__)
-"a0-a11, 0-13, 26-41, a, rg2, rg3, rg9\n"
+"  a0-a11, 0-13, 26-41, rg2, rg3, rg9\n"
 "\n"
-"jumpers: jp4=rd4, jp5,7=master, jp6=a4, jp8=a5\n"
+"jumpers:\n"
+"  jp5,jp7=master\n"
 #else
 //###
 #endif
