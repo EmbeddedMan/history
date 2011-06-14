@@ -50,7 +50,7 @@ the command-line.
 
 The skeleton code provides a rudimentary command-line interface for the
 MCU.  For the MCF52259, MCF52221, MCF51JM128, and PIC32MX4, this is provided
-by a USB device driver and an upper level FTDI device class driver that
+by a USB device driver and an upper level CDC/ACM device class driver that
 connects to a USB Virtual COM Port on the host PC.  For the MCF52233, this is
 provided by the Niche Lite TCP/IP stack that accepts a raw connection from
 a socket on the host PC on port 1234.  All MCUs also support a physical UART
@@ -70,10 +70,9 @@ found in StickOS BASIC, allowing easy porting of BASIC programs to C:
 * boot-time detection of debugger presence
 * programmable interval timer, a/d converter, sleep mode example code
 
-To run the Skeleton USB code, build the bits and flash the board.
-Connect the Mini-AB connector on the board to the host PC.  Let
-Windows auto-install the drivers (or alternatively, install them from
-http://www.ftdichip.com/FTDrivers.htm).  Open HyperTerminal and connect
+To run the Skeleton USB code, build the bits and flash the board.  Save
+cpustick.inf to a file and right-click -> Install.  Connect the board.
+Let Windows auto-install the drivers.  Open HyperTerminal and connect
 to the new Virtual Com Port.  Press <Enter> for a prompt (this may take
 a few seconds).
 
@@ -107,8 +106,8 @@ The general purpose sources files are as follows:
 
 adc.[ch]       -- simple a/d converter driver
 clone.[ch]     -- QSPI/EzPort CPU-to-CPU flash cloner
-flash.[ch]     -- flash access and FTDI-based USB upgrade routines
-ftdi.[ch]      -- FTDI device class driver
+flash.[ch]     -- flash access and CDC/ACM-based USB upgrade routines
+ftdi.[ch]      -- CDC/ACM device class driver
 i2c.[ch]       -- i2c transport driver
 led.[ch]       -- trivial LED status driver
 pin.[ch]       -- MCU I/O pin manipulation
@@ -116,7 +115,7 @@ printf.[ch]    -- lightweight printf to terminal or CW debug console
 qspi.[ch]      -- qspi transport driver
 scsi.[ch]      -- mst class host controller driver
 sleep.[ch]     -- sleep mode driver
-terminal.[ch]  -- vt100 terminal emulator driver (on FTDI or tcp/ip)
+terminal.[ch]  -- vt100 terminal emulator driver (on CDC/ACM or tcp/ip)
 timer.[ch]     -- simple programmable timer interrupt driver
 usb.[ch]       -- dual mode host controller/device driver
 util.[ch]      -- basic utility routines

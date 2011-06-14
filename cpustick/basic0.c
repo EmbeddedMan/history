@@ -535,7 +535,8 @@ static char *const help_pins =
 #elif PIC32
 #if defined CHIPKIT
 #if defined(__32MX320F128H__)
-"pin names: a0-a11, 0-13, 26-41, a, rg2, rg3, rg9\n"
+"a0-a11, 0-13, 26-41, a, rg2, rg3, rg9\n"
+"\n"
 "jumpers: jp4=rd4, jp5,7=master, jp6=a4, jp8=a5\n"
 #else
 //###
