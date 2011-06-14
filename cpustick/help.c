@@ -80,7 +80,7 @@ static char * const help_modes =
 "serv\257[<Hz>]\324-\015set/displa\271serv\257H\272(o\256reset)\n"
 "ste\260[on|off]\323-\015debugge\262single-ste\260mode\n"
 "trac\245[on|off]\322-\015debugge\262trac\245mode\n"
-#if MCF52259 || PIC32
+#if USB_HOST
 "usbhos\264[on|off]\320-\015US\202hos\264mod\245(o\256reset)\n"
 #endif
 "watchsmar\264[on|off]\315-\015low-overhea\244watchpoin\264mode\n"
@@ -312,10 +312,10 @@ static char *const help_pins =
 "\300d6=pwm\n"
 "\n"
 "al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
-"a\037\035potentia\254analo\247inpu\264pin\263(mV)\n"
-"3,5,6,9,10,1\021\035potentia\254analo\247outpu\264(PWM\011pin\263(mV)\n"
-"3,5,6,9,10,1\021\035potentia\254serv\257outpu\264(PWM\011pin\263(us)\n"
-"3,5,6,9,10,1\021\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"
+"a?\014\027\035potentia\254analo\247inpu\264pin\263(mV)\n"
+"3,5,6,8,9,10,1\021\035potentia\254analo\247outpu\264(PWM\011pin\263(mV)\n"
+"3,5,6,8,9,10,1\021\035potentia\254serv\257outpu\264(PWM\011pin\263(us)\n"
+"3,5,6,8,9,10,1\021\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"
 #else
 "\3020\3051\3052\3053\3054\3055\3056\3057\n"
 "\300------\015------\015------\015------\015------\015------\015------\015--------+\n"

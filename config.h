@@ -1,4 +1,4 @@
-#define VERSION  "1.82e"
+#define VERSION  "1.82x"
 
 #if PIC32 && ! _WIN32
 // REVISIT -- we take debug info from the pic32 environment for now
@@ -11,6 +11,9 @@
 #endif
 #elif ! FLASHER
 #endif
+
+// uncomment for CHIPKIT
+//#define CHIPKIT  1
 
 // uncomment for HID bootloader and cp procdefs.ld.ubw32 procdefs.ld
 //#define HIDBL  1
@@ -45,8 +48,6 @@
 #if SODEBUG || MCF52259 || (PIC32 && defined(_USB))
 #define ZIGFLEA  1
 #endif
-
-#define CHIPKIT  1
 
 #if ! CHIPKIT
 #if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
