@@ -553,7 +553,7 @@ static char *const help_pins =
 "jumpers:\n"
 "  jp3,jp4=master\n"
 #else
-"  a0-a15, 0-23, 28-39, 43-49, 52-53, 70-85\n"
+"  a0-a15, 0-13, 16-23, 28-39, 43-49, 52-53, 70-85\n"
 "\n"
 "pin aliases:\n"
 "  40=a11, 41=a13, 42=a12, 50=29, 51=43\n"
