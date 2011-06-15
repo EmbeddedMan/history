@@ -689,8 +689,8 @@ const struct pin pins[] = {
     "ra11", 0,
     "ra12", 0,
     "ra13", 0,
-    "ra14", DIO,
-    "ra15", DIO,
+    "21", DIO,
+    "20", DIO,
 #endif
     "a0", DIO|1<<pin_type_analog_input,  // rb0...
     "a1", DIO|1<<pin_type_analog_input,
@@ -738,8 +738,8 @@ const struct pin pins[] = {
     "49", DIO,
     "8", DIO,
     "76", DIO,
-    "rd14", DIO,
-    "rd15", DIO,
+    "19", DIO,
+    "18", DIO,
     "37", DIO,
     "36", DIO,
     "35", DIO,
@@ -754,16 +754,16 @@ const struct pin pins[] = {
     "46", DIO,
     "0", DIO,
     "rf3", DIO,
-    "rf4", DIO|1<<pin_type_uart_input,  // u2rx
-    "rf5", DIO|1<<pin_type_uart_output,  // u2tx
+    "17", DIO|1<<pin_type_uart_input,  // u2rx
+    "16", DIO|1<<pin_type_uart_output,  // u2tx
     "rf6", DIO,
     "rf7", 0,
     "1", DIO,
     "rf9", 0,
     "rf10", 0,
     "rf11", 0,
-    "rf12", DIO,
-    "rf13", DIO,
+    "15", DIO,
+    "14", DIO,
     "79", DIO,
     "78", DIO,
     "rg2", DIO,
