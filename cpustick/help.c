@@ -400,7 +400,7 @@ static char *const help_pins =
 #elif PIC32
 #if defined CHIPKIT
 #if defined(__32MX320F128H__)
-"\300a0-a11\0140-13\01426-41\014rg2\014rg3\014rg9\n"
+"\300a0-a11\0140-13\01426-41\01443\014rg2\014rg3\014rg9\n"
 "\n"
 "jumpers:\n"
 "\300jp3,jp4=master\n"

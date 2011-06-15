@@ -642,7 +642,7 @@ const struct pin pins[] = {
     "33", DIO,
     "re8", DIO,
     "re9", DIO,
-    "rf0", DIO,
+    "43", DIO,
     "4", DIO,
     "0", DIO,
     "1", DIO,
@@ -2878,6 +2878,8 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_RA5:
         case PIN_RA6:
         case PIN_RA7:
+        case PIN_RA9:
+        case PIN_RA10:
         case PIN_RA14:
         case PIN_RA15:
             offset = pin_number - PIN_RA0;
@@ -3108,6 +3110,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_RG12:
         case PIN_RG13:
         case PIN_RG14:
+        case PIN_RG15:
             offset = pin_number - PIN_RG0;
             assert(offset < 16);
             // if we have a pullup (see datasheet table 12-11)...
@@ -4596,6 +4599,8 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_RA5:
         case PIN_RA6:
         case PIN_RA7:
+        case PIN_RA9:
+        case PIN_RA10:
         case PIN_RA14:
         case PIN_RA15:
             offset = pin_number - PIN_RA0;
@@ -4808,6 +4813,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_RG12:
         case PIN_RG13:
         case PIN_RG14:
+        case PIN_RG15:
             offset = pin_number - PIN_RG0;
             assert(offset < 16);
             assert(pin_type == pin_type_digital_output);
@@ -6014,6 +6020,8 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_RA5:
         case PIN_RA6:
         case PIN_RA7:
+        case PIN_RA9:
+        case PIN_RA10:
         case PIN_RA14:
         case PIN_RA15:
             offset = pin_number - PIN_RA0;
@@ -6174,6 +6182,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_RG12:
         case PIN_RG13:
         case PIN_RG14:
+        case PIN_RG15:
             offset = pin_number - PIN_RG0;
             assert(offset < 16);
             if (pin_qual & 1<<pin_qual_debounced) {
