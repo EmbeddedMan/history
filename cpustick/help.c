@@ -306,7 +306,7 @@ static char *const help_pins =
 "utxd\037\035potentia\254uar\264outpu\264pin\263(transmi\264byte)\n"
 #elif MCF51JM128
 #if FB32
-"\300a0-a7\0140-13\014ptc0\014ptc1\014pte7\n"
+"\300a0-a7\0140-13\014ptc0\014ptc1\014pte7\014ptg1\014ptg2\n"
 "\n"
 "jumpers:\n"
 "\300d6=pwm\n"
