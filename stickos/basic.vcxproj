@@ -559,6 +559,7 @@
     <ClCompile Include="w32main.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\config.h" />
     <ClInclude Include="..\cpustick\basic0.h" />
     <ClInclude Include="..\cpustick\parse2.h" />
     <ClInclude Include="..\cpustick\run2.h" />
@@ -569,6 +570,7 @@
     <ClInclude Include="..\sources\text.h" />
     <ClInclude Include="..\sources\timer.h" />
     <ClInclude Include="..\sources\util.h" />
+    <ClInclude Include="..\startup.h" />
     <ClInclude Include="basic.h" />
     <ClInclude Include="code.h" />
     <ClInclude Include="..\main.h" />

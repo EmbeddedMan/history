@@ -3,7 +3,7 @@
 // sits on top of this module to implement a specific usb device.
 
 #include "main.h"
-#if USB_
+#if USBOTG
 
 #if PIC32
 // REVISIT -- move to relocated compat.h
@@ -108,7 +108,7 @@ static struct bdt {
 
 // N.B. only bdt endpoint 0 is used for host mode!
 
-#if PICTOCRYPT || STICKOSPLUS
+#if PICTOCRYPT || USB_HOST
 #define ENDPOINTS  6
 #else
 #define ENDPOINTS  4
@@ -180,7 +180,7 @@ parse_configuration(const byte *configuration, int size)
 
 // *** host ***
 
-#if ! STICKOS || STICKOSPLUS
+#if ! STICKOS || USB_HOST
 // initialize a setup data0 buffer
 void
 usb_setup(int in, int type, int recip, byte request, short value, short index, short length, struct setup *setup)
@@ -608,7 +608,7 @@ __ISR(45, ipl6) // REVISIT -- ipl?
 #endif
 usb_isr(void)
 {
-#if ! STICKOS || STICKOSPLUS
+#if ! STICKOS || USB_HOST
     int e;
 #endif
     int rv;
@@ -629,7 +629,7 @@ usb_isr(void)
     
     // *** host ***
     
-#if ! STICKOS || STICKOSPLUS
+#if ! STICKOS || USB_HOST
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_ATTACH) {
         int size;
         struct setup setup;
@@ -1012,7 +1012,7 @@ XXX_SKIP2_XXX:;
     // if we just got reset by the host...
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_USB_RST) {
         if (usb_host_mode) {
-#if STICKOSPLUS
+#if USB_HOST
             usb_host_detach();
 #endif
         } else {
@@ -1160,7 +1160,7 @@ usb_initialize(void)
         MCF_GPIO_CLRUA = (uint8)~0x08;
 #endif
 
-#if ! STICKOS || STICKOSPLUS
+#if ! STICKOS || USB_HOST
         // enable usb to interrupt on attach
         usb_host_detach();
 #else

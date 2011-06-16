@@ -1,4 +1,4 @@
-#define VERSION  "1.82x"
+#define VERSION  "1.84x"
 
 #if PIC32 && ! _WIN32
 // REVISIT -- we take debug info from the pic32 environment for now
@@ -12,7 +12,7 @@
 #elif ! FLASHER
 #endif
 
-#if PIC32
+#if PIC32 && ! _WIN32
 // uncomment for CHIPKIT and install chipKIT-UNO32-application-32MX320F128L.ld in project
 #define CHIPKIT  1
 
@@ -43,12 +43,20 @@
 #define LCD  1
 #endif
 
-#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && defined(_USB))
-#define USB_  1
+#if MCF52221 || MCF52259 || MCF51JM128 || (PIC32 && ! defined(__32MX320F128H__))
+#define USBOTG  1
 #endif
 
-#if SODEBUG || MCF52259 || (PIC32 && defined(_USB))
+#if MCF52259 || (PIC32 && ! defined(__32MX320F128H__))
+#define USB_HOST  1
+#endif
+
+#if SODEBUG || MCF52259 || (PIC32 && ! defined(__32MX320F128H__))
 #define ZIGFLEA  1
+#endif
+
+#if PIC32 && ! defined(__32MX320F128H__) && ! defined(__32MX440F256H__) && ! defined(__32MX440F512H__)
+#define PIC32PORTA  1
 #endif
 
 #if ! CHIPKIT

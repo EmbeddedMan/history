@@ -6,11 +6,11 @@
 #include "main.h"
 
 #if PIC32 && ! HIDBL && ! CHIPKIT
-#if defined(USB_)
+#if defined(USBOTG)
     #pragma config UPLLEN   = ON            // USB PLL Enabled
 #endif
     #pragma config FPLLMUL  = MUL_20        // PLL Multiplier
-#if defined(USB_)
+#if defined(USBOTG)
     #pragma config UPLLIDIV = DIV_2         // USB PLL Input Divider
 #endif
     #pragma config FPLLIDIV = DIV_2         // PLL Input Divider
@@ -206,7 +206,7 @@ main()  // we're called directly by startup.c
     } else {
         usb_host_mode = true;
     }
-#elif STICKOSPLUS
+#elif USB_HOST
     usb_host_mode = (var_get_flash(FLASH_USBHOST) == 1) && ! disable_autorun;
 #endif
 
@@ -223,7 +223,7 @@ main()  // we're called directly by startup.c
     serial_initialize();
 #endif
 
-#if USB_
+#if USBOTG
     // initialize usb
     usb_initialize();
 #endif

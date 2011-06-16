@@ -4,7 +4,7 @@
 enum flash_var {
     FLASH_AUTORUN,
     FLASH_BAUD,
-#if STICKOSPLUS
+#if USB_HOST
     FLASH_USBHOST,
 #endif
     FLASH_ANALOG,

@@ -335,7 +335,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
     npages = npages_in;
         
     x = splx(7);
-#if defined(_DMACON_SUSPEND_MASK)
+#if defined(USBOTG)
     DMACONSET = _DMACON_SUSPEND_MASK;
     while (! DMACONbits.SUSPEND) {
         // NULL
@@ -354,7 +354,7 @@ flash_erase_pages(uint32 *addr_in, uint32 npages_in)
         addr += FLASH_PAGE_SIZE/sizeof(uint32);
     }
 
-#if defined(_DMACON_SUSPEND_MASK)
+#if defined(USBOTG)
     DMACONCLR = _DMACON_SUSPEND_MASK;
 #endif
     (void)splx(x);
@@ -382,7 +382,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
     nwords = nwords_in;
 
     x = splx(7);
-#if defined(_DMACON_SUSPEND_MASK)
+#if defined(USBOTG)
     DMACONSET = _DMACON_SUSPEND_MASK;
     while (! DMACONbits.SUSPEND) {
         // NULL
@@ -403,7 +403,7 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
         data++;
     }
 
-#if defined(_DMACON_SUSPEND_MASK)
+#if defined(USBOTG)
     DMACONCLR = _DMACON_SUSPEND_MASK;
 #endif
     (void)splx(x);
@@ -1218,7 +1218,7 @@ flash_upgrade(uint32 fsys_frequency)
     
     // disable interrupts
     x = splx(7);
-#if defined(_DMACON_SUSPEND_MASK)
+#if defined(USBOTG)
     DMACONSET = _DMACON_SUSPEND_MASK;
     while (! DMACONbits.SUSPEND) {
         // NULL

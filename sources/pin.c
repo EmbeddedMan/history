@@ -11,7 +11,7 @@
 
 int servo_hz = 45;
 
-#define SERVO_MAX (1000000/servo_hz)
+#define SERVO_MAX (1000000/servo_hz)  // microseconds
 #if MC9S08QE128 || MCF51QE128 || MCF51CN128 || MCF51JM128 || PIC32
 #if PIC32
 #define SERVO_PRESCALE  64
@@ -566,7 +566,7 @@ const struct pin pins[] = {
 #elif PIC32
 #if defined(__32MX320F128H__) && defined CHIPKIT
 // UNO32
-#ifdef _PORTA_RA0_MASK
+#ifdef PIC32PORTA
     "ra0", DIO,
     "ra1", DIO,
     "ra2", DIO,
@@ -674,7 +674,7 @@ const struct pin pins[] = {
     "rg15", DIO,
 #elif defined(__32MX795F512L__) && defined CHIPKIT
 // MAX32
-#ifdef _PORTA_RA0_MASK
+#ifdef PIC32PORTA
     "70", DIO,
     "71", DIO,
     "12", DIO,
@@ -781,7 +781,7 @@ const struct pin pins[] = {
     "82", DIO,
     "28", DIO,
 #else
-#ifdef _PORTA_RA0_MASK
+#ifdef PIC32PORTA
     "ra0", DIO,
     "ra1", DIO,
     "ra2", DIO,
@@ -979,7 +979,7 @@ enum debounce_ports {
     port_s,
     port_t,
 #elif PIC32
-#ifdef _PORTA_RA0_MASK
+#ifdef PIC32PORTA
     port_a,
 #endif
     port_b,
@@ -2869,7 +2869,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
 #elif PIC32
     // configure the PIC32 pin for the requested function
     switch (pin_number) {
-#ifdef _PORTA_RA0_MASK
+#ifdef PIC32PORTA
         case PIN_RA0:
         case PIN_RA1:
         case PIN_RA2:
@@ -4590,7 +4590,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
 #elif PIC32
     // set the PIC32 pin to value
     switch (pin_number) {
-#ifdef _PORTA_RA0_MASK
+#ifdef PIC32PORTA
         case PIN_RA0:
         case PIN_RA1:
         case PIN_RA2:
@@ -6011,7 +6011,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
 #elif PIC32
     // get the value of the PIC32 pin
     switch (pin_number) {
-#ifdef _PORTA_RA0_MASK
+#ifdef PIC32PORTA
         case PIN_RA0:
         case PIN_RA1:
         case PIN_RA2:
@@ -6621,7 +6621,7 @@ pin_timer_poll(void)
     sample[port_s] = PTIS;
     sample[port_t] = PTIT;
 #elif PIC32
-#ifdef _PORTA_RA0_MASK
+#ifdef PIC32PORTA
     sample[port_a] = PORTA;
 #endif
     sample[port_b] = PORTB;

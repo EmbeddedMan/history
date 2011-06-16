@@ -785,7 +785,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Freescale MCF52221 v1.82!
+Welcome to StickOS for Freescale MCF52221 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -970,7 +970,7 @@ pin names:
 all pins support general purpose digital input/output
 an? = potential analog input pins (mV)
 dtin? = potential analog output (PWM) pins (mV)
-dtin? = potential servo output (PWM) pins (cms)
+dtin? = potential servo output (PWM) pins (us)
 dtin? = potential frequency output pins (Hz)
 urxd? = potential uart input pins (received byte)
 utxd? = potential uart output pins (transmit byte)
@@ -2685,12 +2685,12 @@ end
 4 is even
 5 is odd
 test dummy clone
-Welcome to StickOS for Freescale MCF52221 v1.82!
+Welcome to StickOS for Freescale MCF52221 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 cloning...
-Welcome to StickOS for Freescale MCF52221 v1.82!
+Welcome to StickOS for Freescale MCF52221 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com

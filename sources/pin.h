@@ -421,7 +421,7 @@ enum pin_number {  // skeleton may extend this
     PIN_PT6,
     PIN_PT7,
 #elif PIC32
-#if _PORTA_RA0_MASK
+#if PIC32PORTA
     PIN_RA0,
     PIN_RA1,
     PIN_RA2,

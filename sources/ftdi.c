@@ -6,7 +6,7 @@
 // the usb driver module).
 
 #include "main.h"
-#if USB_
+#if USBOTG
 
 #define PACKET_SIZE  64
 

@@ -279,7 +279,7 @@ enum {
 #include "parse2.h"
 #include "run2.h"
 
-#if STICKOSPLUS && STICKOS
+#if USB_HOST && STICKOS
 #include "block.h"
 #include "fat32.h"
 #endif

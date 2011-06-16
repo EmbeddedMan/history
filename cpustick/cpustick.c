@@ -125,7 +125,7 @@ main_initialize(void)
     // register device mode callbacks
     terminal_register(main_command_cbfn, main_ctrlc_cbfn);
     
-#if USB_
+#if USBOTG
     // if we're in device mode...
     if (! usb_host_mode) {
         ftdi_register(main_reset_cbfn);

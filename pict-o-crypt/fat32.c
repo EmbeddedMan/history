@@ -10,7 +10,7 @@
 
 #include "main.h"
 
-#if STICKOSPLUS || PICTOCRYPT
+#if USB_HOST || PICTOCRYPT
 #define OPTIMIZE  1
 
 #if ! _WIN32

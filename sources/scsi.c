@@ -1,9 +1,8 @@
-#if USB_
 // *** scsi *****************************************************************
 
 #include "main.h"
-
-#if ! STICKOS || STICKOSPLUS
+#if USBOTG
+#if ! STICKOS || USB_HOST
 
 byte scsi_lun;
 

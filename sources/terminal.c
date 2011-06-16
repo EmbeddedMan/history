@@ -101,7 +101,7 @@ terminal_print(const byte *buffer, int length)
     }
 #endif
 
-#if USB_
+#if USBOTG
 #if ! FLASHER
     if (ftdi_attached && ftdi_active) {
         ftdi_print(buffer, length);
@@ -505,7 +505,7 @@ terminal_command_ack(bool edit)
     }
 
     if (terminal_txid == -1) {
-#if USB_
+#if USBOTG
         ftdi_command_ack();
 #endif
 #if ! FLASHER && ! PICTOCRYPT
@@ -592,7 +592,7 @@ terminal_poll(void)
         
         if (strchr((char *)copy, '\r')) {
             if (terminal_txid == -1) {
-#if USB_
+#if USBOTG
                 ftdi_command_ack();
 #endif
 #if ! FLASHER && ! PICTOCRYPT

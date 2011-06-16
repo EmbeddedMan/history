@@ -102,9 +102,6 @@
     <ClInclude Include="code.h">
       <Filter>stickos</Filter>
     </ClInclude>
-    <ClInclude Include="..\main.h">
-      <Filter>stickos</Filter>
-    </ClInclude>
     <ClInclude Include="parse.h">
       <Filter>stickos</Filter>
     </ClInclude>
@@ -114,6 +111,9 @@
     <ClInclude Include="vars.h">
       <Filter>stickos</Filter>
     </ClInclude>
+    <ClInclude Include="..\config.h" />
+    <ClInclude Include="..\main.h" />
+    <ClInclude Include="..\startup.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\test\basic.sh">

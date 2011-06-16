@@ -101,14 +101,14 @@ char * const help_about =
 "Welcome to StickOS for Freescale MC9S12DT256 v" VERSION "!\n"
 #elif MC9S12DP512
 "Welcome to StickOS for Freescale MC9S12DP512 v" VERSION "!\n"
+#elif PIC32 && defined(__32MX320F128H__) && defined CHIPKIT
+"Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F256H__)
 "Welcome to StickOS for Microchip PIC32MXx-F256H v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__)
 "Welcome to StickOS for Microchip PIC32MXx-F512H v" VERSION "!\n"
-#elif PIC32 && defined(__32MX320F128H__) && defined CHIPKIT
-"Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__)
@@ -570,7 +570,7 @@ static char *const help_pins =
 #else
 "  0/8     1/9     2/10    3/11    4/12    5/13    6/14    7/15\n"
 "  ------- ------- ------- ------- ------- ------- ------- --------+\n"
-#if _PORTA_RA0_MASK
+#if PIC32PORTA
 "  ra0     ra1     ra2     ra3     ra4     ra5     ra6     ra7     | PORT A\n"
 "          ra9     ra10                            ra14    ra15    |      A+8\n"
 #endif
@@ -1215,6 +1215,7 @@ basic0_run(char *text_in)
         case command_upgrade:  // upgrade StickOS S19 file
 #endif
             number1 = 0;
+#if DOWNLOAD
             if (cmd == command_download) {
                 // get fsys_frequency
                 (void)basic_const(&text, &number1);
@@ -1226,6 +1227,7 @@ basic0_run(char *text_in)
                     goto XXX_ERROR_XXX;
                 }
             }
+#endif
             flash_upgrade(number1);
             break;
 #endif
@@ -1280,7 +1282,7 @@ basic0_poll(void)
     terminal_poll();
     var_poll();
 
-#if STICKOSPLUS
+#if USB_HOST
     // flush dirty lbas to the filesystem
     flush_log_file();
 #endif

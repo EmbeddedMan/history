@@ -310,7 +310,7 @@ printf_write(char *buffer, int n)
     }
 #endif
 
-#if STICKOSPLUS && STICKOS
+#if USB_HOST && STICKOS
     if (run_printf && scsi_attached) {
         bool open;
 
@@ -361,7 +361,7 @@ printf(const char *format, ...)
     return n;
 }
 
-#if STICKOSPLUS && STICKOS && ! STICK_GUEST
+#if USB_HOST && STICKOS && ! STICK_GUEST
 static bool open;
 static VOLINFO vi;
 static FILEINFO wfi;

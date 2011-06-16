@@ -36,7 +36,6 @@
 #define BASIC_VARS  100
 #define BASIC_STORES  2
 #elif MCF52259
-#define STICKOSPLUS  1
 #define FLASH_START  0
 #define FLASH_BYTES  (256*1024)  // the smallest part we support
 #define FLASH_PAGE_SIZE  4096
@@ -105,9 +104,6 @@
 #define FLASH2_START  0x8000  // BASIC stores, for code access
 #define FLASH2_BYTES  (16*1024L)
 #elif PIC32
-#if defined(USB_)
-#define STICKOSPLUS  1
-#endif
 #define FLASH_START  0x9D000000
 #if defined(__32MX320F128H__)
 #define FLASH_BYTES  (128*1024)  // the smallest part we support
