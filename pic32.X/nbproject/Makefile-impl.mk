@@ -31,7 +31,7 @@ DEFAULTCONF=default
 CONF=${DEFAULTCONF}
 
 # All Configurations
-ALLCONFS=default chipKIT_Max32 chipKIT_Uno32 
+ALLCONFS=default chipKIT_Max32 chipKIT_Uno32 UBW32v1 
 
 
 # build

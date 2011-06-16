@@ -3,11 +3,6 @@
 //#define SODEBUG  1
 //#define DEBUGGING  1
 
-#if PIC32 && ! _WIN32
-// uncomment for HID bootloader and cp procdefs.ld.ubw32 procdefs.ld
-//#define HIDBL  1
-#endif
-
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #define DEMO  1  // 1 enables DEMO board USB power
 #endif

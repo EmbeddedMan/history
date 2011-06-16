@@ -48,7 +48,7 @@
     <conf name="default" type="3">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <targetDevice>PIC32MX795F512L</targetDevice>
+        <targetDevice>PIC32MX460F512L</targetDevice>
         <targetHeader></targetHeader>
         <platformTool>PICkit3PlatformTool</platformTool>
         <languageToolchain>C32</languageToolchain>
@@ -60,9 +60,9 @@
         </archiverTool>
       </compileType>
       <C32>
+        <property key="additional-warnings" value="false"/>
         <property key="extra-include-directories"
                   value="..;../pict-o-crypt;../cpustick;../headers;../sources;../stickos"/>
-        <property key="additional-warnings" value="false"/>
         <property key="preprocessor-macros" value="PIC32=1;STICKOS=1"/>
         <property key="exclude-floating-point" value="true"/>
         <property key="make-warnings-into-errors" value="false"/>
@@ -77,6 +77,7 @@
         <property key="enable-unroll-loops" value="false"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="isolate-each-function" value="false"/>
+        <appendMe value="-fno-builtin"/>
       </C32>
       <C32-AS>
         <property key="omit-debug-dirs" value="false"/>

@@ -65,7 +65,7 @@ ifneq ($(OS_CURRENT),$(OS_ORIGINAL))
 endif
 	${MAKE}  -f nbproject/Makefile-default.mk dist/${CND_CONF}/${IMAGE_TYPE}/pic32.X.${IMAGE_TYPE}.elf
 
-MP_PROCESSOR_OPTION=32MX795F512L
+MP_PROCESSOR_OPTION=32MX460F512L
 MP_LINKER_FILE_OPTION=
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: assemble
@@ -79,7 +79,7 @@ ifeq ($(TYPE_IMAGE), DEBUG_RUN)
 ${OBJECTDIR}/_ext/592584297/util.o: ../sources/util.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/util.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/util.o.d -o ${OBJECTDIR}/_ext/592584297/util.o ../sources/util.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/util.o.d -o ${OBJECTDIR}/_ext/592584297/util.o ../sources/util.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/util.o.d > ${OBJECTDIR}/_ext/592584297/util.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/util.o.d 
@@ -89,7 +89,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/timer.o: ../sources/timer.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/timer.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/timer.o.d -o ${OBJECTDIR}/_ext/592584297/timer.o ../sources/timer.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/timer.o.d -o ${OBJECTDIR}/_ext/592584297/timer.o ../sources/timer.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/timer.o.d > ${OBJECTDIR}/_ext/592584297/timer.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/timer.o.d 
@@ -99,7 +99,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/terminal.o: ../sources/terminal.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/terminal.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/terminal.o.d -o ${OBJECTDIR}/_ext/592584297/terminal.o ../sources/terminal.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/terminal.o.d -o ${OBJECTDIR}/_ext/592584297/terminal.o ../sources/terminal.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/terminal.o.d > ${OBJECTDIR}/_ext/592584297/terminal.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/terminal.o.d 
@@ -109,7 +109,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/flash.o: ../sources/flash.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/flash.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/flash.o.d -o ${OBJECTDIR}/_ext/592584297/flash.o ../sources/flash.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/flash.o.d -o ${OBJECTDIR}/_ext/592584297/flash.o ../sources/flash.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/flash.o.d > ${OBJECTDIR}/_ext/592584297/flash.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/flash.o.d 
@@ -119,7 +119,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/text.o: ../sources/text.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/text.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/text.o.d -o ${OBJECTDIR}/_ext/592584297/text.o ../sources/text.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/text.o.d -o ${OBJECTDIR}/_ext/592584297/text.o ../sources/text.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/text.o.d > ${OBJECTDIR}/_ext/592584297/text.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/text.o.d 
@@ -129,7 +129,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/led.o: ../sources/led.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/led.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/led.o.d -o ${OBJECTDIR}/_ext/592584297/led.o ../sources/led.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/led.o.d -o ${OBJECTDIR}/_ext/592584297/led.o ../sources/led.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/led.o.d > ${OBJECTDIR}/_ext/592584297/led.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/led.o.d 
@@ -139,7 +139,7 @@ endif
 ${OBJECTDIR}/_ext/35980457/cpustick.o: ../cpustick/cpustick.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/35980457 
 	${RM} ${OBJECTDIR}/_ext/35980457/cpustick.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/35980457/cpustick.o.d -o ${OBJECTDIR}/_ext/35980457/cpustick.o ../cpustick/cpustick.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/35980457/cpustick.o.d -o ${OBJECTDIR}/_ext/35980457/cpustick.o ../cpustick/cpustick.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/35980457/cpustick.o.d > ${OBJECTDIR}/_ext/35980457/cpustick.o.tmp
 	${RM} ${OBJECTDIR}/_ext/35980457/cpustick.o.d 
@@ -149,7 +149,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/ftdi.o: ../sources/ftdi.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/ftdi.o.d -o ${OBJECTDIR}/_ext/592584297/ftdi.o ../sources/ftdi.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/ftdi.o.d -o ${OBJECTDIR}/_ext/592584297/ftdi.o ../sources/ftdi.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/ftdi.o.d > ${OBJECTDIR}/_ext/592584297/ftdi.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
@@ -159,7 +159,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/i2c.o: ../sources/i2c.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/i2c.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/i2c.o.d -o ${OBJECTDIR}/_ext/592584297/i2c.o ../sources/i2c.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/i2c.o.d -o ${OBJECTDIR}/_ext/592584297/i2c.o ../sources/i2c.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/i2c.o.d > ${OBJECTDIR}/_ext/592584297/i2c.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/i2c.o.d 
@@ -169,7 +169,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/adc.o: ../sources/adc.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/adc.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/adc.o.d -o ${OBJECTDIR}/_ext/592584297/adc.o ../sources/adc.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/adc.o.d -o ${OBJECTDIR}/_ext/592584297/adc.o ../sources/adc.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/adc.o.d > ${OBJECTDIR}/_ext/592584297/adc.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/adc.o.d 
@@ -179,7 +179,7 @@ endif
 ${OBJECTDIR}/_ext/1472/vectors.o: ../vectors.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/1472 
 	${RM} ${OBJECTDIR}/_ext/1472/vectors.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/1472/vectors.o.d -o ${OBJECTDIR}/_ext/1472/vectors.o ../vectors.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/1472/vectors.o.d -o ${OBJECTDIR}/_ext/1472/vectors.o ../vectors.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/1472/vectors.o.d > ${OBJECTDIR}/_ext/1472/vectors.o.tmp
 	${RM} ${OBJECTDIR}/_ext/1472/vectors.o.d 
@@ -189,7 +189,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/qspi.o: ../sources/qspi.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/qspi.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/qspi.o.d -o ${OBJECTDIR}/_ext/592584297/qspi.o ../sources/qspi.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/qspi.o.d -o ${OBJECTDIR}/_ext/592584297/qspi.o ../sources/qspi.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/qspi.o.d > ${OBJECTDIR}/_ext/592584297/qspi.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/qspi.o.d 
@@ -199,7 +199,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/zigflea.o: ../sources/zigflea.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/zigflea.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/zigflea.o.d -o ${OBJECTDIR}/_ext/592584297/zigflea.o ../sources/zigflea.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/zigflea.o.d -o ${OBJECTDIR}/_ext/592584297/zigflea.o ../sources/zigflea.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/zigflea.o.d > ${OBJECTDIR}/_ext/592584297/zigflea.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/zigflea.o.d 
@@ -209,7 +209,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/sleep.o: ../sources/sleep.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/sleep.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/sleep.o.d -o ${OBJECTDIR}/_ext/592584297/sleep.o ../sources/sleep.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/sleep.o.d -o ${OBJECTDIR}/_ext/592584297/sleep.o ../sources/sleep.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/sleep.o.d > ${OBJECTDIR}/_ext/592584297/sleep.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/sleep.o.d 
@@ -219,7 +219,7 @@ endif
 ${OBJECTDIR}/_ext/35980457/basic0.o: ../cpustick/basic0.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/35980457 
 	${RM} ${OBJECTDIR}/_ext/35980457/basic0.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/35980457/basic0.o.d -o ${OBJECTDIR}/_ext/35980457/basic0.o ../cpustick/basic0.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/35980457/basic0.o.d -o ${OBJECTDIR}/_ext/35980457/basic0.o ../cpustick/basic0.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/35980457/basic0.o.d > ${OBJECTDIR}/_ext/35980457/basic0.o.tmp
 	${RM} ${OBJECTDIR}/_ext/35980457/basic0.o.d 
@@ -229,7 +229,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/printf.o: ../sources/printf.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/printf.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/printf.o.d -o ${OBJECTDIR}/_ext/592584297/printf.o ../sources/printf.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/printf.o.d -o ${OBJECTDIR}/_ext/592584297/printf.o ../sources/printf.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/printf.o.d > ${OBJECTDIR}/_ext/592584297/printf.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/printf.o.d 
@@ -239,7 +239,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/lcd.o: ../sources/lcd.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/lcd.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/lcd.o.d -o ${OBJECTDIR}/_ext/592584297/lcd.o ../sources/lcd.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/lcd.o.d -o ${OBJECTDIR}/_ext/592584297/lcd.o ../sources/lcd.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/lcd.o.d > ${OBJECTDIR}/_ext/592584297/lcd.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/lcd.o.d 
@@ -249,7 +249,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/serial.o: ../sources/serial.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/serial.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/serial.o.d -o ${OBJECTDIR}/_ext/592584297/serial.o ../sources/serial.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/serial.o.d -o ${OBJECTDIR}/_ext/592584297/serial.o ../sources/serial.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/serial.o.d > ${OBJECTDIR}/_ext/592584297/serial.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/serial.o.d 
@@ -259,7 +259,7 @@ endif
 ${OBJECTDIR}/_ext/1472/startup.o: ../startup.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/1472 
 	${RM} ${OBJECTDIR}/_ext/1472/startup.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/1472/startup.o.d -o ${OBJECTDIR}/_ext/1472/startup.o ../startup.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/1472/startup.o.d -o ${OBJECTDIR}/_ext/1472/startup.o ../startup.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/1472/startup.o.d > ${OBJECTDIR}/_ext/1472/startup.o.tmp
 	${RM} ${OBJECTDIR}/_ext/1472/startup.o.d 
@@ -269,7 +269,7 @@ endif
 ${OBJECTDIR}/_ext/35980457/parse2.o: ../cpustick/parse2.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/35980457 
 	${RM} ${OBJECTDIR}/_ext/35980457/parse2.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/35980457/parse2.o.d -o ${OBJECTDIR}/_ext/35980457/parse2.o ../cpustick/parse2.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/35980457/parse2.o.d -o ${OBJECTDIR}/_ext/35980457/parse2.o ../cpustick/parse2.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/35980457/parse2.o.d > ${OBJECTDIR}/_ext/35980457/parse2.o.tmp
 	${RM} ${OBJECTDIR}/_ext/35980457/parse2.o.d 
@@ -279,7 +279,7 @@ endif
 ${OBJECTDIR}/_ext/35980457/run2.o: ../cpustick/run2.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/35980457 
 	${RM} ${OBJECTDIR}/_ext/35980457/run2.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/35980457/run2.o.d -o ${OBJECTDIR}/_ext/35980457/run2.o ../cpustick/run2.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/35980457/run2.o.d -o ${OBJECTDIR}/_ext/35980457/run2.o ../cpustick/run2.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/35980457/run2.o.d > ${OBJECTDIR}/_ext/35980457/run2.o.tmp
 	${RM} ${OBJECTDIR}/_ext/35980457/run2.o.d 
@@ -289,7 +289,7 @@ endif
 ${OBJECTDIR}/_ext/1472/main.o: ../main.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/1472 
 	${RM} ${OBJECTDIR}/_ext/1472/main.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/1472/main.o.d -o ${OBJECTDIR}/_ext/1472/main.o ../main.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/1472/main.o.d -o ${OBJECTDIR}/_ext/1472/main.o ../main.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/1472/main.o.d > ${OBJECTDIR}/_ext/1472/main.o.tmp
 	${RM} ${OBJECTDIR}/_ext/1472/main.o.d 
@@ -299,7 +299,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/usb.o: ../sources/usb.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/usb.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/usb.o.d -o ${OBJECTDIR}/_ext/592584297/usb.o ../sources/usb.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/usb.o.d -o ${OBJECTDIR}/_ext/592584297/usb.o ../sources/usb.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/usb.o.d > ${OBJECTDIR}/_ext/592584297/usb.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/usb.o.d 
@@ -309,7 +309,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/scsi.o: ../sources/scsi.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/scsi.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/scsi.o.d -o ${OBJECTDIR}/_ext/592584297/scsi.o ../sources/scsi.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/scsi.o.d -o ${OBJECTDIR}/_ext/592584297/scsi.o ../sources/scsi.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/scsi.o.d > ${OBJECTDIR}/_ext/592584297/scsi.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/scsi.o.d 
@@ -319,7 +319,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/pin.o: ../sources/pin.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/pin.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/pin.o.d -o ${OBJECTDIR}/_ext/592584297/pin.o ../sources/pin.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/pin.o.d -o ${OBJECTDIR}/_ext/592584297/pin.o ../sources/pin.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/pin.o.d > ${OBJECTDIR}/_ext/592584297/pin.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/pin.o.d 
@@ -329,7 +329,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/kbd.o: ../sources/kbd.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/kbd.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/kbd.o.d -o ${OBJECTDIR}/_ext/592584297/kbd.o ../sources/kbd.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/kbd.o.d -o ${OBJECTDIR}/_ext/592584297/kbd.o ../sources/kbd.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/kbd.o.d > ${OBJECTDIR}/_ext/592584297/kbd.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/kbd.o.d 
@@ -339,7 +339,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/clone.o: ../sources/clone.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/clone.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/clone.o.d -o ${OBJECTDIR}/_ext/592584297/clone.o ../sources/clone.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/clone.o.d -o ${OBJECTDIR}/_ext/592584297/clone.o ../sources/clone.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/clone.o.d > ${OBJECTDIR}/_ext/592584297/clone.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/clone.o.d 
@@ -350,7 +350,7 @@ else
 ${OBJECTDIR}/_ext/592584297/util.o: ../sources/util.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/util.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/util.o.d -o ${OBJECTDIR}/_ext/592584297/util.o ../sources/util.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/util.o.d -o ${OBJECTDIR}/_ext/592584297/util.o ../sources/util.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/util.o.d > ${OBJECTDIR}/_ext/592584297/util.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/util.o.d 
@@ -360,7 +360,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/timer.o: ../sources/timer.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/timer.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/timer.o.d -o ${OBJECTDIR}/_ext/592584297/timer.o ../sources/timer.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/timer.o.d -o ${OBJECTDIR}/_ext/592584297/timer.o ../sources/timer.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/timer.o.d > ${OBJECTDIR}/_ext/592584297/timer.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/timer.o.d 
@@ -370,7 +370,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/terminal.o: ../sources/terminal.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/terminal.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/terminal.o.d -o ${OBJECTDIR}/_ext/592584297/terminal.o ../sources/terminal.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/terminal.o.d -o ${OBJECTDIR}/_ext/592584297/terminal.o ../sources/terminal.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/terminal.o.d > ${OBJECTDIR}/_ext/592584297/terminal.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/terminal.o.d 
@@ -380,7 +380,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/flash.o: ../sources/flash.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/flash.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/flash.o.d -o ${OBJECTDIR}/_ext/592584297/flash.o ../sources/flash.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/flash.o.d -o ${OBJECTDIR}/_ext/592584297/flash.o ../sources/flash.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/flash.o.d > ${OBJECTDIR}/_ext/592584297/flash.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/flash.o.d 
@@ -390,7 +390,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/text.o: ../sources/text.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/text.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/text.o.d -o ${OBJECTDIR}/_ext/592584297/text.o ../sources/text.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/text.o.d -o ${OBJECTDIR}/_ext/592584297/text.o ../sources/text.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/text.o.d > ${OBJECTDIR}/_ext/592584297/text.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/text.o.d 
@@ -400,7 +400,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/led.o: ../sources/led.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/led.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/led.o.d -o ${OBJECTDIR}/_ext/592584297/led.o ../sources/led.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/led.o.d -o ${OBJECTDIR}/_ext/592584297/led.o ../sources/led.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/led.o.d > ${OBJECTDIR}/_ext/592584297/led.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/led.o.d 
@@ -410,7 +410,7 @@ endif
 ${OBJECTDIR}/_ext/35980457/cpustick.o: ../cpustick/cpustick.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/35980457 
 	${RM} ${OBJECTDIR}/_ext/35980457/cpustick.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/35980457/cpustick.o.d -o ${OBJECTDIR}/_ext/35980457/cpustick.o ../cpustick/cpustick.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/35980457/cpustick.o.d -o ${OBJECTDIR}/_ext/35980457/cpustick.o ../cpustick/cpustick.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/35980457/cpustick.o.d > ${OBJECTDIR}/_ext/35980457/cpustick.o.tmp
 	${RM} ${OBJECTDIR}/_ext/35980457/cpustick.o.d 
@@ -420,7 +420,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/ftdi.o: ../sources/ftdi.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/ftdi.o.d -o ${OBJECTDIR}/_ext/592584297/ftdi.o ../sources/ftdi.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/ftdi.o.d -o ${OBJECTDIR}/_ext/592584297/ftdi.o ../sources/ftdi.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/ftdi.o.d > ${OBJECTDIR}/_ext/592584297/ftdi.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
@@ -430,7 +430,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/i2c.o: ../sources/i2c.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/i2c.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/i2c.o.d -o ${OBJECTDIR}/_ext/592584297/i2c.o ../sources/i2c.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/i2c.o.d -o ${OBJECTDIR}/_ext/592584297/i2c.o ../sources/i2c.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/i2c.o.d > ${OBJECTDIR}/_ext/592584297/i2c.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/i2c.o.d 
@@ -440,7 +440,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/adc.o: ../sources/adc.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/adc.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/adc.o.d -o ${OBJECTDIR}/_ext/592584297/adc.o ../sources/adc.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/adc.o.d -o ${OBJECTDIR}/_ext/592584297/adc.o ../sources/adc.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/adc.o.d > ${OBJECTDIR}/_ext/592584297/adc.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/adc.o.d 
@@ -450,7 +450,7 @@ endif
 ${OBJECTDIR}/_ext/1472/vectors.o: ../vectors.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/1472 
 	${RM} ${OBJECTDIR}/_ext/1472/vectors.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/1472/vectors.o.d -o ${OBJECTDIR}/_ext/1472/vectors.o ../vectors.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/1472/vectors.o.d -o ${OBJECTDIR}/_ext/1472/vectors.o ../vectors.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/1472/vectors.o.d > ${OBJECTDIR}/_ext/1472/vectors.o.tmp
 	${RM} ${OBJECTDIR}/_ext/1472/vectors.o.d 
@@ -460,7 +460,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/qspi.o: ../sources/qspi.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/qspi.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/qspi.o.d -o ${OBJECTDIR}/_ext/592584297/qspi.o ../sources/qspi.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/qspi.o.d -o ${OBJECTDIR}/_ext/592584297/qspi.o ../sources/qspi.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/qspi.o.d > ${OBJECTDIR}/_ext/592584297/qspi.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/qspi.o.d 
@@ -470,7 +470,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/zigflea.o: ../sources/zigflea.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/zigflea.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/zigflea.o.d -o ${OBJECTDIR}/_ext/592584297/zigflea.o ../sources/zigflea.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/zigflea.o.d -o ${OBJECTDIR}/_ext/592584297/zigflea.o ../sources/zigflea.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/zigflea.o.d > ${OBJECTDIR}/_ext/592584297/zigflea.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/zigflea.o.d 
@@ -480,7 +480,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/sleep.o: ../sources/sleep.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/sleep.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/sleep.o.d -o ${OBJECTDIR}/_ext/592584297/sleep.o ../sources/sleep.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/sleep.o.d -o ${OBJECTDIR}/_ext/592584297/sleep.o ../sources/sleep.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/sleep.o.d > ${OBJECTDIR}/_ext/592584297/sleep.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/sleep.o.d 
@@ -490,7 +490,7 @@ endif
 ${OBJECTDIR}/_ext/35980457/basic0.o: ../cpustick/basic0.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/35980457 
 	${RM} ${OBJECTDIR}/_ext/35980457/basic0.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/35980457/basic0.o.d -o ${OBJECTDIR}/_ext/35980457/basic0.o ../cpustick/basic0.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/35980457/basic0.o.d -o ${OBJECTDIR}/_ext/35980457/basic0.o ../cpustick/basic0.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/35980457/basic0.o.d > ${OBJECTDIR}/_ext/35980457/basic0.o.tmp
 	${RM} ${OBJECTDIR}/_ext/35980457/basic0.o.d 
@@ -500,7 +500,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/printf.o: ../sources/printf.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/printf.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/printf.o.d -o ${OBJECTDIR}/_ext/592584297/printf.o ../sources/printf.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/printf.o.d -o ${OBJECTDIR}/_ext/592584297/printf.o ../sources/printf.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/printf.o.d > ${OBJECTDIR}/_ext/592584297/printf.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/printf.o.d 
@@ -510,7 +510,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/lcd.o: ../sources/lcd.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/lcd.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/lcd.o.d -o ${OBJECTDIR}/_ext/592584297/lcd.o ../sources/lcd.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/lcd.o.d -o ${OBJECTDIR}/_ext/592584297/lcd.o ../sources/lcd.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/lcd.o.d > ${OBJECTDIR}/_ext/592584297/lcd.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/lcd.o.d 
@@ -520,7 +520,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/serial.o: ../sources/serial.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/serial.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/serial.o.d -o ${OBJECTDIR}/_ext/592584297/serial.o ../sources/serial.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/serial.o.d -o ${OBJECTDIR}/_ext/592584297/serial.o ../sources/serial.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/serial.o.d > ${OBJECTDIR}/_ext/592584297/serial.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/serial.o.d 
@@ -530,7 +530,7 @@ endif
 ${OBJECTDIR}/_ext/1472/startup.o: ../startup.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/1472 
 	${RM} ${OBJECTDIR}/_ext/1472/startup.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/1472/startup.o.d -o ${OBJECTDIR}/_ext/1472/startup.o ../startup.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/1472/startup.o.d -o ${OBJECTDIR}/_ext/1472/startup.o ../startup.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/1472/startup.o.d > ${OBJECTDIR}/_ext/1472/startup.o.tmp
 	${RM} ${OBJECTDIR}/_ext/1472/startup.o.d 
@@ -540,7 +540,7 @@ endif
 ${OBJECTDIR}/_ext/35980457/parse2.o: ../cpustick/parse2.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/35980457 
 	${RM} ${OBJECTDIR}/_ext/35980457/parse2.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/35980457/parse2.o.d -o ${OBJECTDIR}/_ext/35980457/parse2.o ../cpustick/parse2.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/35980457/parse2.o.d -o ${OBJECTDIR}/_ext/35980457/parse2.o ../cpustick/parse2.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/35980457/parse2.o.d > ${OBJECTDIR}/_ext/35980457/parse2.o.tmp
 	${RM} ${OBJECTDIR}/_ext/35980457/parse2.o.d 
@@ -550,7 +550,7 @@ endif
 ${OBJECTDIR}/_ext/35980457/run2.o: ../cpustick/run2.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/35980457 
 	${RM} ${OBJECTDIR}/_ext/35980457/run2.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/35980457/run2.o.d -o ${OBJECTDIR}/_ext/35980457/run2.o ../cpustick/run2.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/35980457/run2.o.d -o ${OBJECTDIR}/_ext/35980457/run2.o ../cpustick/run2.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/35980457/run2.o.d > ${OBJECTDIR}/_ext/35980457/run2.o.tmp
 	${RM} ${OBJECTDIR}/_ext/35980457/run2.o.d 
@@ -560,7 +560,7 @@ endif
 ${OBJECTDIR}/_ext/1472/main.o: ../main.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/1472 
 	${RM} ${OBJECTDIR}/_ext/1472/main.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/1472/main.o.d -o ${OBJECTDIR}/_ext/1472/main.o ../main.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/1472/main.o.d -o ${OBJECTDIR}/_ext/1472/main.o ../main.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/1472/main.o.d > ${OBJECTDIR}/_ext/1472/main.o.tmp
 	${RM} ${OBJECTDIR}/_ext/1472/main.o.d 
@@ -570,7 +570,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/usb.o: ../sources/usb.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/usb.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/usb.o.d -o ${OBJECTDIR}/_ext/592584297/usb.o ../sources/usb.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/usb.o.d -o ${OBJECTDIR}/_ext/592584297/usb.o ../sources/usb.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/usb.o.d > ${OBJECTDIR}/_ext/592584297/usb.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/usb.o.d 
@@ -580,7 +580,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/scsi.o: ../sources/scsi.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/scsi.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/scsi.o.d -o ${OBJECTDIR}/_ext/592584297/scsi.o ../sources/scsi.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/scsi.o.d -o ${OBJECTDIR}/_ext/592584297/scsi.o ../sources/scsi.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/scsi.o.d > ${OBJECTDIR}/_ext/592584297/scsi.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/scsi.o.d 
@@ -590,7 +590,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/pin.o: ../sources/pin.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/pin.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/pin.o.d -o ${OBJECTDIR}/_ext/592584297/pin.o ../sources/pin.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/pin.o.d -o ${OBJECTDIR}/_ext/592584297/pin.o ../sources/pin.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/pin.o.d > ${OBJECTDIR}/_ext/592584297/pin.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/pin.o.d 
@@ -600,7 +600,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/kbd.o: ../sources/kbd.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/kbd.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/kbd.o.d -o ${OBJECTDIR}/_ext/592584297/kbd.o ../sources/kbd.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/kbd.o.d -o ${OBJECTDIR}/_ext/592584297/kbd.o ../sources/kbd.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/kbd.o.d > ${OBJECTDIR}/_ext/592584297/kbd.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/kbd.o.d 
@@ -610,7 +610,7 @@ endif
 ${OBJECTDIR}/_ext/592584297/clone.o: ../sources/clone.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/clone.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -MMD -MF ${OBJECTDIR}/_ext/592584297/clone.o.d -o ${OBJECTDIR}/_ext/592584297/clone.o ../sources/clone.c  
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/clone.o.d -o ${OBJECTDIR}/_ext/592584297/clone.o ../sources/clone.c  
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
 	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/clone.o.d > ${OBJECTDIR}/_ext/592584297/clone.o.tmp
 	${RM} ${OBJECTDIR}/_ext/592584297/clone.o.d 

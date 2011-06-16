@@ -25,3 +25,10 @@ CND_ARTIFACT_PATH_chipKIT_Uno32=dist/chipKIT_Uno32/production/pic32.X.production
 CND_PACKAGE_DIR_chipKIT_Uno32=${CND_DISTDIR}/chipKIT_Uno32/package
 CND_PACKAGE_NAME_chipKIT_Uno32=pic32.x.tar
 CND_PACKAGE_PATH_chipKIT_Uno32=${CND_DISTDIR}/chipKIT_Uno32/package/pic32.x.tar
+# UBW32v1 configuration
+CND_ARTIFACT_DIR_UBW32v1=dist/UBW32v1/production
+CND_ARTIFACT_NAME_UBW32v1=pic32.X.production.elf
+CND_ARTIFACT_PATH_UBW32v1=dist/UBW32v1/production/pic32.X.production.elf
+CND_PACKAGE_DIR_UBW32v1=${CND_DISTDIR}/UBW32v1/package
+CND_PACKAGE_NAME_UBW32v1=pic32.x.tar
+CND_PACKAGE_PATH_UBW32v1=${CND_DISTDIR}/UBW32v1/package/pic32.x.tar
