@@ -3288,7 +3288,7 @@ support@cpustick.com
 
 ### platform 512LBL ###
 ... testing help
-Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.84!
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -3307,7 +3307,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.84!
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -3529,7 +3529,7 @@ error -   ^
 error -       ^
 on
 ... testing pins
-Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.84!
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -3555,7 +3555,7 @@ kbd_r1 none
 kbd_r2 none
 kbd_r3 none
 ... testing jm commands
-Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.84!
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -3570,7 +3570,7 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.84!
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -3580,7 +3580,7 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Microchip PIC32MXx-F512L UBW32 v1.84!
+Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -3886,7 +3886,7 @@ support@cpustick.com
 
 ### platform 795LBL ###
 ... testing help
-Welcome to StickOS for Microchip PIC32MX7-F512L v1.84!
+Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -3905,7 +3905,7 @@ for more information:
 
 see also:
   http://www.cpustick.com
-Welcome to StickOS for Microchip PIC32MX7-F512L v1.84!
+Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -4127,7 +4127,7 @@ error -   ^
 error -       ^
 on
 ... testing pins
-Welcome to StickOS for Microchip PIC32MX7-F512L v1.84!
+Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -4153,7 +4153,7 @@ kbd_r1 none
 kbd_r2 none
 kbd_r3 none
 ... testing jm commands
-Welcome to StickOS for Microchip PIC32MX7-F512L v1.84!
+Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -4168,7 +4168,7 @@ support@cpustick.com
      ^ - error
 end
 ... testing ipaddress
-Welcome to StickOS for Microchip PIC32MX7-F512L v1.84!
+Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
@@ -4178,7 +4178,7 @@ support@cpustick.com
   ^ - error
   ^ - error
 ... testing reset
-Welcome to StickOS for Microchip PIC32MX7-F512L v1.84!
+Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.84!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
