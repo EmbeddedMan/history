@@ -1,16 +1,7 @@
 #define VERSION  "1.84x"
 
-#if PIC32 && ! _WIN32
-// REVISIT -- we take debug info from the pic32 environment for now
-#ifdef __DEBUG
-#define SODEBUG  1
-#define DEBUGGING  1
-#else
-#define SODEBUG  0
-#define DEBUGGING  0
-#endif
-#elif ! FLASHER
-#endif
+//#define SODEBUG  1
+//#define DEBUGGING  1
 
 #if PIC32 && ! _WIN32
 // uncomment for CHIPKIT and install chipKIT-UNO32-application-32MX320F128L.ld in project
