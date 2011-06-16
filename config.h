@@ -4,9 +4,6 @@
 //#define DEBUGGING  1
 
 #if PIC32 && ! _WIN32
-// uncomment for CHIPKIT and install chipKIT-UNO32-application-32MX320F128L.ld in project
-#define CHIPKIT  1
-
 // uncomment for HID bootloader and cp procdefs.ld.ubw32 procdefs.ld
 //#define HIDBL  1
 #endif
