@@ -423,8 +423,8 @@ flash_write_words(uint32 *addr_in, uint32 *data_in, uint32 nwords_in)
 FLASH_UPGRADE_RAM_BEGIN
 void
 #if PIC32
-//__longramfunc__
-//__attribute__((nomips16))
+__longramfunc__
+__attribute__((nomips16))
 #endif
 flash_upgrade_ram_begin(void)
 {
@@ -1244,7 +1244,9 @@ void
 flash_initialize(void)
 {
 #if UPGRADE
-    //assert((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer));
+#if ! PIC32
+    assert((int)flash_upgrade_ram_end - (int)flash_upgrade_ram_begin <= sizeof(big_buffer));
+#endif
 #endif
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MC9S08QE128 || MC9S12DT256 || MC9S12DP512

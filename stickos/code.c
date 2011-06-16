@@ -9,6 +9,10 @@
 
 bool code_indent = true;
 bool code_numbers = true;
+#if PIC32  // XXX -- GCC bug causes ramfunc_image_begin to be misaligned otherwise
+bool unused1 = true;
+bool unused2 = true;
+#endif
 
 // the last word of each flash bank is the generation number
 #define LGENERATION(p)  *(int32 *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(uint32))
@@ -924,6 +928,11 @@ code_initialize(void)
     assert(! (FLASH_PAGE_SIZE%sizeof(uint32)));
     assert(! (BASIC_SMALL_PAGE_SIZE%FLASH_PAGE_SIZE));
     assert(! (BASIC_LARGE_PAGE_SIZE%FLASH_PAGE_SIZE));
+
+#if PIC32  // XXX -- GCC bug causes ramfunc_image_begin to be misaligned otherwise
+    unused1 = true;
+    unused2 = true;
+#endif
 
     // if this is our first boot since reflash...
     if (*(int *)FLASH_CODE_PAGE == -1) {
