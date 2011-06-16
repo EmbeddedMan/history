@@ -91,7 +91,6 @@
                    projectFiles="false">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
-    <itemPath>../crt0.S</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -156,7 +155,7 @@
         <property key="preprocessor-macros" value=""/>
         <property key="warn-section-align" value="false"/>
         <property key="heap-size" value="0"/>
-        <property key="no-startup-files" value="true"/>
+        <property key="no-startup-files" value="false"/>
         <property key="remove-unused-sections" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="linker-symbols" value=""/>
@@ -487,7 +486,7 @@
         <property key="symbol-stripping" value=""/>
         <property key="extra-lib-directories"
                   value="../../../../Program Files/Microchip/MPLAB C32/lib;../../../../Program Files/Microchip/MPLAB C32/pic32mx/lib"/>
-        <appendMe value="../pic32stickos.X/dist/default/pic32stickos.x.a"/>
+        <appendMe value="../pic32stickos.X/dist/default/pic32stickos.x.a  -Wl,--script=../elf32pic32mx.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>

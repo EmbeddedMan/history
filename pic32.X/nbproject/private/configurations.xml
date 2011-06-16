@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="62">
   <projectmakefile>Makefile</projectmakefile>
-  <defaultConf>0</defaultConf>
+  <defaultConf>3</defaultConf>
   <confs>
     <conf name="default" type="2">
       <platformToolSN>:=MPLABCommUSB:=04D8:=00E0:=0000:=Microchip Technology Inc.:=PIC32MX Starter Kit  (C) 2007:=JIT084791434:=x:=en</platformToolSN>
