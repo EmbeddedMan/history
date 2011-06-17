@@ -724,6 +724,10 @@ zb_initialize(void)
 
     assert(sizeof(packet_t) <= 125);
     
+    if (pin_assignments[pin_assignment_zigflea_attn] == PIN_UNASSIGNED) {
+        return;
+    }
+
     qspi_initialize();
 
     // cs inactive
