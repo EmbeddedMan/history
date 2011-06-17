@@ -2116,6 +2116,301 @@ Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
 
+### platform MCF51CN128 ###
+... testing help
+Welcome to StickOS for Freescale MCF51CN128 v1.84!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+for more information:
+  help about
+  help commands
+  help modes
+  help statements
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+  help pins
+  help zigflea
+
+see also:
+  http://www.cpustick.com
+Welcome to StickOS for Freescale MCF51CN128 v1.84!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+<Ctrl-C>                      -- stop program
+auto <line>                   -- automatically number program lines
+clear [flash]                 -- clear ram [and flash] variables
+cls                           -- clear terminal screen
+cont [<line>]                 -- continue program from stop
+delete ([<line>][-][<line>]|<subname>) -- delete program lines
+download <slave Hz>           -- download flash to slave MCU
+dir                           -- list saved programs
+edit <line>                   -- edit program line
+help [<topic>]                -- online help
+list ([<line>][-][<line>]|<subname>) -- list program lines
+load <name>                   -- load saved program
+memory                        -- print memory usage
+new                           -- erase code ram and flash memories
+profile ([<line>][-][<line>]|<subname>) -- display profile info
+purge <name>                  -- purge saved program
+renumber [<line>]             -- renumber program lines (and save)
+reset                         -- reset the MCU!
+run [<line>]                  -- run program
+save [<name>]                 -- save code ram to flash memory
+undo                          -- undo code changes since last save
+upgrade                       -- upgrade StickOS firmware!
+uptime                        -- print time since last reset
+
+for more information:
+  help modes
+analog [<millivolts>]             -- set/display analog voltage scale
+baud [<rate>]                     -- set/display uart console baud rate
+autorun [on|off]                  -- autorun mode (on reset)
+echo [on|off]                     -- terminal echo mode
+indent [on|off]                   -- listing indent mode
+keychars [<keychars>]             -- set/display keypad scan chars
+nodeid [<nodeid>|none]            -- set/display zigflea nodeid
+numbers [on|off]                  -- listing line numbers mode
+pins [<assign> [<pinname>|none]]  -- set/display StickOS pin assignments
+prompt [on|off]                   -- terminal prompt mode
+servo [<Hz>]                      -- set/display servo Hz (on reset)
+step [on|off]                     -- debugger single-step mode
+trace [on|off]                    -- debugger trace mode
+watchsmart [on|off]               -- low-overhead watchpoint mode
+
+pin assignments:
+  heartbeat  safemode*
+  qspi_cs*  zigflea_rst*  zigflea_attn*  zigflea_rxtxen
+
+for more information:
+  help pins
+<line>                                 -- delete program line from code ram
+<line> <statement>                     -- enter program line into code ram
+
+assert <expression>                    -- break if expression is false
+data <n> [, ...]                       -- read-only data
+dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
+end                                    -- end program
+halt                                   -- loop forever
+input [dec|hex|raw] <variable>[$] [, ...] -- input data
+label <label>                          -- read/data label
+lcd <pos>, [dec|hex|raw] <expression> [, ...] [;] -- display results on lcd
+let <variable>[$] = <expression> [, ...] -- assign variable
+print [dec|hex|raw] <expression> [, ...] [;] -- print results
+read <variable> [, ...]                -- read read-only data into variables
+rem <remark>                           -- remark
+restore [<label>]                      -- restore read-only data pointer
+sleep <expression> (s|ms|us)           -- delay program execution
+stop                                   -- insert breakpoint in code
+vprint <variable>[$] = [dec|hex|raw] <expression> [, ...] -- print to variable
+
+for more information:
+  help blocks
+  help devices
+  help expressions
+  help strings
+  help variables
+if <expression> then
+[elseif <expression> then]
+[else]
+endif
+
+for <variable> = <expression> to <expression> [step <expression>]
+  [(break|continue) [n]]
+next
+
+while <expression> do
+  [(break|continue) [n]]
+endwhile
+
+do
+  [(break|continue) [n]]
+until <expression>
+
+gosub <subname> [<expression>, ...]
+
+sub <subname> [<param>, ...]
+  [return]
+endsub
+timers:
+  configure timer <n> for <n> (s|ms|us)
+  on timer <n> do <statement>                -- on timer execute statement
+  off timer <n>                              -- disable timer interrupt
+  mask timer <n>                             -- mask/hold timer interrupt
+  unmask timer <n>                           -- unmask timer interrupt
+
+uarts:
+  configure uart <n> for <n> baud <n> data (even|odd|no) parity [loopback]
+  on uart <n> (input|output) do <statement>  -- on uart execute statement
+  off uart <n> (input|output)                -- disable uart interrupt
+  mask uart <n> (input|output)               -- mask/hold uart interrupt
+  unmask uart <n> (input|output)             -- unmask uart interrupt
+  uart <n> (read|write) <variable> [, ...]   -- perform uart I/O
+
+i2c:
+  i2c (start <addr>|(read|write) <variable> [, ...]|stop) -- master i2c I/O
+
+qspi:
+  qspi <variable> [, ...]                    -- master qspi I/O
+
+watchpoints:
+  on <expression> do <statement>             -- on expr execute statement
+  off <expression>                           -- disable expr watchpoint
+  mask <expression>                          -- mask/hold expr watchpoint
+  unmask <expression>                        -- unmask expr watchpoint
+the following operators are supported as in C,
+in order of decreasing precedence:
+  <n>                       -- decimal constant
+  0x<n>                     -- hexadecimal constant
+  'c'                       -- character constant
+  <variable>                -- simple variable
+  <variable>[<expression>]  -- array variable element
+  <variable>#               -- length of array or string
+  (   )                     -- grouping
+  !   ~                     -- logical not, bitwise not
+  *   /   %                 -- times, divide, mod
+  +   -                     -- plus, minus
+  >>  <<                    -- shift right, left
+  <=  <  >=  >              -- inequalities
+  ==  !=                    -- equal, not equal
+  |   ^   &                 -- bitwise or, xor, and
+  ||  ^^  &&                -- logical or, xor, and
+for more information:
+  help variables
+all variables must be dimensioned!
+variables dimensioned in a sub are local to that sub
+simple variables are passed to sub params by reference; otherwise, by value
+array variable indices start at 0
+v is the same as v[0], except for input/print/i2c/qspi/uart statements
+
+ram variables:
+  dim <var>[$][[n]]
+  dim <var>[[n]] as (byte|short)
+
+absolute variables:
+  dim <var>[[n]] [as (byte|short)] at address <addr>
+
+flash parameter variables:
+  dim <varflash>[[n]] as flash
+
+pin alias variables:
+  dim <varpin> as pin <pinname> for (digital|analog|servo|frequency|uart) \
+                                      (input|output) \
+                                      [debounced] [inverted] [open_drain]
+
+system variables (read-only):
+  analog  getchar  keychar  nodeid  msecs  seconds  ticks  ticks_per_msec
+
+for more information:
+  help pins
+pin names:
+    0       1       2       3       4       5       6       7
+  ------- ------- ------- ------- ------- ------- ------- --------+
+  pta0    pta1    pta2    pta3    pta4    pta5    pta6    pta7    | PORT A
+  ptb0    ptb1    ptb2    ptb3    ptb4    ptb5    ptb6    ptb7    | PORT B
+  ptc0    ptc1    ptc2            ptc4    ptc5    ptc6    ptc7    | PORT C
+  ptd0    ptd1    ptd2    ptd3                    ptd6    ptd7    | PORT D
+  pte0    pte1    pte2    pte3    pte4    pte5    pte6    pte7    | PORT E
+  ptf0    ptf1    ptf2    ptf3    ptf4    ptf5    ptf6    ptf7    | PORT F
+  ptg0    ptg1    ptg2    ptg3    ptg4    ptg5    ptg6    ptg7    | PORT G
+  pth0    pth1    pth2    pth3    pth4    pth5    pth6    pth7    | PORT H
+  ptj0    ptj1    ptj2    ptj3    ptj4    ptj5                    | PORT J
+
+all pins support general purpose digital input/output
+ptc[4-7], ptd[0-37], pte[0-2] = potential analog input pins (mV)
+ptb[67], ptc0, pte[3-5] = potential analog output (PWM) pins (mV)
+ptb[67], ptc0, pte[3-5] = potential servo output (PWM) pins (us)
+ptb[67], ptc0, pte[3-5] = potential frequency output pins (Hz)
+ptd1 (u1), ptd3 (u2), pta4 (u3) = potential uart input pins (received byte)
+ptd0 (u1), ptd2 (u2), pta3 (u3) = potential uart output pins (transmit byte)
+       ^ - error
+       ^ - error
+connect <nodeid>              -- connect to MCU <nodeid> via zigflea
+<Ctrl-D>                      -- disconnect from zigflea
+
+remote node variables:
+  dim <varremote>[[n]] as remote on nodeid <nodeid>
+
+zigflea cable:
+  MCU                  MC1320X
+  -------------        -----------
+  spsck1 (ptb5)        spiclk
+  miso1 (ptb4)         miso
+  mosi1 (ptb3)         mosi
+  irq* (ptc4)          irq*
+  pins qspi_cs*        ce*
+  pins zigflea_rst*    rst*
+  pins zigflea_rxtxen  rxtxen
+  vss                  vss
+  vdd                  vdd
+test usb host
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing pins
+Welcome to StickOS for Freescale MCF51CN128 v1.84!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+heartbeat pte3
+safemode* ptg6
+qspi_cs* ptf0
+clone_rst* none
+zigflea_rst* ptf1
+zigflea_attn* ptf2
+zigflea_rxtxen ptf3
+lcd_d4 none
+lcd_d5 none
+lcd_d6 none
+lcd_d7 none
+lcd_en none
+lcd_rs none
+kbd_s0 none
+kbd_s1 none
+kbd_s2 none
+kbd_s3 none
+kbd_r0 none
+kbd_r1 none
+kbd_r2 none
+kbd_r3 none
+... testing jm commands
+Welcome to StickOS for Freescale MCF51CN128 v1.84!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+    ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+     ^ - error
+end
+... testing ipaddress
+Welcome to StickOS for Freescale MCF51CN128 v1.84!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+  ^ - error
+... testing reset
+Welcome to StickOS for Freescale MCF51CN128 v1.84!
+Copyright (c) 2008-2010; all rights reserved.
+http://www.cpustick.com
+support@cpustick.com
+
 ### platform MCF51QE128 ###
 ... testing help
 Welcome to StickOS for Freescale MCF51QE128 v1.84!
