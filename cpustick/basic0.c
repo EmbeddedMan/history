@@ -456,7 +456,8 @@ static char *const help_pins =
 "utxd? = potential uart output pins (transmit byte)\n"
 #elif MCF51JM128
 #if FB32
-"  a0-a7, 0-13, ptc0, ptc1, pte7, ptg1, ptg2\n"
+"  a0-a7, 0-13\n"
+"  pta[0-5], ptc[0-1,3-6], ptd[0,3-7], pte7, ptf[5,7], ptg[0-2]\n"
 "\n"
 "jumpers:\n"
 "  d6=pwm\n"
