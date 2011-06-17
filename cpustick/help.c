@@ -319,7 +319,7 @@ static char *const help_pins =
 "\300eepro\255writ\245protect\301ptg2\n"
 "\n"
 "jumpers:\n"
-"\300j6=pwm\014j10=pwm\n"
+"\300d6=pwm\014d10=pwm\n"
 "\n"
 "al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
 "a?\014\027\035potentia\254analo\247inpu\264pin\263(mV)\n"

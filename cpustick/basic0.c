@@ -469,7 +469,7 @@ static char *const help_pins =
 "  eeprom write protect   ptg2\n"
 "\n"
 "jumpers:\n"
-"  j6=pwm, j10=pwm\n"
+"  d6=pwm, d10=pwm\n"
 "\n"
 "all pins support general purpose digital input/output\n"
 "a?, 7 = potential analog input pins (mV)\n"
