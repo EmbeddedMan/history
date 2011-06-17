@@ -85,12 +85,12 @@ char * const help_about =
 "Welcome to StickOS for Freescale MCF5211 v" VERSION "!\n"
 #elif BADGE_BOARD && MCF51JM128
 "Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v" VERSION "!\n"
-#elif MCF51JM128
-#if FB32
+#elif MCF51JM128 && FB32
 "Welcome to StickOS for Freescale MCF51JM128 Firebird32 v" VERSION "!\n"
-#else
+#elif MCF51JM128 && FB32LITE
+"Welcome to StickOS for Freescale MCF51JM128 Firebird32-lite v" VERSION "!\n"
+#elif MCF51JM128
 "Welcome to StickOS for Freescale MCF51JM128 v" VERSION "!\n"
-#endif
 #elif MCF51CN128
 "Welcome to StickOS for Freescale MCF51CN128 v" VERSION "!\n"
 #elif MCF51QE128

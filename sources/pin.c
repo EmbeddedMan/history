@@ -60,7 +60,7 @@ byte pin_assignments[pin_assignment_max] = {
 #elif MC9S12DT256 || MC9S12DP512
     PIN_PB7, PIN_PP0, PIN_PM3, PIN_UNASSIGNED, PIN_PT0, PIN_PT1, PIN_PB6,
 #elif MCF51JM128
-#if FB32
+#if FB32 || FB32LITE
     PIN_PTE6, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
 #else
     PIN_PTF0, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_PTE2, PIN_PTE3, PIN_PTB5,
@@ -98,7 +98,7 @@ byte pin_assignments[pin_assignment_max] = {
 #endif
 
 #if LCD
-#if FB32
+#if FB32 || FB32LITE
     PIN_PTA2, PIN_PTA3, PIN_PTA4, PIN_PTA5, PIN_PTA1, PIN_PTA0,
 #else
     PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED,
@@ -106,7 +106,7 @@ byte pin_assignments[pin_assignment_max] = {
 #endif
 
 #if KBD
-#if FB32
+#if FB32 || FB32LITE
     PIN_PTD4, PIN_PTD5, PIN_PTD6, PIN_PTD7, PIN_PTD0, PIN_PTD1, PIN_PTD2, PIN_PTD3
 #else
     PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED
@@ -145,7 +145,7 @@ const char * const pin_qual_names[] = {
 
 int pin_last = PIN_LAST;
 
-#if FB32
+#if FB32 || FB32LITE
 int32 pin_analog = 5000;
 #else
 int32 pin_analog = 3300;
