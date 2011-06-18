@@ -462,7 +462,7 @@ static char *const help_pins =
 "peripherals:\n"
 "  switch                 ptg0\n"
 "  buzzer                 ptf5\n"
-"  rbg anode (+)          ptg1\n"
+"  rgb anode (+)          ptg1\n"
 "  rgb red cathode (-)    5 (pte3)\n"
 "  rgb green cathode (-)  3 (pte2)\n"
 "  rgb blue cathode (-)   9 (ptf1)\n"

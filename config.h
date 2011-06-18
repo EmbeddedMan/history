@@ -1,4 +1,4 @@
-#define VERSION  "1.84a"
+#define VERSION  "1.84b"
 
 //#define SODEBUG  1
 //#define DEBUGGING  1

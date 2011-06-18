@@ -312,7 +312,7 @@ static char *const help_pins =
 "peripherals:\n"
 "\300switch\317ptg0\n"
 "\300buzzer\317ptf5\n"
-"\300rb\247anod\245(+)\310ptg1\n"
+"\300rg\242anod\245(+)\310ptg1\n"
 "\300rg\242re\244cathod\245(-)\302\025(pte3)\n"
 "\300rg\242gree\256cathod\245(-)\300\023(pte2)\n"
 "\300rg\242blu\245cathod\245(-)\301\031(ptf1)\n"
