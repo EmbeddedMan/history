@@ -322,7 +322,7 @@ static char *const help_pins =
 "\300d6=pwm\014d10=pwm\n"
 "\n"
 "al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
-"a?\014\027\035potentia\254analo\247inpu\264pin\263(mV)\n"
+"a\037\035potentia\254analo\247inpu\264pin\263(mV)\n"
 "3,5,6,8,9,10,1\021\035potentia\254analo\247outpu\264(PWM\011pin\263(mV)\n"
 "3,5,6,8,9,10,1\021\035potentia\254serv\257outpu\264(PWM\011pin\263(us)\n"
 "3,5,6,8,9,10,1\021\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"
@@ -425,7 +425,7 @@ static char *const help_pins =
 #endif
 "\n"
 "al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
-"a?\0144\021\035potentia\254analo\247inpu\264pin\263(mV)\n"
+"a\037\035potentia\254analo\247inpu\264pin\263(mV)\n"
 "3,5,6,9,1\020\035potentia\254analo\247outpu\264(PWM\011pin\263(mV)\n"
 "3,5,6,9,1\020\035potentia\254serv\257outpu\264(PWM\011pin\263(us)\n"
 "3,5,6,9,1\020\035potentia\254frequenc\271outpu\264pin\263(Hz)\n"

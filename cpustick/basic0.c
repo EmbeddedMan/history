@@ -472,7 +472,7 @@ static char *const help_pins =
 "  d6=pwm, d10=pwm\n"
 "\n"
 "all pins support general purpose digital input/output\n"
-"a?, 7 = potential analog input pins (mV)\n"
+"a? = potential analog input pins (mV)\n"
 "3,5,6,8,9,10,11 = potential analog output (PWM) pins (mV)\n"
 "3,5,6,8,9,10,11 = potential servo output (PWM) pins (us)\n"
 "3,5,6,8,9,10,11 = potential frequency output pins (Hz)\n"
@@ -575,7 +575,7 @@ static char *const help_pins =
 #endif
 "\n"
 "all pins support general purpose digital input/output\n"
-"a?, 41 = potential analog input pins (mV)\n"
+"a? = potential analog input pins (mV)\n"
 "3,5,6,9,10 = potential analog output (PWM) pins (mV)\n"
 "3,5,6,9,10 = potential servo output (PWM) pins (us)\n"
 "3,5,6,9,10 = potential frequency output pins (Hz)\n"
