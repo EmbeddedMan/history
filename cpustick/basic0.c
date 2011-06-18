@@ -563,7 +563,7 @@ static char *const help_pins =
 "  a0-a11, 0-13, 26-41, 43, rg2, rg3, rg9\n"
 "\n"
 "jumpers:\n"
-"  jp3,jp4=master\n"
+"  jp5,jp7=master, jp4=rd4\n"
 #else
 "  a0-a15, 0-13, 16-23, 28-39, 43-49, 52-53, 70-85\n"
 "\n"
@@ -571,7 +571,7 @@ static char *const help_pins =
 "  40=a11, 41=a13, 42=a12, 50=29, 51=43\n"
 "\n"
 "jumpers:\n"
-"  jp5,jp7=master\n"
+"  jp3,jp4=master\n"
 #endif
 "\n"
 "all pins support general purpose digital input/output\n"

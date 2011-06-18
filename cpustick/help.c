@@ -413,7 +413,7 @@ static char *const help_pins =
 "\300a0-a11\0140-13\01426-41\01443\014rg2\014rg3\014rg9\n"
 "\n"
 "jumpers:\n"
-"\300jp3,jp4=master\n"
+"\300jp5,jp7=master\014jp4=rd4\n"
 #else
 "\300a0-a15\0140-13\01416-23\01428-39\01443-49\01452-53\01470-85\n"
 "\n"
@@ -421,7 +421,7 @@ static char *const help_pins =
 "\30040=a11\01441=a13\01442=a12\01450=29\01451=43\n"
 "\n"
 "jumpers:\n"
-"\300jp5,jp7=master\n"
+"\300jp3,jp4=master\n"
 #endif
 "\n"
 "al\254pin\263suppor\264genera\254purpos\245digita\254input/output\n"
