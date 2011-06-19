@@ -1,5 +1,6 @@
-website bugs -- lcd should be listed as HD44780-compatible everywhere
-cpustick.inf link jumps in document (used to go to the text box)
+disable kbd pins for fb32 nano/mini
+
+add help for uno32 LED on pin 43
 
 ADD data from freescale.pdf/microchip.pdf to "ehlp pins"!
 
