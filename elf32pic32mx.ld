@@ -14,7 +14,7 @@ ENTRY(_reset)
 EXTERN (_min_stack_size _min_heap_size)
 PROVIDE(_min_stack_size = 0x400) ;
 PROVIDE(_min_heap_size = 0) ;
-INCLUDE procdefs.ld.ubw32
+INCLUDE ../procdefs.ld.ubw32
 SECTIONS
 {
   /* Boot Sections */
