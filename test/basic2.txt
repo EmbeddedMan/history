@@ -1729,13 +1729,23 @@ system variables (read-only):
 for more information:
   help pins
 pin names:
-  a0-a7, 0-13, ptc0, ptc1, pte7, ptg1, ptg2
+  a0-a7, 0-13
+  pta[0-5], ptc[0-1,3-6], ptd[0,3-7], pte7, ptf[5,7], ptg[0-2]
+
+peripherals:
+  switch                 ptg0
+  buzzer                 ptf5
+  rgb anode (+)          ptg1
+  rgb red cathode (-)    5 (pte3)
+  rgb green cathode (-)  3 (pte2)
+  rgb blue cathode (-)   9 (ptf1)
+  eeprom write protect   ptg2
 
 jumpers:
-  d6=pwm
+  d6=pwm, d10=pwm
 
 all pins support general purpose digital input/output
-a?, 7 = potential analog input pins (mV)
+a? = potential analog input pins (mV)
 3,5,6,8,9,10,11 = potential analog output (PWM) pins (mV)
 3,5,6,8,9,10,11 = potential servo output (PWM) pins (us)
 3,5,6,8,9,10,11 = potential frequency output pins (Hz)
@@ -5263,10 +5273,10 @@ pin names:
   a0-a11, 0-13, 26-41, 43, rg2, rg3, rg9
 
 jumpers:
-  jp3,jp4=master
+  jp5,jp7=master, jp4=rd4
 
 all pins support general purpose digital input/output
-a?, 41 = potential analog input pins (mV)
+a? = potential analog input pins (mV)
 3,5,6,9,10 = potential analog output (PWM) pins (mV)
 3,5,6,9,10 = potential servo output (PWM) pins (us)
 3,5,6,9,10 = potential frequency output pins (Hz)
@@ -5551,10 +5561,10 @@ pin aliases:
   40=a11, 41=a13, 42=a12, 50=29, 51=43
 
 jumpers:
-  jp5,jp7=master
+  jp3,jp4=master
 
 all pins support general purpose digital input/output
-a?, 41 = potential analog input pins (mV)
+a? = potential analog input pins (mV)
 3,5,6,9,10 = potential analog output (PWM) pins (mV)
 3,5,6,9,10 = potential servo output (PWM) pins (us)
 3,5,6,9,10 = potential frequency output pins (Hz)
