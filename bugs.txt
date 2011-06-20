@@ -1,20 +1,12 @@
 disable kbd pins for fb32 nano/mini
 
-try to process lines with \n rather than \r, to make it possible to paste in unix line endings into tera term
+try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
 
 add help for uno32 LED on pin 43
 
-ADD data from freescale.pdf/microchip.pdf to "ehlp pins"!
+add help to all mcus for spi/i2c pin usage
 
-
-I will add a section on device file naming for OS X and Linux -- I usually just assume if folks are using those OS's, they know how their device files are named.
- 
-On Linux (assuming a moderately recent distribution), if you are running v1.80, your dev file should be very easy to find -- it has the name ACM in it, like /dev/ttyACM0 -- that is because StickOS presents a CDC/ACM function.  The actual number will likely depend on the exact physical USB port you use.
- 
-On OS X, the dev file is /dev/tty.usbmodemX, where X again depends on the exact physical USB port you use, like 411 or 621.
- 
-You can also find these by viewing "dmesg" after boot
-
+add packed save/load commands!!!
 
 
 1. Personal preference, but it would be nice if variable names could 
