@@ -1,5 +1,7 @@
 disable kbd pins for fb32 nano/mini
 
+try to process lines with \n rather than \r, to make it possible to paste in unix line endings into tera term
+
 add help for uno32 LED on pin 43
 
 ADD data from freescale.pdf/microchip.pdf to "ehlp pins"!
