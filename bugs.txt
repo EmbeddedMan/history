@@ -1,3 +1,5 @@
+# on string should still return max len -- @ should return consumed length!
+
 disable kbd pins for fb32 nano/mini
 
 try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
