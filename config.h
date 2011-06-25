@@ -1,6 +1,6 @@
 #define VERSION  "1.84c"
 
-//#define SODEBUG  1
+#define SODEBUG  1
 //#define DEBUGGING  1
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211

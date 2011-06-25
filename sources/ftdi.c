@@ -154,26 +154,16 @@ static bool discard;  // true when we don't think anyone is listening
 void
 ftdi_print(const byte *buffer, int length)
 {
+    int a;
+    int n;
     int m;
     int x;
     static uint32 attached_count;
     
+    assert(length);
     assert(gpl() == 0);
     
     if (! ftdi_attached || discard) {
-        return;
-    }
-
-    m = 0;
-    while (rx_in != rx_out) {
-        delay(1);
-        if (m++ > 1000) {
-            discard = true;
-            return;
-        }
-    }
-    
-    if (! length) {
         return;
     }
     
@@ -183,14 +173,38 @@ ftdi_print(const byte *buffer, int length)
         attached_count = ftdi_attached_count;
     }
 
+    // figure out how many buffers we need
+    n = (length+sizeof(rx[0])-1)/sizeof(rx[0])+1;
+
     x = splx(7);
     
-    ASSERT(rx_in == rx_out);
+    // forever...
+    m = 0;
+    for (;;) {
+        // compute the number of available buffers
+        a = (rx_out+NRX-rx_in)%NRX;
+        if (! a) {
+            a = NRX;
+        }
 
-    // append to next rx_in(s)
+        // if we have as many as we need...
+        if (a >= n) {
+            // we're ready to go
+            break;
+        }
+        splx(x);
+        delay(1);
+        if (m++ > 1000) {
+            discard = true;
+            return;
+        }
+        x = splx(7);
+    }
+
+    // while there is more data to send...
     do {
+        // append to next rx_in(s)
         m = MIN(length, sizeof(rx[rx_in])-rx_length[rx_in]);
-
         assert(rx_length[rx_in]+m <= sizeof(rx[rx_in]));
         memcpy(rx[rx_in]+rx_length[rx_in], buffer, m);
         rx_length[rx_in] += m;
@@ -198,19 +212,23 @@ ftdi_print(const byte *buffer, int length)
         buffer += m;
         length -= m;
 
-        if (length) {
-            assert(rx_length[rx_in] == sizeof(rx[rx_in]));
+        // if this is the first buffer of the transfer or if the transfer will need more buffers...
+        if (a == NRX || length) {
+            // advance to the next buffer
+            assert(length ? rx_length[rx_in] == sizeof(rx[rx_in]) : true);
+            rx_in = (rx_in+1)%NRX;
+            assert(rx_in != rx_out);
+            assert(! rx_length[rx_in]);
         }
-        
-        rx_in = (rx_in+1)%NRX;
-        assert(rx_in != rx_out);
-        assert(! rx_length[rx_in]);
     } while (length);
 
-    // start the rx ball rolling
-    assert(rx_out != rx_in);
-    assert(rx_length[rx_out] > 0 && rx_length[rx_out] < PACKET_SIZE);
-    usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
+    // if this is the first buffer of the transfer...
+    if (a == NRX) {
+        // start the rx ball rolling
+        assert(rx_out != rx_in);
+        assert(rx_length[rx_out] > 0 && rx_length[rx_out] < PACKET_SIZE);
+        usb_device_enqueue(bulk_in_ep, 1, rx[rx_out], rx_length[rx_out]);
+    }
 
     splx(x);
 }
