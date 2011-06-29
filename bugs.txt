@@ -4,6 +4,8 @@ disable kbd pins for fb32 nano/mini
 
 try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
 
+can we allocate more ram to pic32/5225x (ram page size)?  how close are we?
+
 add help for uno32 LED on pin 43
 
 add help to all mcus for spi/i2c pin usage
@@ -25,8 +27,6 @@ I need to add real support ("configure qspi ...") to set the clock polarity in B
 I might as well add the baud rate there, too.
 
 And do the same for i2c.
-
-
 
 
 // prior 1

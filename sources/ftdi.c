@@ -160,7 +160,7 @@ ftdi_print(const byte *buffer, int length)
     int x;
     static uint32 attached_count;
     
-    assert(length);
+    ASSERT(length);
     assert(gpl() == 0);
     
     if (! ftdi_attached || discard) {
