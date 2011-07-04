@@ -103,8 +103,8 @@ terminal_print(const byte *buffer, int length)
 
 #if USBOTG
 #if ! FLASHER
-    if (ftdi_attached && ftdi_active) {
-        ftdi_print(buffer, length);
+    if (cdcacm_attached && cdcacm_active) {
+        cdcacm_print(buffer, length);
         printed = true;
     }
 #endif
@@ -350,8 +350,8 @@ accumulate(char c)
     } while (again);
 }
 
-// N.B. if this routine returns false, ftdi will drop the ball and we'll
-// call ftdi_command_ack() later to pick it up again.
+// N.B. if this routine returns false, cdcacm will drop the ball and we'll
+// call cdcacm_command_ack() later to pick it up again.
 static bool
 terminal_receive_internal(const byte *buffer, int length)
 {
@@ -424,8 +424,6 @@ terminal_receive_internal(const byte *buffer, int length)
     }
     return true;
 }
-
-
 
 bool
 terminal_receive(const byte *buffer, int length)
@@ -506,7 +504,7 @@ terminal_command_ack(bool edit)
 
     if (terminal_txid == -1) {
 #if USBOTG
-        ftdi_command_ack();
+        cdcacm_command_ack();
 #endif
 #if ! FLASHER && ! PICTOCRYPT
         serial_command_ack();
@@ -593,7 +591,7 @@ terminal_poll(void)
         if (strchr((char *)copy, '\r')) {
             if (terminal_txid == -1) {
 #if USBOTG
-                ftdi_command_ack();
+                cdcacm_command_ack();
 #endif
 #if ! FLASHER && ! PICTOCRYPT
                 serial_command_ack();

@@ -128,7 +128,7 @@ main_initialize(void)
 #if USBOTG
     // if we're in device mode...
     if (! usb_host_mode) {
-        ftdi_register(main_reset_cbfn);
+        cdcacm_register(main_reset_cbfn, terminal_receive);
     }
 #endif
     

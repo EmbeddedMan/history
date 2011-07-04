@@ -30,7 +30,7 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/_ext/592584297/util.o ${OBJECTDIR}/_ext/592584297/timer.o ${OBJECTDIR}/_ext/592584297/terminal.o ${OBJECTDIR}/_ext/592584297/flash.o ${OBJECTDIR}/_ext/592584297/text.o ${OBJECTDIR}/_ext/592584297/led.o ${OBJECTDIR}/_ext/35980457/cpustick.o ${OBJECTDIR}/_ext/592584297/ftdi.o ${OBJECTDIR}/_ext/592584297/i2c.o ${OBJECTDIR}/_ext/592584297/adc.o ${OBJECTDIR}/_ext/1472/vectors.o ${OBJECTDIR}/_ext/592584297/qspi.o ${OBJECTDIR}/_ext/592584297/zigflea.o ${OBJECTDIR}/_ext/592584297/sleep.o ${OBJECTDIR}/_ext/35980457/basic0.o ${OBJECTDIR}/_ext/592584297/printf.o ${OBJECTDIR}/_ext/592584297/lcd.o ${OBJECTDIR}/_ext/592584297/serial.o ${OBJECTDIR}/_ext/1472/startup.o ${OBJECTDIR}/_ext/35980457/parse2.o ${OBJECTDIR}/_ext/35980457/run2.o ${OBJECTDIR}/_ext/1472/main.o ${OBJECTDIR}/_ext/592584297/usb.o ${OBJECTDIR}/_ext/592584297/scsi.o ${OBJECTDIR}/_ext/592584297/pin.o ${OBJECTDIR}/_ext/592584297/kbd.o ${OBJECTDIR}/_ext/592584297/clone.o
+OBJECTFILES=${OBJECTDIR}/_ext/592584297/util.o ${OBJECTDIR}/_ext/592584297/timer.o ${OBJECTDIR}/_ext/592584297/terminal.o ${OBJECTDIR}/_ext/592584297/flash.o ${OBJECTDIR}/_ext/592584297/text.o ${OBJECTDIR}/_ext/592584297/led.o ${OBJECTDIR}/_ext/35980457/cpustick.o ${OBJECTDIR}/_ext/592584297/i2c.o ${OBJECTDIR}/_ext/592584297/adc.o ${OBJECTDIR}/_ext/1472/vectors.o ${OBJECTDIR}/_ext/592584297/qspi.o ${OBJECTDIR}/_ext/592584297/zigflea.o ${OBJECTDIR}/_ext/592584297/sleep.o ${OBJECTDIR}/_ext/35980457/basic0.o ${OBJECTDIR}/_ext/592584297/printf.o ${OBJECTDIR}/_ext/592584297/lcd.o ${OBJECTDIR}/_ext/592584297/serial.o ${OBJECTDIR}/_ext/1472/startup.o ${OBJECTDIR}/_ext/35980457/parse2.o ${OBJECTDIR}/_ext/35980457/run2.o ${OBJECTDIR}/_ext/1472/main.o ${OBJECTDIR}/_ext/592584297/usb.o ${OBJECTDIR}/_ext/592584297/scsi.o ${OBJECTDIR}/_ext/592584297/cdcacm.o ${OBJECTDIR}/_ext/592584297/pin.o ${OBJECTDIR}/_ext/592584297/kbd.o ${OBJECTDIR}/_ext/592584297/clone.o
 
 
 CFLAGS=
@@ -145,16 +145,6 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	${RM} ${OBJECTDIR}/_ext/35980457/cpustick.o.d 
 	${CP} ${OBJECTDIR}/_ext/35980457/cpustick.o.tmp ${OBJECTDIR}/_ext/35980457/cpustick.o.d 
 	${RM} ${OBJECTDIR}/_ext/35980457/cpustick.o.tmp
-endif
-${OBJECTDIR}/_ext/592584297/ftdi.o: ../sources/ftdi.c  nbproject/Makefile-${CND_CONF}.mk
-	${MKDIR} ${OBJECTDIR}/_ext/592584297 
-	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DHIDBL=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/ftdi.o.d -o ${OBJECTDIR}/_ext/592584297/ftdi.o ../sources/ftdi.c  
-ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
-	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/ftdi.o.d > ${OBJECTDIR}/_ext/592584297/ftdi.o.tmp
-	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
-	${CP} ${OBJECTDIR}/_ext/592584297/ftdi.o.tmp ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
-	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.tmp
 endif
 ${OBJECTDIR}/_ext/592584297/i2c.o: ../sources/i2c.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
@@ -316,6 +306,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	${CP} ${OBJECTDIR}/_ext/592584297/scsi.o.tmp ${OBJECTDIR}/_ext/592584297/scsi.o.d 
 	${RM} ${OBJECTDIR}/_ext/592584297/scsi.o.tmp
 endif
+${OBJECTDIR}/_ext/592584297/cdcacm.o: ../sources/cdcacm.c  nbproject/Makefile-${CND_CONF}.mk
+	${MKDIR} ${OBJECTDIR}/_ext/592584297 
+	${RM} ${OBJECTDIR}/_ext/592584297/cdcacm.o.d 
+	${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DHIDBL=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/cdcacm.o.d -o ${OBJECTDIR}/_ext/592584297/cdcacm.o ../sources/cdcacm.c  
+ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
+	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/cdcacm.o.d > ${OBJECTDIR}/_ext/592584297/cdcacm.o.tmp
+	${RM} ${OBJECTDIR}/_ext/592584297/cdcacm.o.d 
+	${CP} ${OBJECTDIR}/_ext/592584297/cdcacm.o.tmp ${OBJECTDIR}/_ext/592584297/cdcacm.o.d 
+	${RM} ${OBJECTDIR}/_ext/592584297/cdcacm.o.tmp
+endif
 ${OBJECTDIR}/_ext/592584297/pin.o: ../sources/pin.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
 	${RM} ${OBJECTDIR}/_ext/592584297/pin.o.d 
@@ -416,16 +416,6 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	${RM} ${OBJECTDIR}/_ext/35980457/cpustick.o.d 
 	${CP} ${OBJECTDIR}/_ext/35980457/cpustick.o.tmp ${OBJECTDIR}/_ext/35980457/cpustick.o.d 
 	${RM} ${OBJECTDIR}/_ext/35980457/cpustick.o.tmp
-endif
-${OBJECTDIR}/_ext/592584297/ftdi.o: ../sources/ftdi.c  nbproject/Makefile-${CND_CONF}.mk
-	${MKDIR} ${OBJECTDIR}/_ext/592584297 
-	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DHIDBL=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/ftdi.o.d -o ${OBJECTDIR}/_ext/592584297/ftdi.o ../sources/ftdi.c  
-ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
-	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/ftdi.o.d > ${OBJECTDIR}/_ext/592584297/ftdi.o.tmp
-	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
-	${CP} ${OBJECTDIR}/_ext/592584297/ftdi.o.tmp ${OBJECTDIR}/_ext/592584297/ftdi.o.d 
-	${RM} ${OBJECTDIR}/_ext/592584297/ftdi.o.tmp
 endif
 ${OBJECTDIR}/_ext/592584297/i2c.o: ../sources/i2c.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 
@@ -586,6 +576,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	${RM} ${OBJECTDIR}/_ext/592584297/scsi.o.d 
 	${CP} ${OBJECTDIR}/_ext/592584297/scsi.o.tmp ${OBJECTDIR}/_ext/592584297/scsi.o.d 
 	${RM} ${OBJECTDIR}/_ext/592584297/scsi.o.tmp
+endif
+${OBJECTDIR}/_ext/592584297/cdcacm.o: ../sources/cdcacm.c  nbproject/Makefile-${CND_CONF}.mk
+	${MKDIR} ${OBJECTDIR}/_ext/592584297 
+	${RM} ${OBJECTDIR}/_ext/592584297/cdcacm.o.d 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DHIDBL=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/592584297/cdcacm.o.d -o ${OBJECTDIR}/_ext/592584297/cdcacm.o ../sources/cdcacm.c  
+ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
+	 sed -e 's/\\$$/__EOL__/g' -e 's/\\ /__ESCAPED_SPACES__/g' -e 's/\\/\//g' -e 's/__ESCAPED_SPACES__/\\ /g' -e 's/__EOL__$$/\\/g' ${OBJECTDIR}/_ext/592584297/cdcacm.o.d > ${OBJECTDIR}/_ext/592584297/cdcacm.o.tmp
+	${RM} ${OBJECTDIR}/_ext/592584297/cdcacm.o.d 
+	${CP} ${OBJECTDIR}/_ext/592584297/cdcacm.o.tmp ${OBJECTDIR}/_ext/592584297/cdcacm.o.d 
+	${RM} ${OBJECTDIR}/_ext/592584297/cdcacm.o.tmp
 endif
 ${OBJECTDIR}/_ext/592584297/pin.o: ../sources/pin.c  nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} ${OBJECTDIR}/_ext/592584297 

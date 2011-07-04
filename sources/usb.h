@@ -38,8 +38,8 @@ extern bool scsi_attached;  // set when usb mass storage device is attached
 extern uint32 scsi_attached_count;
 extern bool other_attached;
 
-extern bool ftdi_attached;  // set when ftdi host is attached
-extern uint32 ftdi_attached_count;
+extern bool cdcacm_attached;  // set when cdcacm host is attached
+extern uint32 cdcacm_attached_count;
 
 extern byte bulk_in_ep;
 extern byte bulk_out_ep;

@@ -1,4 +1,4 @@
-// *** ftdi.c *********************************************************
+// *** cdcacm.c *******************************************************
 // N.B. as of v1.80, this file implements a CDC/ACM transport (on top
 // of the usb driver module).
 //
@@ -18,7 +18,7 @@
 #define FTDI_PID  0xA660
 #define FTDI_RID  0x0180
 
-static const byte ftdi_device_descriptor[] = {
+static const byte cdcacm_device_descriptor[] = {
     18,  // length
     0x01,  // device descriptor
     0x01, 0x01,  // 1.1
@@ -32,7 +32,7 @@ static const byte ftdi_device_descriptor[] = {
     0x01  // num configurations
 };
 
-static const byte ftdi_configuration_descriptor[] = {
+static const byte cdcacm_configuration_descriptor[] = {
     9,  // length
     0x02,  // configuration descriptor
     67, 0,  // total length
@@ -106,7 +106,7 @@ static const byte ftdi_configuration_descriptor[] = {
     0x00,  // interval (ms)
 };
 
-static const byte ftdi_string_descriptor[] = {
+static const byte cdcacm_string_descriptor[] = {
     4,  // length
     0x03, // string descriptor
     0x09, 0x04,  // english (usa)
@@ -130,9 +130,10 @@ static const byte ftdi_string_descriptor[] = {
 #endif
 };
 
-bool ftdi_active;
+bool cdcacm_active;
 
-static ftdi_reset_cbfn reset_cbfn;
+static cdcacm_reset_cbfn reset_cbfn;
+static cdcacm_receive_cbfn receive_cbfn;
 
 static byte tx[PACKET_SIZE];  // packet from host
 
@@ -152,7 +153,7 @@ static bool discard;  // true when we don't think anyone is listening
 // buffers and then prints the specified line to the FTDI transport
 // console.
 void
-ftdi_print(const byte *buffer, int length)
+cdcacm_print(const byte *buffer, int length)
 {
     int a;
     int n;
@@ -163,14 +164,14 @@ ftdi_print(const byte *buffer, int length)
     ASSERT(length);
     assert(gpl() == 0);
     
-    if (! ftdi_attached || discard) {
+    if (! cdcacm_attached || discard) {
         return;
     }
     
     // revisit -- without this delays, we can get usb hangs on boot
-    if (attached_count != ftdi_attached_count) {
+    if (attached_count != cdcacm_attached_count) {
         delay(100);
-        attached_count = ftdi_attached_count;
+        attached_count = cdcacm_attached_count;
     }
 
     // figure out how many buffers we need
@@ -253,7 +254,7 @@ static uint8 line_coding[7] = {
 
 // this function implements the FTDI usb setup control transfer.
 static int
-ftdi_control_transfer(struct setup *setup, byte *buffer, int length)
+cdcacm_control_transfer(struct setup *setup, byte *buffer, int length)
 {
 #if SODEBUG
     if ((setup->requesttype & 0x60) != (SETUP_TYPE_CLASS<<5)) {
@@ -309,7 +310,7 @@ static bool waiting;
 // this function acknowledges receipt of an FTDI command from upper
 // level code.
 void
-ftdi_command_ack(void)
+cdcacm_command_ack(void)
 {
     int x;
 
@@ -327,15 +328,16 @@ ftdi_command_ack(void)
 
 // this function implements the FTDI usb bulk transfer.
 static int
-ftdi_bulk_transfer(bool in, byte *buffer, int length)
+cdcacm_bulk_transfer(bool in, byte *buffer, int length)
 {
     if (! in) {
         discard = false;
     
-        ftdi_active = true;
+        cdcacm_active = true;
         
         // accumulate commands
-        if (terminal_receive(buffer, length)) {
+        ASSERT(receive_cbfn);
+        if (receive_cbfn(buffer, length)) {
             // keep the tx ball rolling
             usb_device_enqueue(bulk_out_ep, 0, tx, sizeof(tx));
         } else {
@@ -368,7 +370,7 @@ ftdi_bulk_transfer(bool in, byte *buffer, int length)
 // this function is called by the usb driver when the USB device
 // is reset.
 static void
-ftdi_reset(void)
+cdcacm_reset(void)
 {
     int i;
 
@@ -406,7 +408,7 @@ check(const byte *descriptor, int length)
 // this function is called by upper level code to register callback
 // functions.
 void
-ftdi_register(ftdi_reset_cbfn reset)
+cdcacm_register(cdcacm_reset_cbfn reset, cdcacm_receive_cbfn receive)
 {
     int i;
 
@@ -415,17 +417,18 @@ ftdi_register(ftdi_reset_cbfn reset)
     }
 
     reset_cbfn = reset;
+    receive_cbfn = receive;
 
-    usb_register(ftdi_reset, ftdi_control_transfer, ftdi_bulk_transfer);
+    usb_register(cdcacm_reset, cdcacm_control_transfer, cdcacm_bulk_transfer);
 
-    assert(check(ftdi_device_descriptor, sizeof(ftdi_device_descriptor)) == 1);
-    usb_device_descriptor(ftdi_device_descriptor, sizeof(ftdi_device_descriptor));
+    assert(check(cdcacm_device_descriptor, sizeof(cdcacm_device_descriptor)) == 1);
+    usb_device_descriptor(cdcacm_device_descriptor, sizeof(cdcacm_device_descriptor));
 
-    assert(check(ftdi_configuration_descriptor, sizeof(ftdi_configuration_descriptor)) == 10);
-    usb_configuration_descriptor(ftdi_configuration_descriptor, sizeof(ftdi_configuration_descriptor));
+    assert(check(cdcacm_configuration_descriptor, sizeof(cdcacm_configuration_descriptor)) == 10);
+    usb_configuration_descriptor(cdcacm_configuration_descriptor, sizeof(cdcacm_configuration_descriptor));
 
-    assert(check(ftdi_string_descriptor, sizeof(ftdi_string_descriptor)) == 3);
-    usb_string_descriptor(ftdi_string_descriptor, sizeof(ftdi_string_descriptor));
+    assert(check(cdcacm_string_descriptor, sizeof(cdcacm_string_descriptor)) == 3);
+    usb_string_descriptor(cdcacm_string_descriptor, sizeof(cdcacm_string_descriptor));
 }
 #endif
 

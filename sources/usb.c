@@ -142,8 +142,8 @@ bool scsi_attached;  // set when usb mass storage device is attached
 uint32 scsi_attached_count;
 bool other_attached;  // set when other device is attached
 
-bool ftdi_attached;  // set when ftdi host is attached
-uint32 ftdi_attached_count;
+bool cdcacm_attached;  // set when cdcacm host is attached
+uint32 cdcacm_attached_count;
 
 static
 void
@@ -877,8 +877,8 @@ usb_isr(void)
                         next_address = value;
                     } else if (setup->request == REQUEST_SET_CONFIGURATION) {
                         assert(value == 1);
-                        ftdi_attached_count++;
-                        ftdi_attached = 1;
+                        cdcacm_attached_count++;
+                        cdcacm_attached = 1;
                     } else if (setup->request == REQUEST_GET_CONFIGURATION) {
                         endpoints[endpoint].data_pid = TOKEN_IN;
 
@@ -1016,8 +1016,8 @@ XXX_SKIP2_XXX:;
             usb_host_detach();
 #endif
         } else {
-            ftdi_active = 0;
-            ftdi_attached = 0;
+            cdcacm_active = 0;
+            cdcacm_attached = 0;
     
             usb_device_default();
     
@@ -1041,8 +1041,8 @@ XXX_SKIP2_XXX:;
     if (MCF_USB_OTG_INT_STAT & MCF_USB_OTG_INT_STAT_SLEEP) {
         assert(! usb_host_mode);
     
-        ftdi_active = 0;
-        ftdi_attached = 0;
+        cdcacm_active = 0;
+        cdcacm_attached = 0;
 
         // disable usb sleep interrupts
         MCF_USB_OTG_INT_ENB &= ~MCF_USB_OTG_INT_ENB_SLEEP_EN;

@@ -230,7 +230,7 @@ enum {
 #include "sleep.h"
 
 #if MCF52221 || MCF52259 || MCF51JM128 || PIC32
-#include "ftdi.h"
+#include "cdcacm.h"
 #include "scsi.h"
 #include "usb.h"
 #endif
