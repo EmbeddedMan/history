@@ -2,7 +2,11 @@
 
 add "lcd init" statement...  set rs = 0 at end of write nibble...
 
+add "configure qspi mode (0-3)"
+
 disable kbd pins for fb32 nano/mini
+
+eliminate restrictions on "analog" mode values.  "servo", too?
 
 try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
 
@@ -13,6 +17,8 @@ add help for uno32 LED on pin 43
 add help to all mcus for spi/i2c pin usage
 
 add packed save/load commands!!!
+
+add automatic subs in saved program ("library")
 
 
 1. Personal preference, but it would be nice if variable names could 
