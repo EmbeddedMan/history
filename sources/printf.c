@@ -288,6 +288,8 @@ static char printf_buffer[BASIC_OUTPUT_LINE_SIZE+2];  // 2 for \r\n
 static char printf_buffer[BASIC_OUTPUT_LINE_SIZE+1];  // 1 for \n
 #endif
 
+static bool open;
+
 int
 printf_write(char *buffer, int n)
 {
@@ -312,8 +314,6 @@ printf_write(char *buffer, int n)
 
 #if USB_HOST && STICKOS
     if (run_printf && scsi_attached) {
-        bool open;
-
         if (scsi_attached_count != last_scsi_attached_count) {
             open = open_log_file();
             last_scsi_attached_count = scsi_attached_count;
@@ -362,7 +362,6 @@ printf(const char *format, ...)
 }
 
 #if USB_HOST && STICKOS && ! STICK_GUEST
-static bool open;
 static VOLINFO vi;
 static FILEINFO wfi;
 
