@@ -106,13 +106,15 @@ char * const help_about =
 #elif PIC32 && defined(__32MX440F256H__)
 "Welcome to StickOS for Microchip PIC32MXx-F256H v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__) && HIDBL
-"Welcome to StickOS for Microchip PIC32MXx-F512H CUI32 v" VERSION "!\n"
+"Welcome to StickOS for Microchip PIC32MX4-F512H CUI32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__)
 "Welcome to StickOS for Microchip PIC32MXx-F512H v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__)
 "Welcome to StickOS for Microchip PIC32MXx-F512L v" VERSION "!\n"
+#elif PIC32 && defined(__32MX795F512H__) && HIDBL
+"Welcome to StickOS for Microchip PIC32MX7-F512H CUI32Stem v" VERSION "!\n"
 #elif PIC32 && defined(__32MX795F512L__) && defined CHIPKIT
 "Welcome to StickOS for Microchip PIC32MX7-F512L chipKIT Max32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX795F512L__) && HIDBL
