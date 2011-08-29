@@ -46,3 +46,10 @@ CND_ARTIFACT_PATH_CUI32=dist/CUI32/production/pic32.X.production.elf
 CND_PACKAGE_DIR_CUI32=${CND_DISTDIR}/CUI32/package
 CND_PACKAGE_NAME_CUI32=pic32.x.tar
 CND_PACKAGE_PATH_CUI32=${CND_DISTDIR}/CUI32/package/pic32.x.tar
+# CUI32Stem configuration
+CND_ARTIFACT_DIR_CUI32Stem=dist/CUI32Stem/production
+CND_ARTIFACT_NAME_CUI32Stem=pic32.X.production.elf
+CND_ARTIFACT_PATH_CUI32Stem=dist/CUI32Stem/production/pic32.X.production.elf
+CND_PACKAGE_DIR_CUI32Stem=${CND_DISTDIR}/CUI32Stem/package
+CND_PACKAGE_NAME_CUI32Stem=pic32.x.tar
+CND_PACKAGE_PATH_CUI32Stem=${CND_DISTDIR}/CUI32Stem/package/pic32.x.tar
