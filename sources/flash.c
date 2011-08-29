@@ -304,6 +304,14 @@ flash_operation(unsigned int nvmop)
     // Enable Flash Write/Erase Operations
     NVMCON = NVMCON_WREN | nvmop;
 
+    // wait at least 6 us for LVD start-up
+    // assume we're running at max frequency
+    // (80 MHz) so we're always safe
+    {
+        unsigned long t0 = _CP0_GET_COUNT();
+        while (_CP0_GET_COUNT() - t0 < (80/2)*6);
+    }
+
     NVMKEY = 0xAA996655;
     NVMKEY = 0x556699AA;
     NVMCONSET = NVMCON_WR;
