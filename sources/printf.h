@@ -13,7 +13,10 @@ void
 flush_log_file(void);
 
 int
-snprintf(char *buffer, int length, const char *format, ...);
+vsnprintf(char *buffer, size_t length, const char *format, va_list ap);
+
+int
+snprintf(char *buffer, size_t length, const char *format, ...);
 
 int
 sprintf(char *buffer, const char *format, ...);

@@ -19,8 +19,11 @@ int servo_hz = 45;
 #define SERVO_PRESCALE  16
 #endif
 #define SERVO_MOD  (bus_frequency/SERVO_PRESCALE/servo_hz)
-#else
+#elif MC9S12DT256 || MC9S12DP512
 #define SERVO_PRESCALE  8
+#else
+#define SERVO_PRESCALE  16
+#define SERVO_MOD  (bus_frequency/SERVO_PRESCALE/servo_hz)
 #endif
 
 const char * const pin_assignment_names[] = {
@@ -232,10 +235,10 @@ const struct pin pins[] = {
     "irq11*", DIO,
 #endif
 #if MCF52233 || MCF52259 || MCF5211
-    "gpt0", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
-    "gpt1", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
-    "gpt2", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
-    "gpt3", DIO|1<<pin_type_analog_output|1<<pin_type_servo_output,
+    "gpt0", 0,
+    "gpt1", 0,
+    "gpt2", 0,
+    "gpt3", 0,
 #endif
     "scl", DIO,
     "sda", DIO,
@@ -1075,10 +1078,20 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 assign = 0;
             } else if (pin_type == pin_type_analog_output) {
                 assign = 3;
-                MCF_PWM_PWMCLK &= ~(1 << (offset*2));  // prescaled clock
+                MCF_PWM_PWMCLK &= ~(1 << (offset*2+1));  // prescaled clock
+
+                // set periods to pin_analog for analog output
+                assert(pin_analog < 0x10000);
+                MCF_PWM_PWMPER(offset*2) = pin_analog/256;
+                MCF_PWM_PWMPER(offset*2+1) = pin_analog%256;
             } else if (pin_type == pin_type_servo_output) {
                 assign = 3;
-                MCF_PWM_PWMCLK |= 1 << (offset*2);  // prescaled and scaled clock
+                MCF_PWM_PWMCLK |= 1 << (offset*2+1);  // prescaled and scaled clock
+
+                // set periods to SERVER_MOD for 45Hz for servo output
+                assert(SERVER_MOD < 0x10000);
+                MCF_PWM_PWMPER(offset*2) = SERVO_MOD/256;
+                MCF_PWM_PWMPER(offset*2+1) = SERVO_MOD%256;
             } else {
                 assert(pin_type == pin_type_frequency_output);
                 assign = 2;
@@ -1268,20 +1281,11 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_GPT3:
             offset = pin_number - PIN_GPT0;
             assert(offset < 4);
-            if (pin_type == pin_type_digital_output || pin_type == pin_type_digital_input) {
-                assign = 0;
-            } else if (pin_type == pin_type_analog_output) {
-                assign = 3;
-                MCF_PWM_PWMCLK &= ~(1 << (offset*2+1));  // prescaled clock
-            } else {
-                assert(pin_type == pin_type_servo_output);
-                assign = 3;
-                MCF_PWM_PWMCLK |= 1 << (offset*2+1);  // prescaled and scaled clock
-            }
-            MCF_GPIO_PTAPAR = (MCF_GPIO_PTAPAR &~ (3<<(offset*2))) | (assign<<(offset*2));
+            MCF_GPIO_PTAPAR &= ~(3<<(offset*2)));
             if (pin_type == pin_type_digital_output) {
                 MCF_GPIO_DDRTA |= 1 << offset;
-            } else if (pin_type == pin_type_digital_input) {
+            } else {
+                assert(pin_type == pin_type_digital_input);
                 MCF_GPIO_DDRTA &= ~(1 << offset);
             }
             break;
@@ -3140,6 +3144,23 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
 #endif
 }
 
+#if MCF52221 || MCF52233 || MCF52259 || MCF5211
+static
+void
+pwmset(int n, int32 value)
+{
+    MCF_PWM_PWMDTY(n) = (byte)(value>>8);
+    MCF_PWM_PWMDTY(n+1) = (byte)value;
+}
+
+static
+int32
+pwmget(int n)
+{
+    return (MCF_PWM_PWMDTY(n)<<8) | MCF_PWM_PWMDTY(n+1);
+}
+#endif
+
 // this function declares a ram, flash, or pin variable!
 void
 pin_declare(IN int pin_number, IN int pin_type, IN int pin_qual)
@@ -3246,11 +3267,11 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
             offset = pin_number - PIN_DTIN0;
             assert(offset < 4);
             if (pin_type == pin_type_analog_output) {
-                // program MCF_PWM_PWMDTY with values 0 (3.3v) to 255 (0v)
-                MCF_PWM_PWMDTY(offset*2) = 255 - value*255/pin_analog;
+                // program MCF_PWM_PWMDTY with values 0 (3.3v) to pin_analog (0v)
+                pwmset(offset*2, pin_analog - value);
             } else if (pin_type == pin_type_servo_output) {
-                // program MCF_PWM_PWMDTY with values 0 (SERVO_MAX) to 255 (0)
-                MCF_PWM_PWMDTY(offset*2) = 255 - value*255/SERVO_MAX;
+                // program MCF_PWM_PWMDTY with values 0 (SERVO_MAX) to SERVO_MOD (0)
+                pwmset(offset*2, SERVO_MOD - value*SERVO_MOD/SERVO_MAX);
             } else if (pin_type == pin_type_frequency_output) {
                 // program MCF_DTIM_DTRR with bus_frequency (1 Hz) to 1 (bus_frequency Hz)
                 MCF_DTIM_DTRR(offset) = value;
@@ -3427,19 +3448,11 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_GPT3:
             offset = pin_number - PIN_GPT0;
             assert(offset < 4);
-            if (pin_type == pin_type_analog_output) {
-                // program MCF_PWM_PWMDTY with values 0 (3.3v) to 255 (0v)
-                MCF_PWM_PWMDTY(offset*2+1) = 255 - value*255/pin_analog;
-            } else if (pin_type == pin_type_servo_output) {
-                // program MCF_PWM_PWMDTY with values 0 (SERVO_MAX) to 255 (0)
-                MCF_PWM_PWMDTY(offset*2+1) = 255 - value*255/SERVO_MAX;
+            assert(pin_type == pin_type_digital_output);
+            if (value) {
+                MCF_GPIO_SETTA = 1 << offset;
             } else {
-                assert(pin_type == pin_type_digital_output);
-                if (value) {
-                    MCF_GPIO_SETTA = 1 << offset;
-                } else {
-                    MCF_GPIO_CLRTA = ~(1 << offset);
-                }
+                MCF_GPIO_CLRTA = ~(1 << offset);
             }
             break;
 #endif
@@ -4870,9 +4883,9 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
             offset = pin_number - PIN_DTIN0;
             assert(offset < 4);
             if (pin_type == pin_type_analog_output) {
-                value = (255-MCF_PWM_PWMDTY(offset*2))*pin_analog/255;
+                value = (pin_analog-pwmget(offset*2));
             } else if (pin_type == pin_type_servo_output) {
-                value = (255-MCF_PWM_PWMDTY(offset*2))*SERVO_MAX/255;
+                value = (SERVO_MOD-pwmget(offset*2))*SERVO_MAX/SERVO_MOD;
             } else if (pin_type == pin_type_frequency_output) {
                 if (MCF_DTIM_DTRR(offset) == -1) {
                     value = 0;
@@ -5057,11 +5070,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_GPT3:
             offset = pin_number - PIN_GPT0;
             assert(offset < 4);            
-            if (pin_type == pin_type_analog_output) {
-                value = (255-MCF_PWM_PWMDTY(offset*2+1))*pin_analog/255;
-            } else if (pin_type == pin_type_servo_output) {
-                value = (255-MCF_PWM_PWMDTY(offset*2+1))*SERVO_MAX/255;
-            } else if (pin_qual & 1<<pin_qual_debounced) {
+            if (pin_qual & 1<<pin_qual_debounced) {
                 assert(pin_type == pin_type_digital_input);
                 value = pin_get_digital_debounced(port_ta, offset);
             } else {
@@ -6683,32 +6692,23 @@ pin_initialize(void)
 #else
     hz = -1;
 #endif
-    if (hz != (uint32)-1 && hz >= 30 && hz < 400) {
+    if (hz != (uint32)-1 && hz >= 20 && hz <= 500) {
         servo_hz = hz;
     }
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
+    // 16 bit pwm
+    MCF_PWM_PWMCTL = MCF_PWM_PWMCTL_CON01|MCF_PWM_PWMCTL_CON23|MCF_PWM_PWMCTL_CON45|MCF_PWM_PWMCTL_CON67;
+
     // enable all pwm channels
     MCF_PWM_PWME = 0xff;
     
-    // set pwm prescales to 8 for analog output, or 8*n for servo output
-    assert(SERVO_PRESCALE == 8);
-    MCF_PWM_PWMPRCLK = MCF_PWM_PWMPRCLK_PCKA(3)|MCF_PWM_PWMPRCLK_PCKB(3);
-    // set pwm scales for 45Hz for servo output
-    assert(bus_frequency/SERVO_PRESCALE/2/256/servo_hz < 256);
-    MCF_PWM_PWMSCLA = bus_frequency/SERVO_PRESCALE/2/256/servo_hz;
-    MCF_PWM_PWMSCLB = bus_frequency/SERVO_PRESCALE/2/256/servo_hz;    
-    
-    // set periods to 0xff
-    MCF_PWM_PWMPER0 = 0xff;
-    MCF_PWM_PWMPER1 = 0xff;
-    MCF_PWM_PWMPER2 = 0xff;
-    MCF_PWM_PWMPER3 = 0xff;
-    MCF_PWM_PWMPER4 = 0xff;
-    MCF_PWM_PWMPER5 = 0xff;
-    MCF_PWM_PWMPER6 = 0xff;
-    MCF_PWM_PWMPER7 = 0xff;
-        
+    // set pwm prescales to 1 for analog output or 16 for servo output
+    assert(SERVO_PRESCALE == 16);
+    MCF_PWM_PWMPRCLK = MCF_PWM_PWMPRCLK_PCKA(0)|MCF_PWM_PWMPRCLK_PCKB(0);
+    MCF_PWM_PWMSCLA = 8;
+    MCF_PWM_PWMSCLB = 8;
+
     // set dma timer mode registers for frequency output
     MCF_DTIM0_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;
     MCF_DTIM1_DTMR = MCF_DTIM_DTMR_OM|MCF_DTIM_DTMR_FRR|MCF_DTIM_DTMR_CLK_DIV1|MCF_DTIM_DTMR_RST;

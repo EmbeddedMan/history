@@ -556,6 +556,9 @@ SECTIONS
   .debug_funcnames 0 : { *(.debug_funcnames) }
   .debug_typenames 0 : { *(.debug_typenames) }
   .debug_varnames  0 : { *(.debug_varnames) }
+.debug_pubtypes 0 : { *(.debug_pubtypes) }
+.debug_range    0 : { *(.debug_ranges) }
+.gnu.attributes 0 : { KEEP (*(.gnu.attributes)) }
   /DISCARD/ : { *(.rel.dyn) }
   /DISCARD/ : { *(.note.GNU-stack) }
 }

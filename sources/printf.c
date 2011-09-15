@@ -69,9 +69,8 @@ convert(uintptr value, unsigned radix, char *buffer)
     return i;
 }
 
-static
 int
-vsnprintf(char *buffer, int length, const char *format, va_list ap)
+vsnprintf(char *buffer, size_t length, const char *format, va_list ap)
 {
     int i;
     int j;
@@ -249,7 +248,7 @@ vsnprintf(char *buffer, int length, const char *format, va_list ap)
 }
 
 int
-snprintf(char *buffer, int length, const char *format, ...)
+snprintf(char *buffer, size_t length, const char *format, ...)
 {
     int n;
     va_list ap;

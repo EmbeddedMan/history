@@ -204,6 +204,12 @@ enum {
 #define BASIC_OUTPUT_LINE_SIZE  79
 #define BASIC_INPUT_LINE_SIZE  72
 
+#define vsnprintf  myvsnprintf
+#define snprintf  mysnprintf
+#define sprintf  mysprintf
+#define vsprintf  myvsprintf
+#define printf  myprintf
+
 #include <stdarg.h>
 
 #include "clone.h"
@@ -294,6 +300,9 @@ extern void os_yield(void);
 #else
 #define os_yield()  // NULL
 #endif
+
+int
+vprintf(const char *format, va_list ap);
 
 #if ! STICK_GUEST
 

@@ -40,7 +40,7 @@ ASFLAGS=
 LDLIBSOPTIONS=
 
 # Path to java used to run MPLAB X when this makefile was created
-MP_JAVA_PATH=C:\\Program\ Files\\Java\\jdk1.6.0_26\\jre/bin/
+MP_JAVA_PATH=C:\\Program\ Files\\Java\\jdk1.6.0_27\\jre/bin/
 OS_CURRENT="$(shell uname -s)"
 ############# Tool locations ##########################################
 # If you copy a project from one host to another, the path where the  #
@@ -48,17 +48,17 @@ OS_CURRENT="$(shell uname -s)"
 # If you open this project with MPLAB X in the new host, this         #
 # makefile will be regenerated and the paths will be corrected.       #
 #######################################################################
-MP_CC=C:\\Program\ Files\\Microchip\\MPLAB\ C32\ Suite\\bin\\pic32-gcc.exe
+MP_CC=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin\\pic32-gcc.exe
 # MP_BC is not defined
-MP_AS=C:\\Program\ Files\\Microchip\\MPLAB\ C32\ Suite\\bin\\pic32-as.exe
-MP_LD=C:\\Program\ Files\\Microchip\\MPLAB\ C32\ Suite\\bin\\pic32-ld.exe
-MP_AR=C:\\Program\ Files\\Microchip\\MPLAB\ C32\ Suite\\bin\\pic32-ar.exe
+MP_AS=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin\\pic32-as.exe
+MP_LD=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin\\pic32-ld.exe
+MP_AR=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin\\pic32-ar.exe
 # MP_BC is not defined
-MP_CC_DIR=C:\\Program\ Files\\Microchip\\MPLAB\ C32\ Suite\\bin
+MP_CC_DIR=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin
 # MP_BC_DIR is not defined
-MP_AS_DIR=C:\\Program\ Files\\Microchip\\MPLAB\ C32\ Suite\\bin
-MP_LD_DIR=C:\\Program\ Files\\Microchip\\MPLAB\ C32\ Suite\\bin
-MP_AR_DIR=C:\\Program\ Files\\Microchip\\MPLAB\ C32\ Suite\\bin
+MP_AS_DIR=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin
+MP_LD_DIR=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin
+MP_AR_DIR=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin
 # MP_BC_DIR is not defined
 
 .build-conf: ${BUILD_SUBPROJECTS}
@@ -86,7 +86,7 @@ ${OBJECTDIR}/_ext/724208933/vars.o: ../stickos/vars.c  nbproject/Makefile-${CND_
 	@${RM} ${OBJECTDIR}/_ext/724208933/vars.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/vars.o.ok ${OBJECTDIR}/_ext/724208933/vars.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/vars.o.d -o ${OBJECTDIR}/_ext/724208933/vars.o ../stickos/vars.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/vars.o.d -o ${OBJECTDIR}/_ext/724208933/vars.o ../stickos/vars.c   > ${OBJECTDIR}/_ext/724208933/vars.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/vars.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/vars.o.d -o ${OBJECTDIR}/_ext/724208933/vars.o ../stickos/vars.c   2>&1  > ${OBJECTDIR}/_ext/724208933/vars.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/vars.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/vars.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -95,14 +95,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/vars.o.tmp ${OBJECTDIR}/_ext/724208933/vars.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/vars.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/vars.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/vars.o.ok; else cat ${OBJECTDIR}/_ext/724208933/vars.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/vars.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/vars.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/vars.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/vars.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/724208933/run.o: ../stickos/run.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/724208933 
 	@${RM} ${OBJECTDIR}/_ext/724208933/run.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/run.o.ok ${OBJECTDIR}/_ext/724208933/run.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/run.o.d -o ${OBJECTDIR}/_ext/724208933/run.o ../stickos/run.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/run.o.d -o ${OBJECTDIR}/_ext/724208933/run.o ../stickos/run.c   > ${OBJECTDIR}/_ext/724208933/run.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/run.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/run.o.d -o ${OBJECTDIR}/_ext/724208933/run.o ../stickos/run.c   2>&1  > ${OBJECTDIR}/_ext/724208933/run.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/run.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/run.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -111,14 +113,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/run.o.tmp ${OBJECTDIR}/_ext/724208933/run.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/run.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/run.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/run.o.ok; else cat ${OBJECTDIR}/_ext/724208933/run.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/run.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/run.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/run.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/run.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/555720668/fat32.o: ../pict-o-crypt/fat32.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/555720668 
 	@${RM} ${OBJECTDIR}/_ext/555720668/fat32.o.d 
 	@${RM} ${OBJECTDIR}/_ext/555720668/fat32.o.ok ${OBJECTDIR}/_ext/555720668/fat32.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/fat32.o.d -o ${OBJECTDIR}/_ext/555720668/fat32.o ../pict-o-crypt/fat32.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/fat32.o.d -o ${OBJECTDIR}/_ext/555720668/fat32.o ../pict-o-crypt/fat32.c   > ${OBJECTDIR}/_ext/555720668/fat32.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/555720668/fat32.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/fat32.o.d -o ${OBJECTDIR}/_ext/555720668/fat32.o ../pict-o-crypt/fat32.c   2>&1  > ${OBJECTDIR}/_ext/555720668/fat32.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/555720668/fat32.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/555720668/fat32.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -127,14 +131,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/555720668/fat32.o.tmp ${OBJECTDIR}/_ext/555720668/fat32.o.d 
 	@${RM} ${OBJECTDIR}/_ext/555720668/fat32.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/555720668/fat32.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/555720668/fat32.o.ok; else cat ${OBJECTDIR}/_ext/555720668/fat32.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/555720668/fat32.o.err 
+	@cat ${OBJECTDIR}/_ext/555720668/fat32.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/555720668/fat32.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/555720668/fat32.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/724208933/code.o: ../stickos/code.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/724208933 
 	@${RM} ${OBJECTDIR}/_ext/724208933/code.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/code.o.ok ${OBJECTDIR}/_ext/724208933/code.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/code.o.d -o ${OBJECTDIR}/_ext/724208933/code.o ../stickos/code.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/code.o.d -o ${OBJECTDIR}/_ext/724208933/code.o ../stickos/code.c   > ${OBJECTDIR}/_ext/724208933/code.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/code.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/code.o.d -o ${OBJECTDIR}/_ext/724208933/code.o ../stickos/code.c   2>&1  > ${OBJECTDIR}/_ext/724208933/code.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/code.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/code.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -143,14 +149,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/code.o.tmp ${OBJECTDIR}/_ext/724208933/code.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/code.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/code.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/code.o.ok; else cat ${OBJECTDIR}/_ext/724208933/code.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/code.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/code.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/code.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/code.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/555720668/block.o: ../pict-o-crypt/block.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/555720668 
 	@${RM} ${OBJECTDIR}/_ext/555720668/block.o.d 
 	@${RM} ${OBJECTDIR}/_ext/555720668/block.o.ok ${OBJECTDIR}/_ext/555720668/block.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/block.o.d -o ${OBJECTDIR}/_ext/555720668/block.o ../pict-o-crypt/block.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/block.o.d -o ${OBJECTDIR}/_ext/555720668/block.o ../pict-o-crypt/block.c   > ${OBJECTDIR}/_ext/555720668/block.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/555720668/block.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/block.o.d -o ${OBJECTDIR}/_ext/555720668/block.o ../pict-o-crypt/block.c   2>&1  > ${OBJECTDIR}/_ext/555720668/block.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/555720668/block.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/555720668/block.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -159,14 +167,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/555720668/block.o.tmp ${OBJECTDIR}/_ext/555720668/block.o.d 
 	@${RM} ${OBJECTDIR}/_ext/555720668/block.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/555720668/block.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/555720668/block.o.ok; else cat ${OBJECTDIR}/_ext/555720668/block.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/555720668/block.o.err 
+	@cat ${OBJECTDIR}/_ext/555720668/block.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/555720668/block.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/555720668/block.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/724208933/basic.o: ../stickos/basic.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/724208933 
 	@${RM} ${OBJECTDIR}/_ext/724208933/basic.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/basic.o.ok ${OBJECTDIR}/_ext/724208933/basic.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/basic.o.d -o ${OBJECTDIR}/_ext/724208933/basic.o ../stickos/basic.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/basic.o.d -o ${OBJECTDIR}/_ext/724208933/basic.o ../stickos/basic.c   > ${OBJECTDIR}/_ext/724208933/basic.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/basic.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/basic.o.d -o ${OBJECTDIR}/_ext/724208933/basic.o ../stickos/basic.c   2>&1  > ${OBJECTDIR}/_ext/724208933/basic.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/basic.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/basic.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -175,14 +185,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/basic.o.tmp ${OBJECTDIR}/_ext/724208933/basic.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/basic.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/basic.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/basic.o.ok; else cat ${OBJECTDIR}/_ext/724208933/basic.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/basic.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/basic.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/basic.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/basic.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/724208933/parse.o: ../stickos/parse.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/724208933 
 	@${RM} ${OBJECTDIR}/_ext/724208933/parse.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/parse.o.ok ${OBJECTDIR}/_ext/724208933/parse.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/parse.o.d -o ${OBJECTDIR}/_ext/724208933/parse.o ../stickos/parse.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/parse.o.d -o ${OBJECTDIR}/_ext/724208933/parse.o ../stickos/parse.c   > ${OBJECTDIR}/_ext/724208933/parse.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/parse.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/parse.o.d -o ${OBJECTDIR}/_ext/724208933/parse.o ../stickos/parse.c   2>&1  > ${OBJECTDIR}/_ext/724208933/parse.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/parse.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/parse.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -191,7 +203,9 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/parse.o.tmp ${OBJECTDIR}/_ext/724208933/parse.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/parse.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/parse.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/parse.o.ok; else cat ${OBJECTDIR}/_ext/724208933/parse.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/parse.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/parse.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/parse.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/parse.o.ok; else exit 1; fi
 	
 else
 ${OBJECTDIR}/_ext/724208933/vars.o: ../stickos/vars.c  nbproject/Makefile-${CND_CONF}.mk
@@ -199,7 +213,7 @@ ${OBJECTDIR}/_ext/724208933/vars.o: ../stickos/vars.c  nbproject/Makefile-${CND_
 	@${RM} ${OBJECTDIR}/_ext/724208933/vars.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/vars.o.ok ${OBJECTDIR}/_ext/724208933/vars.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/vars.o.d -o ${OBJECTDIR}/_ext/724208933/vars.o ../stickos/vars.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/vars.o.d -o ${OBJECTDIR}/_ext/724208933/vars.o ../stickos/vars.c   > ${OBJECTDIR}/_ext/724208933/vars.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/vars.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/vars.o.d -o ${OBJECTDIR}/_ext/724208933/vars.o ../stickos/vars.c   2>&1  > ${OBJECTDIR}/_ext/724208933/vars.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/vars.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/vars.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -208,14 +222,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/vars.o.tmp ${OBJECTDIR}/_ext/724208933/vars.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/vars.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/vars.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/vars.o.ok; else cat ${OBJECTDIR}/_ext/724208933/vars.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/vars.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/vars.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/vars.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/vars.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/724208933/run.o: ../stickos/run.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/724208933 
 	@${RM} ${OBJECTDIR}/_ext/724208933/run.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/run.o.ok ${OBJECTDIR}/_ext/724208933/run.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/run.o.d -o ${OBJECTDIR}/_ext/724208933/run.o ../stickos/run.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/run.o.d -o ${OBJECTDIR}/_ext/724208933/run.o ../stickos/run.c   > ${OBJECTDIR}/_ext/724208933/run.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/run.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/run.o.d -o ${OBJECTDIR}/_ext/724208933/run.o ../stickos/run.c   2>&1  > ${OBJECTDIR}/_ext/724208933/run.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/run.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/run.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -224,14 +240,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/run.o.tmp ${OBJECTDIR}/_ext/724208933/run.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/run.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/run.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/run.o.ok; else cat ${OBJECTDIR}/_ext/724208933/run.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/run.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/run.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/run.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/run.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/555720668/fat32.o: ../pict-o-crypt/fat32.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/555720668 
 	@${RM} ${OBJECTDIR}/_ext/555720668/fat32.o.d 
 	@${RM} ${OBJECTDIR}/_ext/555720668/fat32.o.ok ${OBJECTDIR}/_ext/555720668/fat32.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/fat32.o.d -o ${OBJECTDIR}/_ext/555720668/fat32.o ../pict-o-crypt/fat32.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/fat32.o.d -o ${OBJECTDIR}/_ext/555720668/fat32.o ../pict-o-crypt/fat32.c   > ${OBJECTDIR}/_ext/555720668/fat32.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/555720668/fat32.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/fat32.o.d -o ${OBJECTDIR}/_ext/555720668/fat32.o ../pict-o-crypt/fat32.c   2>&1  > ${OBJECTDIR}/_ext/555720668/fat32.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/555720668/fat32.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/555720668/fat32.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -240,14 +258,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/555720668/fat32.o.tmp ${OBJECTDIR}/_ext/555720668/fat32.o.d 
 	@${RM} ${OBJECTDIR}/_ext/555720668/fat32.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/555720668/fat32.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/555720668/fat32.o.ok; else cat ${OBJECTDIR}/_ext/555720668/fat32.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/555720668/fat32.o.err 
+	@cat ${OBJECTDIR}/_ext/555720668/fat32.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/555720668/fat32.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/555720668/fat32.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/724208933/code.o: ../stickos/code.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/724208933 
 	@${RM} ${OBJECTDIR}/_ext/724208933/code.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/code.o.ok ${OBJECTDIR}/_ext/724208933/code.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/code.o.d -o ${OBJECTDIR}/_ext/724208933/code.o ../stickos/code.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/code.o.d -o ${OBJECTDIR}/_ext/724208933/code.o ../stickos/code.c   > ${OBJECTDIR}/_ext/724208933/code.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/code.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/code.o.d -o ${OBJECTDIR}/_ext/724208933/code.o ../stickos/code.c   2>&1  > ${OBJECTDIR}/_ext/724208933/code.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/code.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/code.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -256,14 +276,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/code.o.tmp ${OBJECTDIR}/_ext/724208933/code.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/code.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/code.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/code.o.ok; else cat ${OBJECTDIR}/_ext/724208933/code.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/code.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/code.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/code.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/code.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/555720668/block.o: ../pict-o-crypt/block.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/555720668 
 	@${RM} ${OBJECTDIR}/_ext/555720668/block.o.d 
 	@${RM} ${OBJECTDIR}/_ext/555720668/block.o.ok ${OBJECTDIR}/_ext/555720668/block.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/block.o.d -o ${OBJECTDIR}/_ext/555720668/block.o ../pict-o-crypt/block.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/block.o.d -o ${OBJECTDIR}/_ext/555720668/block.o ../pict-o-crypt/block.c   > ${OBJECTDIR}/_ext/555720668/block.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/555720668/block.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/555720668/block.o.d -o ${OBJECTDIR}/_ext/555720668/block.o ../pict-o-crypt/block.c   2>&1  > ${OBJECTDIR}/_ext/555720668/block.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/555720668/block.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/555720668/block.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -272,14 +294,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/555720668/block.o.tmp ${OBJECTDIR}/_ext/555720668/block.o.d 
 	@${RM} ${OBJECTDIR}/_ext/555720668/block.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/555720668/block.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/555720668/block.o.ok; else cat ${OBJECTDIR}/_ext/555720668/block.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/555720668/block.o.err 
+	@cat ${OBJECTDIR}/_ext/555720668/block.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/555720668/block.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/555720668/block.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/724208933/basic.o: ../stickos/basic.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/724208933 
 	@${RM} ${OBJECTDIR}/_ext/724208933/basic.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/basic.o.ok ${OBJECTDIR}/_ext/724208933/basic.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/basic.o.d -o ${OBJECTDIR}/_ext/724208933/basic.o ../stickos/basic.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/basic.o.d -o ${OBJECTDIR}/_ext/724208933/basic.o ../stickos/basic.c   > ${OBJECTDIR}/_ext/724208933/basic.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/basic.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/basic.o.d -o ${OBJECTDIR}/_ext/724208933/basic.o ../stickos/basic.c   2>&1  > ${OBJECTDIR}/_ext/724208933/basic.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/basic.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/basic.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -288,14 +312,16 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/basic.o.tmp ${OBJECTDIR}/_ext/724208933/basic.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/basic.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/basic.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/basic.o.ok; else cat ${OBJECTDIR}/_ext/724208933/basic.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/basic.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/basic.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/basic.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/basic.o.ok; else exit 1; fi
 	
 ${OBJECTDIR}/_ext/724208933/parse.o: ../stickos/parse.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/724208933 
 	@${RM} ${OBJECTDIR}/_ext/724208933/parse.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/parse.o.ok ${OBJECTDIR}/_ext/724208933/parse.o.err 
 	@echo ${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/parse.o.d -o ${OBJECTDIR}/_ext/724208933/parse.o ../stickos/parse.c  
-	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/parse.o.d -o ${OBJECTDIR}/_ext/724208933/parse.o ../stickos/parse.c   > ${OBJECTDIR}/_ext/724208933/parse.o.err 2>&1  ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/parse.o.ok ; fi 
+	@-${MP_CC} $(MP_EXTRA_CC_PRE)  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -mno-float -DPIC32=1 -DSTICKOS=1 -DCHIPKIT=1 -I".." -I"../pict-o-crypt" -I"../cpustick" -I"../headers" -I"../sources" -I"../stickos" -Os -fomit-frame-pointer -fno-builtin -MMD -MF ${OBJECTDIR}/_ext/724208933/parse.o.d -o ${OBJECTDIR}/_ext/724208933/parse.o ../stickos/parse.c   2>&1  > ${OBJECTDIR}/_ext/724208933/parse.o.err ; if [ $$? -eq 0 ] ; then touch ${OBJECTDIR}/_ext/724208933/parse.o.ok ; fi 
 	@touch ${OBJECTDIR}/_ext/724208933/parse.o.d 
 	
 ifneq (,$(findstring MINGW32,$(OS_CURRENT))) 
@@ -304,7 +330,9 @@ ifneq (,$(findstring MINGW32,$(OS_CURRENT)))
 	@${CP} ${OBJECTDIR}/_ext/724208933/parse.o.tmp ${OBJECTDIR}/_ext/724208933/parse.o.d 
 	@${RM} ${OBJECTDIR}/_ext/724208933/parse.o.tmp
 endif
-	@if [ -f ${OBJECTDIR}/_ext/724208933/parse.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/parse.o.ok; else cat ${OBJECTDIR}/_ext/724208933/parse.o.err; exit 1; fi
+	@touch ${OBJECTDIR}/_ext/724208933/parse.o.err 
+	@cat ${OBJECTDIR}/_ext/724208933/parse.o.err 
+	@if [ -f ${OBJECTDIR}/_ext/724208933/parse.o.ok ] ; then rm -f ${OBJECTDIR}/_ext/724208933/parse.o.ok; else exit 1; fi
 	
 endif
 
