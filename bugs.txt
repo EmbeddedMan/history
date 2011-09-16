@@ -36,6 +36,8 @@ I might as well add the baud rate there, too.
 
 And do the same for i2c.
 
+fix user guide to not loop over servo variables directly -- use a target variable!
+
 
 // prior 1
 // =======
