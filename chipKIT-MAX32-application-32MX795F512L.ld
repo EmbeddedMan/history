@@ -599,7 +599,7 @@ SECTIONS
     . = ALIGN(8);
   } >kseg1_data_mem
   /* Stack allocation follows the heap */
-  .stack ALIGN(8) :
+  .stack ALIGN(8) (NOLOAD) :
   {
     _splim = . ;
     _SPLIM = . ;
