@@ -14,9 +14,9 @@
 // The PIDs must be used with VID 0403.
 // We use A660; Cale Fallgatter uses A661; Jim Donelson uses A667;
 // Avrbootloader group uses A662.
-#define FTDI_VID  0x0403
-#define FTDI_PID  0xA660
-#define FTDI_RID  0x0180
+#define CDCACM_VID  0x0403
+#define CDCACM_PID  0xA660
+#define CDCACM_RID  0x0180
 
 static const byte cdcacm_device_descriptor[] = {
     18,  // length
@@ -24,8 +24,8 @@ static const byte cdcacm_device_descriptor[] = {
     0x01, 0x01,  // 1.1
     0x02, 0x00, 0x00,  // class (cdc), subclass, protocol
     PACKET_SIZE,  // packet size
-    FTDI_VID%0x100, FTDI_VID/0x100, FTDI_PID%0x100, FTDI_PID/0x100,
-    FTDI_RID%0x100, FTDI_RID/0x100,
+    CDCACM_VID%0x100, CDCACM_VID/0x100, CDCACM_PID%0x100, CDCACM_PID/0x100,
+    CDCACM_RID%0x100, CDCACM_RID/0x100,
     0x01,  // manufacturer (string)
     0x02,  // product (string)
     0x00,  // sn (string)
@@ -150,7 +150,7 @@ static bool discard;  // true when we don't think anyone is listening
 
 
 // this function waits for space to be available in the transport
-// buffers and then prints the specified line to the FTDI transport
+// buffers and then prints the specified line to the CDCACM transport
 // console.
 void
 cdcacm_print(const byte *buffer, int length)
@@ -252,7 +252,7 @@ static uint8 line_coding[7] = {
   FILL_LINE_CODING(115200, 0, 0, 8) /* Default is 115200 BPS and 8N1 format. */
 };
 
-// this function implements the FTDI usb setup control transfer.
+// this function implements the CDCACM usb setup control transfer.
 static int
 cdcacm_control_transfer(struct setup *setup, byte *buffer, int length)
 {
@@ -307,7 +307,7 @@ cdcacm_control_transfer(struct setup *setup, byte *buffer, int length)
 
 static bool waiting;
 
-// this function acknowledges receipt of an FTDI command from upper
+// this function acknowledges receipt of an CDCACM command from upper
 // level code.
 void
 cdcacm_command_ack(void)
@@ -326,7 +326,7 @@ cdcacm_command_ack(void)
 }
 
 
-// this function implements the FTDI usb bulk transfer.
+// this function implements the CDCACM usb bulk transfer.
 static int
 cdcacm_bulk_transfer(bool in, byte *buffer, int length)
 {
