@@ -3149,15 +3149,21 @@ static
 void
 pwmset(int n, int32 value)
 {
+#if ! STICK_GUEST
     MCF_PWM_PWMDTY(n) = (byte)(value>>8);
     MCF_PWM_PWMDTY(n+1) = (byte)value;
+#endif
 }
 
 static
 int32
 pwmget(int n)
 {
+#if ! STICK_GUEST
     return (MCF_PWM_PWMDTY(n)<<8) | MCF_PWM_PWMDTY(n+1);
+#else
+    return 0;
+#endif
 }
 #endif
 

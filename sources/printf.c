@@ -70,7 +70,7 @@ convert(uintptr value, unsigned radix, char *buffer)
 }
 
 int
-vsnprintf(char *buffer, size_t length, const char *format, va_list ap)
+vsnprintf(char *buffer, size_t length_in, const char *format, va_list ap)
 {
     int i;
     int j;
@@ -81,12 +81,14 @@ vsnprintf(char *buffer, size_t length, const char *format, va_list ap)
     bool shortb;
     int zero;
     int width;
+    int length;
     int prec;
     int32 value;
     const char *p;
     char temp[1+MAXDIGITS+1];
 
     i = 0;
+    length = length_in;
 
     nl = false;
     for (p = format; *p; p++) {
