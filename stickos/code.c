@@ -429,7 +429,9 @@ code_list(bool profile, int start_line_number, int end_line_number, bool in_libr
     int line_number;
     int profiled_buckets;
     struct line *line;
-    char text[BASIC_OUTPUT_LINE_SIZE+10+20/*2*MAX_SCOPES*/];  // REVISIT -- line number size?
+    char *text;
+
+    text = big_buffer;
     
     if (profile) {
         assert(! in_library);

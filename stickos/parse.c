@@ -7,7 +7,8 @@
 
 #include "main.h"
 
-#define TICK  '`'
+#define COMMENT  "//"
+#define COMMENTLEN  2
 
 static
 const struct op {
@@ -93,6 +94,7 @@ const struct keyword {
     "off", code_off,
     "on", code_on,
     "print", code_print,
+    "?", code_print,
     "qspi", code_qspi,
     "read", code_read,
     "rem", code_rem,
@@ -576,7 +578,7 @@ parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT by
     number = true;
     for (;;) {
         c = **text;
-        if (! c || c == ',' || c == TICK) {
+        if (! c || c == ',' || ! strncmp(*text, COMMENT, COMMENTLEN)) {
             if (number) {
                 return false;
             }
@@ -794,7 +796,7 @@ parse_class(IN char *text, IN OUT int *length, IN OUT byte *bytecode)
     if (! p) {
         p = strchr(text, '\0');
     }
-    q = strchr(text, TICK);
+    q = strstr(text, COMMENT);
     if (q && q < p) {
         p = q;
     }
@@ -1222,7 +1224,7 @@ XXX_AGAIN_XXX:
                     if (! parse_expression(0, &text, &length, bytecode)) {
                         goto XXX_ERROR_XXX;
                     }
-                } else if (*text && *text != ',' && *text != TICK) {
+                } else if (*text && *text != ',' && strncmp(text, COMMENT, COMMENTLEN)) {
                     assert(text_err);
                     text = text_err;
                     goto XXX_ERROR_XXX;
@@ -1488,7 +1490,7 @@ XXX_AGAIN_XXX:
                 
                 // while there are more parameters to parse...
                 olength = length;
-                while (*text && *text != TICK) {
+                while (*text && strncmp(text, COMMENT, COMMENTLEN)) {
                     if (length > olength) {
                         if (! parse_char(&text, ',')) {
                             goto XXX_ERROR_XXX;
@@ -1533,12 +1535,12 @@ XXX_AGAIN_XXX:
             break;
     }
 
-    if (*text && *text != TICK && multi) {
+    if (*text && strncmp(text, COMMENT, COMMENTLEN) && multi) {
         goto XXX_AGAIN_XXX;
     }
 
     // if a comment follows on the line...
-    if (parse_char(&text, TICK)) {
+    if (parse_word(&text, COMMENT)) {
         // generate the comment to bytecode
         bytecode[length++] = code_tick;
         while (*text) {
@@ -1571,6 +1573,8 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     int length;
     char *text;
     int syntax_error;
+
+    assert(strlen(COMMENT) == COMMENTLEN);
 
     text = text_in;
     parse_trim(&text);
@@ -2438,9 +2442,11 @@ XXX_AGAIN_XXX:
     if (bytecode < bytecode_in+length) {
         assert(*bytecode == code_tick);
         bytecode++;
-        len = sprintf(out, " ` %s", bytecode);
+        len = sprintf(out, "  %s ", COMMENT);
         out += len;
-        bytecode += len-2;
+        len = sprintf(out, "%s", bytecode);
+        out += len;
+        bytecode += len+1;
     }
 
     assert(bytecode == bytecode_in+length);
