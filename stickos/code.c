@@ -14,11 +14,13 @@ bool unused1 = true;
 bool unused2 = true;
 #endif
 
+byte *code_library_page;
+
 // the last word of each flash bank is the generation number
 #define LGENERATION(p)  *(int32 *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(uint32))
 
 #undef PAGE_SIZE
-#define PAGE_SIZE(p)  (((p) == FLASH_CODE1_PAGE || (p) == FLASH_CODE2_PAGE) ? BASIC_LARGE_PAGE_SIZE : sizeof(RAM_CODE_PAGE))
+#define PAGE_SIZE(p)  (((p) == FLASH_CODE1_PAGE || (p) == FLASH_CODE2_PAGE || (p) == code_library_page) ? BASIC_LARGE_PAGE_SIZE : sizeof(RAM_CODE_PAGE))
 
 // we always pick the newer flash bank
 #define FLASH_CODE_PAGE  ((LGENERATION(FLASH_CODE1_PAGE)+1 > LGENERATION(FLASH_CODE2_PAGE)+1) ? FLASH_CODE1_PAGE : FLASH_CODE2_PAGE)
@@ -35,6 +37,8 @@ struct bucket {
     uint32 hits;
 } *profile_buckets;
 
+uint32 profile_other;
+uint32 profile_library;
 
 static
 void
@@ -202,34 +206,47 @@ insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
 // ram or flash code page.
 static
 struct line *
-code_next_line_internal(IN bool deleted_ok, IN OUT int *line_number)
+code_next_line_internal(IN bool deleted_ok, IN bool in_library, IN OUT int *line_number)
 {
     struct line *line;
     struct line *ram_line;
     struct line *flash_line;
 
-    do {
-        ram_line = find_following_line_in_page(RAM_CODE_PAGE, *line_number);
-        assert(ram_line);
-        flash_line = find_following_line_in_page(FLASH_CODE_PAGE, *line_number);
-        assert(flash_line);
+    // if we're looking in primary code space...
+    if (! in_library) {
+        do {
+            ram_line = find_following_line_in_page(RAM_CODE_PAGE, *line_number);
+            assert(ram_line);
+            flash_line = find_following_line_in_page(FLASH_CODE_PAGE, *line_number);
+            assert(flash_line);
 
-        if (! ram_line->line_number && ! flash_line->line_number) {
+            if (! ram_line->line_number && ! flash_line->line_number) {
+                return NULL;
+            }
+
+            if (! ram_line->line_number) {
+                line = flash_line;
+            } else if (! flash_line->line_number) {
+                line = ram_line;
+            } else if (flash_line->line_number < ram_line->line_number) {
+                line = flash_line;
+            } else {
+                line = ram_line;
+            }
+
+            *line_number = line->line_number;
+        } while (! deleted_ok && line->length == 1 && line->bytecode[0] == code_deleted);
+    } else {
+        // look in the library code space
+        line = find_following_line_in_page(code_library_page, *line_number);
+        assert(line);
+
+        if (! line->line_number) {
             return NULL;
         }
 
-        if (! ram_line->line_number) {
-            line = flash_line;
-        } else if (! flash_line->line_number) {
-            line = ram_line;
-        } else if (flash_line->line_number < ram_line->line_number) {
-            line = flash_line;
-        } else {
-            line = ram_line;
-        }
-
         *line_number = line->line_number;
-    } while (! deleted_ok && line->length == 1 && line->bytecode[0] == code_deleted);
+    }
 
     return line;
 }
@@ -237,23 +254,28 @@ code_next_line_internal(IN bool deleted_ok, IN OUT int *line_number)
 // LRU cache
 static struct line *last_seq_line;
 static int last_seq_line_number;
+static bool last_seq_in_library;
 static struct line *last_nonseq_line;
 static int last_nonseq_line_number;
+static bool last_nonseq_in_library;
 
 // this function finds the next logical code line, hopefully from
 // the lru cache
 struct line *
-code_next_line(IN bool deleted_ok, IN OUT int *line_number)
+code_next_line(IN bool deleted_ok, IN bool in_library, IN OUT int *line_number)
 {
+    byte *code_page;
     struct line *line;
     
     // performance path
     // N.B. this works if the code is all in the same page -- i.e., saved
     if (! ((struct line *)RAM_CODE_PAGE)->line_number && *line_number) {
+        code_page = in_library ? code_library_page : FLASH_CODE_PAGE;
+
         // if we've got a sequential LRU cache hit...
-        if (*line_number == last_seq_line_number && last_seq_line) {
-            line = find_next_line_in_page(FLASH_CODE_PAGE, last_seq_line);
-            check_line(FLASH_CODE_PAGE, line);
+        if (*line_number == last_seq_line_number && in_library == last_seq_in_library && last_seq_line) {
+            line = find_next_line_in_page(code_page, last_seq_line);
+            check_line(code_page, line);
             if (! line->line_number) {
                 return NULL;
             }
@@ -262,7 +284,7 @@ code_next_line(IN bool deleted_ok, IN OUT int *line_number)
         }
         
         // if we've got a non-sequential cache hit...
-        if (*line_number == last_nonseq_line_number && last_nonseq_line) {
+        if (*line_number == last_nonseq_line_number && in_library == last_nonseq_in_library && last_nonseq_line) {
             line = last_nonseq_line;
             *line_number = line->line_number;
             goto XXX_DONE_XXX;
@@ -270,14 +292,17 @@ code_next_line(IN bool deleted_ok, IN OUT int *line_number)
     }
 
     last_nonseq_line_number = *line_number;
+    last_nonseq_in_library = in_library;
     
-    line = code_next_line_internal(deleted_ok, line_number);
+    line = code_next_line_internal(deleted_ok, in_library, line_number);
     
     last_nonseq_line = line;  // remember this for subsequent non-sequential accesses
 
 XXX_DONE_XXX:    
-    last_seq_line = line;  // remember this for subsequent sequential accesses
     last_seq_line_number = *line_number;
+    last_seq_in_library = in_library;
+    last_seq_line = line;  // remember this for subsequent sequential accesses
+
     assert(line != (struct line *)-1);
     return line;
 }
@@ -285,24 +310,42 @@ XXX_DONE_XXX:
 // this function returns the line where the specified sub_name
 // exists.
 struct line *
-code_line(enum bytecode code, const byte *name)
+code_line(IN enum bytecode code, IN const byte *name, IN bool print, IN bool library_ok, OUT bool *in_library)
 {
+    bool library;
     int line_number;
     struct line *line;
 
     assert(code == code_label || code == code_sub);
 
-    line_number = 0;
-    for (;;) {
-        line = code_next_line(false, &line_number);
-        if (line) {
-            if (line->bytecode[0] == code && ! strcmp((char *)line->bytecode+1, (const char *)name)) {
-                return line;
+    // first check the primary code space, then check the library code space...
+    for (library = false; library <= true; library++) {
+        if (! library || (library_ok && code_library_page)) {
+            line_number = 0;
+            for (;;) {
+                line = code_next_line(false, library, &line_number);
+                if (line) {
+                    if (line->bytecode[0] == code) {
+                        if (! strcmp((char *)line->bytecode+1, (const char *)name)) {
+                            if (in_library) {
+                                *in_library = library;
+                            }
+                            return line;
+                        }
+                        if (print) {
+                            printf("  %s\n", (char *)line->bytecode+1);
+                        }
+                    }
+                } else {
+                    break;
+                }
             }
-        } else {
-            return NULL;
+            if (print && ! library && library_ok && code_library_page) {
+                printf("library:\n");
+            }
         }
     }
+    return NULL;
 }
 
 // *** RAM control and access ***
@@ -358,7 +401,7 @@ code_delete(int start_line_number, int end_line_number)
 
     line_number = start_line_number?start_line_number-1:0;
     for (;;) {
-        line = code_next_line(false, &line_number);
+        line = code_next_line(false, false, &line_number);
         if (line) {
             code = line->bytecode[0];
             if (end_line_number && line_number > end_line_number) {
@@ -376,7 +419,7 @@ code_delete(int start_line_number, int end_line_number)
 
 // this function lists lines.
 void
-code_list(bool profile, int start_line_number, int end_line_number)
+code_list(bool profile, int start_line_number, int end_line_number, bool in_library)
 {
     byte code;
     int p;
@@ -388,16 +431,29 @@ code_list(bool profile, int start_line_number, int end_line_number)
     struct line *line;
     char text[BASIC_OUTPUT_LINE_SIZE+10+20/*2*MAX_SCOPES*/];  // REVISIT -- line number size?
     
-    if (profile && ((struct line *)RAM_CODE_PAGE)->line_number) {
-        printf("save code to profile\n");
-        return;
+    if (profile) {
+        assert(! in_library);
+        if (((struct line *)RAM_CODE_PAGE)->line_number) {
+            printf("save code to profile\n");
+            return;
+        }
+        printf("%7ldms other\n", profile_other);
+        if (code_library_page) {
+            printf("%7ldms library\n", profile_library);
+        }
+    }
+
+    if (in_library) {
+        assert(! profile);
+        assert(code_library_page);
+        printf("library:\n");
     }
 
     indent = 0;
     line_number = 0;
     profiled_buckets = start_line_number>>profile_shift;
     for (;;) {
-        line = code_next_line(false, &line_number);
+        line = code_next_line(false, in_library, &line_number);
         if (line) {
             code = line->bytecode[0];
             if (code == code_endif || code == code_else || code == code_elseif || code == code_endwhile || code == code_until || code == code_next || code == code_endsub) {
@@ -462,7 +518,7 @@ code_edit(int line_number_in)
     char text[BASIC_OUTPUT_LINE_SIZE+10];  // REVISIT -- line number size?
 
     line_number = line_number_in-1;
-    line = code_next_line(false, &line_number);
+    line = code_next_line(false, false, &line_number);
     if (! line || line_number != line_number_in) {
         return;
     }
@@ -584,7 +640,7 @@ code_save(bool fast, int renum)
     line_number = 0;
     line_renumber = 0;
     for (;;) {
-        line = code_next_line(true, &line_number);
+        line = code_next_line(true, false, &line_number);
         if (! line) {
             break;
         }
@@ -678,6 +734,30 @@ struct catalog {
     int dummy;
 };
 
+// find the library if it exists
+static
+void
+find_library(void)
+{
+    int i;
+    struct catalog *catalog;
+
+    code_library_page = NULL;
+
+    catalog = (struct catalog *)FLASH_CATALOG_PAGE;
+
+    // look up the library name in the catalog
+    for (i = 0; i < BASIC_STORES; i++) {
+        if (! strncmp(catalog->name[i], "library", sizeof(catalog->name[i])-1)) {
+            break;
+        }
+    }
+    if (i < BASIC_STORES) {
+        // we'll run with a library code space
+        code_library_page = FLASH_STORE_PAGE(i);
+    }
+}
+
 // this function stores the current program to the filesystem.
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
@@ -759,6 +839,8 @@ code_store(char *name)
 #if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
     PPAGE = ppage;
 #endif
+
+    find_library();
 }
 
 // this function loads the current program from the filesystem.
@@ -866,6 +948,8 @@ code_purge(char *name)
     flash_write_words((uint32 *)FLASH_CATALOG_PAGE, (uint32 *)&temp, sizeof(temp)/sizeof(uint32));
 
     delay(500);  // this always takes a while!
+
+    find_library();
 }
 
 void
@@ -876,13 +960,15 @@ code_timer_poll(void)
     // if we can profile...
     // N.B. this works if the code is all in the same page -- i.e., saved
     if (! ((struct line *)RAM_CODE_PAGE)->line_number) {
-        if (run_line_number == -1) {
-            bucket = 0;
+        if (run_in_library) {
+            profile_library++;
+        } else if (run_line_number == -1) {
+            profile_other++;
         } else {
             bucket = run_line_number >> profile_shift;
+            assert(bucket < PROFILE_BUCKETS);
+            profile_buckets[bucket].hits++;
         }
-        assert(bucket < PROFILE_BUCKETS);
-        profile_buckets[bucket].hits++;
     }
 }
 
@@ -945,5 +1031,7 @@ code_initialize(void)
     }
 
     profile_buckets = (struct bucket *)PROFILE_BUFFER;
+
+    find_library();
 }
 

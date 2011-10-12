@@ -19,6 +19,7 @@ bool run_trace;
 bool run_isr;
 
 int run_line_number;
+bool run_in_library;
 
 int data_line_number;
 int data_line_offset;
@@ -123,6 +124,7 @@ static int cur_scopes;
 static
 struct running_gosub {
     int return_line_number;
+    bool return_in_library;
     int return_var_scope;
     int return_scope;
 } gosubs[MAX_GOSUBS];
@@ -192,7 +194,7 @@ read_data()
     line_number = data_line_number ? data_line_number-1 : 0;
     for (;;) {
         // find the next line to check
-        line = code_next_line(false, &line_number);
+        line = code_next_line(false, run_in_library, &line_number);
         if (! line) {
             printf("out of data\n");
             stop();
@@ -361,7 +363,7 @@ run_expression_watchpoint(const byte *bytecode_in, int length, IN uint32 running
 
     clear_stack();
     
-    while (bytecode < bytecode_in+length && *bytecode != code_comma) {
+    while (bytecode < bytecode_in+length && *bytecode != code_comma && *bytecode != code_tick) {
         code = *bytecode++;
         switch (code) {
             case code_add:
@@ -1155,7 +1157,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
         case code_restore:
             if (run_condition) {
                 if (bytecode[index]) {
-                    line = code_line(code_label, bytecode+index);
+                    line = code_line(code_label, bytecode+index, false, false, NULL);
                     if (line == NULL) {
                         printf("missing label\n");
                         goto XXX_SKIP_XXX;
@@ -1260,7 +1262,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             } while (index < length && bytecode[index] == code_comma);
             break;
 
-        case code_let:  // N.B. code_letstring is below
+        case code_let:
+        case code_nolet:
 #if ! GCC
             cw7bug++;  // CW7 BUG
 #endif
@@ -1841,7 +1844,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 index += run_expression(bytecode+index, length-index, NULL, &scope->for_final_value);
 
                 // if there is a step value...
-                if (index < length) {
+                if (index < length && bytecode[index] != code_tick) {
                     assert(bytecode[index] == code_comma);
                     index++;
 
@@ -1997,12 +2000,13 @@ XXX_PERF_XXX:
 
                 // open a new gosub scope
                 gosubs[max_gosubs].return_line_number = run_line_number;
+                gosubs[max_gosubs].return_in_library = run_in_library;
                 gosubs[max_gosubs].return_var_scope = var_open_scope();
                 gosubs[max_gosubs].return_scope = cur_scopes;
                 max_gosubs++;
 
                 // jump to the gosub line
-                line = code_line(code_sub, bytecode+index);
+                line = code_line(code_sub, bytecode+index, false, true, &run_in_library);
                 if (line == NULL) {
                     printf("missing sub\n");
                     goto XXX_SKIP_XXX;
@@ -2105,6 +2109,7 @@ XXX_PERF_XXX:
 
                 // and jump to the return line
                 run_line_number = gosubs[max_gosubs].return_line_number;
+                run_in_library = gosubs[max_gosubs].return_in_library;
             }
             break;
 
@@ -2147,7 +2152,17 @@ XXX_PERF_XXX:
             return run2_bytecode_code(code, bytecode, length);
             break;
     }
-    
+
+    // skip comments that follow the line
+    if (index < length) {
+        assert(bytecode[index] == code_tick);
+        index++;
+        while (bytecode[index]) {
+            index++;
+        }
+        index++;
+    }
+
 #if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
     assert_ram(index == length);  // CW bug
 #else
@@ -2254,7 +2269,7 @@ run(bool cont, int start_line_number)
             }
         } else {
             // we're running; get the next statement to execute
-            line = code_next_line(false, &run_line_number);
+            line = code_next_line(false, run_in_library, &run_line_number);
             if (! line) {
                 // we fell off the end
                 break;
@@ -2265,7 +2280,7 @@ run(bool cont, int start_line_number)
             // if we're in trace mode...
             if (run_trace) {
                 // trace every line
-                code_list(false, line_number, line_number);
+                code_list(false, line_number, line_number, run_in_library);
             }
 
             // run the statement's bytecodes

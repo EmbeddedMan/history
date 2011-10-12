@@ -624,3 +624,22 @@ set_sr(uint16 csr)
 }
 #endif
 
+static uint32 m_w = 1;    /* must not be zero */
+static uint32 m_z = 2;    /* must not be zero */
+
+uint32
+random_32(
+    void
+    )
+{
+    uint32 z;
+    uint32 w;
+
+    z = m_z;
+    w = m_w;
+    assert(z);
+    assert(w);
+    m_z = z = 36969 * (z & 65535) + (z >> 16);
+    m_w = w = 18000 * (w & 65535) + (w >> 16);
+    return (z << 16) + w;  /* 32-bit result */
+}

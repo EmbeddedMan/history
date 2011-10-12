@@ -340,6 +340,7 @@ end
   90 dim a
 end
 profile tests
+      0ms other
       0ms   10 rem ### blinky ###
       0ms   20 dim i
       0ms   30 dim led as pin dtin2 for digital output
@@ -353,6 +354,7 @@ profile tests
       0ms  100 endwhile 
       0ms  110 end 
 end
+      0ms other
       0ms   10 rem ### blinky ###
       0ms   20 dim i
       0ms   30 dim led as pin dtin2 for digital output
@@ -366,6 +368,7 @@ end
       0ms  100 endwhile 
       0ms  110 end 
 end
+      0ms other
       0ms   10 rem ### blinky ###
             20 dim i
             30 dim led as pin dtin2 for digital output
@@ -380,6 +383,7 @@ end
            110 end 
       0ms 9999 rem 
 end
+      0ms other
       0ms   10 rem ### blinky ###
             20 dim i
             30 dim led as pin dtin2 for digital output
@@ -3210,7 +3214,7 @@ let
         ^ - error
          ^ - error
         ^ - error
-  ^ - error
+     ^ - error
 error -   ^
 print
        ^ - error
@@ -4936,6 +4940,7 @@ test time units
   50 configure timer 2 for 10 ms
   60 configure timer 3 for 100 us
 end
+      0ms other
    1000ms   10 sleep 1 s
       4ms   20 sleep 2*2 ms
    3000ms   30 sleep 3000000 us

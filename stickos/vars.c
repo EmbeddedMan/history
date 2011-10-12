@@ -680,6 +680,8 @@ var_get(IN const char *name, IN int index, IN uint32 running_watchpoint_mask)
                     terminal_getchar = 0;
                 }
                 return value;
+            } else if (! strcmp(name, "random")) {
+                return random_32();
             }
         }
         printf("var '%s' undefined\n", name);
@@ -767,6 +769,9 @@ var_get_size(IN const char *name, OUT int *max_index)
     if (! var) {
         // see if this could be a special system variable
         if (system_find(name)) {
+            *max_index = 1;
+            return sizeof(int32);
+        } else if (! strcmp(name, "random")) {
             *max_index = 1;
             return sizeof(int32);
         }

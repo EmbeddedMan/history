@@ -4,6 +4,7 @@
 enum bytecode {
     code_deleted = 0x80,  // used to indicate a deleted line in ram
     code_rem,
+      code_tick,
     code_on,
     code_off,
     code_mask,
@@ -23,6 +24,7 @@ enum bytecode {
       code_var_reference, // for sub reference parameters
       code_absolute, // for absolute variables
     code_let,
+      code_nolet,
     code_input,
     code_vprint,
     code_print,

@@ -48,6 +48,7 @@ enum cmdcode {
     command_run,  // [nnn]
     command_save,  // [<name>]
     command_servo,  // [nnn]
+    command_subs,
     command_undo,
     num_commands
 };
@@ -74,6 +75,7 @@ const char * const commands[] = {
     "run",
     "save",
     "servo",
+    "subs",
     "undo",
 };
 
@@ -135,6 +137,7 @@ basic_run(char *text_in)
     int length;
     int number1;
     int number2;
+    bool in_library;
     struct line *line;
     int syntax_error;
     byte bytecode[BASIC_BYTECODE_SIZE];
@@ -336,6 +339,7 @@ basic_run(char *text_in)
         case command_delete:
         case command_list:
         case command_profile:
+            in_library = false;
             if (*text) {
                 boo = basic_const(&text, &number1);
                 number2 = number1;
@@ -345,7 +349,7 @@ basic_run(char *text_in)
                     boo |= basic_const(&text, &number2);
                 }
                 if (! boo) {
-                    line = code_line(code_sub, (byte *)text);
+                    line = code_line(code_sub, (byte *)text, false, cmd==command_list, &in_library);
                     if (line == NULL) {
                         goto XXX_ERROR_XXX;
                     }
@@ -361,7 +365,7 @@ basic_run(char *text_in)
             if (cmd == command_delete) {
                 code_delete(number1, number2);
             } else {
-                code_list(cmd == command_profile, number1, number2);
+                code_list(cmd == command_profile, number1, number2, in_library);
             }
             break;
 
@@ -422,6 +426,14 @@ basic_run(char *text_in)
             }
 
             code_save(false, number1);
+            break;
+
+        case command_subs:
+            if (*text) {
+                goto XXX_ERROR_XXX;
+            }
+            line = code_line(code_sub, "", true, true, NULL);
+            assert(! line);
             break;
 
         case command_undo:

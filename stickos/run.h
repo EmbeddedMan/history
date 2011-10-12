@@ -17,6 +17,7 @@ extern bool run_step;
 extern bool run_trace;
 
 extern int run_line_number;
+extern bool run_in_library;
 
 extern bool run_watchpoint;
 extern bool run_condition;

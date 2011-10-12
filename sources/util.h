@@ -166,3 +166,8 @@ get_sr(void);
 
 void
 set_sr(uint16 csr);
+
+uint32
+random_32(
+    void
+    );
