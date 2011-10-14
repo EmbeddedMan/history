@@ -240,12 +240,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF52221 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -277,26 +277,26 @@ Welcome to StickOS for Freescale MCF52221 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF52221 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF52221 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -547,12 +547,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF52233 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -584,15 +584,15 @@ Welcome to StickOS for Freescale MCF52233 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF52233 v1.90!
@@ -913,26 +913,26 @@ Welcome to StickOS for Freescale MCF52252 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF52252 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF52252 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -1181,12 +1181,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF5211 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -1218,26 +1218,26 @@ Welcome to StickOS for Freescale MCF5211 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF5211 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF5211 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -1474,12 +1474,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF51JM128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -1511,26 +1511,26 @@ Welcome to StickOS for Freescale MCF51JM128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF51JM128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF51JM128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -1770,12 +1770,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF51JM128 Firebird32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -1807,26 +1807,26 @@ Welcome to StickOS for Freescale MCF51JM128 Firebird32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF51JM128 Firebird32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF51JM128 Firebird32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -2063,12 +2063,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF51JM128 Firebird32-lite v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -2100,26 +2100,26 @@ Welcome to StickOS for Freescale MCF51JM128 Firebird32-lite v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF51JM128 Firebird32-lite v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF51JM128 Firebird32-lite v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -2358,12 +2358,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF51CN128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -2395,26 +2395,26 @@ Welcome to StickOS for Freescale MCF51CN128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF51CN128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF51CN128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -2651,12 +2651,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF51QE128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -2688,26 +2688,26 @@ Welcome to StickOS for Freescale MCF51QE128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Freescale MCF51QE128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF51QE128 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -2943,12 +2943,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -2982,11 +2982,11 @@ Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Freescale MCF51JM128 BadgeBoard v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -3264,26 +3264,26 @@ Welcome to StickOS for Microchip PIC32MXx-F256H v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MXx-F256H v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MXx-F256H v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -3561,26 +3561,26 @@ Welcome to StickOS for Microchip PIC32MX4-F512H CUI32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MX4-F512H CUI32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MX4-F512H CUI32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -3858,26 +3858,26 @@ Welcome to StickOS for Microchip PIC32MXx-F512H v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MXx-F512H v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MXx-F512H v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -4157,26 +4157,26 @@ Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -4456,26 +4456,26 @@ Welcome to StickOS for Microchip PIC32MXx-F512L v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MXx-F512L v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MXx-F512L v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -4755,26 +4755,26 @@ Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -5054,26 +5054,26 @@ Welcome to StickOS for Microchip PIC32MX7-F512L v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MX7-F512L v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MX7-F512L v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -5301,12 +5301,12 @@ zigflea cable:
   vss                  vss
   vdd                  vdd
 test usb host
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+         ^ - error
+error -   ^
+         ^ - error
+error -   ^
+error -   ^
+         ^ - error
 ... testing pins
 Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -5338,26 +5338,26 @@ Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
@@ -5625,26 +5625,26 @@ Welcome to StickOS for Microchip PIC32MX7-F512L chipKIT Max32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-    ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
-     ^ - error
+error -     ^
+error -      ^
+error -      ^
+error -    ^
+error -    ^
+error -    ^
+error -      ^
+error -      ^
+error -      ^
 end
 ... testing ipaddress
 Welcome to StickOS for Microchip PIC32MX7-F512L chipKIT Max32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
 http://www.cpustick.com
 support@cpustick.com
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
-  ^ - error
+error -    ^
+error -     ^
+error -    ^
+error -     ^
+error -    ^
 ... testing reset
 Welcome to StickOS for Microchip PIC32MX7-F512L chipKIT Max32 v1.90!
 Copyright (c) 2008-2010; all rights reserved.
