@@ -1572,7 +1572,11 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     byte code;
     int length;
     char *text;
-    int syntax_error;
+    int syntax_error1;
+    int syntax_error2;
+
+    syntax_error1 = 0;
+    syntax_error2 = 0;
 
     assert(strlen(COMMENT) == COMMENTLEN);
 
@@ -1592,7 +1596,7 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     // if no command was found...
     if (i == LENGTHOF(keywords)) {
         // check for private commands
-        if (parse2_line(text_in, length_out, bytecode, &syntax_error)) {
+        if (parse2_line(text_in, length_out, bytecode, &syntax_error1)) {
             return true;
         }
 
@@ -1603,9 +1607,9 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     *bytecode = code;
 
     // parse the public command
-    boo = parse_line_code(code, text, &length, bytecode+1, &syntax_error);
+    boo = parse_line_code(code, text, &length, bytecode+1, &syntax_error2);
     if (! boo) {
-        *syntax_error_in = text - text_in + syntax_error;
+        *syntax_error_in = text - text_in + MAX(syntax_error1, syntax_error2);
         assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_OUTPUT_LINE_SIZE);
         return boo;
     }
