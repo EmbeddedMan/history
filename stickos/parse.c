@@ -1238,20 +1238,31 @@ XXX_AGAIN_XXX:
 
         case code_let:
         case code_nolet:
+            text_err = text;
+
             string = parse_class(text, &length, bytecode);
 
             // parse the variable
             if (! parse_var(string, true, string?0:1, 0, &text, &length, bytecode)) {
+                if (code == code_nolet) {
+                    text = text_err;
+                }
                 goto XXX_ERROR_XXX;
             }
 
             // parse the assignment
             if (! parse_char(&text, '=')) {
+                if (code == code_nolet) {
+                    text = text_err;
+                }
                 goto XXX_ERROR_XXX;
             }
 
             // parse the string or expression
             if (! parse_string_or_expression(string, &text, &length, bytecode)) {
+                if (code == code_nolet) {
+                    text = text_err;
+                }
                 goto XXX_ERROR_XXX;
             }
 
