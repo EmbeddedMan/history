@@ -1008,6 +1008,8 @@ void code_clear2(void)
     if (! ((struct line *)RAM_CODE_PAGE)->line_number) {
         // clear the profile buffer
         memset(PROFILE_BUFFER, 0, PROFILE_BUFFER_SIZE);
+        profile_other = 0;
+        profile_library = 0;
 
         // find the last line of code
         last_line = NULL;

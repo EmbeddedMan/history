@@ -533,6 +533,28 @@ list sub2
 list sub3
 ?"sub4"
 list sub4
+90
+run
+?"purge"
+purge library
+subs
+run
+EOF
+
+echo test library profile
+"$BASIC" -q <<'EOF'
+10 sub other
+20 sleep 1 s
+30 endsub
+save library
+new
+subs
+10 gosub other
+save
+run
+profile
+run
+profile
 EOF
 
 exit 0
