@@ -85,11 +85,13 @@ const struct keyword {
     "input", code_input,
     "label", code_label,
     "let", code_let,
+    "", code_nolet,
     "mask", code_mask,
     "next", code_next,
     "off", code_off,
     "on", code_on,
     "print", code_print,
+    "?", code_print,
     "qspi", code_qspi,
     "read", code_read,
     "rem", code_rem,
@@ -1228,6 +1230,7 @@ XXX_AGAIN_XXX:
             break;
 
         case code_let:
+        case code_nolet:
             string = parse_class(text, &length, bytecode);
 
             // parse the variable
@@ -1548,9 +1551,14 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     int i;
     int len;
     bool boo;
+    byte code;
     int length;
     char *text;
-    int syntax_error;
+    int syntax_error1;
+    int syntax_error2;
+
+    syntax_error1 = 0;
+    syntax_error2 = 0;
 
     text = text_in;
     parse_trim(&text);
@@ -1558,28 +1566,30 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     // check for public commands
     for (i = 0; i < LENGTHOF(keywords); i++) {
         len = strlen(keywords[i].keyword);
-        if (! strncmp(text, keywords[i].keyword, len)) {
+        if (len && ! strncmp(text, keywords[i].keyword, len)) {
             text += len;
+            code = keywords[i].code;
             break;
         }
     }
+
+    // if no command was found...
     if (i == LENGTHOF(keywords)) {
         // check for private commands
-        if (parse2_line(text_in, length_out, bytecode, &syntax_error)) {
+        if (parse2_line(text_in, length_out, bytecode, &syntax_error1)) {
             return true;
         }
 
-        *syntax_error_in = text - text_in + syntax_error;
-        assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_OUTPUT_LINE_SIZE);
-        return false;
+        // assume a let (nolet)
+        code = code_nolet;
     }
 
-    *bytecode = keywords[i].code;
+    *bytecode = code;
 
     // parse the public command
-    boo = parse_line_code(keywords[i].code, text, &length, bytecode+1, &syntax_error);
+    boo = parse_line_code(code, text, &length, bytecode+1, &syntax_error2);
     if (! boo) {
-        *syntax_error_in = text - text_in + syntax_error;
+        *syntax_error_in = text - text_in + MAX(syntax_error1, syntax_error2);
         assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_OUTPUT_LINE_SIZE);
         return boo;
     }
@@ -2195,6 +2205,7 @@ XXX_AGAIN_XXX:
             break;
 
         case code_let:
+        case code_nolet:
             bytecode += unparse_class(bytecode, &string);
 
             // decompile the variable
@@ -2439,8 +2450,10 @@ unparse_bytecode(IN byte *bytecode, IN int length, OUT char *text)
     }
 
     // decompile the bytecode keyword
-    out += sprintf(out, keywords[i].keyword);
-    out += sprintf(out, " ");
+    if (keywords[i].keyword[0]) {
+        out += sprintf(out, keywords[i].keyword);
+        out += sprintf(out, " ");
+    }
 
     assert(length);
     unparse_bytecode_code(code, bytecode+1, length-1, out);
