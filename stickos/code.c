@@ -449,7 +449,7 @@ code_list(bool profile, int start_line_number, int end_line_number, bool in_libr
     struct line *line;
     char *text;
 
-    text = big_buffer;
+    text = (char *)big_buffer;
     
     if (profile) {
         assert(! in_library);
@@ -488,7 +488,7 @@ code_list(bool profile, int start_line_number, int end_line_number, bool in_libr
                 unparse_bytecode(line->bytecode, line->length, text+code_indent*indent*2);
                 if (line->comment_length) {
                     strcat(text, "  //");
-                    strcat(text, line->bytecode+line->length);
+                    strcat(text, (char *)line->bytecode+line->length);
                 }
                 if (profile) {
                     bucket = line_number>>profile_shift;

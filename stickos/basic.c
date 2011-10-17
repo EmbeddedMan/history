@@ -432,7 +432,7 @@ basic_run(char *text_in)
             if (*text) {
                 goto XXX_ERROR_XXX;
             }
-            line = code_line(code_sub, "", true, true, NULL);
+            line = code_line(code_sub, (const byte *)"", true, true, NULL);
             assert(! line);
             break;
 

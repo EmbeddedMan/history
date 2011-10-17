@@ -1281,7 +1281,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_GPT3:
             offset = pin_number - PIN_GPT0;
             assert(offset < 4);
-            MCF_GPIO_PTAPAR &= ~(3<<(offset*2)));
+            MCF_GPIO_PTAPAR &= ~(3<<(offset*2));
             if (pin_type == pin_type_digital_output) {
                 MCF_GPIO_DDRTA |= 1 << offset;
             } else {
