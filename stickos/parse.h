@@ -1,5 +1,8 @@
 // *** parse.h ********************************************************
 
+#define COMMENT  "//"
+#define COMMENTLEN  2
+
 void parse_trim(IN char **p);
 bool parse_char(IN OUT char **text, IN char c);
 bool parse_word(IN OUT char **text, IN const char *word);

@@ -7,9 +7,6 @@
 
 #include "main.h"
 
-#define COMMENT  "//"
-#define COMMENTLEN  2
-
 static
 const struct op {
     char *op;
@@ -1390,7 +1387,7 @@ XXX_AGAIN_XXX:
         case code_break:
         case code_continue:
             // if the user specified a break/continue level...
-            if (*text) {
+            if (*text && strncmp(text, COMMENT, COMMENTLEN)) {
                 // parse the break/continue level
                 text_ok = text;
                 if (! parse_const(&text, &length, bytecode)) {
@@ -2355,7 +2352,7 @@ XXX_AGAIN_XXX:
         case code_break:
         case code_continue:
             // if the user specified a break/continue level...
-            if (bytecode < bytecode_in+length) {
+            if (bytecode < bytecode_in+length && *bytecode != code_tick) {
                 bytecode += unparse_const(0, bytecode, &out);
             }
             break;

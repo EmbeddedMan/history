@@ -690,7 +690,7 @@ run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *str
     bytecode = bytecode_in;
     while (bytecode < bytecode_in+length) {
         code = *bytecode;
-        if (code == code_comma) {
+        if (code == code_comma || code == code_tick) {
             break;
         }
         bytecode++;
@@ -1844,8 +1844,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 index += run_expression(bytecode+index, length-index, NULL, &scope->for_final_value);
 
                 // if there is a step value...
-                if (index < length && bytecode[index] != code_tick) {
-                    assert(bytecode[index] == code_comma);
+                if (index < length && bytecode[index] == code_comma) {
                     index++;
 
                     // evaluate the step value
@@ -1879,7 +1878,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
         case code_break:
         case code_continue:
             // if the user specified a break/continue level...
-            if (index < length) {
+            if (index < length && bytecode[index] != code_tick) {
                 n = run_bytecode_const(bytecode, &index);
             } else {
                 n = 1;
@@ -2052,18 +2051,20 @@ XXX_PERF_XXX:
 
                     // advance over the sub's current parameter to the next parameter
                     n = strlen((const char *)sub_bytecode) + 1;
+                    assert(sub_length >= n);
                     sub_length -= n;
                     sub_bytecode += n;
 
-                    if (sub_length > 0) {
-                        assert(*sub_bytecode == code_comma);
+                    if (sub_length > 0 && *sub_bytecode == code_comma) {
                         sub_length--;
                         sub_bytecode++;
+                    } else {
+                        break;
                     }
                 }
 
                 // check to see that all gosub parameter were consumed.  check for call site parameter overflow.
-                if (index != length) {
+                if (index != length && bytecode[index] != code_tick) {
                     printf("too many gosub parameters\n");
                     goto XXX_SKIP_XXX;
                 }
