@@ -85,13 +85,11 @@ const struct keyword {
     "input", code_input,
     "label", code_label,
     "let", code_let,
-    "", code_nolet,
     "mask", code_mask,
     "next", code_next,
     "off", code_off,
     "on", code_on,
     "print", code_print,
-    "?", code_print,
     "qspi", code_qspi,
     "read", code_read,
     "rem", code_rem,
@@ -575,7 +573,7 @@ parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT by
     number = true;
     for (;;) {
         c = **text;
-        if (! c || c == ',' || ! strncmp(*text, COMMENT, COMMENTLEN)) {
+        if (! c || c == ',') {
             if (number) {
                 return false;
             }
@@ -792,10 +790,6 @@ parse_class(IN char *text, IN OUT int *length, IN OUT byte *bytecode)
     p = strchr(text, ',');
     if (! p) {
         p = strchr(text, '\0');
-    }
-    q = strstr(text, COMMENT);
-    if (q && q < p) {
-        p = q;
     }
     q = strchr(text, '=');
     if (q && q < p) {
@@ -1221,7 +1215,7 @@ XXX_AGAIN_XXX:
                     if (! parse_expression(0, &text, &length, bytecode)) {
                         goto XXX_ERROR_XXX;
                     }
-                } else if (*text && *text != ',' && strncmp(text, COMMENT, COMMENTLEN)) {
+                } else if (*text && *text != ',') {
                     assert(text_err);
                     text = text_err;
                     goto XXX_ERROR_XXX;
@@ -1234,7 +1228,6 @@ XXX_AGAIN_XXX:
             break;
 
         case code_let:
-        case code_nolet:
             string = parse_class(text, &length, bytecode);
 
             // parse the variable
@@ -1387,7 +1380,7 @@ XXX_AGAIN_XXX:
         case code_break:
         case code_continue:
             // if the user specified a break/continue level...
-            if (*text && strncmp(text, COMMENT, COMMENTLEN)) {
+            if (*text) {
                 // parse the break/continue level
                 text_ok = text;
                 if (! parse_const(&text, &length, bytecode)) {
@@ -1442,7 +1435,7 @@ XXX_AGAIN_XXX:
             if (! parse_expression(0, &text, &length, bytecode)) {
                 goto XXX_ERROR_XXX;
             }
-            if (p && *text) {
+            if (*text) {
                 goto XXX_ERROR_XXX;
             }
 
@@ -1487,7 +1480,7 @@ XXX_AGAIN_XXX:
                 
                 // while there are more parameters to parse...
                 olength = length;
-                while (*text && strncmp(text, COMMENT, COMMENTLEN)) {
+                while (*text) {
                     if (length > olength) {
                         if (! parse_char(&text, ',')) {
                             goto XXX_ERROR_XXX;
@@ -1532,20 +1525,9 @@ XXX_AGAIN_XXX:
             break;
     }
 
-    if (*text && strncmp(text, COMMENT, COMMENTLEN) && multi) {
+    if (*text && multi) {
         goto XXX_AGAIN_XXX;
     }
-
-    // if a comment follows on the line...
-    if (parse_word(&text, COMMENT)) {
-        // generate the comment to bytecode
-        bytecode[length++] = code_tick;
-        while (*text) {
-            bytecode[length++] = *text++;
-        }
-        bytecode[length++] = *text;
-    }
-
     if (*text) {
         goto XXX_ERROR_XXX;
     }
@@ -1566,16 +1548,9 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     int i;
     int len;
     bool boo;
-    byte code;
     int length;
     char *text;
-    int syntax_error1;
-    int syntax_error2;
-
-    syntax_error1 = 0;
-    syntax_error2 = 0;
-
-    assert(strlen(COMMENT) == COMMENTLEN);
+    int syntax_error;
 
     text = text_in;
     parse_trim(&text);
@@ -1583,30 +1558,28 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
     // check for public commands
     for (i = 0; i < LENGTHOF(keywords); i++) {
         len = strlen(keywords[i].keyword);
-        if (len && ! strncmp(text, keywords[i].keyword, len)) {
+        if (! strncmp(text, keywords[i].keyword, len)) {
             text += len;
-            code = keywords[i].code;
             break;
         }
     }
-
-    // if no command was found...
     if (i == LENGTHOF(keywords)) {
         // check for private commands
-        if (parse2_line(text_in, length_out, bytecode, &syntax_error1)) {
+        if (parse2_line(text_in, length_out, bytecode, &syntax_error)) {
             return true;
         }
 
-        // assume a let (nolet)
-        code = code_nolet;
+        *syntax_error_in = text - text_in + syntax_error;
+        assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_OUTPUT_LINE_SIZE);
+        return false;
     }
 
-    *bytecode = code;
+    *bytecode = keywords[i].code;
 
     // parse the public command
-    boo = parse_line_code(code, text, &length, bytecode+1, &syntax_error2);
+    boo = parse_line_code(keywords[i].code, text, &length, bytecode+1, &syntax_error);
     if (! boo) {
-        *syntax_error_in = text - text_in + MAX(syntax_error1, syntax_error2);
+        *syntax_error_in = text - text_in + syntax_error;
         assert(*syntax_error_in >= 0 && *syntax_error_in < BASIC_OUTPUT_LINE_SIZE);
         return boo;
     }
@@ -1758,7 +1731,7 @@ unparse_expression(int tbase, byte *bytecode_in, int length, char **out)
     // while there are more bytecodes to decompile...
     while (bytecode < bytecode_in+length) {
         code = *bytecode;
-        if (code == code_comma || code == code_tick) {
+        if (code == code_comma) {
             break;
         }
         bytecode++;
@@ -1867,7 +1840,7 @@ unparse_string(byte *bytecode_in, int length, char **out)
     // while there are more bytecodes to decompile...
     while (bytecode < bytecode_in+length) {
         code = *bytecode;
-        if (code == code_comma || code == code_tick) {
+        if (code == code_comma) {
             break;
         }
         if (bytecode > bytecode_in) {
@@ -2222,7 +2195,6 @@ XXX_AGAIN_XXX:
             break;
 
         case code_let:
-        case code_nolet:
             bytecode += unparse_class(bytecode, &string);
 
             // decompile the variable
@@ -2352,7 +2324,7 @@ XXX_AGAIN_XXX:
         case code_break:
         case code_continue:
             // if the user specified a break/continue level...
-            if (bytecode < bytecode_in+length && *bytecode != code_tick) {
+            if (bytecode < bytecode_in+length) {
                 bytecode += unparse_const(0, bytecode, &out);
             }
             break;
@@ -2378,7 +2350,8 @@ XXX_AGAIN_XXX:
             bytecode += unparse_expression(0, bytecode, bytecode_in+length-bytecode, &out);
 
             // if there is a "step" keyword...
-            if (bytecode_in+length > bytecode && *bytecode == code_comma) {
+            if (bytecode_in+length > bytecode) {
+                assert(*bytecode == code_comma);
                 bytecode++;
                 // decompile the "step" and the step value expression
                 out += sprintf(out, " step ");
@@ -2402,7 +2375,7 @@ XXX_AGAIN_XXX:
 
             if ((code == code_sub) || (code == code_gosub)) {
                 // decompile the parameter names separating parameter names with a comma
-                while (bytecode < bytecode_in+length && *bytecode != code_tick) {
+                while (bytecode < bytecode_in+length) {
                     if (n) {
                         assert(*bytecode == code_comma);
                         bytecode++;
@@ -2436,20 +2409,9 @@ XXX_AGAIN_XXX:
             break;
     }
 
-    if (bytecode < bytecode_in+length && *bytecode != code_tick && multi) {
+    if (bytecode < bytecode_in+length && multi) {
         goto XXX_AGAIN_XXX;
     }
-
-    if (bytecode < bytecode_in+length) {
-        assert(*bytecode == code_tick);
-        bytecode++;
-        len = sprintf(out, "  %s ", COMMENT);
-        out += len;
-        len = sprintf(out, "%s", bytecode);
-        out += len;
-        bytecode += len+1;
-    }
-
     assert(bytecode == bytecode_in+length);
 }
 
@@ -2477,10 +2439,8 @@ unparse_bytecode(IN byte *bytecode, IN int length, OUT char *text)
     }
 
     // decompile the bytecode keyword
-    if (keywords[i].keyword[0]) {
-        out += sprintf(out, keywords[i].keyword);
-        out += sprintf(out, " ");
-    }
+    out += sprintf(out, keywords[i].keyword);
+    out += sprintf(out, " ");
 
     assert(length);
     unparse_bytecode_code(code, bytecode+1, length-1, out);

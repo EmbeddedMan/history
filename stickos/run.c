@@ -363,7 +363,7 @@ run_expression_watchpoint(const byte *bytecode_in, int length, IN uint32 running
 
     clear_stack();
     
-    while (bytecode < bytecode_in+length && *bytecode != code_comma && *bytecode != code_tick) {
+    while (bytecode < bytecode_in+length && *bytecode != code_comma) {
         code = *bytecode++;
         switch (code) {
             case code_add:
@@ -690,7 +690,7 @@ run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *str
     bytecode = bytecode_in;
     while (bytecode < bytecode_in+length) {
         code = *bytecode;
-        if (code == code_comma || code == code_tick) {
+        if (code == code_comma) {
             break;
         }
         bytecode++;
@@ -1878,7 +1878,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
         case code_break:
         case code_continue:
             // if the user specified a break/continue level...
-            if (index < length && bytecode[index] != code_tick) {
+            if (index < length) {
                 n = run_bytecode_const(bytecode, &index);
             } else {
                 n = 1;
@@ -2064,7 +2064,7 @@ XXX_PERF_XXX:
                 }
 
                 // check to see that all gosub parameter were consumed.  check for call site parameter overflow.
-                if (index != length && bytecode[index] != code_tick) {
+                if (index != length) {
                     printf("too many gosub parameters\n");
                     goto XXX_SKIP_XXX;
                 }
@@ -2152,16 +2152,6 @@ XXX_PERF_XXX:
         default:
             return run2_bytecode_code(code, bytecode, length);
             break;
-    }
-
-    // skip comments that follow the line
-    if (index < length) {
-        assert(bytecode[index] == code_tick);
-        index++;
-        while (bytecode[index]) {
-            index++;
-        }
-        index++;
     }
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF51JM128 || MCF51CN128 || MCF51QE128 || MCF5211
