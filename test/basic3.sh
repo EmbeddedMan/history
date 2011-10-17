@@ -460,36 +460,6 @@ analog
 print analog+1
 EOF
 
-echo test comments
-"$BASIC" -q <<'EOF'
-10 assert 1 //10
-19 while 1 do
-20 break 1 //20
-21 endwhile
-29 while 1 do
-30 break //30
-31 endwhile
-40 configure uart 1 for 9600 baud 8 data no parity //40
-45 configure timer 1 for 1 s //45
-49 do
-50 continue 1 //50
-51 until 1
-59 do
-60 continue //60
-61 until 1
-70 data 1 //70
-80 data 2,3 //80
-81 dim a,b,c
-82 read a,b,c
-90 dim x as byte //90
-91 dim y,z // 91
-100 dim q as pin an0 for analog input //100
-
-
-EOF
-
-
-
 exit 0
 # XXX -- move this to basic2, along with:
 
