@@ -607,7 +607,7 @@ code_append_line_to_alternate(const struct line *line)
     return true;
 }
 
-const static struct line empty = { 0, LINESIZE, 0 };
+const static struct line empty = { LINESIZE, 0, 0, 0 };
 
 // this function promotes the alternate code page in flash memory
 // to become current.

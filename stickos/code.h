@@ -1,10 +1,10 @@
 // *** code.h *********************************************************
 
 struct line {
+    uint16 size;  // of entire struct, rounded up to 4 byte boundary (used internally)
+    uint16 length;  // of bytecode (used externally)
+    uint16 comment_length;  // follows length (used only for listing)
     int line_number;
-    int size;  // of entire struct, rounded up to 4 byte boundary (used internally)
-    int length;  // of bytecode (used externally)
-    int comment_length;  // follows length (used only for listing)
     byte bytecode[VARIABLE];
 };
 
