@@ -118,16 +118,6 @@ parse2_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *
             break;
     }
 
-    // if a comment follows on the line...
-    if (parse_word(&text, COMMENT)) {
-        // generate the comment to bytecode
-        bytecode[length++] = code_tick;
-        while (*text) {
-            bytecode[length++] = *text++;
-        }
-        bytecode[length++] = *text;
-    }
-
     if (*text) {
         goto XXX_ERROR_XXX;
     }
@@ -146,7 +136,6 @@ void
 unparse2_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
 {
     int i;
-    int len;
     byte code;
     char *out;
     byte *bytecode;
@@ -202,16 +191,6 @@ unparse2_bytecode(IN byte *bytecode_in, IN int length, OUT char *text)
         default:
             assert(0);
             break;
-    }
-
-    if (bytecode < bytecode_in+length) {
-        assert(*bytecode == code_tick);
-        bytecode++;
-        len = sprintf(out, "  %s ", COMMENT);
-        out += len;
-        len = sprintf(out, "%s", bytecode);
-        out += len;
-        bytecode += len+1;
     }
 
     assert(bytecode == bytecode_in+length);

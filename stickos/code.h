@@ -4,9 +4,7 @@ struct line {
     int line_number;
     int size;  // of entire struct, rounded up to 4 byte boundary (used internally)
     int length;  // of bytecode (used externally)
-#if MC9S08QE128 || MC9S12DT256 || MC9S12DP512
-    int pad;
-#endif
+    int comment_length;  // follows length (used only for listing)
     byte bytecode[VARIABLE];
 };
 

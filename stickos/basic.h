@@ -4,7 +4,6 @@
 enum bytecode {
     code_deleted = 0x80,  // used to indicate a deleted line in ram
     code_rem,
-      code_tick,
     code_on,
     code_off,
     code_mask,

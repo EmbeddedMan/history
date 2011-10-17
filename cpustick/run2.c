@@ -95,16 +95,6 @@ run2_bytecode_code(uint code, const byte *bytecode, int length)
             break;
     }
 
-    // skip comments that follow the line
-    if (index < length) {
-        assert(bytecode[index] == code_tick);
-        index++;
-        while (bytecode[index]) {
-            index++;
-        }
-        index++;
-    }
-
     assert(index == length);
     return end;
 

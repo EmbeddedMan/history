@@ -46,11 +46,11 @@ check_line(byte *page, struct line *line)
 {
     assert(line->line_number != -1);
     if (line->line_number) {
-        assert(line->length > 0 && line->length <= BASIC_BYTECODE_SIZE);
+        assert(line->length+line->comment_length > 0 && line->length+line->comment_length <= BASIC_BYTECODE_SIZE);
     } else {
-        assert(line->length == 0);
+        assert(line->length+line->comment_length == 0);
     }
-    assert(line->size == ROUNDUP(line->length, sizeof(uint32)) + LINESIZE);
+    assert(line->size == ROUNDUP(line->length+line->comment_length, sizeof(uint32)) + LINESIZE);
 
     if (page) {
         assert((byte *)line >= page && (byte *)line+line->size <= page+PAGE_SIZE(page));
@@ -155,7 +155,7 @@ delete_line_in_page(byte *page, struct line *line)
 // this function inserts a code line in a page.
 static
 bool
-insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
+insert_line_in_page(byte *page, int line_number, int length, int comment_length, byte *bytecode)
 {
     int room;
     int grow;
@@ -178,7 +178,7 @@ insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
     room = page+sizeof(RAM_CODE_PAGE) - ((byte *)eop+eop->size);
 
     // check for available memory
-    grow = LINESIZE+ROUNDUP(length, sizeof(uint32));
+    grow = LINESIZE+ROUNDUP(length+comment_length, sizeof(uint32));
     if (grow > room) {
         return false;
     }
@@ -193,8 +193,9 @@ insert_line_in_page(byte *page, int line_number, int length, byte *bytecode)
     line->line_number = line_number;
     line->size = grow;
     line->length = length;
-    assert((unsigned)length <= BASIC_BYTECODE_SIZE);
-    memcpy(line->bytecode, bytecode, length);
+    line->comment_length = comment_length;
+    assert((unsigned)length+comment_length <= BASIC_BYTECODE_SIZE);
+    memcpy(line->bytecode, bytecode, length+comment_length);
 
     // verify
     find_exact_line_in_page(page, 0);
@@ -355,7 +356,9 @@ code_line(IN enum bytecode code, IN const byte *name, IN bool print, IN bool lib
 void
 code_insert(int line_number, char *text_in, IN int text_offset)
 {
+    char *c;
     int length;
+    int comment_length;
     int syntax_error;
     char text[BASIC_OUTPUT_LINE_SIZE];
     byte bytecode[BASIC_BYTECODE_SIZE];
@@ -363,7 +366,18 @@ code_insert(int line_number, char *text_in, IN int text_offset)
     syntax_error = -1;
 
     if (text_in) {
-        strcpy(text, text_in);
+        // if there is a comment...
+        // XXX -- can't put comment in quotes!
+        c = strstr(text_in, "//");
+        if (c) {
+            strncpy(text, text_in, c-text_in);
+            text[c-text_in] = '\0';
+            c += 2;  // skip the "//"
+            comment_length = strlen(c)+1;
+        } else {
+            strcpy(text, text_in);
+            comment_length = 0;
+        }
         if (! parse_line(text, &length, bytecode, &syntax_error)) {
             terminal_command_error(text_offset + syntax_error);
 #if ! STICK_GUEST
@@ -371,15 +385,19 @@ code_insert(int line_number, char *text_in, IN int text_offset)
 #endif
             return;
         }
+        if (c) {
+            memcpy(bytecode+length, c, comment_length);
+        }
     } else {
         bytecode[0] = code_deleted;
         length = 1;
+        comment_length = 0;
     }
 
-    if (! insert_line_in_page(RAM_CODE_PAGE, line_number, length, bytecode)) {
+    if (! insert_line_in_page(RAM_CODE_PAGE, line_number, length, comment_length, bytecode)) {
         printf("auto save\n");
         code_save(true, 0);
-        if (! insert_line_in_page(RAM_CODE_PAGE, line_number, length, bytecode)) {
+        if (! insert_line_in_page(RAM_CODE_PAGE, line_number, length, comment_length, bytecode)) {
             printf("out of code ram\n");
         }
     }
@@ -468,6 +486,10 @@ code_list(bool profile, int start_line_number, int end_line_number, bool in_libr
             if (line_number >= start_line_number && (! end_line_number || line_number <= end_line_number)) {
                 memset(text, ' ', indent*2);
                 unparse_bytecode(line->bytecode, line->length, text+code_indent*indent*2);
+                if (line->comment_length) {
+                    strcat(text, "  //");
+                    strcat(text, line->bytecode+line->length);
+                }
                 if (profile) {
                     bucket = line_number>>profile_shift;
                     if (bucket >= profiled_buckets) {
