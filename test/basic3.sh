@@ -460,6 +460,81 @@ analog
 print analog+1
 EOF
 
+echo test comments
+"$BASIC" -q <<'EOF'
+print 1 // nocomment
+1 //nocomment
+10 print 1 //comment
+20 print "//nocomment"
+30 print "" //comment
+save
+list
+run
+EOF
+
+echo test noprint and nolet
+"$BASIC" -q <<'EOF'
+?1+2
+10 ? 2+3
+20 print 3+4
+30 dim a,b,c
+40 a=5
+50 b=6,c=7
+60 print a,b,c
+list
+run
+EOF
+
+echo test random
+"$BASIC" -q <<'EOF'
+10 dim a
+20 for a = 1 to 4
+30 print random // random
+40 next
+list
+run
+EOF
+
+echo test library
+"$BASIC" -q <<'EOF'
+10 sub sub1
+20 print "hello"
+30 endsub
+40 sub sub2 a,b
+50 a=b*2
+60 endsub
+subs
+save library
+subs
+?"new"
+new
+subs
+200 sub sub3
+220 print "bye"
+230 endsub
+40 dim i
+50 gosub sub1
+60 gosub sub2 i,2
+70 print i
+80 gosub sub3
+100 end
+list
+run
+90 gosub sub4
+list
+run
+cont
+subs
+?"sub1"
+list sub1
+?"sub2"
+list sub2
+?"sub3"
+list sub3
+?"sub4"
+list sub4
+EOF
+
 exit 0
 # XXX -- move this to basic2, along with:
 
