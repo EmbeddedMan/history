@@ -499,9 +499,14 @@ echo test library
 "$BASIC" -q <<'EOF'
 10 sub sub1
 20 print "hello"
+25 gosub again
 30 endsub
+31 sub again
+32 print "again"
+33 endsub
 40 sub sub2 a,b
 50 a=b*2
+51 gosub sub3 0
 60 endsub
 subs
 save library
@@ -509,14 +514,14 @@ subs
 ?"new"
 new
 subs
-200 sub sub3
-220 print "bye"
+200 sub sub3 a
+220 print "bye", a
 230 endsub
 40 dim i
 50 gosub sub1
 60 gosub sub2 i,2
 70 print i
-80 gosub sub3
+80 gosub sub3 1
 100 end
 list
 run
