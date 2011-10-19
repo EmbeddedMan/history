@@ -813,7 +813,8 @@ purge <name>                  -- purge saved program
 renumber [<line>]             -- renumber program lines (and save)
 reset                         -- reset the MCU!
 run [<line>]                  -- run program
-save [<name>]                 -- save code ram to flash memory
+save [<name>|library]         -- save code ram to flash memory
+subs                          -- list sub names
 undo                          -- undo code changes since last save
 upgrade                       -- upgrade StickOS firmware!
 uptime                        -- print time since last reset
@@ -842,8 +843,10 @@ pin assignments:
 for more information:
   help pins
 <line>                                 -- delete program line from code ram
-<line> <statement>                     -- enter program line into code ram
+<line> <statement>  // comment         -- enter program line into code ram
 
+<variable>[$] = <expression> [, ...]   -- assign variable
+? [dec|hex|raw] <expression> [, ...] [;] -- print results
 assert <expression>                    -- break if expression is false
 data <n> [, ...]                       -- read-only data
 dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables
@@ -956,7 +959,8 @@ pin alias variables:
                                       [debounced] [inverted] [open_drain]
 
 system variables (read-only):
-  analog  getchar  keychar  nodeid  msecs  seconds  ticks  ticks_per_msec
+  analog  getchar  keychar  msecs  nodeid
+  random  seconds  ticks  ticks_per_msec
 
 for more information:
   help pins

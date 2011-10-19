@@ -202,7 +202,8 @@ static char * const help_commands =
 "renumber [<line>]             -- renumber program lines (and save)\n"
 "reset                         -- reset the MCU!\n"
 "run [<line>]                  -- run program\n"
-"save [<name>]                 -- save code ram to flash memory\n"
+"save [<name>|library]         -- save code ram to flash memory\n"
+"subs                          -- list sub names\n"
 "undo                          -- undo code changes since last save\n"
 #if UPGRADE
 "upgrade                       -- upgrade StickOS firmware!\n"
@@ -251,8 +252,10 @@ static char * const help_modes =
 
 static char * const help_statements =
 "<line>                                 -- delete program line from code ram\n"
-"<line> <statement>                     -- enter program line into code ram\n"
+"<line> <statement>  // comment         -- enter program line into code ram\n"
 "\n"
+"<variable>[$] = <expression> [, ...]   -- assign variable\n"
+"? [dec|hex|raw] <expression> [, ...] [;] -- print results\n"
 "assert <expression>                    -- break if expression is false\n"
 "data <n> [, ...]                       -- read-only data\n"
 "dim <variable>[$][[n]] [as ...] [, ...] -- dimension variables\n"
@@ -410,7 +413,8 @@ static char *const help_variables =
 #if KBD
 "  keychar"
 #endif
-"  nodeid  msecs  seconds  ticks  ticks_per_msec\n"
+"  msecs  nodeid\n"
+"  random  seconds  ticks  ticks_per_msec\n"
 "\n"
 "for more information:\n"
 "  help pins\n"

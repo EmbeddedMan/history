@@ -50,7 +50,8 @@ static char * const help_commands =
 "renumbe\262[<line>]\313-\015renumbe\262progra\255line\263(an\244save)\n"
 "reset\327-\015rese\264th\245MCU!\n"
 "ru\256[<line>]\320-\015ru\256program\n"
-"sav\245[<name>]\317-\015sav\245cod\245ra\255t\257flas\250memory\n"
+"sav\245[<name>|library]\307-\015sav\245cod\245ra\255t\257flas\250memory\n"
+"subs\330-\015lis\264su\242names\n"
 "undo\330-\015und\257cod\245change\263sinc\245las\264save\n"
 #if UPGRADE
 "upgrade\325-\015upgrad\245StickO\223firmware!\n"
@@ -99,8 +100,10 @@ static char * const help_modes =
 
 static char * const help_statements =
 "<line>\337-\015delet\245progra\255lin\245fro\255cod\245ram\n"
-"<line\036<statement>\323-\015ente\262progra\255lin\245int\257cod\245ram\n"
+"<line\036<statement>\300/\017comment\307-\015ente\262progra\255lin\245int\257cod\245ram\n"
 "\n"
+"<variable>[$\235\035<expression\036[\014...]\301-\015assig\256variable\n"
+"\037[dec|hex|raw\235<expression\036[\014...\235[;\235-\015prin\264results\n"
 "asser\264<expression>\322-\015brea\253i\246expressio\256i\263false\n"
 "dat\241<n\036[\014...]\325-\015read-onl\271data\n"
 "di\255<variable>[$][[n]\235[a\263...\235[\014...\235-\015dimensio\256variables\n"
@@ -258,7 +261,8 @@ static char *const help_variables =
 #if KBD
 "\300keychar"
 #endif
-"\300nodeid\300msecs\300seconds\300ticks\300ticks_per_msec\n"
+"\300msecs\300nodeid\n"
+"\300random\300seconds\300ticks\300ticks_per_msec\n"
 "\n"
 "fo\262mor\245information:\n"
 "\300hel\260pins\n"
