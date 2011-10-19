@@ -1088,8 +1088,8 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 assign = 3;
                 MCF_PWM_PWMCLK |= 1 << (offset*2+1);  // prescaled and scaled clock
 
-                // set periods to SERVER_MOD for 45Hz for servo output
-                assert(SERVER_MOD < 0x10000);
+                // set periods to SERVO_MOD for 45Hz for servo output
+                assert(SERVO_MOD < 0x10000);
                 MCF_PWM_PWMPER(offset*2) = SERVO_MOD/256;
                 MCF_PWM_PWMPER(offset*2+1) = SERVO_MOD%256;
             } else {
