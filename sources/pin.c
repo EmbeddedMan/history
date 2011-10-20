@@ -69,7 +69,11 @@ byte pin_assignments[pin_assignment_max] = {
     PIN_PTF0, PIN_PTG0, PIN_PTE7, PIN_UNASSIGNED, PIN_PTE2, PIN_PTE3, PIN_PTB5,
 #endif
 #elif MCF5211 || MCF52221 || MCF52233 || (MCF52259 && DEMO)
+#if MCF52259
+    PIN_UNASSIGNED,
+#else
     PIN_DTIN3,
+#endif
 #if MCF5211
       PIN_IRQ4,
 #elif MCF52221 || MCF52233
