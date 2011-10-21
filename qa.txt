@@ -815,35 +815,35 @@ Badge
   80 dim p[7] as pin urxd2 for digital output
   90 dim p[8] as pin urts2* for digital output
  100 dim p[9] as pin ucts2* for digital output
- 110 dim p[10] as pin gpt0 for digital output
- 120 dim p[11] as pin gpt1 for digital output
- 130 dim p[12] as pin gpt2 for digital output
- 140 dim p[13] as pin irq1* for digital output
- 150 dim p[14] as pin irq3* for digital output
- 160 dim p[15] as pin irq5* for digital output
- 170 dim p[16] as pin irq7* for digital output
- 180 dim p[17] as pin utxd0 for digital output
- 190 dim p[18] as pin urxd0 for digital output
- 200 dim p[19] as pin urts0* for digital output
- 210 dim p[20] as pin ucts0* for digital output
- 220 dim p[21] as pin utxd1 for digital output
- 230 dim p[22] as pin urxd1 for digital output
- 240 dim p[23] as pin urts1* for digital output
- 250 dim p[24] as pin ucts1* for digital output
- 260 dim p[25] as pin dtin0 for digital output
- 270 dim p[26] as pin dtin1 for digital output
- 280 dim p[27] as pin dtin2 for digital output
- 290 dim p[28] as pin dtin3 for digital output
- 300 dim p[29] as pin scl for digital output
- 310 dim p[30] as pin sda for digital output
- 320 dim p[31] as pin an0 for digital output
- 330 dim p[32] as pin an1 for digital output
- 340 dim p[33] as pin an2 for digital output
- 350 dim p[34] as pin an3 for digital output
- 360 dim p[35] as pin an4 for digital output
- 370 dim p[36] as pin an5 for digital output
- 380 dim p[37] as pin an6 for digital output
- 390 dim p[38] as pin an7 for digital output
+ 140 dim p[10] as pin irq1* for digital output
+ 150 dim p[11] as pin irq3* for digital output
+ 160 dim p[12] as pin irq5* for digital output
+ 170 dim p[13] as pin irq7* for digital output
+ 180 dim p[14] as pin utxd0 for digital output
+ 190 dim p[15] as pin urxd0 for digital output
+ 200 dim p[16] as pin urts0* for digital output
+ 210 dim p[17] as pin ucts0* for digital output
+ 220 dim p[18] as pin utxd1 for digital output
+ 230 dim p[19] as pin urxd1 for digital output
+ 240 dim p[20] as pin urts1* for digital output
+ 250 dim p[21] as pin ucts1* for digital output
+ 260 dim p[22] as pin dtin0 for digital output
+ 270 dim p[23] as pin dtin1 for digital output
+ 280 dim p[24] as pin dtin2 for digital output
+ 290 dim p[25] as pin dtin3 for digital output
+ 300 dim p[26] as pin scl for digital output
+ 310 dim p[27] as pin sda for digital output
+ 320 dim p[28] as pin an0 for digital output
+ 330 dim p[29] as pin an1 for digital output
+ 340 dim p[30] as pin an2 for digital output
+ 350 dim p[31] as pin an3 for digital output
+ 360 dim p[32] as pin an4 for digital output
+ 370 dim p[33] as pin an5 for digital output
+ 380 dim p[34] as pin an6 for digital output
+ 390 dim p[35] as pin an7 for digital output
+ 110 dim p[36] as pin gpt0 for digital output
+ 120 dim p[37] as pin gpt1 for digital output
+ 130 dim p[38] as pin gpt2 for digital output
  400 dim p[39] as pin gpt3 for digital output
  410 dim i
  420 while 1 do

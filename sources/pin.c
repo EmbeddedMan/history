@@ -239,10 +239,10 @@ const struct pin pins[] = {
     "irq11*", DIO,
 #endif
 #if MCF52233 || MCF52259 || MCF5211
-    "gpt0", 0,
-    "gpt1", 0,
-    "gpt2", 0,
-    "gpt3", 0,
+    "gpt0", DIO,
+    "gpt1", DIO,
+    "gpt2", DIO,
+    "gpt3", DIO,
 #endif
     "scl", DIO,
     "sda", DIO,
