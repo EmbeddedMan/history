@@ -1,3 +1,5 @@
+if variable has underscore in name, need let and can't do <var>=0 in immediate mode; ADD UT FOR THIS!
+
 # on string should still return max len -- @ should return consumed length!
 
 add "lcd init" statement...  set rs = 0 at end of write nibble...
