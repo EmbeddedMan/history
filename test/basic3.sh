@@ -619,6 +619,10 @@ EOF
 
 echo test norem
 "$BASIC" -q <<'EOF'
+10 rem // hello
+20 // bye
+list
+run
 EOF
 
 exit 0

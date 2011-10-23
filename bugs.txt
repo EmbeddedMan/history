@@ -1,10 +1,6 @@
-read/data is broken in library -- screws up world!
-
 label <xxx> should allow trailing spaces!
 
 if variable has underscore in name, need let and can't do <var>=0 in immediate mode; ADD UT FOR THIS!
-
-add "code_norem" so we can have a line with just // comment -- 10 // comment; ADD UT FOR THIS!
 
 # on string should still return max len -- @ should return consumed length!
 

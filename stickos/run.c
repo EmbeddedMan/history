@@ -954,6 +954,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
             break;
 
         case code_rem:
+        case code_norem:
             index = length;  // skip the comment
             break;
 

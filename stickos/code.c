@@ -487,7 +487,10 @@ code_list(bool profile, int start_line_number, int end_line_number, bool in_libr
                 memset(text, ' ', indent*2);
                 unparse_bytecode(line->bytecode, line->length, text+code_indent*indent*2);
                 if (line->comment_length) {
-                    strcat(text, "  //");
+                    if (*line->bytecode != code_norem) {
+                        strcat(text, "  ");
+                    }
+                    strcat(text, "//");
                     strcat(text, (char *)line->bytecode+line->length);
                 }
                 if (profile) {

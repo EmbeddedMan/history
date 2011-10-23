@@ -95,6 +95,7 @@ const struct keyword {
     "qspi", code_qspi,
     "read", code_read,
     "rem", code_rem,
+    "", code_norem,
     "restore", code_restore,
     "return", code_return,
     "sleep", code_sleep,
@@ -929,6 +930,8 @@ XXX_AGAIN_XXX:
             }
             bytecode[length++] = *text;
             break;
+        case code_norem:
+            break;
 
         case code_on:
         case code_off:
@@ -1580,8 +1583,13 @@ parse_line(IN char *text_in, OUT int *length_out, OUT byte *bytecode, OUT int *s
             return true;
         }
 
-        // assume a let (nolet)
-        code = code_nolet;
+        if (*text) {
+            // assume a let (nolet)
+            code = code_nolet;
+        } else {
+            // assume a rem (norem)
+            code = code_norem;
+        }
     }
 
     *bytecode = code;
@@ -2034,6 +2042,9 @@ XXX_AGAIN_XXX:
             len = sprintf(out, "%s", bytecode);
             out += len;
             bytecode += len+1;
+            break;
+        case code_norem:
+            *out = '\0';
             break;
 
         case code_on:
