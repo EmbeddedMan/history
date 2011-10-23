@@ -21,8 +21,8 @@ bool run_isr;
 int run_line_number;
 bool run_in_library;
 
-int data_line_number;
-int data_line_offset;
+int data_line_number[2];  // [run_in_library]
+int data_line_offset[2];  // [run_in_library]
 
 bool run_watchpoint;
 bool run_condition = true;  // global condition flag
@@ -191,7 +191,7 @@ read_data()
         return 0;
     }
 
-    line_number = data_line_number ? data_line_number-1 : 0;
+    line_number = data_line_number[run_in_library] ? data_line_number[run_in_library]-1 : 0;
     for (;;) {
         // find the next line to check
         line = code_next_line(false, run_in_library, &line_number);
@@ -207,17 +207,17 @@ read_data()
             continue;
         }
 
-        data_line_number = line->line_number;
+        data_line_number[run_in_library] = line->line_number;
 
         // if we have data left in the line...
-        if (line->length > (int)(1+data_line_offset*(sizeof(uint32)+1))) {
-            value = read32(line->bytecode+1+data_line_offset*(sizeof(uint32)+1)+1);
-            data_line_offset++;
+        if (line->length > (int)(1+data_line_offset[run_in_library]*(sizeof(uint32)+1))) {
+            value = read32(line->bytecode+1+data_line_offset[run_in_library]*(sizeof(uint32)+1)+1);
+            data_line_offset[run_in_library]++;
             return value;
         }
 
         // on to the next line
-        data_line_offset = 0;
+        data_line_offset[run_in_library] = 0;
     }
 }
 
@@ -1157,7 +1157,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
         case code_restore:
             if (run_condition) {
                 if (bytecode[index]) {
-                    line = code_line(code_label, bytecode+index, false, false, NULL);
+                    // XXX -- we can find label in main program by mistake
+                    line = code_line(code_label, bytecode+index, false, run_in_library, NULL);
                     if (line == NULL) {
                         printf("missing label\n");
                         goto XXX_SKIP_XXX;
@@ -1165,8 +1166,8 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                 } else {
                     line = NULL;
                 }
-                data_line_number = line ? line->line_number : 0;
-                data_line_offset = 0;
+                data_line_number[run_in_library] = line ? line->line_number : 0;
+                data_line_offset[run_in_library] = 0;
             }
 
             index += strlen((char *)bytecode+index)+1;
@@ -2205,8 +2206,8 @@ run_clear(bool flash)
     memset(watchpoints, 0, sizeof(watchpoints));
     watchpoints_armed_mask = all_watchpoints_mask;
 
-    data_line_number = 0;
-    data_line_offset = 0;
+    memset(data_line_number, 0, sizeof(data_line_number));
+    memset(data_line_offset, 0, sizeof(data_line_offset));
 
     code_clear2();
     var_clear(flash);

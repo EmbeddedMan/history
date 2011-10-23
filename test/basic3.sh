@@ -546,6 +546,61 @@ subs
 run
 EOF
 
+echo test library recursion
+"$BASIC" -q <<'EOF'
+  50 sub sumit x, y
+  60   dim z
+  70   if x==1 then
+  80     let y = 1
+  90     return
+ 100   endif
+ 110   gosub sumit x-1, z
+ 120   let y = z+x
+ 130 endsub
+save library
+new
+  10 dim t
+  20 gosub sumit 7, t
+  30 print t
+  40 end
+list sumit
+?"main:"
+list
+run
+EOF
+
+echo test library read/data
+"$BASIC" -q <<'EOF'
+10 sub doit1
+15 dim a
+20 restore liblabel
+30 read a
+40 print "doit1", a
+50 endsub
+51 sub doit2
+52 read a
+53 print "doit2", a
+59 endsub
+60 label liblabel
+70 data 123, 789
+save library
+new
+1 gosub doit1
+15 dim a
+20 restore mainlabel
+30 read a
+40 print "main", a
+41 gosub doit2
+50 end
+60 label mainlabel
+70 data 456
+list doit1
+list doit2
+?"main:"
+list
+run
+EOF
+
 echo test library profile
 "$BASIC" -q <<'EOF'
 10 sub other
@@ -560,6 +615,10 @@ run
 profile
 run
 profile
+EOF
+
+echo test norem
+"$BASIC" -q <<'EOF'
 EOF
 
 exit 0
