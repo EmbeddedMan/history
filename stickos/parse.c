@@ -1476,10 +1476,10 @@ XXX_AGAIN_XXX:
             }
             bytecode[length++] = '\0';
 
+            parse_trim(&text);
+
             // if there's more text after the sub name...
             if (*text) {
-                parse_trim(&text);
-
                 if ((code != code_sub) && (code != code_gosub)) {
                     goto XXX_ERROR_XXX;
                 }

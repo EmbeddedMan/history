@@ -581,7 +581,7 @@ echo test library read/data
 52 read a
 53 print "doit2", a
 59 endsub
-60 label liblabel
+60 label liblabel // space
 70 data 123, 789
 save library
 new
@@ -592,7 +592,7 @@ new
 40 print "main", a
 41 gosub doit2
 50 end
-60 label mainlabel
+60 label mainlabel 
 70 data 456
 list doit1
 list doit2
