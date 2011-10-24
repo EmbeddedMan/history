@@ -345,7 +345,6 @@ accumulate(char c)
             p[cursor-orig] = '\0';
 
             // N.B. the remainder of the line still needs to be reprinted!
-            assert(! tail[0]);
             strcpy(tail, command+cursor);
         }
 
