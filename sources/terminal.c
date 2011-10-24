@@ -39,6 +39,10 @@ static int ki;
 static char keys[8];
 static int cursor;
 
+// this buffer holds the tail of the line that still has to be reprinted
+// after we insert characters in the middle of the line
+static char tail[BASIC_INPUT_LINE_SIZE];
+
 // this buffer holds characters queued by an isr to be echoed later by
 // terminal_poll().
 static char echo[BASIC_INPUT_LINE_SIZE*2];
@@ -78,11 +82,11 @@ terminal_print(const byte *buffer, int length)
 {
     int id;
     bool printed;
-    
+
     assert(gpl() == 0);
-    
+
     led_unknown_progress();
-    
+
     printed = false;
 
     // if we're connected to another node...
@@ -155,8 +159,8 @@ struct keycode {
     "\033[3~", KEY_DEL,
 
     // Everything prior to this line is indexed by "enum keys" values.
-    // Aliases for keys must follow this line.  
-    
+    // Aliases for keys must follow this line.
+
     "\006", KEY_RIGHT, // ctrl-f
     "\002", KEY_LEFT, // ctrl-b
     "\020", KEY_UP, // ctrl-p
@@ -179,9 +183,10 @@ accumulate(char c)
 {
     int i;
     int n;
+    char *p;
     int orig;
     int again;
-  
+
 #if MCF52221 || MCF52259 || MCF51JM128 || PIC32
     assert(gpl() >= MIN(SPL_USB, SPL_IRQ4));
 #endif
@@ -334,16 +339,14 @@ accumulate(char c)
         }
 
         if (cursor > orig) {
-            // reprint the line
-            strcat(echo, command+orig);
-            assert(strlen(echo) < sizeof(echo));
+            // print the new characters
+            p = strchr(echo, '\0');
+            strncpy(p, command+orig, cursor-orig);
+            p[cursor-orig] = '\0';
 
-            // and back the cursor up
-            assert(strlen(command+orig));
-            if (strlen(command+orig)-1) {
-                sprintf(echo+strlen(echo), KEYS_LEFT, strlen(command+orig)-1);
-                assert(strlen(echo) < sizeof(echo));
-            }
+            // N.B. the remainder of the line still needs to be reprinted!
+            assert(! tail[0]);
+            strcpy(tail, command+cursor);
         }
 
         ki = 0;
@@ -361,7 +364,7 @@ terminal_receive_internal(const byte *buffer, int length)
     bool boo;
 
     led_unknown_progress();
-    
+
     // if we're connected to another node...
     id = terminal_rxid;
     if (id != -1) {
@@ -380,14 +383,14 @@ terminal_receive_internal(const byte *buffer, int length)
         }
         return true;
     }
-    
+
     // accumulate commands
     for (j = 0; j < length; j++) {
         if (buffer[j] == '\003') {
             assert(ctrlc_cbfn);
             ctrlc_cbfn();
         }
-        
+
         // if the other node just disconnected from us...
         if (buffer[j] == '\004') {
             terminal_txid = -1;
@@ -395,11 +398,16 @@ terminal_receive_internal(const byte *buffer, int length)
 
         if (! discard) {
             if (buffer[j] == '\r') {
+                // this is a delayed reprint
+                strcat(echo, tail);
+                assert(strlen(echo) < sizeof(echo));
+                tail[0] = '\0';
+
                 if (strcmp(history[HISTWRAP(hist_in-1)], command)) {
                     strcpy(history[hist_in], command);
                     hist_in = HISTWRAP(hist_in+1);
                 }
-                
+
                 // save extra for later
                 assert(length >= j+1);
                 strncpy(extra, (char *)buffer+j+1, length-(j+1));
@@ -409,10 +417,10 @@ terminal_receive_internal(const byte *buffer, int length)
 #if ! FLASHER && ! PICTOCRYPT
                 zb_drop(true);
 #endif
-                
+
                 assert(command_cbfn);
                 command_cbfn(command);
-                
+
                 // wait for terminal_command_ack();
                 return false;
             } else {
@@ -422,6 +430,19 @@ terminal_receive_internal(const byte *buffer, int length)
             terminal_getchar = buffer[j];
         }
     }
+
+    // this is a delayed reprint
+    strcat(echo, tail);
+    assert(strlen(echo) < sizeof(echo));
+
+    // and back the cursor up
+    if (strlen(tail)) {
+        sprintf(echo+strlen(echo), KEYS_LEFT, strlen(tail));
+        assert(strlen(echo) < sizeof(echo));
+    }
+
+    tail[0] = '\0';
+
     return true;
 }
 
@@ -478,7 +499,7 @@ terminal_command_ack(bool edit)
 {
     int x;
     bool boo;
-    
+
     ki = 0;
     hist_first = true;
 
@@ -489,7 +510,7 @@ terminal_command_ack(bool edit)
         printf("%s", command);
         cursor = strlen(command);
     }
-    
+
     // if we had extra left over from last time...
     if (extra[0]) {
         // process it now
@@ -510,7 +531,7 @@ terminal_command_ack(bool edit)
         serial_command_ack();
 #endif
     }
-    
+
     ack = true;
 #if ! FLASHER && ! PICTOCRYPT
     zb_drop(false);
@@ -557,7 +578,7 @@ terminal_poll(void)
     int x;
     static int last;
     char copy[BASIC_INPUT_LINE_SIZE*2];
-    
+
 #if MCF52221 || MCF52259 || MCF51JM128 || PIC32
     assert(gpl() == 0);
 #endif
@@ -567,18 +588,18 @@ terminal_poll(void)
     assert(strlen(copy) < sizeof(copy));
     echo[0] = '\0';
     splx(x);
-    
+
     if (terminal_echo && copy[0]) {
         terminal_print((byte *)copy, strlen(copy));
         last = msecs;
     }
-    
+
     x = splx(7);
     strcpy(copy, forward);
     assert(strlen(copy) < sizeof(copy));
     forward[0] = '\0';
     splx(x);
-    
+
     if (copy[0]) {
 #if ! FLASHER && ! PICTOCRYPT
         zb_send(terminal_rxid, zb_class_receive, strlen(copy), (byte *)copy);
@@ -587,7 +608,7 @@ terminal_poll(void)
             // stop forwarding packets on Ctrl-D
             terminal_rxid = -1;
         }
-        
+
         if (strchr((char *)copy, '\r')) {
             if (terminal_txid == -1) {
 #if USBOTG
@@ -601,15 +622,15 @@ terminal_poll(void)
             ack = true;
         }
     }
-    
+
 #if ! FLASHER && ! PICTOCRYPT
     zb_poll();
 #endif
-    
+
 #if PICTOCRYPT
     sleep_poll();
 #endif
-    
+
     os_yield();
 }
 
@@ -627,7 +648,7 @@ class_receive(int nodeid, int length, byte *buffer)
         // reply to remote node
         terminal_txid = nodeid;
     }
-    
+
     (void)terminal_receive_internal(buffer, length);
 }
 
@@ -635,7 +656,7 @@ static void
 class_print(int nodeid, int length, byte *buffer)
 {
     int x;
-    
+
     x = splx(7);
     strncat(echo, (char *)buffer, length);
     assert(strlen(echo) < sizeof(echo));
