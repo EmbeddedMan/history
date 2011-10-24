@@ -2238,6 +2238,7 @@ run(bool cont, int start_line_number)
         // prepare for a new run
         run_clear(false);
         run_line_number = start_line_number?start_line_number-1:0;
+        run_in_library = false;
     } else {
         // continue a stopped run
         run_line_number = start_line_number?start_line_number-1:run_line_number;

@@ -625,6 +625,31 @@ list
 run
 EOF
 
+echo stop/continue in library
+"$BASIC" -q <<'EOF'
+10 sub doit
+20 stop
+25 print "library running"
+30 endsub
+save library
+new
+10 gosub doit
+1 print "running"
+list doit
+?"main:"
+list
+run
+cont
+run
+cont 30
+run
+purge library
+list doit
+?"main:"
+list
+run
+EOF
+
 exit 0
 # XXX -- move this to basic2, along with:
 
