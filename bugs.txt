@@ -1,3 +1,5 @@
+is "reset" broken on 5225x?
+
 # on string should still return max len -- @ should return consumed length!
 
 add "lcd init" statement...  set rs = 0 at end of write nibble...
