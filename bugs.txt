@@ -20,7 +20,7 @@ add help to all mcus for spi/i2c pin usage
 
 add packed save/load commands!!!
 
-add automatic subs in saved program ("library")
+add fslbot example to user's guide?
 
 
 1. Personal preference, but it would be nice if variable names could 
@@ -38,7 +38,6 @@ I might as well add the baud rate there, too.
 
 And do the same for i2c.
 
-fix user guide to not loop over servo variables directly -- use a target variable!
 
 
 // prior 1
