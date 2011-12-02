@@ -1,4 +1,8 @@
+editing a line with a // comment drops the comment!!!
+
 is "reset" broken on 5225x?
+
+should everybody use 2 stop bits?
 
 update user's guide to indicate keychar and getchar automatically reset to 0 after they are read.
 
