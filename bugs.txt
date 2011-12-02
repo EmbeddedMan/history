@@ -1,5 +1,7 @@
 is "reset" broken on 5225x?
 
+update user's guide to indicate keychar and getchar automatically reset to 0 after they are read.
+
 # on string should still return max len -- @ should return consumed length!
 
 add "lcd init" statement...  set rs = 0 at end of write nibble...
