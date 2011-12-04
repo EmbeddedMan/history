@@ -26,6 +26,11 @@ int data_line_offset[2];  // [run_in_library]
 
 bool run_watchpoint;
 bool run_condition = true;  // global condition flag
+#if PIC32  // XXX -- GCC bug causes ramfunc_image_begin to be misaligned otherwise
+bool unused3 = true;
+bool unused4 = true;
+bool unused5 = true;
+#endif
 
 bool run_printf;
 
@@ -2500,5 +2505,11 @@ run_initialize(void)
 {
     watch_mode_smart = !! var_get_flash(FLASH_WATCH_SMART);
     assert(MAX_INTS < sizeof(run_isr_enabled)*8);
+
+#if PIC32  // XXX -- GCC bug causes ramfunc_image_begin to be misaligned otherwise
+    unused3 = true;
+    unused4 = true;
+    unused5 = true;
+#endif
 }
 
