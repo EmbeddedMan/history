@@ -4,6 +4,10 @@ is "reset" broken on 5225x?
 
 should everybody use 2 stop bits?
 
+you can't copy keychar$ with "let temp$=keychar$", since there are three nul-bytes on big-endian memory in start of keychar$!
+
+"halt" should be like "sleep 99999999" so that it does not show up in "trace on" over and over!
+
 update user's guide to indicate keychar and getchar automatically reset to 0 after they are read.
 
 # on string should still return max len -- @ should return consumed length!
