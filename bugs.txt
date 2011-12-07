@@ -1,3 +1,5 @@
+fix cpustick.inf to pass chkinf!
+
 editing a line with a // comment drops the comment!!!
 
 is "reset" broken on 5225x?
