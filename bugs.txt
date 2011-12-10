@@ -1,5 +1,7 @@
 fix cpustick.inf to pass chkinf!
 
+allow "library" sub in "library" to create global variables somehow.  call this by convention to initilize library.
+
 editing a line with a // comment drops the comment!!!
 
 is "reset" broken on 5225x?
