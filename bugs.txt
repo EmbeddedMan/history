@@ -1,5 +1,7 @@
 fix cpustick.inf to pass chkinf!
 
+print missing sub and variable names in error messages -- save trouble when referenced in on handler!
+
 allow "library" sub in "library" to create global variables somehow.  call this by convention to initilize library.
 
 editing a line with a // comment drops the comment!!!
