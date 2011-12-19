@@ -1,3 +1,5 @@
+fix CFV1 to tolerate uart overruns on rx, just like pic32; CFV2 might need help, too, so you don't have to reconfigure.
+
 fix cpustick.inf to pass chkinf!
 
 print missing sub and variable names in error messages -- save trouble when referenced in on handler!
