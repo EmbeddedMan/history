@@ -1,3 +1,21 @@
+change pic32 clock config bits to XT!
+HS 10 MHz-40 MHz crystal, high speed crystal
+XT 3.5 MHz-10 MHz resonator, crystal or resonator
+
+following does not return value to array!
+> run
+0 0
+> list
+  10 dim array[2]
+  20 gosub set array[1]
+  30 print array
+  40 end
+  50 sub set x
+  60   let x = 1
+  70 endsub
+end
+>
+
 fix CFV1 to tolerate uart overruns on rx, just like pic32; CFV2 might need help, too, so you don't have to reconfigure.
 
 fix cpustick.inf to pass chkinf!
