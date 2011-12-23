@@ -1,5 +1,9 @@
+  on uart 1 error do gosub recover
+
 I also added a bug to allow you to set stop bits in the "configure" statement -- and I suppose I might need to allow you to configure it for the console as well...
 I wish I could configure the PIC32 to always transmit two and always receive one, but I don't see that as a possibility.
+
+stickos should report uart framing errors and overrun errors more gracefully!
 
 change pic32 clock config bits to XT!
 HS 10 MHz-40 MHz crystal, high speed crystal
