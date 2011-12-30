@@ -1,14 +1,3 @@
-  on uart 1 error do gosub recover
-
-I also added a bug to allow you to set stop bits in the "configure" statement -- and I suppose I might need to allow you to configure it for the console as well...
-I wish I could configure the PIC32 to always transmit two and always receive one, but I don't see that as a possibility.
-
-stickos should report uart framing errors and overrun errors more gracefully!
-
-change pic32 clock config bits to XT!
-HS 10 MHz-40 MHz crystal, high speed crystal
-XT 3.5 MHz-10 MHz resonator, crystal or resonator
-
 following does not return value to array!
 > run
 0 0
@@ -23,103 +12,66 @@ following does not return value to array!
 end
 >
 
-fix CFV1 to tolerate uart overruns on rx, just like pic32; CFV2 might need help, too, so you don't have to reconfigure.
-
-fix cpustick.inf to pass chkinf!
-
 print missing sub and variable names in error messages -- save trouble when referenced in on handler!
+# on string should still return max len -- @ should return consumed length! (or swap!)
+allow variables to begin with _...
+configure/on timer (n) should be able to take variables for (n)
+"trace on" should not trace input or halt statements
+remove 4 pwm assignments from 5225x online help
 
-allow "library" sub in "library" to create global variables somehow.  call this by convention to initilize library.
-
-editing a line with a // comment drops the comment!!!
-
-is "reset" broken on 5225x?
-
-should everybody use 2 stop bits?
-
-"new" should not clear flash variables -- only "clear flash".
-
-you can't copy keychar$ with "let temp$=keychar$", since there are three nul-bytes on big-endian memory in start of keychar$!
-
-"halt" should be like "sleep 99999999" so that it does not show up in "trace on" over and over!
-
-update user's guide to indicate keychar and getchar automatically reset to 0 after they are read.
-
-# on string should still return max len -- @ should return consumed length!
-
-add "lcd init" statement...  set rs = 0 at end of write nibble...
-
-add "configure qspi mode (0-3)"
-
-disable kbd pins for fb32 nano/mini
-
-eliminate restrictions on "analog" mode values.  "servo", too?
-
+you can't copy keychar$ with "let temp$=keychar$", since there are three nul-bytes on big-endian memory in start of keychar$! (inconsistent with print keychar$)
 try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
-
+editing a line with a // comment drops the comment!!!
+is "reset" broken on 5225x?
+host mode for pic32 and mcf5225x!
+add "lcd init" statement...  set rs = 0 at end of write nibble...
 can we allocate more ram to pic32/5225x (ram page size)?  how close are we?
-
-add help for uno32 LED on pin 43
-
-add help to all mcus for spi/i2c pin usage
-
-add packed save/load commands!!!
-
-add fslbot example to user's guide?
-
-
-1. Personal preference, but it would be nice if variable names could 
-start with an underscore "_", as subroutines can.  This would be useful 
-for naming variables assigned to inverted logic pins.
-
-2. I think it would be awesome if the timer functions could take a 
-variable (or expression) rather than simply 0-n.  This would make it a 
-lot easier to keep track of timers in code.
-
-
-I need to add real support ("configure qspi ...") to set the clock polarity in BASIC.
-
-I might as well add the baud rate there, too.
-
-And do the same for i2c.
-
-
+make sure if pins safemode* none is set that we cannot autorun!
+change pic32 clock config bits to XT!  HS 10 MHz-40 MHz crystal, high speed crystal; XT 3.5 MHz-10 MHz resonator, crystal or resonator
 
 // prior 1
 // =======
-// "trace on" should not trace input or halt statements
+// add qspi and i2c pin assignments to online help (data, clk, cs)
+// add to help pins all "unchangable" pins (i2c, spi, etc.) from freescale.pdf and microchip.pdf
+// add packed save/load commands!!!
+// add help for uno32 LED on pin 43
+// disable kbd pins for fb32 nano/mini
+// eliminate restrictions on "analog" mode values.  "servo", too?
+// add "configure qspi baud (n) mode (0-3)"
+// add "configure i2c baud (n)"
+// allow "library" sub in "library" to create global variables somehow.  call this by convention to initialize library.
+// fix cpustick.inf to pass chkinf!
+// fix CFV1 to tolerate uart overruns on rx, just like pic32; CFV2 might need help, too, so you don't have to reconfigure.
+// allow you to set stop bits in the "configure" statement; switch all to 1 stop bit!
+// stickos should report uart framing errors and overrun errors more gracefully!
+// on uart 1 error do gosub recover
 // I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
 // get rid of parse2/run2/basic0 if we make stickos source public?
-// add to help pins all "unchangable" pins (i2c, spi, etc.) from freescale.pdf and microchip.pdf
-// add ability to call subs in "library" BASIC program; ability to chain basic programs.
 // fix checksum to be compatible/consistent with bootloader (pic32 and freescale)
 // pins should survive upgrade
 // do we want BASIC to have control over pull-ups?  thru a mode variable?
-// make sure if pins safemode* none is set that we cannot autorun!
 // why does jm upgrade show diff cecksum (by 0x5a?) than program from cw?
 // multi-pin variables (digital I/O only, using binary integer)!!!
-// I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
-// pasting into an edited line doesn't work!  echo buffer overflow!
 // add getchar example in ug?
-// generate skeleton with HIDBL commented out!
 // make flash filesystem allocate only as much space as is needed to save a current program!
 // mode to disable usb device (and autorun disable to override)
 // move block.c and fat32.c from pict-o-crypt to sources (include in skeleton)
 // on/off/mask/unmask should move to parse2.c/run2.c
 // 9s12 and others need to reset timer counter when increasing frequency output -- see "wrap"
-// add qspi pin assignments to online help (data, clk, cs)
 // Ctrl-E to dump all variables while basic program is running?
+// add ability to get stack trace with locals from all frames
 // add a faster zigflea option for pic32/5225x!
-// with no pullups, i2c will crash
 // test i2c with sda, scl, sda and acl all tied to ground -- no hangs or crashes.
 
 // doc
 // ===
+// add fslbot example to user's guide?
 // change VBUS to +5V in schematic
 // add digital input and analog output example
 // add minimum flash requirements for pic32 and 5225x to mcu details
 // document "conflicting timer usage"
 // MCU details says "autorun disable", but we are inconsistent in docs with use of "safemode*"
+// update user's guide to indicate keychar and getchar automatically reset to 0 after they are read.
 
 // prior 2
 // =======
