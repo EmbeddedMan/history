@@ -106,6 +106,7 @@ echo more print raw
    51 on timer 1 do stop
    60 halt
    list
+   trace on
    run
 EOF
 
@@ -649,6 +650,20 @@ list doit
 list
 run
 EOF
+
+echo _ in variable names
+"$BASIC" -q <<'EOF'
+10 dim _abc
+20 _abc=2
+30 let _abc=_abc+1
+40 print _abc
+50 restore xxx
+60 label yyy
+list
+run
+cont
+EOF
+
 
 exit 0
 # XXX -- move this to basic2, along with:

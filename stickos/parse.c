@@ -385,9 +385,16 @@ parse_word_const_word(IN char *prefix, IN char *suffix, IN OUT char **text, IN O
 
 static
 bool
-parse_is_legal_var_name_char(const char *text) 
+isvarstart(char c) 
 {
-    return isalpha(*text) || isdigit(*text) || *text == '_';
+    return isalpha(c) || (c) == '_';
+}
+
+static
+bool
+isvarmiddle(char c) 
+{
+    return isalpha(c) || isdigit(c) || (c) == '_';
 }
 
 // this function parses (compiles) a variable to bytecode.
@@ -401,13 +408,13 @@ parse_var(IN bool string, IN bool lvalue, IN int indices, IN int obase, IN OUT c
     int olength;
     char name[BASIC_OUTPUT_LINE_SIZE];
 
-    if (! isalpha(**text) && **text != '_') {
+    if (! isvarstart(**text)) {
         return false;
     }
 
     // extract the variable name and advance *text past name
     i = 0;
-    while (parse_is_legal_var_name_char(*text)) {
+    while (isvarmiddle(**text)) {
         name[i++] = *(*text)++;
     }
     name[i] = '\0';
@@ -596,7 +603,7 @@ parse_expression(IN int obase, IN OUT char **text, IN OUT int *length, IN OUT by
             number = false;
 
         // otherwise, if this is the start of a variable...
-        } else if (isalpha(c)) {
+        } else if (isvarstart(c)) {
             if (! number) {
                 return false;
             }
@@ -727,7 +734,7 @@ parse_string(IN OUT char **text, IN OUT int *length, IN OUT byte *bytecode)
             (*text)++;
 
         // otherwise, if this is the start of a variable...
-        } else if (isalpha(c)) {
+        } else if (isvarstart(c)) {
             if (! string) {
                 return false;
             }
@@ -1471,7 +1478,7 @@ XXX_AGAIN_XXX:
                 goto XXX_ERROR_XXX;
             }
             // generate the label/subname to bytecode
-            while (*text && parse_is_legal_var_name_char(text)) {
+            while (*text && isvarmiddle(*text)) {
                 bytecode[length++] = *text++;
             }
             bytecode[length++] = '\0';
