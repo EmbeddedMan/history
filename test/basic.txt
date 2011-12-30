@@ -251,17 +251,17 @@ test re-dim errors
    1 dim a as byte
    2 dim a as byte
 end
-var 'a' already defined at this scope
+var 'a' already declared at this scope
 STOP at line 2!
    1 dim a as short
    2 dim a as short
 end
-var 'a' already defined at this scope
+var 'a' already declared at this scope
 STOP at line 2!
    1 dim a
    2 dim a
 end
-var 'a' already defined at this scope
+var 'a' already declared at this scope
 STOP at line 2!
 test some assertions
 assertion failed
@@ -1050,7 +1050,7 @@ STOP at line 80!
   13 dim x[10] as pin an0 for digital input
   14 dim y[2] as pin an0 for digital input
 end
-var 'y' already defined at this scope
+var 'y' already declared at this scope
 STOP at line 14!
   10 dim x
   20 dim leds[1] as pin dtin0 for digital output
@@ -1327,7 +1327,7 @@ test long variable names
 end
 0 0 0
 1 2 3
-var 'muchmuchmuchmuchlonger2' already defined at this scope
+var 'muchmuchmuchmuchlonger2' already declared at this scope
 STOP at line 110!
 0 0 3
 1 2 3
@@ -1550,10 +1550,10 @@ test variable scope overflow
  130 endsub 
 end
   92   dim g as flash
-flash or pin variable declared in sub
+declared flash or pin variable in sub
 STOP at line 92!
   92   dim g as pin dtin0 for digital output
-flash or pin variable declared in sub
+declared flash or pin variable in sub
 STOP at line 92!
 out of variable ram
 STOP at line 95!
@@ -3035,7 +3035,7 @@ divide by 0
 divide by 0
 0
 assertion failed
-var 'a' already defined at this scope
+var 'a' already declared at this scope
 0
 var 'b' undefined
 
@@ -3128,7 +3128,7 @@ error -   ^
 label
        ^ - error
 restore
-missing label
+missing label: xxx
 dim
      ^ - error
       ^ - error
@@ -3143,7 +3143,7 @@ error -         ^
         ^ - error
 error -          ^
 error -         ^
-var 'a' already defined at this scope
+var 'a' already declared at this scope
 pin 0
 error -        ^
 error -           ^
@@ -3396,18 +3396,18 @@ main
 main
 main
 main
-too many variables
-too many variables
-too many variables
-too many variables
-too many variables
-too many variables
-too many variables
-too many variables
-too many variables
-too many variables
-too many variables
-too many variables
+out of variables
+out of variables
+out of variables
+out of variables
+out of variables
+out of variables
+out of variables
+out of variables
+out of variables
+out of variables
+out of variables
+out of variables
 STOP at line 50!
 out of variable ram
 STOP at line 60!
@@ -4998,7 +4998,7 @@ passed
   60 endsub 
 end
 sub params2.1
-var 'a' already defined at this scope
+var 'a' already declared at this scope
 STOP at line 20!
    5 print "sub params3"
   20 assert ticks_per_msec==4
@@ -5142,7 +5142,7 @@ STOP at line 110!
   70 endsub 
 end
 sub param with same-name local
-var 'x' already defined at this scope
+var 'x' already declared at this scope
 STOP at line 60!
 test demo
   10 rem ### blinky ###

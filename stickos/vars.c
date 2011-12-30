@@ -322,7 +322,7 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN bool st
     }
 
     if ((type == code_flash || type == code_pin) && gosubs) {
-        printf("flash or pin variable declared in sub\n");
+        printf("declared flash or pin variable in sub\n");
         stop();
         return;
     }
@@ -341,7 +341,7 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN bool st
         // if the var exists at the same scope...
         if (var_gosubs == gosubs) {
             // this is a repeat dimension
-            printf("var '%s' already defined at this scope\n", name);
+            printf("var '%s' already declared at this scope\n", name);
             stop();
             return;
         } else {
@@ -351,7 +351,7 @@ var_declare_internal(IN const char *name, IN int gosubs, IN int type, IN bool st
 
     // if we're out of vars...
     if (max_vars >= BASIC_VARS) {
-        printf("too many variables\n");
+        printf("out of variables\n");
         stop();
         return;
     }
@@ -462,7 +462,7 @@ var_declare_reference(const char *name, int gosubs, const char *target_name)
     // see if the referent is a normal variable or another reference...
     target = var_find(target_name, 0, &target_gosubs);
     if (! target) {
-        printf("unable to find referent '%s'\n", target_name);
+        printf("referent '%s' undefined\n", target_name);
         stop();
         return;
     }

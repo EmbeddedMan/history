@@ -401,7 +401,7 @@ parse_var(IN bool string, IN bool lvalue, IN int indices, IN int obase, IN OUT c
     int olength;
     char name[BASIC_OUTPUT_LINE_SIZE];
 
-    if (! isalpha(**text)) {
+    if (! isalpha(**text) && **text != '_') {
         return false;
     }
 

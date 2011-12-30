@@ -1166,7 +1166,7 @@ run_bytecode_code(uint code, bool immediate, const byte *bytecode, int length)
                     // XXX -- we can find label in main program by mistake
                     line = code_line(code_label, bytecode+index, false, run_in_library, NULL);
                     if (line == NULL) {
-                        printf("missing label\n");
+                        printf("missing label: %s\n", bytecode+index);
                         goto XXX_SKIP_XXX;
                     }
                 } else {
@@ -2014,7 +2014,7 @@ XXX_PERF_XXX:
                 // jump to the gosub line
                 line = code_line(code_sub, bytecode+index, false, true, &run_in_library);
                 if (line == NULL) {
-                    printf("missing sub\n");
+                    printf("missing sub: %s\n", bytecode+index);
                     goto XXX_SKIP_XXX;
                 }
                 run_line_number = line->line_number-1;
@@ -2277,7 +2277,7 @@ run(bool cont, int start_line_number)
             line_number = run_line_number;
 
             // if we're in trace mode...
-            if (run_trace) {
+            if (run_trace && line->bytecode[0] != code_halt && line->bytecode[0] != code_input) {
                 // trace every line
                 code_list(false, line_number, line_number, run_in_library);
             }

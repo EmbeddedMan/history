@@ -552,6 +552,13 @@ code_edit(int line_number_in)
 
     n = sprintf(text, "%d ", line_number);
     unparse_bytecode(line->bytecode, line->length, text+n);
+    if (line->comment_length) {
+        if (*line->bytecode != code_norem) {
+            strcat(text, "  ");
+        }
+        strcat(text, "//");
+        strcat(text, (char *)line->bytecode+line->length);
+    }
 #if ! STICK_GUEST
     terminal_edit(text);
     main_edit = true;

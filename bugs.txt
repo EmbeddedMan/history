@@ -1,26 +1,9 @@
-following does not return value to array!
-> run
-0 0
-> list
-  10 dim array[2]
-  20 gosub set array[1]
-  30 print array
-  40 end
-  50 sub set x
-  60   let x = 1
-  70 endsub
-end
->
-
 print missing sub and variable names in error messages -- save trouble when referenced in on handler!
-# on string should still return max len -- @ should return consumed length! (or swap!)
 allow variables to begin with _...
-configure/on timer (n) should be able to take variables for (n)
 "trace on" should not trace input or halt statements
 
 mcu
 ---
-you can't copy keychar$ with "let temp$=keychar$", since there are three nul-bytes on big-endian memory in start of keychar$! (inconsistent with print keychar$)
 try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
 editing a line with a // comment drops the comment!!!
 host mode for pic32!
@@ -37,9 +20,25 @@ is "reset" broken on 5225x?
 
 // bugs
 // ====
+following does not return value to array!
+> run
+0 0
+> list
+  10 dim array[2]
+  20 gosub set array[1]
+  30 print array
+  40 end
+  50 sub set x
+  60   let x = 1
+  70 endsub
+end
+>
 //
 // prior 1
 // =======
+// configure/on timer (n) should be able to take variables for (n)
+// you can't copy keychar$ with "let temp$=keychar$", since there are three nul-bytes on big-endian memory in start of keychar$! (doc error!)
+// # on string should still return max len -- @ should return consumed length! (or swap!)
 // can we allocate more ram to pic32/5225x (ram page size)?  how close are we?
 // add qspi and i2c pin assignments to online help (data, clk, cs)
 // add to help pins all "unchangable" pins (i2c, spi, etc.) from freescale.pdf and microchip.pdf
