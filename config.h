@@ -1,4 +1,4 @@
-#define VERSION  "1.92-"
+#define VERSION  "1.92a"
 
 //#define SODEBUG  1
 //#define DEBUGGING  1
@@ -41,7 +41,7 @@
 #define ZIGFLEA  1
 #endif
 
-#if PIC32 && ! defined(__32MX320F128H__) && ! defined(__32MX440F256H__) && ! defined(__32MX440F512H__) && ! defined(__32MX795F512H__)
+#if PIC32 && ! defined(__32MX320F128H__) && ! defined(__32MX440F512H__) && ! defined(__32MX795F512H__)
 #define PIC32PORTA  1
 #endif
 

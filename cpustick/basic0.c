@@ -103,8 +103,6 @@ char * const help_about =
 "Welcome to StickOS for Freescale MC9S12DP512 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX320F128H__) && defined CHIPKIT
 "Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v" VERSION "!\n"
-#elif PIC32 && defined(__32MX440F256H__)
-"Welcome to StickOS for Microchip PIC32MXx-F256H v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MX4-F512H CUI32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__)
@@ -119,6 +117,8 @@ char * const help_about =
 "Welcome to StickOS for Microchip PIC32MX7-F512L chipKIT Max32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX795F512L__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MX7-F512L UBW32v2 v" VERSION "!\n"
+#elif PIC32 && defined(__32MX795F512H__)
+"Welcome to StickOS for Microchip PIC32MX7-F512H v" VERSION "!\n"
 #elif PIC32 && defined(__32MX795F512L__)
 "Welcome to StickOS for Microchip PIC32MX7-F512L v" VERSION "!\n"
 #else
