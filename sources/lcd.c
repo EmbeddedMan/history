@@ -105,7 +105,7 @@ lcdinit(void)
     int i;
 
     for (i = pin_assignment_lcd_d4; i < pin_assignment_lcd_rs+1; i++) {
-        pin_set(pin_assignments[i], pin_type_digital_output, 0, 0);
+        pin_set(pin_assignments[i], pin_type_digital_output, 0, 1);
     }
 
     delay(50);

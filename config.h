@@ -1,7 +1,9 @@
-#define VERSION  "1.90g"
+#define VERSION  "1.92-"
 
 //#define SODEBUG  1
 //#define DEBUGGING  1
+
+#define FSLBOT  0
 
 #if MCF52221 || MCF52233 || MCF52259 || MCF5211
 #define DEMO  1  // 1 enables DEMO board USB power

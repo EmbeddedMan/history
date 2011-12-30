@@ -37,11 +37,19 @@
 #define BASIC_STORES  2
 #elif MCF52259
 #define FLASH_START  0
+#if FSLBOT
 #define FLASH_BYTES  (512*1024)  // the smallest part we support
+#else
+#define FLASH_BYTES  (256*1024)  // the smallest part we support
+#endif
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  4096
 #define BASIC_VARS  200
+#if FSLBOT
 #define BASIC_STORES  12
+#else
+#define BASIC_STORES  2
+#endif
 #elif MCF5211
 #define FLASH_START  0
 #define FLASH_BYTES  (128*1024)
