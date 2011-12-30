@@ -108,10 +108,10 @@ lcdinit(void)
         pin_set(pin_assignments[i], pin_type_digital_output, 0, 0);
     }
 
-    delay(20);
+    delay(50);
     for (i = 0; i < LENGTHOF(data); i++) {
         writebyte(data[i], false);
-        delay(2);
+        delay(5);
     }
 }
 

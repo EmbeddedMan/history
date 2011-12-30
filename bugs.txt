@@ -7,7 +7,7 @@ mcu
 try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
 editing a line with a // comment drops the comment!!!
 host mode for pic32!
-add "lcd init" statement...  set rs = 0 at end of write nibble...
+  set rs = 0 at end of write nibble...
 make sure if pins safemode* none is set that we cannot autorun!
 change pic32 clock config bits to XT!  HS 10 MHz-40 MHz crystal, high speed crystal; XT 3.5 MHz-10 MHz resonator, crystal or resonator
 
@@ -36,6 +36,7 @@ end
 //
 // prior 1
 // =======
+// add "lcd init" statement...
 // configure/on timer (n) should be able to take variables for (n)
 // you can't copy keychar$ with "let temp$=keychar$", since there are three nul-bytes on big-endian memory in start of keychar$! (doc error!)
 // # on string should still return max len -- @ should return consumed length! (or swap!)
