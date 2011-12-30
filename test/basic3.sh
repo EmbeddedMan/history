@@ -117,6 +117,7 @@ echo print raw multibyte
 30 print raw a, b, c
 40 print hex a, b, c
 list
+trace on
 run
 0x4142 0x4344 0x4546 0x30313233 0x34353637 0x38393a3b 0x61 0x62 0x63
 EOF
