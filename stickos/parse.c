@@ -385,14 +385,14 @@ parse_word_const_word(IN char *prefix, IN char *suffix, IN OUT char **text, IN O
 
 static
 bool
-isvarstart(char c) 
+isvarstart(char c)
 {
     return isalpha(c) || (c) == '_';
 }
 
 static
 bool
-isvarmiddle(char c) 
+isvarmiddle(char c)
 {
     return isalpha(c) || isdigit(c) || (c) == '_';
 }
