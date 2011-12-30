@@ -17,20 +17,30 @@ print missing sub and variable names in error messages -- save trouble when refe
 allow variables to begin with _...
 configure/on timer (n) should be able to take variables for (n)
 "trace on" should not trace input or halt statements
-remove 4 pwm assignments from 5225x online help
 
+mcu
+---
 you can't copy keychar$ with "let temp$=keychar$", since there are three nul-bytes on big-endian memory in start of keychar$! (inconsistent with print keychar$)
 try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
 editing a line with a // comment drops the comment!!!
-is "reset" broken on 5225x?
-host mode for pic32 and mcf5225x!
+host mode for pic32!
 add "lcd init" statement...  set rs = 0 at end of write nibble...
-can we allocate more ram to pic32/5225x (ram page size)?  how close are we?
 make sure if pins safemode* none is set that we cannot autorun!
 change pic32 clock config bits to XT!  HS 10 MHz-40 MHz crystal, high speed crystal; XT 3.5 MHz-10 MHz resonator, crystal or resonator
 
+5225x
+-----
+remove 4 pwm assignments from 5225x online help
+host mode for mcf5225x!
+is "reset" broken on 5225x?
+
+
+// bugs
+// ====
+//
 // prior 1
 // =======
+// can we allocate more ram to pic32/5225x (ram page size)?  how close are we?
 // add qspi and i2c pin assignments to online help (data, clk, cs)
 // add to help pins all "unchangable" pins (i2c, spi, etc.) from freescale.pdf and microchip.pdf
 // add packed save/load commands!!!
