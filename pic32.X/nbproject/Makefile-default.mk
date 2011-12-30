@@ -64,7 +64,7 @@ MP_AR_DIR=C:\\Program\ Files\ \(x86\)\\Microchip\\mplabc32\\v2.00\\bin
 .build-conf: ${BUILD_SUBPROJECTS}
 	${MAKE}  -f nbproject/Makefile-default.mk dist/${CND_CONF}/${IMAGE_TYPE}/pic32.X.${IMAGE_TYPE}.elf
 
-MP_PROCESSOR_OPTION=32MX440F512H
+MP_PROCESSOR_OPTION=32MX460F512L
 MP_LINKER_FILE_OPTION=
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: assemble
