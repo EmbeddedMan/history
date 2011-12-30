@@ -1,3 +1,5 @@
+vs
+--
 print missing sub and variable names in error messages -- save trouble when referenced in on handler!
 allow variables to begin with _...
 "trace on" should not trace input or halt statements
@@ -7,8 +9,6 @@ mcu
 try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
 editing a line with a // comment drops the comment!!!
 host mode for pic32!
-  set rs = 0 at end of write nibble...
-make sure if pins safemode* none is set that we cannot autorun!
 change pic32 clock config bits to XT!  HS 10 MHz-40 MHz crystal, high speed crystal; XT 3.5 MHz-10 MHz resonator, crystal or resonator
 
 5225x

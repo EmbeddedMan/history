@@ -355,14 +355,40 @@ accumulate(char c)
 // N.B. if this routine returns false, cdcacm will drop the ball and we'll
 // call cdcacm_command_ack() later to pick it up again.
 static bool
-terminal_receive_internal(const byte *buffer, int length)
+terminal_receive_internal(byte *buffer, int length)
 {
+    int i;
     int j;
     int x;
     int id;
+    char c;
     bool boo;
+    static byte term;
 
     led_unknown_progress();
+
+    // allow \n or \r to terminate lines, but not both
+    j = 0;
+    for (i = 0; i < length; i++) {
+        c = buffer[i];
+        if (c == '\n' || c == '\r') {
+            if (! term || term == c) {
+                buffer[j] = '\r';
+                j++;
+            }
+            if (! term) {
+                term = c;
+            } else {
+                term = 0;
+            }
+        } else {
+            buffer[j] = c;
+            j++;
+            term = 0;
+        }
+    }
+    // N.B. we just rewrote buffer and may have shortened length!
+    length = j;
 
     // if we're connected to another node...
     id = terminal_rxid;
@@ -446,7 +472,7 @@ terminal_receive_internal(const byte *buffer, int length)
 }
 
 bool
-terminal_receive(const byte *buffer, int length)
+terminal_receive(byte *buffer, int length)
 {
     if (length) {
         // reply to local node

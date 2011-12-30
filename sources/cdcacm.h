@@ -4,7 +4,7 @@ extern bool cdcacm_active;
 
 typedef void (*cdcacm_reset_cbfn)(void);
 
-typedef bool (*cdcacm_receive_cbfn)(const byte *buffer, int length);
+typedef bool (*cdcacm_receive_cbfn)(byte *buffer, int length);
 
 void
 cdcacm_print(const byte *line, int length);

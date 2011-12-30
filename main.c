@@ -20,7 +20,7 @@
     #pragma config WDTPS    = PS1           // Watchdog Timer Postscale
     #pragma config FCKSM    = CSDCMD        // Clock Switching & Fail Safe Clock Monitor
     #pragma config OSCIOFNC = OFF           // CLKO Enable
-    #pragma config POSCMOD  = HS            // Primary Oscillator
+    #pragma config POSCMOD  = XT            // Primary Oscillator
     #pragma config IESO     = OFF           // Internal/External Switch-over
     #pragma config FSOSCEN  = OFF           // Secondary Oscillator Enable
     #pragma config FNOSC    = PRIPLL        // Oscillator Selection

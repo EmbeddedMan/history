@@ -10,7 +10,7 @@ void
 terminal_print(const byte *buffer, int length);
 
 bool
-terminal_receive(const byte *buffer, int length);
+terminal_receive(byte *buffer, int length);
 
 void
 terminal_wait(void);
