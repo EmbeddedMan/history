@@ -208,7 +208,7 @@ transaction(int endpoint, int token, void *buffer, int length)
     int flags;
     int retry;
     int int_stat;
-    struct bdt *bdt;
+    volatile struct bdt *bdt;
 
     assert(usb_host_mode);
 
@@ -544,7 +544,7 @@ usb_device_enqueue(int endpoint, bool tx, byte *buffer, int length)
     int ep;
     bool odd;
     int flags;
-    struct bdt *bdt;
+    volatile struct bdt *bdt;
 
     assert(! usb_host_mode);
     assert(endpoint < LENGTHOF(endpoints));
@@ -773,7 +773,7 @@ usb_isr(void)
         int endpoint2;
         short length;
         short value;
-        struct bdt *bdt;
+        volatile struct bdt *bdt;
         struct setup *setup;
         
         assert(! usb_host_mode);

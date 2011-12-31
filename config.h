@@ -1,4 +1,4 @@
-#define VERSION  "1.92b"
+#define VERSION  "1.92c"
 
 //#define SODEBUG  1
 //#define DEBUGGING  1  // enable to use mplab x debugger
@@ -37,7 +37,7 @@
 #define USB_HOST  1
 #endif
 
-#if SODEBUG || MCF52259 || (PIC32 && ! defined(__32MX320F128H__))
+#if ! PIC32 || (PIC32 && ! defined(__32MX320F128H__))
 #define ZIGFLEA  1
 #endif
 
