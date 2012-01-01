@@ -75,6 +75,7 @@ end
 
 // doc
 // ===
+// remove refs to keychar$ and getchar$!
 // add fslbot example to user's guide?
 // change VBUS to +5V in schematic
 // add digital input and analog output example
