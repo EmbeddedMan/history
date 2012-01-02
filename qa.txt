@@ -33,12 +33,12 @@ pins zigflea_rxtxen sda
 
 lcd
 ===
-pins lcd_d4 urxd1
-pins lcd_d5 utxd1
-pins lcd_d6 ucts0*
-pins lcd_d7 urts0*
-pins lcd_en urxd0
-pins lcd_rs utxd0
+pins lcd_d4 dtin0
+pins lcd_d5 dtin1
+pins lcd_d6 dtin2
+pins lcd_d7 dtin3
+pins lcd_en urxd1
+pins lcd_rs utxd1
 
 test auto line number
   - exit on two blankd
