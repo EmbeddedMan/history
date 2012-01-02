@@ -79,6 +79,8 @@ char * const help_about =
 "Welcome to StickOS for Freescale MCF52221 v" VERSION "!\n"
 #elif DEMO_KIT && MCF52259
 "Welcome to StickOS for Freescale MCF52252 DemoKit v" VERSION "!\n"
+#elif FSLBOT && MCF52259
+"Welcome to StickOS for Freescale MCF52259 v" VERSION "!\n"
 #elif MCF52259
 "Welcome to StickOS for Freescale MCF52252 v" VERSION "!\n"
 #elif MCF5211

@@ -75,6 +75,7 @@ end
 
 // doc
 // ===
+// remove gpt0-3 as pwm for 5225x, etc., in online help!
 // remove refs to keychar$ and getchar$!
 // add fslbot example to user's guide?
 // change VBUS to +5V in schematic
