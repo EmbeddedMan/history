@@ -31,6 +31,15 @@ pins zigflea_rst* scl
 pins zigflea_attn* none
 pins zigflea_rxtxen sda
 
+lcd
+===
+pins lcd_d4 urxd1
+pins lcd_d5 utxd1
+pins lcd_d6 ucts0*
+pins lcd_d7 urts0*
+pins lcd_en urxd0
+pins lcd_rs utxd0
+
 test auto line number
   - exit on two blankd
   - exit on parse error
