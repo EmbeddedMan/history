@@ -11,7 +11,7 @@ sub at25df641_init
   gosub at25df641_cs 0
   qspi cmd, id
   gosub at25df641_cs 1
-  assert id==0x1f480000
+  assert id!=0&&id!=-1
 endsub
 //
 sub at25df641_status status
