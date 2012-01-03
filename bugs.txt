@@ -1,23 +1,3 @@
-vs
---
-print missing sub and variable names in error messages -- save trouble when referenced in on handler!
-allow variables to begin with _...
-"trace on" should not trace input or halt statements
-
-mcu
----
-try to process lines with \n or \r (but not both), to make it possible to paste in unix line endings into tera term
-editing a line with a // comment drops the comment!!!
-host mode for pic32!
-change pic32 clock config bits to XT!  HS 10 MHz-40 MHz crystal, high speed crystal; XT 3.5 MHz-10 MHz resonator, crystal or resonator
-
-5225x
------
-remove 4 pwm assignments from 5225x online help
-host mode for mcf5225x!
-is "reset" broken on 5225x?
-
-
 // bugs
 // ====
 following does not return value to array!
@@ -36,6 +16,7 @@ end
 //
 // prior 1
 // =======
+// remove 4 pwm assignments from 5225x online help
 // add "lcd init" statement...
 // configure/on timer (n) should be able to take variables for (n)
 // you can't copy keychar$ with "let temp$=keychar$", since there are three nul-bytes on big-endian memory in start of keychar$! (doc error!)
@@ -43,7 +24,6 @@ end
 // can we allocate more ram to pic32/5225x (ram page size)?  how close are we?
 // add qspi and i2c pin assignments to online help (data, clk, cs)
 // add to help pins all "unchangable" pins (i2c, spi, etc.) from freescale.pdf and microchip.pdf
-// add packed save/load commands!!!
 // add help for uno32 LED on pin 43
 // disable kbd pins for fb32 nano/mini
 // eliminate restrictions on "analog" mode values.  "servo", too?
@@ -53,17 +33,15 @@ end
 // fix cpustick.inf to pass chkinf!
 // fix CFV1 to tolerate uart overruns on rx, just like pic32; CFV2 might need help, too, so you don't have to reconfigure.
 // allow you to set stop bits in the "configure" statement; switch all to 1 stop bit!
-// stickos should report uart framing errors and overrun errors more gracefully!
-// on uart 1 error do gosub recover
+// stickos should report uart framing errors and overrun errors more gracefully!  on uart 1 error do gosub recover
 // I should probably allow "as byte" or "as word" on pin variables, but I don't currently.
 // get rid of parse2/run2/basic0 if we make stickos source public?
 // fix checksum to be compatible/consistent with bootloader (pic32 and freescale)
-// pins should survive upgrade
+// pins should survive upgrade; same for nodeid, ipaddress, etc.
 // do we want BASIC to have control over pull-ups?  thru a mode variable?
-// why does jm upgrade show diff cecksum (by 0x5a?) than program from cw?
+// why does jm upgrade show diff checksum (by 0x5a?) than program from cw?
 // multi-pin variables (digital I/O only, using binary integer)!!!
-// add getchar example in ug?
-// make flash filesystem allocate only as much space as is needed to save a current program!
+// add packed save/load commands!!!; make flash filesystem allocate only as much space as is needed to save a current program!
 // mode to disable usb device (and autorun disable to override)
 // move block.c and fat32.c from pict-o-crypt to sources (include in skeleton)
 // on/off/mask/unmask should move to parse2.c/run2.c
@@ -72,10 +50,12 @@ end
 // add ability to get stack trace with locals from all frames
 // add a faster zigflea option for pic32/5225x!
 // test i2c with sda, scl, sda and acl all tied to ground -- no hangs or crashes.
+// zigbee read remote variables
 
 // doc
 // ===
 // remove gpt0-3 as pwm for 5225x, etc., in online help!
+// add getchar example in ug?  don't use getchar$
 // remove refs to keychar$ and getchar$!
 // add fslbot example to user's guide?
 // change VBUS to +5V in schematic
@@ -95,18 +75,13 @@ end
 // consider doing servos in sw w/ lightweight isr rather than using hw timers
 // add "modes" to turn off USB and QSPI and get their pins back for gpio
 // saw bug changing pic32 pin from servo to freq mode on fly?
-// add demokit skeleton
-// attempt to decouple servo pwm from frequency -- 256 should be 2.56ms independent of Hz!
-//   9s12 and cfv2 can do 4 16 bit channels!
+// pwm: 9s12 and cfv2 can do 4 16 bit channels!
 // spi-to-sd card data logging
 // how to enable different uart selection (other than lowest number) for console?
-// gets warnings
-// permanent params (protected from upgrade) for nodeid, ipaddress, etc.
-// zigbee read remote variables
 // we need a way to prevent you from upgrading the wrong firmware file!!!
 // if data area of flash looks bogus on boot, we should clear it all!
 // have nodeid and clusterid, and broadcast 0x4242 and clusterid as magic number
-// save zigbee channel in nvparam!
+// add zigbee channel; save zigbee channel in nvparam!
 // need a second catalog page for safe updates!
 // handle uart errors (interrupt as well as poll)
 
