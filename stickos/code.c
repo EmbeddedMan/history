@@ -2,7 +2,7 @@
 // this file implements bytecode code storage and access and merge
 // functionality, as well as the stickos filesystem.
 
-// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2012.  All rights reserved.
 // Patent pending.
 
 #include "main.h"

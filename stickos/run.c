@@ -4,7 +4,7 @@
 // handlers.  it also implements the core of the interactive debugger,
 // coupled with the command interpreter and variable access module.
 
-// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2012.  All rights reserved.
 // Patent pending.
 
 #include "main.h"

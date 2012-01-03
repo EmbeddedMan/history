@@ -2,7 +2,7 @@
 // this file implements the bytecode compiler and de-compiler for
 // stickos.
 
-// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2012.  All rights reserved.
 // Patent pending.
 
 #include "main.h"

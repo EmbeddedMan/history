@@ -3,7 +3,7 @@
 // pin, and flash variables, as well as the external pin control and
 // access module.
 
-// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2012.  All rights reserved.
 // Patent pending.
 
 #include "main.h"

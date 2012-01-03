@@ -1,7 +1,7 @@
 // *** basic.c ********************************************************
 // this file implements the stickos command interpreter.
 
-// Copyright (c) CPUStick.com, 2008-2010.  All rights reserved.
+// Copyright (c) CPUStick.com, 2008-2012.  All rights reserved.
 // Patent pending.
 
 #include "main.h"
