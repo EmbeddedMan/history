@@ -16,6 +16,7 @@ end
 //
 // prior 1
 // =======
+// "step" and "trace" should be statements, not commands!
 // remove 4 pwm assignments from 5225x online help
 // add "lcd init" statement...
 // configure/on timer (n) should be able to take variables for (n)
