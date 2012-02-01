@@ -16,6 +16,8 @@ end
 //
 // prior 1
 // =======
+// make run_var() extern and add to run.h!
+// add windows/linux build to skeleton project
 // "step" and "trace" should be statements, not commands!
 // remove 4 pwm assignments from 5225x online help
 // add "lcd init" statement...
