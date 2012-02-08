@@ -1,4 +1,4 @@
-#define VERSION  "1.92c"
+#define VERSION  "1.92z"
 
 //#define SODEBUG  1
 //#define DEBUGGING  1  // enable to use mplab x debugger
