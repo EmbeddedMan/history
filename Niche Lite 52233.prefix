@@ -1,0 +1,2 @@
+#define MCF52233  1
+#define NICHELITE  1

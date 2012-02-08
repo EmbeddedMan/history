@@ -204,11 +204,13 @@ enum {
 #define BASIC_OUTPUT_LINE_SIZE  79
 #define BASIC_INPUT_LINE_SIZE  72
 
+#if PIC32
 #define vsnprintf  myvsnprintf
 #define snprintf  mysnprintf
 #define sprintf  mysprintf
 #define vsprintf  myvsprintf
 #define printf  myprintf
+#endif
 
 #include <stdarg.h>
 

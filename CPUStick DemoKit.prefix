@@ -1,0 +1,3 @@
+#define MCF52259  1
+#define DEMO_KIT  1
+#define STICKOS  1

@@ -1,0 +1,2 @@
+#define MCF52221  1
+#define STICKOS  1
