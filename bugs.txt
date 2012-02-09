@@ -1,3 +1,5 @@
+get rid of all code in #defines -- esp ?: and such for flash generations
+
 // bugs
 // ====
 following does not return value to array!
