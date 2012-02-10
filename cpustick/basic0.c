@@ -113,6 +113,8 @@ char * const help_about =
 "Welcome to StickOS for Microchip PIC32MXx-F512L UBW32v1 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX460F512L__)
 "Welcome to StickOS for Microchip PIC32MXx-F512L v" VERSION "!\n"
+#elif PIC32 && defined(__32MX795F512H__) && DUINOMITE
+"Welcome to StickOS for Microchip PIC32MX7-F512H DuinoMite-Mega v" VERSION "!\n"
 #elif PIC32 && defined(__32MX795F512H__) && HIDBL
 "Welcome to StickOS for Microchip PIC32MX7-F512H CUI32Stem v" VERSION "!\n"
 #elif PIC32 && defined(__32MX795F512L__) && defined CHIPKIT
