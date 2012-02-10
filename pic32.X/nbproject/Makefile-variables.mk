@@ -53,3 +53,10 @@ CND_ARTIFACT_PATH_CUI32Stem=dist/CUI32Stem/production/pic32.X.production.elf
 CND_PACKAGE_DIR_CUI32Stem=${CND_DISTDIR}/CUI32Stem/package
 CND_PACKAGE_NAME_CUI32Stem=pic32.x.tar
 CND_PACKAGE_PATH_CUI32Stem=${CND_DISTDIR}/CUI32Stem/package/pic32.x.tar
+# Duinomite configuration
+CND_ARTIFACT_DIR_Duinomite=dist/Duinomite/production
+CND_ARTIFACT_NAME_Duinomite=pic32.X.production.elf
+CND_ARTIFACT_PATH_Duinomite=dist/Duinomite/production/pic32.X.production.elf
+CND_PACKAGE_DIR_Duinomite=${CND_DISTDIR}/Duinomite/package
+CND_PACKAGE_NAME_Duinomite=pic32.x.tar
+CND_PACKAGE_PATH_Duinomite=${CND_DISTDIR}/Duinomite/package/pic32.x.tar

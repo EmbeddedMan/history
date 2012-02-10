@@ -31,7 +31,7 @@ DEFAULTCONF=default
 CONF=${DEFAULTCONF}
 
 # All Configurations
-ALLCONFS=default chipKIT_Max32 chipKIT_Uno32 UBW32v1 UBW32v2 CUI32 CUI32Stem 
+ALLCONFS=default chipKIT_Max32 chipKIT_Uno32 UBW32v1 UBW32v2 CUI32 CUI32Stem Duinomite 
 
 
 # build
