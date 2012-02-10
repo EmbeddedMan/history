@@ -1,4 +1,5 @@
 get rid of all code in #defines -- esp ?: and such for flash generations
+change duinomite pin names to match silkscreens (and fb32/chipKIT), change help pins, change default "pins" to remove zigflea and move safemode, change default heartbeat led
 
 // bugs
 // ====
