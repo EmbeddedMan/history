@@ -66,10 +66,10 @@
 <listEntry value="true"/>
 </listAttribute>
 <listAttribute key="com.freescale.cdt.debug.cw.Embedded Download.TaskNames">
-<listEntry value="CopyOfMCF52221_INTFLASH"/>
+<listEntry value="MCF52221_INTFLASH"/>
 </listAttribute>
 <listAttribute key="com.freescale.cdt.debug.cw.Embedded Download.TaskSuccessiveRuns">
-<listEntry value="false"/>
+<listEntry value="true"/>
 </listAttribute>
 <listAttribute key="com.freescale.cdt.debug.cw.Embedded Download.TaskTypes">
 <listEntry value="Flash Programmer for ColdFire V234"/>
