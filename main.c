@@ -56,7 +56,7 @@ main()  // we're called directly by startup.c
     byte *p;
     extern unsigned char _data_image_begin[];
 
-    SYSTEMConfig(80000000L, SYS_CFG_WAIT_STATES | SYS_CFG_PCACHE);
+    SYSTEMConfigPerformance(80000000L);
     INTEnableSystemMultiVectoredInt();
     (void)splx(7);
 #if ! DEBUGGING
