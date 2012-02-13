@@ -118,13 +118,20 @@
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  2048
 #define BASIC_VARS  100
+#define BASIC_STORES  2
+#elif DUINOMITE
+#define FLASH_BYTES  (512*1024)  // the smallest part we support
+#define FLASH_PAGE_SIZE  4096
+#define BASIC_RAM_PAGE_SIZE  4096
+#define BASIC_VARS  200
+#define BASIC_STORES  10
 #else
 #define FLASH_BYTES  (256*1024)  // the smallest part we support
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  4096
 #define BASIC_VARS  200
-#endif
 #define BASIC_STORES  2
+#endif
 
 #define FLASH2_START  0x9FC00000  // boot flash, for flash upgrade
 #define FLASH2_BYTES  (12*1024)

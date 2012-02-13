@@ -77,8 +77,8 @@
         <property key="make-warnings-into-errors" value="false"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="use-indirect-calls" value="false"/>
-        <property key="strict-ansi" value="false"/>
         <property key="support-ansi" value="false"/>
+        <property key="strict-ansi" value="false"/>
         <property key="optimization-level" value="-Os"/>
         <property key="place-data-into-section" value="false"/>
         <property key="post-instruction-scheduling" value="default"/>
@@ -96,8 +96,8 @@
         <property key="list-file" value=""/>
         <property key="list-source" value="false"/>
         <property key="list-assembly" value="false"/>
-        <property key="warning-level" value=""/>
         <property key="extra-include-directories-for-preprocessor" value=""/>
+        <property key="warning-level" value=""/>
         <property key="list-section-info" value="false"/>
         <property key="omit-forms" value="false"/>
         <property key="list-symbols" value="false"/>
@@ -149,23 +149,23 @@
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="programoptions.usehighvoltageonmclr" value="false"/>
         <property key="hwtoolclock.units" value="mips"/>
-        <property key="memories.eeprom" value="false"/>
-        <property key="REAL TIME CLOCK" value="true"/>
         <property key="CHANGE NOTICE" value="true"/>
+        <property key="REAL TIME CLOCK" value="true"/>
+        <property key="memories.eeprom" value="false"/>
         <property key="ToolFirmwareFilePath" value=""/>
-        <property key="TIMER1" value="true"/>
         <property key="UART@" value="true"/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
-        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
-        <property key="voltagevalue" value="3.25"/>
+        <property key="TIMER1" value="true"/>
         <property key="hwtoolclock.instructionspeed" value=""/>
-        <property key="memories.programmemory.start" value="0x1d000000"/>
-        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="voltagevalue" value="3.25"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
         <property key="ADC @" value="true"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="memories.programmemory.start" value="0x1d000000"/>
         <property key="memories.programmemory.end" value="0x1d07ffff"/>
         <property key="OUTPUT COMPARE @" value="true"/>
-        <property key="I2C@" value="true"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="I2C@" value="true"/>
       </PICkit3PlatformTool>
     </conf>
     <conf name="chipKIT_Max32" type="3">
@@ -200,8 +200,8 @@
         <property key="make-warnings-into-errors" value="false"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="use-indirect-calls" value="false"/>
-        <property key="support-ansi" value="false"/>
         <property key="strict-ansi" value="false"/>
+        <property key="support-ansi" value="false"/>
         <property key="optimization-level" value="-Os"/>
         <property key="place-data-into-section" value="false"/>
         <property key="post-instruction-scheduling" value="default"/>
@@ -219,8 +219,8 @@
         <property key="list-file" value=""/>
         <property key="list-source" value="false"/>
         <property key="list-assembly" value="false"/>
-        <property key="warning-level" value=""/>
         <property key="extra-include-directories-for-preprocessor" value=""/>
+        <property key="warning-level" value=""/>
         <property key="list-section-info" value="false"/>
         <property key="omit-forms" value="false"/>
         <property key="list-symbols" value="false"/>
@@ -272,23 +272,23 @@
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="programoptions.usehighvoltageonmclr" value="false"/>
         <property key="hwtoolclock.units" value="mips"/>
-        <property key="memories.eeprom" value="false"/>
-        <property key="REAL TIME CLOCK" value="true"/>
         <property key="CHANGE NOTICE" value="true"/>
+        <property key="REAL TIME CLOCK" value="true"/>
+        <property key="memories.eeprom" value="false"/>
         <property key="ToolFirmwareFilePath" value=""/>
-        <property key="TIMER1" value="true"/>
         <property key="UART@" value="true"/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
-        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
-        <property key="voltagevalue" value="3.25"/>
+        <property key="TIMER1" value="true"/>
         <property key="hwtoolclock.instructionspeed" value=""/>
-        <property key="memories.programmemory.start" value="0x1d000000"/>
-        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="voltagevalue" value="3.25"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
         <property key="ADC @" value="true"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="memories.programmemory.start" value="0x1d000000"/>
         <property key="memories.programmemory.end" value="0x1d07ffff"/>
         <property key="OUTPUT COMPARE @" value="true"/>
-        <property key="I2C@" value="true"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="I2C@" value="true"/>
       </PICkit3PlatformTool>
     </conf>
     <conf name="chipKIT_Uno32" type="3">
@@ -323,8 +323,8 @@
         <property key="make-warnings-into-errors" value="false"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="use-indirect-calls" value="false"/>
-        <property key="strict-ansi" value="false"/>
         <property key="support-ansi" value="false"/>
+        <property key="strict-ansi" value="false"/>
         <property key="optimization-level" value="-Os"/>
         <property key="place-data-into-section" value="false"/>
         <property key="post-instruction-scheduling" value="default"/>
@@ -342,8 +342,8 @@
         <property key="list-file" value=""/>
         <property key="list-source" value="false"/>
         <property key="list-assembly" value="false"/>
-        <property key="warning-level" value=""/>
         <property key="extra-include-directories-for-preprocessor" value=""/>
+        <property key="warning-level" value=""/>
         <property key="list-section-info" value="false"/>
         <property key="omit-forms" value="false"/>
         <property key="list-symbols" value="false"/>
@@ -395,23 +395,148 @@
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="programoptions.usehighvoltageonmclr" value="false"/>
         <property key="hwtoolclock.units" value="mips"/>
-        <property key="memories.eeprom" value="false"/>
-        <property key="REAL TIME CLOCK" value="true"/>
         <property key="CHANGE NOTICE" value="true"/>
+        <property key="REAL TIME CLOCK" value="true"/>
+        <property key="memories.eeprom" value="false"/>
         <property key="ToolFirmwareFilePath" value=""/>
-        <property key="TIMER1" value="true"/>
         <property key="UART@" value="true"/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
-        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
-        <property key="voltagevalue" value="3.25"/>
+        <property key="TIMER1" value="true"/>
         <property key="hwtoolclock.instructionspeed" value=""/>
-        <property key="memories.programmemory.start" value="0x1d000000"/>
-        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="voltagevalue" value="3.25"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
         <property key="ADC @" value="true"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="memories.programmemory.start" value="0x1d000000"/>
         <property key="memories.programmemory.end" value="0x1d07ffff"/>
         <property key="OUTPUT COMPARE @" value="true"/>
-        <property key="I2C@" value="true"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="I2C@" value="true"/>
+      </PICkit3PlatformTool>
+    </conf>
+    <conf name="DuinoMite" type="3">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <targetDevice>PIC32MX460F512L</targetDevice>
+        <targetHeader></targetHeader>
+        <platformTool>PICkit3PlatformTool</platformTool>
+        <languageToolchain>C32</languageToolchain>
+        <languageToolchainVersion>2.02</languageToolchainVersion>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <archiverTool>
+        </archiverTool>
+      </compileType>
+      <makeCustomizationType>
+        <makeCustomizationPreStepEnabled>false</makeCustomizationPreStepEnabled>
+        <makeCustomizationPreStep></makeCustomizationPreStep>
+        <makeCustomizationPostStepEnabled>false</makeCustomizationPostStepEnabled>
+        <makeCustomizationPostStep></makeCustomizationPostStep>
+        <makeCustomizationAlternativeFileToLoadEnabled>false</makeCustomizationAlternativeFileToLoadEnabled>
+        <makeCustomizationAlternativeFileToLoad></makeCustomizationAlternativeFileToLoad>
+        <makeCustomizationPutChecksumInUserID>false</makeCustomizationPutChecksumInUserID>
+      </makeCustomizationType>
+      <C32>
+        <property key="optimization-level" value="-Os"/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="strict-ansi" value="false"/>
+        <property key="preprocessor-macros" value="PIC32=1;STICKOS=1;DUINOMITE=1"/>
+        <property key="additional-warnings" value="false"/>
+        <property key="extra-include-directories"
+                  value="..;../pict-o-crypt;../cpustick;../headers;../sources;../stickos"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="support-ansi" value="false"/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+        <property key="exclude-floating-point" value="true"/>
+        <property key="enable-omit-frame-pointer" value="true"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <appendMe value="-fno-builtin"/>
+      </C32>
+      <C32-AS>
+        <property key="omit-debug-dirs" value="false"/>
+        <property key="extra-include-directories-for-assembler" value=".."/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="exclude-floating-point-library" value="false"/>
+        <property key="list-file" value=""/>
+        <property key="list-source" value="false"/>
+        <property key="list-assembly" value="false"/>
+        <property key="extra-include-directories-for-preprocessor" value=""/>
+        <property key="warning-level" value=""/>
+        <property key="list-section-info" value="false"/>
+        <property key="omit-forms" value="false"/>
+        <property key="list-symbols" value="false"/>
+        <property key="keep-locals" value="false"/>
+        <property key="false-conditionals" value="false"/>
+        <property key="expand-macros" value="false"/>
+        <property key="assembler-symbols" value=""/>
+      </C32-AS>
+      <C32-LD>
+        <property key="exclude-floating-point-library" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="warn-section-align" value="false"/>
+        <property key="heap-size" value=""/>
+        <property key="no-startup-files" value="false"/>
+        <property key="remove-unused-sections" value="false"/>
+        <property key="stack-size" value=""/>
+        <property key="linker-symbols" value=""/>
+        <property key="trace-symbols" value=""/>
+        <property key="map-file" value="&quot;$(BINDIR_)$(TARGETBASE).map&quot;"/>
+        <property key="exclude-standard-libraries" value="false"/>
+        <property key="generate-cross-reference-file" value="false"/>
+        <property key="input-libraries" value=""/>
+        <property key="enable-check-sections" value="false"/>
+        <property key="symbol-stripping" value=""/>
+        <property key="extra-lib-directories"
+                  value="../../../../Program Files/Microchip/MPLAB C32/lib;../../../../Program Files/Microchip/MPLAB C32/pic32mx/lib"/>
+      </C32-LD>
+      <C32Global>
+        <property key="legacy-libc" value="false"/>
+        <property key="no-start-files" value="false"/>
+      </C32Global>
+      <PICkit3PlatformTool>
+        <property key="programoptions.preserveprogramrange.end" value="0x1d0001ff"/>
+        <property key="PARALLEL MASTER/SLAVE PORT" value="true"/>
+        <property key="memories.id" value="false"/>
+        <property key="programoptions.preserveeeprom" value="false"/>
+        <property key="Freeze All Other Peripherals" value="true"/>
+        <property key="programmertogo.imagename" value=""/>
+        <property key="INPUT CAPTURE @" value="true"/>
+        <property key="memories.programmemory" value="true"/>
+        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
+        <property key="INTERRUPT CONTROL" value="true"/>
+        <property key="COMPARATOR" value="true"/>
+        <property key="AutoSelectMemRanges" value="auto"/>
+        <property key="TIMER@" value="true"/>
+        <property key="DMA" value="true"/>
+        <property key="hwtoolclock.frcindebug" value="false"/>
+        <property key="programoptions.usehighvoltageonmclr" value="false"/>
+        <property key="hwtoolclock.units" value="mips"/>
+        <property key="CHANGE NOTICE" value="true"/>
+        <property key="REAL TIME CLOCK" value="true"/>
+        <property key="memories.eeprom" value="false"/>
+        <property key="ToolFirmwareFilePath" value=""/>
+        <property key="UART@" value="true"/>
+        <property key="TIMER1" value="true"/>
+        <property key="hwtoolclock.instructionspeed" value=""/>
+        <property key="voltagevalue" value="3.25"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
+        <property key="ADC @" value="true"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="memories.programmemory.start" value="0x1d000000"/>
+        <property key="memories.programmemory.end" value="0x1d07ffff"/>
+        <property key="OUTPUT COMPARE @" value="true"/>
+        <property key="poweroptions.powerenable" value="false"/>
+        <property key="I2C@" value="true"/>
       </PICkit3PlatformTool>
     </conf>
   </confs>
