@@ -1623,10 +1623,10 @@
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_FlexCAN.h" name="MCF52235_FlexCAN.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_FlexCAN.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235.h" name="MCF52235.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_QSPI.h" name="MCF5211_QSPI.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_QSPI.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_PIT.h" name="MCF52221_PIT.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_PIT.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_RTC.h" name="MCF52235_RTC.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_RTC.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_I2C.h" name="MCF52221_I2C.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_I2C.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_PIT.h" name="MCF52221_PIT.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_PIT.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_QSPI.h" name="MCF52221_QSPI.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_QSPI.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_I2C.h" name="MCF52221_I2C.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_I2C.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_PAD.h" name="MCF52259_PAD.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_PAD.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_RNGA.h" name="MCF52259_RNGA.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_RNGA.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_CCM.h" name="MCF52221_CCM.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_CCM.h" toolsToInvoke=""/>
@@ -1643,26 +1643,26 @@
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_DTIM.h" name="MCF52259_DTIM.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_DTIM.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_DMA.h" name="MCF5211_DMA.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_DMA.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_SCM.h" name="MCF52235_SCM.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_SCM.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_FlexCAN.h" name="MCF5211_FlexCAN.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_FlexCAN.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_GPTA.h" name="MCF52221_GPTA.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_GPTA.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_CFM.h" name="MCF52235_CFM.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_CFM.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_FlexCAN.h" name="MCF5211_FlexCAN.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_FlexCAN.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_GPT.h" name="MCF52259_GPT.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_GPT.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_CFM.h" name="MCF52235_CFM.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_CFM.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_CFM.h" name="MCF5211_CFM.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_CFM.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_PAD.h" name="MCF52235_PAD.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_PAD.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_I2C.h" name="MCF52259_I2C.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_I2C.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_QSPI.h" name="MCF52235_QSPI.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_QSPI.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_CLOCK.h" name="MCF52221_CLOCK.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_CLOCK.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_USB_OTG.h" name="MCF52221_USB_OTG.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_USB_OTG.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_CLOCK.h" name="MCF52221_CLOCK.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_CLOCK.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_GIACR.h" name="MCF52235_GIACR.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_GIACR.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_SCM.h" name="MCF52221_SCM.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_SCM.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_DMA.h" name="MCF52259_DMA.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_DMA.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_GPTA.h" name="MCF5211_GPTA.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_GPTA.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_SCM.h" name="MCF52221_SCM.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_SCM.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_FlexCAN.h" name="MCF52259_FlexCAN.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_FlexCAN.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_GPTA.h" name="MCF5211_GPTA.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_GPTA.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_CCM.h" name="MCF5211_CCM.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_CCM.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_ADC.h" name="MCF52259_ADC.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_ADC.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_UART.h" name="MCF52235_UART.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_UART.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_EPORT.h" name="MCF52221_EPORT.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_EPORT.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52259_INTC.h" name="MCF52259_INTC.h" rcbsApplicability="disable" resourcePath="Headers/MCF52259_INTC.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_EPORT.h" name="MCF52221_EPORT.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_EPORT.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_GPIO.h" name="MCF5211_GPIO.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_GPIO.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52221_DTIM.h" name="MCF52221_DTIM.h" rcbsApplicability="disable" resourcePath="Headers/MCF52221_DTIM.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF5211_I2C.h" name="MCF5211_I2C.h" rcbsApplicability="disable" resourcePath="Headers/MCF5211_I2C.h" toolsToInvoke=""/>
@@ -1720,8 +1720,8 @@
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Headers/MCF52235_CLOCK.h" name="MCF52235_CLOCK.h" rcbsApplicability="disable" resourcePath="Headers/MCF52235_CLOCK.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924..cproject" name=".cproject" rcbsApplicability="disable" resourcePath=".cproject" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.CPUStick/basic0.h" name="basic0.h" rcbsApplicability="disable" resourcePath="CPUStick/basic0.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.CPUStick/run2.h" name="run2.h" rcbsApplicability="disable" resourcePath="CPUStick/run2.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.CPUStick/parse2.h" name="parse2.h" rcbsApplicability="disable" resourcePath="CPUStick/parse2.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.CPUStick/run2.h" name="run2.h" rcbsApplicability="disable" resourcePath="CPUStick/run2.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.CPUStick/Makefile.cpustick" name="Makefile.cpustick" rcbsApplicability="disable" resourcePath="CPUStick/Makefile.cpustick" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.CPUStick/cpustick.h" name="cpustick.h" rcbsApplicability="disable" resourcePath="CPUStick/cpustick.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.readme.txt" name="readme.txt" rcbsApplicability="disable" resourcePath="readme.txt" toolsToInvoke=""/>
@@ -1750,13 +1750,13 @@
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.856646400" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
 						</tool>
 					</fileInfo>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/Makefile.stickos" name="Makefile.stickos" rcbsApplicability="disable" resourcePath="StickOS/Makefile.stickos" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/basic.c" name="basic.c" rcbsApplicability="disable" resourcePath="StickOS/basic.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.855506662">
 						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.855506662" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.619102738" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1853545749" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
 						</tool>
 					</fileInfo>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/Makefile.stickos" name="Makefile.stickos" rcbsApplicability="disable" resourcePath="StickOS/Makefile.stickos" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/parse.h" name="parse.h" rcbsApplicability="disable" resourcePath="StickOS/parse.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/run.c" name="run.c" rcbsApplicability="disable" resourcePath="StickOS/run.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.493731409">
 						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.493731409" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
@@ -1777,8 +1777,8 @@
 						</tool>
 					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/run.h" name="run.h" rcbsApplicability="disable" resourcePath="StickOS/run.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/vars.h" name="vars.h" rcbsApplicability="disable" resourcePath="StickOS/vars.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/code.h" name="code.h" rcbsApplicability="disable" resourcePath="StickOS/code.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/vars.h" name="vars.h" rcbsApplicability="disable" resourcePath="StickOS/vars.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.StickOS/basic.h" name="basic.h" rcbsApplicability="disable" resourcePath="StickOS/basic.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.extract.sh" name="extract.sh" rcbsApplicability="disable" resourcePath="extract.sh" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924..settings/com.freescale.core.ide.newprojectwizard.prefs" name="com.freescale.core.ide.newprojectwizard.prefs" rcbsApplicability="disable" resourcePath=".settings/com.freescale.core.ide.newprojectwizard.prefs" toolsToInvoke=""/>
@@ -1788,8 +1788,8 @@
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Project_Settings/Debugger/project - CPUStick 5211 - PEMICRO_USB.launch" name="project - CPUStick 5211 - PEMICRO_USB.launch" rcbsApplicability="disable" resourcePath="Project_Settings/Debugger/project - CPUStick 5211 - PEMICRO_USB.launch" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.extract.h" name="extract.h" rcbsApplicability="disable" resourcePath="extract.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924..cwGeneratedFileSetLog" name=".cwGeneratedFileSetLog" rcbsApplicability="disable" resourcePath=".cwGeneratedFileSetLog" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.vectors.h" name="vectors.h" rcbsApplicability="disable" resourcePath="vectors.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.config.h" name="config.h" rcbsApplicability="disable" resourcePath="config.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.vectors.h" name="vectors.h" rcbsApplicability="disable" resourcePath="vectors.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/misclib/IN_UTILS.C" name="IN_UTILS.C" rcbsApplicability="disable" resourcePath="Niche Lite/misclib/IN_UTILS.C" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.55605191">
 						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.55605191" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.1011969498" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
@@ -1827,16 +1827,16 @@
 						</tool>
 					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/mydiff.sh" name="mydiff.sh" rcbsApplicability="disable" resourcePath="Niche Lite/mydiff.sh" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/allports/timeouts.c" name="timeouts.c" rcbsApplicability="disable" resourcePath="Niche Lite/allports/timeouts.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1588814267">
-						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1588814267" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
-							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.1408361623" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
-							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1647378344" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
-						</tool>
-					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/allports/allports.c" name="allports.c" rcbsApplicability="disable" resourcePath="Niche Lite/allports/allports.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.459345433">
 						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.459345433" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.133578912" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1072383196" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
+						</tool>
+					</fileInfo>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/allports/timeouts.c" name="timeouts.c" rcbsApplicability="disable" resourcePath="Niche Lite/allports/timeouts.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1588814267">
+						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1588814267" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
+							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.1408361623" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
+							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1647378344" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
 						</tool>
 					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/Makefile.nichelite" name="Makefile.nichelite" rcbsApplicability="disable" resourcePath="Niche Lite/Makefile.nichelite" toolsToInvoke=""/>
@@ -1852,16 +1852,16 @@
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1958176764" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
 						</tool>
 					</fileInfo>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/mip/m_udp.c" name="m_udp.c" rcbsApplicability="disable" resourcePath="Niche Lite/mip/m_udp.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1238555199">
-						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1238555199" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
-							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.1044611625" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
-							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1479934031" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
-						</tool>
-					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/mip/m_icmp.c" name="m_icmp.c" rcbsApplicability="disable" resourcePath="Niche Lite/mip/m_icmp.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1242817903">
 						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1242817903" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.518294731" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.912246558" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
+						</tool>
+					</fileInfo>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/mip/m_udp.c" name="m_udp.c" rcbsApplicability="disable" resourcePath="Niche Lite/mip/m_udp.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1238555199">
+						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1238555199" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
+							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.1044611625" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
+							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1479934031" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
 						</tool>
 					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/mip/m_ipnet.c" name="m_ipnet.c" rcbsApplicability="disable" resourcePath="Niche Lite/mip/m_ipnet.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1365981547">
@@ -1902,16 +1902,16 @@
 						</tool>
 					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/mii.h" name="mii.h" rcbsApplicability="disable" resourcePath="Niche Lite/mii.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/net/PKTALLOC.C" name="PKTALLOC.C" rcbsApplicability="disable" resourcePath="Niche Lite/net/PKTALLOC.C" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.2138607000">
-						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.2138607000" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
-							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.1466500421" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
-							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1218768316" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
-						</tool>
-					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/net/DHCPCLNT.C" name="DHCPCLNT.C" rcbsApplicability="disable" resourcePath="Niche Lite/net/DHCPCLNT.C" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.378391068">
 						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.378391068" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.306235819" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1112319853" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
+						</tool>
+					</fileInfo>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/net/PKTALLOC.C" name="PKTALLOC.C" rcbsApplicability="disable" resourcePath="Niche Lite/net/PKTALLOC.C" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.2138607000">
+						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.2138607000" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
+							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.1466500421" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
+							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.c++.1218768316" name="C++ Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input.c++"/>
 						</tool>
 					</fileInfo>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/net/dhcputil.c" name="dhcputil.c" rcbsApplicability="disable" resourcePath="Niche Lite/net/dhcputil.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.430074042">
@@ -1952,10 +1952,10 @@
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/profiler.h" name="profiler.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/profiler.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/rfc1213_.h" name="rfc1213_.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/rfc1213_.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/task.h" name="task.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/task.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/nptcp.h" name="nptcp.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/nptcp.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/socket6.h" name="socket6.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/socket6.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/htcmptab.h" name="htcmptab.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/htcmptab.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/nptcp.h" name="nptcp.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/nptcp.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/tcpapp.h" name="tcpapp.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/tcpapp.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/htcmptab.h" name="htcmptab.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/htcmptab.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/smtpalrt.h" name="smtpalrt.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/smtpalrt.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/netbuf.h" name="netbuf.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/netbuf.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/sockcall.h" name="sockcall.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/sockcall.h" toolsToInvoke=""/>
@@ -1991,15 +1991,15 @@
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/dhcpclnt.h" name="dhcpclnt.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/dhcpclnt.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/app_ping.h" name="app_ping.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/app_ping.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/sysdep.h" name="sysdep.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/sysdep.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/intimers.h" name="intimers.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/intimers.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/nptypes.h" name="nptypes.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/nptypes.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/intimers.h" name="intimers.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/intimers.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/icmp6.h" name="icmp6.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/icmp6.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/genlist.h" name="genlist.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/genlist.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/dns.h" name="dns.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/dns.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/genlist.h" name="genlist.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/genlist.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/crypt_api.h" name="crypt_api.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/crypt_api.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/memwrap.h" name="memwrap.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/memwrap.h" toolsToInvoke=""/>
-					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/license.h" name="license.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/license.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/sec_drv_globals.h" name="sec_drv_globals.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/sec_drv_globals.h" toolsToInvoke=""/>
+					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/h/license.h" name="license.h" rcbsApplicability="disable" resourcePath="Niche Lite/h/license.h" toolsToInvoke=""/>
 					<fileInfo id="com.freescale.coldfire.toolchain.configuration.1087010924.Niche Lite/cf_specific/osporttk.c" name="osporttk.c" rcbsApplicability="disable" resourcePath="Niche Lite/cf_specific/osporttk.c" toolsToInvoke="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1682410247">
 						<tool id="com.freescale.coldfire.toolchain.compiler.debug.2141651276.1682410247" name="ColdFire Compiler" superClass="com.freescale.coldfire.toolchain.compiler.debug.2141651276">
 							<inputType id="com.freescale.coldfire.toolchain.compiler.base.input.741966486" name="C Source File" superClass="com.freescale.coldfire.toolchain.compiler.base.input"/>
