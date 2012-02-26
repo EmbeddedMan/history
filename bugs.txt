@@ -1,4 +1,8 @@
 get rid of all code in #defines -- esp ?: and such for flash generations
+get rid of all (*xxx)++ references
+uniq -d long lines (if, else, while, etc.)
+merge const parsing
+
 change duinomite pin names to match silkscreens (and fb32/chipKIT), change help pins, change default "pins" to remove zigflea and move safemode, change default heartbeat led
 add stickos library versions that use all 512k for pic32 just like for CFV2 -- make an official part of the skeleton project!
 
