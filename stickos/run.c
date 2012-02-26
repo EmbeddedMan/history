@@ -284,7 +284,6 @@ run_input_const(IN OUT char **text, OUT int32 *value_out)
     return true;
 }
 
-static
 int
 run_var(const byte *bytecode_in, int length, OUT const char **name, OUT int32 *max_index)
 {

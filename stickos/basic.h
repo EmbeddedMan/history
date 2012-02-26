@@ -2,7 +2,7 @@
 
 // bytecodes
 enum bytecode {
-    code_deleted = 0x80,  // used to indicate a deleted line in ram
+    code_deleted = 0x01,  // used to indicate a deleted line in ram
     code_rem,
       code_norem,
     code_on,
@@ -64,7 +64,7 @@ enum bytecode {
     code_stop,
     code_end,
     
-    // exressions
+    // expressions
     code_load_and_push_immediate,  // integer
     code_load_and_push_immediate_hex,  // hex integer
     code_load_and_push_immediate_ascii,  // ascii integer

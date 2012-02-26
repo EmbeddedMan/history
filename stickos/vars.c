@@ -9,10 +9,23 @@
 #include "main.h"
 
 // the last word of each flash bank is the generation number
-#define SGENERATION(p)  *(int32 *)((p)+BASIC_SMALL_PAGE_SIZE-sizeof(uint32))
+#define _SGENERATION(p)  *(int32 *)((p)+BASIC_SMALL_PAGE_SIZE-sizeof(uint32))
+static
+int32
+SGENERATION(byte *p)
+{
+    return _SGENERATION(p);
+}
 
 // we always pick the newer flash bank
-#define FLASH_PARAM_PAGE  ((SGENERATION(FLASH_PARAM1_PAGE)+1 > SGENERATION(FLASH_PARAM2_PAGE)+1) ? FLASH_PARAM1_PAGE : FLASH_PARAM2_PAGE)
+#define __FLASH_PARAM_PAGE  ((SGENERATION(FLASH_PARAM1_PAGE)+1 > SGENERATION(FLASH_PARAM2_PAGE)+1) ? FLASH_PARAM1_PAGE : FLASH_PARAM2_PAGE)
+static
+byte *
+_FLASH_PARAM_PAGE()
+{
+    return __FLASH_PARAM_PAGE;
+}
+#define FLASH_PARAM_PAGE _FLASH_PARAM_PAGE()
 
 static byte *alternate_flash_param_page;
 

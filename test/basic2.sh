@@ -19,9 +19,9 @@ case `uname 2>/dev/null` in
 esac
 
 if [ X${1:-} = X-r ]; then
-	BASIC="../stickos/obj.${build}.${platform}.RELEASE/stickos"
+    BASIC="../stickos/obj.${build}.${platform}.RELEASE/stickos"
 else
-	BASIC="../stickos/obj.${build}.${platform}.DEBUG/stickos"
+    BASIC="../stickos/obj.${build}.${platform}.DEBUG/stickos"
 fi
 
 echo "... testing help"

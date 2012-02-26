@@ -17,13 +17,32 @@ bool unused2 = true;
 byte *code_library_page;
 
 // the last word of each flash bank is the generation number
-#define LGENERATION(p)  *(int32 *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(uint32))
+#define _LGENERATION(p)  *(int32 *)((p)+BASIC_LARGE_PAGE_SIZE-sizeof(uint32))
+static
+int32
+LGENERATION(byte *p)
+{
+    return _LGENERATION(p);
+}
 
 #undef PAGE_SIZE
-#define PAGE_SIZE(p)  (((p) == FLASH_CODE1_PAGE || (p) == FLASH_CODE2_PAGE || (p) == code_library_page) ? BASIC_LARGE_PAGE_SIZE : sizeof(RAM_CODE_PAGE))
+#define _PAGE_SIZE(p)  (((p) == FLASH_CODE1_PAGE || (p) == FLASH_CODE2_PAGE || (p) == code_library_page) ? BASIC_LARGE_PAGE_SIZE : sizeof(RAM_CODE_PAGE))
+static
+int
+PAGE_SIZE(byte *p)
+{
+    return _PAGE_SIZE(p);
+}
 
 // we always pick the newer flash bank
-#define FLASH_CODE_PAGE  ((LGENERATION(FLASH_CODE1_PAGE)+1 > LGENERATION(FLASH_CODE2_PAGE)+1) ? FLASH_CODE1_PAGE : FLASH_CODE2_PAGE)
+#define __FLASH_CODE_PAGE  ((LGENERATION(FLASH_CODE1_PAGE)+1 > LGENERATION(FLASH_CODE2_PAGE)+1) ? FLASH_CODE1_PAGE : FLASH_CODE2_PAGE)
+static
+byte *
+_FLASH_CODE_PAGE()
+{
+    return __FLASH_CODE_PAGE;
+}
+#define FLASH_CODE_PAGE _FLASH_CODE_PAGE()
 
 
 // profiling

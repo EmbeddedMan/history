@@ -31,6 +31,7 @@ extern uint32 possible_watchpoints_mask;
 extern bool watch_mode_smart;
 
 extern int32 run_bytecode_const(IN const byte *bytecode, IN OUT int *index);
+extern int run_var(const byte *bytecode_in, int length, OUT const char **name, OUT int32 *max_index);
 extern int run_expression(const byte *bytecode_in, int length, IN OUT const char **lvalue_var_name, OUT int32 *value);
 extern int run_string(IN const byte *bytecode_in, IN int length, IN int size, OUT char *string, OUT int *actual_out);
 extern int run_relation(const byte *bytecode_in, int length, OUT int32 *value);
