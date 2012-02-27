@@ -128,7 +128,7 @@ char * const help_about =
 #else
 #error
 #endif
-"Copyright (c) 2008-2012; all rights reserved.\n"
+"Copyright (c) 2008-2012; all rights reserved.  Patent U.S. 8,117,587.\n"
 "http://www.cpustick.com\n"
 "support@cpustick.com\n"
 ;
