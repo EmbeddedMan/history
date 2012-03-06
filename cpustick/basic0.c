@@ -103,6 +103,8 @@ char * const help_about =
 "Welcome to StickOS for Freescale MC9S12DT256 v" VERSION "!\n"
 #elif MC9S12DP512
 "Welcome to StickOS for Freescale MC9S12DP512 v" VERSION "!\n"
+#elif PIC32 && defined(__32MX250F128B__)
+"Welcome to StickOS for Microchip PIC32MX2-F128B v" VERSION "!\n"
 #elif PIC32 && defined(__32MX320F128H__) && defined CHIPKIT
 "Welcome to StickOS for Microchip PIC32MXx-F128H chipKIT Uno32 v" VERSION "!\n"
 #elif PIC32 && defined(__32MX440F512H__) && HIDBL
