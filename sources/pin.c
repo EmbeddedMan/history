@@ -992,11 +992,14 @@ enum debounce_ports {
     port_a,
 #endif
     port_b,
+#if PIC32PPS
+#else
     port_c,
     port_d,
     port_e,
     port_f,
     port_g,
+#endif
 #else
 #error
 #endif
@@ -2918,6 +2921,9 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
         case PIN_AN13:
         case PIN_AN14:
         case PIN_AN15:
+#if PIC32PPS
+            break;
+#else
             offset = pin_number - PIN_AN0;
             assert(offset < 16);
             // if we have a pullup (see datasheet table 12-11)...
@@ -3139,6 +3145,7 @@ pin_declare_internal(IN int pin_number, IN int pin_type, IN int pin_qual, IN boo
                 assert(pin_type == pin_type_digital_input);
                 TRISGSET = 1<<offset;
             }
+#endif
             break;
         default:
             assert(0);
@@ -4654,6 +4661,9 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
         case PIN_AN13:
         case PIN_AN14:
         case PIN_AN15:
+#if PIC32PPS
+            break;
+#else
             offset = pin_number - PIN_AN0;
             assert(offset < 16);
             assert(pin_type == pin_type_digital_output);
@@ -4848,6 +4858,7 @@ pin_set(IN int pin_number, IN int pin_type, IN int pin_qual, IN int32 value)
                 LATGCLR = 1<<offset;
             }
             break;
+#endif
         default:
             assert(0);
             break;
@@ -6072,6 +6083,9 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
         case PIN_AN13:
         case PIN_AN14:
         case PIN_AN15:
+#if PIC32PPS
+            break;
+#else
             offset = pin_number - PIN_AN0;
             assert(offset < 16);
             if (pin_type == pin_type_analog_input) {
@@ -6214,6 +6228,7 @@ pin_get(IN int pin_number, IN int pin_type, IN int pin_qual)
                 value = (PORTG & 1 << offset);
             }
             break;
+#endif
         default:
             assert(0);
             break;
@@ -6638,11 +6653,14 @@ pin_timer_poll(void)
     sample[port_a] = PORTA;
 #endif
     sample[port_b] = PORTB;
+#if PIC32PPS
+#else
     sample[port_c] = PORTC;
     sample[port_d] = PORTD;
     sample[port_e] = PORTE;
     sample[port_f] = PORTF;
     sample[port_g] = PORTG;
+#endif
 #endif
 
     if (++pin_digital_debounce_cycle >= pin_digital_debounce_history_depth) {
@@ -6774,8 +6792,11 @@ pin_initialize(void)
     // we have to manage shared timer resources across pins
     pin_clear();
 
+#if PIC32PPS
+#else
     // enable all pullups
     CNPUE = 0x3fffff;
+#endif
 #else
 #error
 #endif

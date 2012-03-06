@@ -47,9 +47,17 @@ serial_disable(void)
 #elif PIC32
     // Unconfigure UART2 RX Interrupt
 #if SERIAL_UART
+#if PIC32PPS
+    INTEnable(INT_U2RX, INT_DISABLED);
+#else
     ConfigIntUART2(0);
+#endif
+#else
+#if PIC32PPS
+    INTEnable(INT_U1RX, INT_DISABLED);
 #else
     ConfigIntUART1(0);
+#endif
 #endif
 #endif
     // don't allow the rx ball to start rolling
@@ -128,9 +136,17 @@ serial_isr(void)
 #if PIC32
     // Clear the RX interrupt Flag
 #if SERIAL_UART
+#if PIC32PPS
+    INTClearFlag(INT_U2RX);
+#else
     mU2RXClearIntFlag();
+#endif
+#else
+#if PIC32PPS
+    INTClearFlag(INT_U1RX);
 #else
     mU1RXClearIntFlag();
+#endif
 #endif
 #endif
 
@@ -267,12 +283,22 @@ serial_initialize(void)
     U2MODE |= _U2MODE_UARTEN_MASK;
 
     // Configure UART1 RX Interrupt
+#if PIC32PPS
+    INTSetVectorPriority(INT_UART_2_VECTOR, INT_PRIORITY_LEVEL_2);
+    INTEnable(INT_U2RX, INT_ENABLED);
+#else
     ConfigIntUART2(UART_INT_PR2 | UART_RX_INT_EN);
+#endif
 #else
     U1MODE |= _U1MODE_UARTEN_MASK;
 
     // Configure UART1 RX Interrupt
+#if PIC32PPS
+    INTSetVectorPriority(INT_UART_1_VECTOR, INT_PRIORITY_LEVEL_2);
+    INTEnable(INT_U1RX, INT_ENABLED);
+#else
     ConfigIntUART1(UART_INT_PR2 | UART_RX_INT_EN);
+#endif
 #endif
 #else
 #error

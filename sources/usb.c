@@ -1127,9 +1127,15 @@ usb_initialize(void)
     U1PWRCbits.USBPWR = 1;
 
     // enable int
+#if PIC32PPS
+    IEC1bits.USBIE = 1;
+    IPC7bits.USBIP = 6;
+    IPC7bits.USBIS = 0;
+#else
     IEC1bits.USBIE = 1;
     IPC11bits.USBIP = 6;
     IPC11bits.USBIS = 0;
+#endif
     //INTEnable(INT_USB, 1);
     //INTSetPriority(INT_USB, 6);
 #endif

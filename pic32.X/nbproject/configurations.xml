@@ -1134,7 +1134,7 @@
         <property key="exclude-floating-point" value="true"/>
         <property key="extra-include-directories"
                   value="..;../pict-o-crypt;../cpustick;../headers;../sources;../stickos"/>
-        <property key="generate-16-bit-code" value="false"/>
+        <property key="generate-16-bit-code" value="true"/>
         <property key="isolate-each-function" value="false"/>
         <property key="make-warnings-into-errors" value="false"/>
         <property key="optimization-level" value="-Os"/>
@@ -1181,11 +1181,12 @@
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/default/pic32stickos.x.a -Wl,--script=../elf32pic32mx.old.ld"/>
+        <appendMe value="../pic32stickos.X/dist/MX2/production/pic32stickos.x.a -Wl,--script=../elf32pic32mx.old.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>

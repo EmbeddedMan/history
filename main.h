@@ -107,7 +107,7 @@ extern uint8 __RAMBAR[];
 #define asm_halt()  asm("bgnd");
 #elif PIC32
 #define INTERRUPT
-#define asm_halt()  asm("SDBBP");
+#define asm_halt()  asm("SDBBP 0");
 #else
 #error
 #endif

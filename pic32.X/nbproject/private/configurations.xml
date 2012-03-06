@@ -148,7 +148,7 @@
       </runprofile>
     </conf>
     <conf name="MX2" type="2">
-      <platformToolSN></platformToolSN>
+      <platformToolSN>:=MPLABCommUSB:=04D8:=900A:=0002:=Microchip Technology Inc.:=PICkit 3:=BUR110376379:=x:=en</platformToolSN>
       <languageToolchainDir>C:\Program Files (x86)\Microchip\mplabc32\v2.02\bin</languageToolchainDir>
       <mdbdebugger version="1">
         <placeholder1>place holder 1</placeholder1>
