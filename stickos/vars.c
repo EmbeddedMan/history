@@ -4,7 +4,7 @@
 // access module.
 
 // Copyright (c) CPUStick.com, 2008-2012.  All rights reserved.
-// Patent pending.
+// Patent U.S. 8,117,587.
 
 #include "main.h"
 

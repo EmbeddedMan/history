@@ -2,6 +2,8 @@ You can use these source files however you want.
 
 The StickOS libraries are for evaluation purposes only, with no warrantee whatsoever; contact me if you want to use them commercially.
 
-Everything here is Copyright (c) CPUStick.com, 2008-2012.  All rights reserved.  Patent pending.
+The StickOS libraries are released under a free, irrevocable, perpetual license to U.S. Patent 8,117,587 for personal, educational, or non-commercial purposes.  The StickOS libraries are released "as-is" with no warranty of merchantability and no warranty of fitness for any purpose.  This license shall not be implied to cover any future releases of StickOS libraries which are not expressly released under such a license.  For information on commercial licenses, please contact cpustick.com.
+
+Everything here is Copyright (c) CPUStick.com, 2008-2012.  All rights reserved.  Patent U.S. 8,117,587.
 
 rich@testardi.com
