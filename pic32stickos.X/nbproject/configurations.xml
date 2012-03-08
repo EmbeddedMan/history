@@ -318,12 +318,14 @@
       </makeCustomizationType>
       <C32>
         <property key="additional-warnings" value="false"/>
+        <property key="enable-app-io" value="false"/>
         <property key="enable-omit-frame-pointer" value="true"/>
+        <property key="enable-symbols" value="true"/>
         <property key="enable-unroll-loops" value="false"/>
         <property key="exclude-floating-point" value="true"/>
         <property key="extra-include-directories"
                   value="..;../pict-o-crypt;../cpustick;../headers;../sources;../stickos"/>
-        <property key="generate-16-bit-code" value="false"/>
+        <property key="generate-16-bit-code" value="true"/>
         <property key="isolate-each-function" value="false"/>
         <property key="make-warnings-into-errors" value="false"/>
         <property key="optimization-level" value="-Os"/>

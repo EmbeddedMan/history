@@ -265,11 +265,12 @@
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/chipKIT_Max32/pic32stickos.x.a -Wl,--script=../chipKIT-MAX32-application-32MX795F512L.ld"/>
+        <appendMe value="../pic32stickos.X/dist/chipKIT_Max32/production/pic32stickos.x.a -Wl,--script=../chipKIT-MAX32-application-32MX795F512L.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>
@@ -339,12 +340,14 @@
       </makeCustomizationType>
       <C32>
         <property key="additional-warnings" value="false"/>
+        <property key="enable-app-io" value="false"/>
         <property key="enable-omit-frame-pointer" value="true"/>
+        <property key="enable-symbols" value="true"/>
         <property key="enable-unroll-loops" value="false"/>
         <property key="exclude-floating-point" value="true"/>
         <property key="extra-include-directories"
                   value="..;../pict-o-crypt;../cpustick;../headers;../sources;../stickos"/>
-        <property key="generate-16-bit-code" value="false"/>
+        <property key="generate-16-bit-code" value="true"/>
         <property key="isolate-each-function" value="false"/>
         <property key="make-warnings-into-errors" value="false"/>
         <property key="optimization-level" value="-Os"/>
@@ -391,11 +394,12 @@
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/chipKIT_Uno32/pic32stickos.x.a -Wl,--script=../chipKIT-UNO32-application-32MX320F128L.ld"/>
+        <appendMe value="../pic32stickos.X/dist/chipKIT_Uno32/production/pic32stickos.x.a -Wl,--script=../chipKIT-UNO32-application-32MX320F128L.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>
