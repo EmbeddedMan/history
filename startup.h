@@ -155,7 +155,7 @@
 #define BASIC_LARGE_PAGE_SIZE  (8*1024)
 #else
 #if PIC32 || MCF52233 || MCF52259
-#if defined(__32MX320F128H__)
+#if defined(__32MX250F128B__) || defined(__32MX320F128H__)
 #define BASIC_LARGE_PAGE_SIZE  (8*1024)
 #else
 #define BASIC_LARGE_PAGE_SIZE  (24*1024)

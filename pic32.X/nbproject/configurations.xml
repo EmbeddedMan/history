@@ -1190,7 +1190,7 @@
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/MX2/production/pic32stickos.x.a -Wl,--script=../elf32pic32mx.old.ld"/>
+        <appendMe value="../pic32stickos.X/dist/MX2/production/pic32stickos.x.a"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>

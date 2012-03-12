@@ -114,10 +114,18 @@ XXX_SKIP_XXX:
 INTERRUPT
 void
 #if PIC32
+#if defined(__32MX250F128B__)
+#if SERIAL_UART
+__ISR(37, ipl2) // REVISIT -- ipl?
+#else
+__ISR(32, ipl2) // REVISIT -- ipl?
+#endif
+#else
 #if SERIAL_UART
 __ISR(32, ipl2) // REVISIT -- ipl?
 #else
 __ISR(24, ipl2) // REVISIT -- ipl?
+#endif
 #endif
 #endif
 serial_isr(void)

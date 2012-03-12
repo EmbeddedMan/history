@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="62">
   <projectmakefile>Makefile</projectmakefile>
-  <defaultConf>2</defaultConf>
+  <defaultConf>8</defaultConf>
   <confs>
     <conf name="default" type="2">
       <platformToolSN></platformToolSN>
@@ -40,7 +40,7 @@
       </runprofile>
     </conf>
     <conf name="chipKIT_Uno32" type="2">
-      <platformToolSN></platformToolSN>
+      <platformToolSN>:=MPLABCommUSB:=04D8:=900A:=0002:=Microchip Technology Inc.:=PICkit 3:=BUR110376379:=x:=en</platformToolSN>
       <languageToolchainDir>C:\Program Files (x86)\Microchip\mplabc32\v2.02\bin</languageToolchainDir>
       <mdbdebugger version="1">
         <placeholder1>place holder 1</placeholder1>

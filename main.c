@@ -14,7 +14,11 @@
     #pragma config UPLLIDIV = DIV_2         // USB PLL Input Divider
 #endif
     #pragma config FPLLIDIV = DIV_2         // PLL Input Divider
+#if defined(__32MX250F128B__)
+    #pragma config FPLLODIV = DIV_2         // PLL Output Divider
+#else
     #pragma config FPLLODIV = DIV_1         // PLL Output Divider
+#endif
     #pragma config FPBDIV   = DIV_1         // Peripheral Clock divisor
     #pragma config FWDTEN   = OFF           // Watchdog Timer 
     #pragma config WDTPS    = PS1           // Watchdog Timer Postscale
@@ -23,11 +27,19 @@
     #pragma config POSCMOD  = XT            // Primary Oscillator
     #pragma config IESO     = OFF           // Internal/External Switch-over
     #pragma config FSOSCEN  = OFF           // Secondary Oscillator Enable
+#if defined(__32MX250F128B__)
+    #pragma config FNOSC    = FRCPLL        // Oscillator Selection
+#else
     #pragma config FNOSC    = PRIPLL        // Oscillator Selection
+#endif
     #pragma config CP       = OFF           // Code Protect
     #pragma config BWP      = OFF           // Boot Flash Write Protect
     #pragma config PWP      = OFF           // Program Flash Write Protect
+#if defined(__32MX250F128B__)
+    #pragma config ICESEL   = ICS_PGx1      // ICE/ICD Comm Channel Select
+#else
     #pragma config ICESEL   = ICS_PGx2      // ICE/ICD Comm Channel Select
+#endif
     #pragma config DEBUG    = OFF           // Debugger Disabled for Starter Kit
 #endif
 
@@ -54,9 +66,13 @@ main()  // we're called directly by startup.c
 
 #if PIC32
     byte *p;
-    extern unsigned char _data_image_begin[];
+    //extern unsigned char _data_image_begin[];
 
+#if defined(__32MX250F128B__)
+    SYSTEMConfigPerformance(40000000L);
+#else
     SYSTEMConfigPerformance(80000000L);
+#endif
     INTEnableSystemMultiVectoredInt();
     (void)splx(7);
 #if ! DEBUGGING
@@ -69,14 +85,24 @@ main()  // we're called directly by startup.c
     // N.B. we can't rely on config bits since the bootloader sets them differently
     SYSKEY = 0xAA996655; // Write Key1 to SYSKEY
     SYSKEY = 0x556699AA; // Write Key2 to SYSKEY
+#if defined(__32MX250F128B__)
+    OSCCONbits.PBDIV = 0;
+#else
     OSCCONbits.PBDIV = 1;
+#endif
     SYSKEY = 0;
 
+#if defined(__32MX250F128B__)
+    cpu_frequency = 40000000;
+    oscillator_frequency = 8000000;
+    bus_frequency = 40000000;
+#else
     cpu_frequency = 80000000;
     oscillator_frequency = 8000000;
     bus_frequency = 40000000;
+#endif
 
-    end_of_static = _data_image_begin;
+    //end_of_static = _data_image_begin;
 
     // if rd6 is asserted on boot, skip autorun
     pin_initialize();

@@ -604,7 +604,11 @@ static byte configuration[CONFIGURATION_DESCRIPTOR_SIZE];
 INTERRUPT
 void
 #if PIC32
+#if defined(__32MX250F128B__)
+__ISR(30, ipl6) // REVISIT -- ipl?
+#else
 __ISR(45, ipl6) // REVISIT -- ipl?
+#endif
 #endif
 usb_isr(void)
 {
@@ -622,7 +626,11 @@ usb_isr(void)
     assert((usb_in_ticks = ticks) ? true : true);
     
 #if PIC32
+#if PIC32PPS
+    mUSBClearIntFlag();
+#else
     IFS1CLR = 0x02000000; // USBIF
+#endif
 #else
      (void)splx(7);
 #endif
@@ -1128,9 +1136,12 @@ usb_initialize(void)
 
     // enable int
 #if PIC32PPS
-    IEC1bits.USBIE = 1;
-    IPC7bits.USBIP = 6;
-    IPC7bits.USBIS = 0;
+    mUSBIntEnable(true);
+    mUSBSetIntPriority(6);
+    mUSBSetIntSubPriority(0);
+    //IEC1bits.USBIE = 1;
+    //IPC7bits.USBIP = 6;
+    //IPC7bits.USBIS = 0;
 #else
     IEC1bits.USBIE = 1;
     IPC11bits.USBIP = 6;

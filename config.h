@@ -1,7 +1,7 @@
 #define VERSION  "1.92g"
 
 //#define SODEBUG  1
-//#define DEBUGGING  1  // enable to use mplab x debugger
+#define DEBUGGING  1  // enable to use mplab x debugger
 
 #define FSLBOT  0
 // #define DEMO_KIT  1  // and change to demokit.lcf and check bootload.c to build
