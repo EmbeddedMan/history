@@ -27,7 +27,7 @@
     #pragma config POSCMOD  = XT            // Primary Oscillator
     #pragma config IESO     = OFF           // Internal/External Switch-over
     #pragma config FSOSCEN  = OFF           // Secondary Oscillator Enable
-#if defined(__32MX250F128B__)
+#if 0 && defined(__32MX250F128B__)
     #pragma config FNOSC    = FRCPLL        // Oscillator Selection
 #else
     #pragma config FNOSC    = PRIPLL        // Oscillator Selection
