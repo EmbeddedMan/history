@@ -118,14 +118,14 @@
 #define FLASH_PAGE_SIZE  1024
 #define BASIC_RAM_PAGE_SIZE  2048
 #define BASIC_VARS  100
-#define BASIC_STORES  2
+#define BASIC_STORES  0
 #define PIC32PPS  1
 #elif defined(__32MX320F128H__)
 #define FLASH_BYTES  (128*1024)  // the smallest part we support
 #define FLASH_PAGE_SIZE  4096
 #define BASIC_RAM_PAGE_SIZE  2048
 #define BASIC_VARS  100
-#define BASIC_STORES  2
+#define BASIC_STORES  0
 #elif DUINOMITE
 #define FLASH_BYTES  (512*1024)  // the smallest part we support
 #define FLASH_PAGE_SIZE  4096
@@ -155,11 +155,7 @@
 #define BASIC_LARGE_PAGE_SIZE  (8*1024)
 #else
 #if PIC32 || MCF52233 || MCF52259
-#if defined(__32MX250F128B__) || defined(__32MX320F128H__)
-#define BASIC_LARGE_PAGE_SIZE  (8*1024)
-#else
 #define BASIC_LARGE_PAGE_SIZE  (24*1024)
-#endif
 #else
 #define BASIC_LARGE_PAGE_SIZE  (12*1024)
 #endif

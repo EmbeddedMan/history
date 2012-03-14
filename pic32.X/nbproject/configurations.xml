@@ -173,11 +173,12 @@
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/default/pic32stickos.x.a -Wl,--script=../elf32pic32mx.old.ld"/>
+        <appendMe value="../pic32stickos.X/dist/default/production/pic32stickos.x.a -Wl,--script=../elf32pic32mx.old.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>
@@ -213,7 +214,9 @@
       </makeCustomizationType>
       <C32>
         <property key="additional-warnings" value="false"/>
+        <property key="enable-app-io" value="false"/>
         <property key="enable-omit-frame-pointer" value="true"/>
+        <property key="enable-symbols" value="true"/>
         <property key="enable-unroll-loops" value="false"/>
         <property key="exclude-floating-point" value="true"/>
         <property key="extra-include-directories"
@@ -521,11 +524,12 @@
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/default/pic32stickos.x.a  -Wl,--script=../elf32pic32mx.ld"/>
+        <appendMe value="../pic32stickos.X/dist/default/production/pic32stickos.x.a  -Wl,--script=../elf32pic32mx.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>
@@ -647,11 +651,12 @@
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/default/pic32stickos.x.a  -Wl,--script=../elf32pic32mx.ld"/>
+        <appendMe value="../pic32stickos.X/dist/default/production/pic32stickos.x.a  -Wl,--script=../elf32pic32mx.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>
@@ -773,11 +778,12 @@
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/default/pic32stickos.x.a  -Wl,--script=../elf32pic32mx.ld"/>
+        <appendMe value="../pic32stickos.X/dist/default/production/pic32stickos.x.a  -Wl,--script=../elf32pic32mx.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>
@@ -911,11 +917,12 @@
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
         <property key="stack-size" value="3072"/>
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/default/pic32stickos.x.a -Wl,--script=../chipKIT-MAX32-application-32MX795F512L.ld"/>
+        <appendMe value="../pic32stickos.X/dist/default/production/pic32stickos.x.a -Wl,--script=../chipKIT-MAX32-application-32MX795F512L.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>
@@ -1061,7 +1068,7 @@
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
-        <appendMe value="../pic32stickos.X/dist/DuinoMite/pic32stickos.x.a  -Wl,--script=../Maximite.ld"/>
+        <appendMe value="../pic32stickos.X/dist/DuinoMite/production/pic32stickos.x.a  -Wl,--script=../Maximite.ld"/>
       </C32-LD>
       <C32Global>
         <property key="legacy-libc" value="false"/>

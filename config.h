@@ -37,9 +37,7 @@
 #define USB_HOST  1
 #endif
 
-#if ! PIC32 || (PIC32 && ! defined(__32MX320F128H__))
 #define ZIGFLEA  1
-#endif
 
 #if PIC32 && ! defined(__32MX320F128H__) && ! defined(__32MX440F512H__) && ! defined(__32MX795F512H__)
 #define PIC32PORTA  1
