@@ -1,5 +1,7 @@
 turn off pcache for pic32; disable interrupts while talking to spi/i2c; see eratta
 
+allow heartbeat and safemode* on same pin!
+
 get rid of all code in #defines -- esp ?: and such for flash generations
 get rid of all (*xxx)++ references
 uniq -d long lines (if, else, while, etc.)
