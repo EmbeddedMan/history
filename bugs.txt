@@ -1,4 +1,4 @@
-turn off pcache for pic32; disable interrupts while talking to spi/i2c; see eratta
+make all parts support 20 scopes (rather than 10).
 
 allow heartbeat and safemode* on same pin!
 
@@ -8,10 +8,16 @@ uniq -d long lines (if, else, while, etc.)
 merge const parsing
 replace all switch statements out of performance path with if-elseif
 
+allow upper case letters in hex addresses.
+
+turn off pcache for pic32; disable interrupts while talking to spi/i2c; see eratta
+
 change duinomite pin names to match silkscreens (and fb32/chipKIT), change help pins, change default "pins" to remove zigflea and move safemode, change default heartbeat led
 add stickos library versions that use all 512k for pic32 just like for CFV2 -- make an official part of the skeleton project!
 
 data_image_begin is wrong for pic32 -- we have to use address after ramfunc images as the end of code!
+
+add "upload" command to turn BASIC programs into S19/HEX...
 
 // bugs
 // ====
