@@ -1,5 +1,9 @@
 make all parts support 20 scopes (rather than 10).
 
+allow gosub to use string expression instead of a label -- gosub state$
+
+add "eval" command?  add case/switch command?
+
 allow heartbeat and safemode* on same pin!
 
 get rid of all code in #defines -- esp ?: and such for flash generations
