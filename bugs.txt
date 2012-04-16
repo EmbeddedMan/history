@@ -1,3 +1,5 @@
+turn rb12 high output on dm mini to enable 3.3v on UEXT.
+
 make all parts support 20 scopes (rather than 10).
 
 allow gosub to use string expression instead of a label -- gosub state$
