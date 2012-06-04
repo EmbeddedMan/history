@@ -367,7 +367,7 @@ uint32_t DFS_SetFAT(PVOLINFO volinfo, uint8_t *scratch, uint32_t *scratchcache, 
 			// If we wrote that sector OK, then read in the subsequent sector
 			// and poke the first byte with the remainder of this FAT entry.
 			if (DFS_OK == result) {
-				(*scratchcache)++;
+				(*scratchcache)++;  // rpt
 				result = DFS_ReadSector(volinfo->unit, scratch, *scratchcache, 1);
 				if (DFS_OK == result) {
 					// Odd cluster: High 12 bits being set
