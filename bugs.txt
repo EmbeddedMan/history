@@ -25,6 +25,8 @@ data_image_begin is wrong for pic32 -- we have to use address after ramfunc imag
 
 add "upload" command to turn BASIC programs into S19/HEX...
 
+I was hoping "ipaddress" would tell me what it got but that seems to just report "dhcp" or whatever static address was assigned.
+
 // bugs
 // ====
 following does not return value to array!
