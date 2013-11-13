@@ -11,10 +11,6 @@ serial.c, sleep.c, startup.c, terminal.c, text.c, timer.c, usb.c, util.c, vector
 public domain, and you can use them however you want.
 
 The StickOS libraries built by CPUStick.com (aka Rich Testardi) and contained in the skeleton.zip archive, as
-well as the StickOS .HEX, .S19, and .SX binaries published on the CPUStick.com Downloads page, are for
-evaluation purposes only, with no warrantee whatsoever; contact me if you want to use them commercially.
-
-The StickOS libraries built by CPUStick.com (aka Rich Testardi) and contained in the skeleton.zip archive, as
 well as the StickOS .HEX, .S19, and .SX binaries published on the CPUStick.com Downloads page, are released
 under a free, irrevocable, perpetual license to U.S. Patent 8,117,587 for personal, educational, or
 non-commercial purposes.  The StickOS libraries are released "as-is" with no warranty of merchantability and no
