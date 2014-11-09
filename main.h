@@ -1,4 +1,5 @@
 // *** main.h *********************************************************
+#define _SUPPRESS_PLIB_WARNING
 
 #ifndef MAIN_INCLUDED
 #define SLEEP_DELAY  60

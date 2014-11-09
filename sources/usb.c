@@ -604,7 +604,7 @@ static byte configuration[CONFIGURATION_DESCRIPTOR_SIZE];
 INTERRUPT
 void
 #if PIC32
-#if defined(__32MX250F128B__)
+#if defined(__32MX250F128B__) || defined(__32MX250F128C__) || defined(__32MX250F128D__) || defined(__32MX270F256D__)
 __ISR(30, ipl6) // REVISIT -- ipl?
 #else
 __ISR(45, ipl6) // REVISIT -- ipl?

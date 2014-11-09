@@ -4,6 +4,9 @@
 // application program loop.
 
 #include "main.h"
+#if defined(__XC32)
+#include <int.h>
+#endif
 
 #if PIC32 && ! HIDBL && ! CHIPKIT
 #if defined(USBOTG)
@@ -14,7 +17,7 @@
     #pragma config UPLLIDIV = DIV_2         // USB PLL Input Divider
 #endif
     #pragma config FPLLIDIV = DIV_2         // PLL Input Divider
-#if defined(__32MX250F128B__)
+#if defined(__32MX250F128B__) || defined(__32MX250F128C__) || defined(__32MX250F128D__) || defined(__32MX270F256D__)
     #pragma config FPLLODIV = DIV_2         // PLL Output Divider
 #else
     #pragma config FPLLODIV = DIV_1         // PLL Output Divider
@@ -35,7 +38,7 @@
     #pragma config CP       = OFF           // Code Protect
     #pragma config BWP      = OFF           // Boot Flash Write Protect
     #pragma config PWP      = OFF           // Program Flash Write Protect
-#if defined(__32MX250F128B__)
+#if defined(__32MX250F128B__) || defined(__32MX250F128C__) || defined(__32MX250F128D__) || defined(__32MX270F256D__)
     #pragma config ICESEL   = ICS_PGx1      // ICE/ICD Comm Channel Select
 #else
     #pragma config ICESEL   = ICS_PGx2      // ICE/ICD Comm Channel Select
@@ -68,7 +71,7 @@ main()  // we're called directly by startup.c
     byte *p;
     //extern unsigned char _data_image_begin[];
 
-#if defined(__32MX250F128B__)
+#if defined(__32MX250F128B__) || defined(__32MX250F128C__) || defined(__32MX250F128D__) || defined(__32MX270F256D__)
     SYSTEMConfigPerformance(40000000L);
 #else
     SYSTEMConfigPerformance(80000000L);
@@ -85,14 +88,14 @@ main()  // we're called directly by startup.c
     // N.B. we can't rely on config bits since the bootloader sets them differently
     SYSKEY = 0xAA996655; // Write Key1 to SYSKEY
     SYSKEY = 0x556699AA; // Write Key2 to SYSKEY
-#if defined(__32MX250F128B__)
+#if defined(__32MX250F128B__) || defined(__32MX250F128C__) || defined(__32MX250F128D__) || defined(__32MX270F256D__)
     OSCCONbits.PBDIV = 0;
 #else
     OSCCONbits.PBDIV = 1;
 #endif
     SYSKEY = 0;
 
-#if defined(__32MX250F128B__)
+#if defined(__32MX250F128B__) || defined(__32MX250F128C__) || defined(__32MX250F128D__) || defined(__32MX270F256D__)
     cpu_frequency = 40000000;
     oscillator_frequency = 8000000;
     bus_frequency = 40000000;
