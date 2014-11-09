@@ -113,12 +113,19 @@
 #define FLASH2_BYTES  (16*1024L)
 #elif PIC32
 #define FLASH_START  0x9D000000
-#if defined(__32MX250F128B__) || defined(__32MX250F128C__) || defined(__32MX250F128D__) || defined(__32MX270F256D__)
+#if defined(__32MX250F128B__) || defined(__32MX250F128C__) || defined(__32MX250F128D__)
 #define FLASH_BYTES  (124*1024)  // the smallest part we support
 #define FLASH_PAGE_SIZE  1024
 #define BASIC_RAM_PAGE_SIZE  2048
 #define BASIC_VARS  100
 #define BASIC_STORES  0
+#define PIC32PPS  1
+#elif defined(__32MX270F256D__)
+#define FLASH_BYTES  (252*1024)  // the smallest part we support
+#define FLASH_PAGE_SIZE  1024
+#define BASIC_RAM_PAGE_SIZE  2048
+#define BASIC_VARS  200
+#define BASIC_STORES  10
 #define PIC32PPS  1
 #elif defined(__32MX320F128H__)
 #define FLASH_BYTES  (128*1024)  // the smallest part we support

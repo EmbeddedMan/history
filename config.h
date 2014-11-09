@@ -44,12 +44,12 @@
 #endif
 
 #if ! CHIPKIT
-#if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
-#define UPGRADE  1
-#endif
-#if ! PIC32
-#define DOWNLOAD  1
-#endif
+  #if ! BADGE_BOARD && ! DEMO_KIT && ! MCF9S08QE128 && ! MC9S12DT256 && ! MC9S12DP512 && ! MC51QE128
+    #define UPGRADE  1
+  #endif
+  #if ! PIC32
+    #define DOWNLOAD  1
+  #endif
 #endif
 
 // Enable in-memory trace buffer for debugging with the trace() macro.
